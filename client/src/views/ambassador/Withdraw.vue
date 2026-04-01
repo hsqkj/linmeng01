@@ -1,0 +1,181 @@
+<template>
+  <div class="withdraw-page">
+    <h2>提现管理</h2>
+    <el-row :gutter="20">
+      <el-col :span="12">
+        <div class="balance-card">
+          <div class="balance-label">账户余额</div>
+          <div class="balance-val">¥ 2,580.00</div>
+          <div class="balance-tip">待结算金额 ¥3,200（下次结算日：05-01）</div>
+          <el-button type="warning" size="large" style="margin-top:16px" @click="showWithdraw = true" :disabled="balance < 100">申请提现</el-button>
+          <div v-if="balance < 100" style="color:#F56C6C;font-size:12px;margin-top:4px">余额不足100元，暂不可提现</div>
+        </div>
+      </el-col>
+      <el-col :span="12">
+        <div class="account-card">
+          <h3>绑定收款账户</h3>
+          <div class="account-list">
+            <div class="account-item active">
+              <el-icon><CreditCard /></el-icon>
+              <div>
+                <div class="acc-name">招商银行储蓄卡</div>
+                <div class="acc-num">尾号 **** **** 8888</div>
+              </div>
+              <el-tag type="success" size="small">默认</el-tag>
+            </div>
+            <div class="account-item" @click="openAddAccount">
+              <el-icon><Plus /></el-icon>
+              <span>添加收款账户</span>
+            </div>
+          </div>
+        </div>
+      </el-col>
+    </el-row>
+    
+    <div class="section-card" style="margin-top:20px">
+      <h3>提现记录</h3>
+      <el-table :data="withdrawRecords" stripe>
+        <el-table-column prop="time" label="申请时间" width="180" />
+        <el-table-column prop="amount" label="提现金额" width="120">
+          <template #default="{ row }"><span class="amount-text">¥{{ row.amount.toLocaleString() }}</span></template>
+        </el-table-column>
+        <el-table-column prop="account" label="到账账户" />
+        <el-table-column prop="arrivalTime" label="到账时间" width="180" />
+        <el-table-column prop="status" label="状态" width="100">
+          <template #default="{ row }">
+            <el-tag :type="row.status === '已到账' ? 'success' : 'warning'" size="small">{{ row.status }}</el-tag>
+          </template>
+        </el-table-column>
+      </el-table>
+    </div>
+
+    <el-dialog v-model="showWithdraw" title="申请提现" width="400px">
+      <div class="withdraw-form">
+        <div class="withdraw-balance">可提现余额：<strong>¥ 2,580.00</strong></div>
+        <el-form label-position="top" style="margin-top:16px">
+          <el-form-item label="提现金额">
+            <el-input-number v-model="withdrawAmount" :min="100" :max="2580" style="width:100%" />
+            <div style="font-size:12px;color:#909399;margin-top:4px">最低提现100元</div>
+          </el-form-item>
+          <el-form-item label="到账账户">
+            <el-select v-model="withdrawAccount" style="width:100%">
+              <el-option label="招商银行 尾号8888" value="8888" />
+            </el-select>
+          </el-form-item>
+        </el-form>
+      </div>
+      <template #footer>
+        <el-button @click="showWithdraw = false">取消</el-button>
+        <el-button type="warning" @click="submitWithdraw">确认提现</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 添加收款账户对话框 -->
+    <el-dialog v-model="showAddAccount" title="添加收款账户" width="480px">
+      <el-form :model="accountForm" label-width="100px">
+        <el-form-item label="账户类型" required>
+          <el-radio-group v-model="accountForm.type">
+            <el-radio label="bank">银行卡</el-radio>
+            <el-radio label="alipay">支付宝</el-radio>
+            <el-radio label="wechat">微信钱包</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <template v-if="accountForm.type === 'bank'">
+          <el-form-item label="持卡人姓名" required>
+            <el-input v-model="accountForm.name" placeholder="请输入银行卡持卡人真实姓名" />
+          </el-form-item>
+          <el-form-item label="银行名称" required>
+            <el-select v-model="accountForm.bankName" style="width:100%">
+              <el-option v-for="b in bankList" :key="b" :label="b" :value="b" />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="卡号" required>
+            <el-input v-model="accountForm.cardNo" placeholder="请输入银行卡号" maxlength="19" />
+          </el-form-item>
+          <el-form-item label="确认卡号" required>
+            <el-input v-model="accountForm.cardNoConfirm" placeholder="请再次输入银行卡号" maxlength="19" />
+          </el-form-item>
+        </template>
+        <template v-else-if="accountForm.type === 'alipay'">
+          <el-form-item label="支付宝账号" required>
+            <el-input v-model="accountForm.account" placeholder="手机号或邮箱" />
+          </el-form-item>
+          <el-form-item label="真实姓名" required>
+            <el-input v-model="accountForm.name" placeholder="与支付宝实名一致" />
+          </el-form-item>
+        </template>
+        <template v-else>
+          <el-form-item label="微信昵称" required>
+            <el-input v-model="accountForm.name" placeholder="微信实名认证姓名" />
+          </el-form-item>
+          <el-form-item label="微信手机号" required>
+            <el-input v-model="accountForm.account" placeholder="绑定微信的手机号" />
+          </el-form-item>
+        </template>
+        <el-form-item label="设为默认">
+          <el-switch v-model="accountForm.isDefault" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showAddAccount = false">取消</el-button>
+        <el-button type="primary" @click="submitAccount">确认添加</el-button>
+      </template>
+    </el-dialog>
+  </div>
+</template>
+<script setup>
+import { ref, reactive } from 'vue'
+import { ElMessage } from 'element-plus'
+import { CreditCard, Plus } from '@element-plus/icons-vue'
+const balance = ref(2580)
+const showWithdraw = ref(false), showAddAccount = ref(false)
+const withdrawAmount = ref(2580), withdrawAccount = ref('8888')
+
+const bankList = ['招商银行', '工商银行', '建设银行', '农业银行', '中国银行', '交通银行', '邮政储蓄银行', '兴业银行', '浦发银行', '民生银行', '平安银行']
+const accountForm = reactive({ type: 'bank', name: '', bankName: '', cardNo: '', cardNoConfirm: '', account: '', isDefault: false })
+
+function openAddAccount() {
+  Object.assign(accountForm, { type: 'bank', name: '', bankName: '', cardNo: '', cardNoConfirm: '', account: '', isDefault: false })
+  showAddAccount.value = true
+}
+
+function submitAccount() {
+  if (accountForm.type === 'bank') {
+    if (!accountForm.name || !accountForm.bankName || !accountForm.cardNo) { ElMessage.warning('请填写完整的银行卡信息'); return }
+    if (accountForm.cardNo !== accountForm.cardNoConfirm) { ElMessage.error('两次输入的卡号不一致'); return }
+    ElMessage.success(`${accountForm.bankName}储蓄卡（尾号${accountForm.cardNo.slice(-4)}）已添加`)
+  } else if (accountForm.type === 'alipay') {
+    if (!accountForm.name || !accountForm.account) { ElMessage.warning('请填写完整信息'); return }
+    ElMessage.success(`支付宝账号（${accountForm.account}）已添加`)
+  } else {
+    if (!accountForm.name || !accountForm.account) { ElMessage.warning('请填写完整信息'); return }
+    ElMessage.success('微信钱包已添加')
+  }
+  showAddAccount.value = false
+}
+const withdrawRecords = [
+  { time: '2026-03-01 08:00', amount: 3200, account: '招商银行 *8888', arrivalTime: '2026-03-01 14:30', status: '已到账' },
+  { time: '2026-02-01 08:00', amount: 2400, account: '招商银行 *8888', arrivalTime: '2026-02-01 15:00', status: '已到账' },
+  { time: '2026-01-01 08:00', amount: 3100, account: '招商银行 *8888', arrivalTime: '2026-01-01 13:45', status: '已到账' }
+]
+function submitWithdraw() {
+  showWithdraw.value = false
+  ElMessage.success(`提现申请已提交！¥${withdrawAmount.value} 将在1-3个工作日内到账`)
+}
+</script>
+<style scoped>
+.withdraw-page { max-width: 900px; margin: 0 auto; }
+.withdraw-page h2 { margin-bottom: 20px; font-size: 22px; font-weight: 700; }
+.balance-card, .account-card, .section-card { background: #fff; border-radius: 12px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+.balance-label { font-size: 14px; color: #909399; }
+.balance-val { font-size: 40px; font-weight: 700; color: #F59E0B; margin: 8px 0; }
+.balance-tip { font-size: 13px; color: #909399; }
+.account-card h3, .section-card h3 { margin: 0 0 16px; font-size: 16px; font-weight: 700; }
+.account-list { display: flex; flex-direction: column; gap: 10px; }
+.account-item { display: flex; align-items: center; gap: 12px; padding: 12px; border: 1px solid #eee; border-radius: 8px; cursor: pointer; }
+.account-item.active { border-color: #F59E0B; background: #fff8e1; }
+.acc-name { font-weight: 500; font-size: 14px; }
+.acc-num { font-size: 12px; color: #909399; }
+.amount-text { color: #67C23A; font-weight: 600; }
+.withdraw-balance { font-size: 15px; color: #606266; }
+</style>

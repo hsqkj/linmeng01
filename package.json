@@ -1,0 +1,19 @@
+{
+  "name": "linmeng-platform",
+  "version": "1.0.0",
+  "description": "邻盟 - 社区资源智能匹配助手",
+  "main": "server/app.js",
+  "scripts": {
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "server": "cd server && npm run dev",
+    "client": "cd client && npm run dev",
+    "build": "cd client && npm run build",
+    "start": "cd server && npm start"
+  },
+  "keywords": ["社区", "商家", "资源匹配", "邻盟"],
+  "author": "大彭",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
