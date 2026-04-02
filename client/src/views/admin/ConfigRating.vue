@@ -143,6 +143,7 @@
 import { ref, reactive, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
+import { saveRatingConfig } from '@/api/admin'
 
 const showDimensionDialog = ref(false)
 const activeCollapse = ref(['quality', 'response', 'activity', 'cooperation'])
@@ -305,12 +306,20 @@ function addCriteria(dim) {
   ElMessage.info('评分项编辑功能开发中...')
 }
 
-function saveAll() {
+async function saveAll() {
   if (totalWeight.value !== 100) {
     ElMessage.warning('权重总和必须为100%')
     return
   }
-  ElMessage.success('评级标准配置已保存')
+  try {
+    await saveRatingConfig({
+      dimensions: dimensions.map(d => ({ name: d.name, description: d.description, weight: d.weight, criteria: d.criteria })),
+      starRules: ratingRules.map(r => ({ star: r.stars, minScore: r.minScore, maxScore: r.maxScore, description: r.description }))
+    })
+    ElMessage.success('评级标准配置已保存')
+  } catch {
+    ElMessage.error('保存失败，请重试')
+  }
 }
 
 function resetToDefault() {

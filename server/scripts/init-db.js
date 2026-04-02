@@ -3,6 +3,7 @@
  * 创建所有必要的表结构和初始数据
  */
 
+require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') })
 const mysql = require('mysql2/promise')
 const bcrypt = require('bcryptjs')
 const dbConfig = require('../src/config/database')
@@ -248,11 +249,10 @@ async function initDatabase() {
         user_type TINYINT NOT NULL COMMENT '1社区 2商家',
         user_id INT NOT NULL,
         content TEXT NOT NULL COMMENT '留言内容',
-        parent_id INT DEFAULT 0 COMMENT '回复ID',
+        parent_id INT DEFAULT NULL COMMENT '回复ID',
         status TINYINT DEFAULT 1 COMMENT '0隐藏 1显示',
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        FOREIGN KEY (parent_id) REFERENCES comments(id)
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='留言表'
     `)
     console.log('表 comments 创建成功')

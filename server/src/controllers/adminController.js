@@ -35,12 +35,20 @@ exports.login = async (req, res) => {
       return error(res, '用户名或密码错误', 401)
     }
     
+    // permissions字段：MySQL的JSON类型由mysql2自动反序列化为数组，兼容字符串格式
+    let permissions = []
+    if (Array.isArray(admin.permissions)) {
+      permissions = admin.permissions
+    } else if (typeof admin.permissions === 'string') {
+      try { permissions = JSON.parse(admin.permissions) } catch (e) { permissions = [] }
+    }
+    
     // 生成Token
     const token = jwt.sign({
       id: admin.id,
       username: admin.username,
       role: admin.role,
-      permissions: JSON.parse(admin.permissions || '[]')
+      permissions
     }, jwtConfig.secret, { expiresIn: jwtConfig.expiresIn })
     
     // 更新登录信息
@@ -56,7 +64,7 @@ exports.login = async (req, res) => {
         username: admin.username,
         realName: admin.real_name,
         role: admin.role,
-        permissions: JSON.parse(admin.permissions || '[]')
+        permissions
       }
     })
   } catch (err) {
@@ -703,7 +711,7 @@ exports.grantReward = async (req, res) => {
 
 exports.getComments = async (req, res) => {
   try {
-    const { page = 1, pageSize = 10, type } = req.query
+    const { page = 1, pageSize = 10, type, keyword } = req.query
     const offset = (page - 1) * pageSize
     
     let where = '1=1'
@@ -711,6 +719,9 @@ exports.getComments = async (req, res) => {
       where += ' AND demand_id IS NOT NULL'
     } else if (type === 'resource') {
       where += ' AND resource_id IS NOT NULL'
+    }
+    if (keyword) {
+      where += ` AND content LIKE ${pool.escape('%' + keyword + '%')}`
     }
     
     const [rows] = await pool.query(

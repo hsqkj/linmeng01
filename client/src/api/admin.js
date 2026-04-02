@@ -1,0 +1,108 @@
+/**
+ * 管理后台 API
+ */
+import request from '@/utils/request'
+
+// ====== 认证 ======
+export const adminLogin = (data) => request.post('/admin/login', data)
+export const adminLogout = () => { localStorage.removeItem('admin_token') }
+
+// ====== 仪表盘 ======
+export const getDashboard = () => request.get('/admin/dashboard')
+
+// ====== 社区管理 ======
+export const getCommunities = (params) => request.get('/admin/users/communities', { params })
+export const getCommunityDetail = (id) => request.get(`/admin/users/communities/${id}`)
+export const updateCommunityStatus = (id, data) => request.put(`/admin/users/communities/${id}/status`, data)
+
+// ====== 商家管理 ======
+export const getMerchants = (params) => request.get('/admin/users/merchants', { params })
+export const getMerchantDetail = (id) => request.get(`/admin/users/merchants/${id}`)
+export const updateMerchantStatus = (id, data) => request.put(`/admin/users/merchants/${id}/status`, data)
+export const updateMerchantLevel = (id, data) => request.put(`/admin/users/merchants/${id}/level`, data)
+export const updateMerchantRating = (id, data) => request.put(`/admin/users/merchants/${id}/rating`, data)
+
+// ====== 大使管理 ======
+export const getAmbassadors = (params) => request.get('/admin/users/ambassadors', { params })
+export const getAmbassadorDetail = (id) => request.get(`/admin/users/ambassadors/${id}`)
+export const updateAmbassadorStatus = (id, data) => request.put(`/admin/users/ambassadors/${id}/status`, data)
+
+// ====== 内容审核 ======
+export const getDemandAuditList = (params) => request.get('/admin/audit/demands', { params })
+export const passDemand = (id) => request.put(`/admin/audit/demands/${id}/pass`)
+export const rejectDemand = (id, data) => request.put(`/admin/audit/demands/${id}/reject`, data)
+
+export const getResourceAuditList = (params) => request.get('/admin/audit/resources', { params })
+export const passResource = (id) => request.put(`/admin/audit/resources/${id}/pass`)
+export const rejectResource = (id, data) => request.put(`/admin/audit/resources/${id}/reject`, data)
+
+// ====== 撮合管理 ======
+export const getMatchingList = (params) => request.get('/admin/matching', { params })
+export const getMatchingDetail = (id) => request.get(`/admin/matching/${id}`)
+export const completeMatching = (id) => request.put(`/admin/matching/${id}/complete`)
+export const grantReward = (id, data) => request.post(`/admin/matching/${id}/reward`, data)
+
+// ====== 留言管理 ======
+export const getComments = (params) => request.get('/admin/comments', { params })
+export const deleteComment = (id) => request.delete(`/admin/comments/${id}`)
+
+// ====== 财务管理 ======
+export const getFinance = () => request.get('/admin/finance')
+
+// ====== 配置管理 ======
+// 会员配置
+export const getMemberConfig = () => request.get('/admin/config/members')
+export const saveMemberConfig = (data) => request.put('/admin/config/members', data)
+
+// 大使提成配置
+export const getAmbassadorConfig = () => request.get('/admin/config/ambassador')
+export const saveAmbassadorConfig = (data) => request.put('/admin/config/ambassador', data)
+
+// 撮合奖励配置
+export const getRewardConfig = () => request.get('/admin/config/reward')
+export const saveRewardConfig = (data) => request.put('/admin/config/reward', data)
+
+// 商家评级配置
+export const getRatingConfig = () => request.get('/admin/config/rating')
+export const saveRatingConfig = (data) => request.put('/admin/config/rating', data)
+
+// 行政区划配置
+export const getRegions = (params) => request.get('/admin/config/basic/regions', { params })
+export const createRegion = (data) => request.post('/admin/config/basic/regions', data)
+export const updateRegion = (id, data) => request.put(`/admin/config/basic/regions/${id}`, data)
+export const deleteRegion = (id) => request.delete(`/admin/config/basic/regions/${id}`)
+
+// 算法配置（前端本地管理，暂无后端）
+export const getAlgorithmConfig = () => Promise.resolve({ data: null })
+export const saveAlgorithmConfig = (data) => request.post('/admin/config/algorithm', data)
+
+// ====== 轮播图 ======
+export const getBanners = (params) => request.get('/admin/config/banners', { params })
+export const createBanner = (data) => request.post('/admin/config/banners', data)
+export const updateBanner = (id, data) => request.put(`/admin/config/banners/${id}`, data)
+export const deleteBanner = (id) => request.delete(`/admin/config/banners/${id}`)
+
+// ====== 标签管理 ======
+export const getTags = (params) => request.get('/admin/config/tags', { params })
+export const createTag = (data) => request.post('/admin/config/tags', data)
+export const updateTag = (id, data) => request.put(`/admin/config/tags/${id}`, data)
+export const deleteTag = (id) => request.delete(`/admin/config/tags/${id}`)
+
+// ====== 管理员管理 ======
+export const getAdmins = () => request.get('/admin/admins')
+export const createAdmin = (data) => request.post('/admin/admins', {
+  username: data.username || data.account,
+  password: data.password,
+  realName: data.realName || data.name,
+  phone: data.phone,
+  role: data.role,
+  permissions: data.permissions || []
+})
+export const updateAdmin = (id, data) => request.put(`/admin/admins/${id}`, {
+  realName: data.realName || data.name,
+  phone: data.phone,
+  role: data.role,
+  permissions: data.permissions || [],
+  password: data.password || undefined
+})
+export const deleteAdmin = (id) => request.delete(`/admin/admins/${id}`)

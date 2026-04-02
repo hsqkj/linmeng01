@@ -26,6 +26,10 @@ router.get('/demands/:id', MerchantController.getDemandDetail)
 router.get('/resources', MerchantController.getResources)
 router.get('/resources/:id', MerchantController.getResourceDetail)
 
+// 留言查询（公开）
+router.get('/comments/demand/:id', MerchantController.getDemandComments)
+router.get('/comments/resource/:id', MerchantController.getResourceComments)
+
 // 需要认证的路由
 router.use(authMerchant)
 
@@ -43,12 +47,11 @@ router.get('/my/intentions', MerchantController.getMyIntentions)
 router.post('/intentions', MerchantController.createIntention)
 router.delete('/intentions/:id', MerchantController.cancelIntention)
 
-// 留言
-router.get('/comments/demand/:id', MerchantController.getDemandComments)
+// 留言（提交需要认证）
 router.post('/comments/demand/:id', MerchantController.createDemandComment)
-router.get('/comments/resource/:id', MerchantController.getResourceComments)
 router.post('/comments/resource/:id', MerchantController.createResourceComment)
 router.post('/comments/:id/reply', MerchantController.replyComment)
+router.get('/comments/:id/replies', MerchantController.getCommentReplies)
 
 // 个人中心
 router.get('/profile', MerchantController.getProfile)

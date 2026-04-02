@@ -12,7 +12,9 @@ const { calculateMatchScore, getMatchHearts } = require('../utils/matching')
 // 登录
 exports.login = async (req, res) => {
   try {
-    const { phone, password } = req.body
+    const { phone, password, code } = req.body
+    
+    if (!phone) return error(res, '请输入手机号', 400)
     
     const [rows] = await pool.query(
       'SELECT * FROM merchants WHERE phone = ?',
@@ -20,18 +22,28 @@ exports.login = async (req, res) => {
     )
     
     if (rows.length === 0) {
-      return error(res, '账号或密码错误', 401)
+      return error(res, '账号不存在，请先注册', 401)
     }
     
     const merchant = rows[0]
     
-    if (merchant.status !== 1) {
-      return error(res, '账号未通过审核', 403)
+    if (merchant.status === 2) {
+      return error(res, '账号已被禁用', 403)
     }
     
-    const isMatch = await bcrypt.compare(password, merchant.password)
-    if (!isMatch) {
-      return error(res, '账号或密码错误', 401)
+    // 验证码登录（测试版：接受123456或888888）
+    if (code !== undefined) {
+      const validCodes = ['123456', '888888']
+      if (!validCodes.includes(code)) {
+        return error(res, '验证码错误', 401)
+      }
+    } else if (password) {
+      const isMatch = await bcrypt.compare(password, merchant.password)
+      if (!isMatch) {
+        return error(res, '手机号或密码错误', 401)
+      }
+    } else {
+      return error(res, '请输入验证码', 400)
     }
     
     const token = jwt.sign({
@@ -446,21 +458,27 @@ exports.getMyIntentions = async (req, res) => {
 exports.createIntention = async (req, res) => {
   try {
     const data = req.body
-    data.merchant_id = req.merchant.id
+    const merchantId = req.merchant.id
     
     // 检查是否已经发起过
     const [existing] = await pool.query(
       'SELECT id FROM intentions WHERE demand_id = ? AND merchant_id = ?',
-      [data.demand_id, data.merchant_id]
+      [data.demand_id, merchantId]
     )
     
     if (existing.length > 0) {
       return error(res, '已发起过对接', 400)
     }
     
+    // 从需求表获取 community_id
+    const [[demand]] = await pool.query('SELECT community_id FROM demands WHERE id = ?', [data.demand_id])
+    if (!demand) {
+      return error(res, '需求不存在', 404)
+    }
+    
     await pool.query(
       'INSERT INTO intentions (demand_id, merchant_id, community_id, intro) VALUES (?, ?, ?, ?)',
-      [data.demand_id, data.merchant_id, data.community_id, data.intro || '']
+      [data.demand_id, merchantId, demand.community_id, data.intro || data.content || '']
     )
     
     success(res, null, '对接意向已发送')
@@ -490,11 +508,11 @@ exports.getDemandComments = async (req, res) => {
   try {
     const { id } = req.params
     const [rows] = await pool.query(
-      `SELECT c.*, 
+      `SELECT c.id, c.content, c.created_at, c.user_type,
        (SELECT company_name FROM merchants WHERE id = c.user_id AND c.user_type = 2) as user_name,
        (SELECT logo FROM merchants WHERE id = c.user_id AND c.user_type = 2) as user_logo
        FROM comments c
-       WHERE c.demand_id = ? AND c.status = 1 AND c.parent_id = 0
+       WHERE c.demand_id = ? AND c.status = 1 AND (c.parent_id IS NULL OR c.parent_id = 0)
        ORDER BY c.created_at DESC`,
       [id]
     )
@@ -524,10 +542,11 @@ exports.getResourceComments = async (req, res) => {
   try {
     const { id } = req.params
     const [rows] = await pool.query(
-      `SELECT c.*, 
-       (SELECT community_name FROM communities WHERE id = c.user_id AND c.user_type = 1) as user_name
+      `SELECT c.id, c.content, c.created_at, c.user_type,
+       (SELECT community_name FROM communities WHERE id = c.user_id AND c.user_type = 1) as user_name,
+       (SELECT logo FROM communities WHERE id = c.user_id AND c.user_type = 1) as user_logo
        FROM comments c
-       WHERE c.resource_id = ? AND c.status = 1 AND c.parent_id = 0
+       WHERE c.resource_id = ? AND c.status = 1 AND (c.parent_id IS NULL OR c.parent_id = 0)
        ORDER BY c.created_at DESC`,
       [id]
     )
@@ -571,13 +590,37 @@ exports.replyComment = async (req, res) => {
   }
 }
 
+// 获取评论的回复列表
+exports.getCommentReplies = async (req, res) => {
+  try {
+    const { id } = req.params
+    const [rows] = await pool.query(
+      `SELECT c.id, c.content, c.created_at, c.user_type,
+       (SELECT company_name FROM merchants WHERE id = c.user_id AND c.user_type = 2) as user_name,
+       (SELECT community_name FROM communities WHERE id = c.user_id AND c.user_type = 1) as user_name,
+       (SELECT logo FROM merchants WHERE id = c.user_id AND c.user_type = 2) as user_logo,
+       (SELECT logo FROM communities WHERE id = c.user_id AND c.user_type = 1) as user_logo
+       FROM comments c
+       WHERE c.parent_id = ? AND c.status = 1
+       ORDER BY c.created_at ASC`,
+      [id]
+    )
+    success(res, rows)
+  } catch (err) {
+    error(res, '获取回复失败')
+  }
+}
+
 // 个人中心
 exports.getProfile = async (req, res) => {
   try {
     const [rows] = await pool.query(
-      `SELECT id, company_name, logo, description, company_type, industry, resource_types,
-       contact_name, phone, address, tags, member_level, star_rating
-       FROM merchants WHERE id = ?`,
+      `SELECT m.id, m.company_name, m.logo, m.description, m.company_type, m.industry,
+       m.resource_types, m.contact_name, m.phone, m.address, m.tags, m.member_level, m.star_rating,
+       m.images, m.status,
+       (SELECT COALESCE(SUM(view_count), 0) FROM resources WHERE merchant_id = m.id) as view_count,
+       (SELECT MAX(end_date) FROM member_payments WHERE merchant_id = m.id AND status = 1) as member_expire_at
+       FROM merchants m WHERE m.id = ?`,
       [req.merchant.id]
     )
     
@@ -585,7 +628,19 @@ exports.getProfile = async (req, res) => {
       return error(res, '用户不存在', 404)
     }
     
-    success(res, rows[0])
+    const result = { ...rows[0] }
+    // 解析 JSON 字段
+    if (result.resource_types && typeof result.resource_types === 'string') {
+      try { result.resource_types = JSON.parse(result.resource_types) } catch {}
+    }
+    if (result.tags && typeof result.tags === 'string') {
+      try { result.tags = result.tags } catch {}
+    }
+    if (result.images && typeof result.images === 'string') {
+      try { result.images = result.images } catch {}
+    }
+    
+    success(res, result)
   } catch (err) {
     error(res, '获取信息失败')
   }
@@ -596,11 +651,14 @@ exports.updateProfile = async (req, res) => {
     const data = req.body
     
     await pool.query(
-      `UPDATE merchants SET logo = ?, description = ?, company_type = ?, industry = ?,
-       resource_types = ?, contact_name = ?, address = ?, tags = ? WHERE id = ?`,
-      [data.logo, data.description, data.company_type, data.industry,
-       JSON.stringify(data.resource_types || []), data.contact_name, data.address,
-       JSON.stringify(data.tags || []), req.merchant.id]
+      `UPDATE merchants SET company_name = ?, logo = ?, description = ?, company_type = ?,
+       industry = ?, resource_types = ?, contact_name = ?, phone = ?, address = ?,
+       tags = ? WHERE id = ?`,
+      [data.company_name, data.logo, data.description, data.company_type, data.industry,
+       typeof data.resource_types === 'string' ? data.resource_types : JSON.stringify(data.resource_types || []),
+       data.contact_name, data.phone, data.address,
+       typeof data.tags === 'string' ? data.tags : JSON.stringify(data.tags || []),
+       req.merchant.id]
     )
     
     success(res, null, '更新成功')

@@ -12,7 +12,9 @@ const { calculateMatchScore, getMatchHearts } = require('../utils/matching')
 // 登录
 exports.login = async (req, res) => {
   try {
-    const { phone, password } = req.body
+    const { phone, password, code } = req.body
+    
+    if (!phone) return error(res, '请输入手机号', 400)
     
     const [rows] = await pool.query(
       'SELECT * FROM communities WHERE phone = ?',
@@ -20,18 +22,29 @@ exports.login = async (req, res) => {
     )
     
     if (rows.length === 0) {
-      return error(res, '账号或密码错误', 401)
+      return error(res, '账号不存在，请先注册', 401)
     }
     
     const community = rows[0]
     
-    if (community.status !== 1) {
-      return error(res, '账号未通过审核', 403)
+    if (community.status === 2) {
+      return error(res, '账号已被禁用', 403)
     }
     
-    const isMatch = await bcrypt.compare(password, community.password)
-    if (!isMatch) {
-      return error(res, '账号或密码错误', 401)
+    // 验证码登录（测试版：接受123456或888888）
+    if (code !== undefined) {
+      const validCodes = ['123456', '888888']
+      if (!validCodes.includes(code)) {
+        return error(res, '验证码错误', 401)
+      }
+    } else if (password) {
+      // 密码登录
+      const isMatch = await bcrypt.compare(password, community.password)
+      if (!isMatch) {
+        return error(res, '手机号或密码错误', 401)
+      }
+    } else {
+      return error(res, '请输入验证码', 400)
     }
     
     const token = jwt.sign({
@@ -552,11 +565,11 @@ exports.getDemandComments = async (req, res) => {
   try {
     const { id } = req.params
     const [rows] = await pool.query(
-      `SELECT c.*, 
+      `SELECT c.id, c.content, c.created_at, c.user_type,
        (SELECT company_name FROM merchants WHERE id = c.user_id AND c.user_type = 2) as user_name,
        (SELECT logo FROM merchants WHERE id = c.user_id AND c.user_type = 2) as user_logo
        FROM comments c
-       WHERE c.demand_id = ? AND c.status = 1 AND c.parent_id = 0
+       WHERE c.demand_id = ? AND c.status = 1 AND (c.parent_id IS NULL OR c.parent_id = 0)
        ORDER BY c.created_at DESC`,
       [id]
     )
@@ -586,10 +599,11 @@ exports.getResourceComments = async (req, res) => {
   try {
     const { id } = req.params
     const [rows] = await pool.query(
-      `SELECT c.*, 
-       (SELECT community_name FROM communities WHERE id = c.user_id AND c.user_type = 1) as user_name
+      `SELECT c.id, c.content, c.created_at, c.user_type,
+       (SELECT community_name FROM communities WHERE id = c.user_id AND c.user_type = 1) as user_name,
+       (SELECT logo FROM communities WHERE id = c.user_id AND c.user_type = 1) as user_logo
        FROM comments c
-       WHERE c.resource_id = ? AND c.status = 1 AND c.parent_id = 0
+       WHERE c.resource_id = ? AND c.status = 1 AND (c.parent_id IS NULL OR c.parent_id = 0)
        ORDER BY c.created_at DESC`,
       [id]
     )
@@ -637,7 +651,7 @@ exports.replyComment = async (req, res) => {
 exports.getProfile = async (req, res) => {
   try {
     const [rows] = await pool.query(
-      'SELECT * FROM communities WHERE id = ?',
+      'SELECT id, username, community, community_name, position, households, family_ratio, elderly_ratio, public_space_area, has_outdoor_plaza, has_commercial, has_school, has_park, merchant_count, logo, description, images, address, tags, status FROM communities WHERE id = ?',
       [req.community.id]
     )
     
@@ -645,8 +659,17 @@ exports.getProfile = async (req, res) => {
       return error(res, '用户不存在', 404)
     }
     
-    delete rows[0].password
-    success(res, rows[0])
+    const result = { ...rows[0] }
+    // 解析 JSON 字段
+    try { result.images = result.images ? (typeof result.images === 'string' ? JSON.parse(result.images) : result.images) : [] } catch { result.images = [] }
+    try { result.tags = result.tags ? (typeof result.tags === 'string' ? JSON.parse(result.tags) : result.tags) : [] } catch { result.tags = [] }
+    // 添加统计
+    const [[demandCount]] = await pool.query('SELECT COUNT(*) as cnt FROM demands WHERE community_id = ?', [req.community.id])
+    const [[intentionCount]] = await pool.query("SELECT COUNT(*) as cnt FROM intentions WHERE community_id = ? AND status = 3", [req.community.id])
+    result.demandCount = demandCount?.cnt || 0
+    result.intentionCount = intentionCount?.cnt || 0
+    
+    success(res, result)
   } catch (err) {
     error(res, '获取信息失败')
   }
@@ -657,9 +680,15 @@ exports.updateProfile = async (req, res) => {
     const data = req.body
     
     await pool.query(
-      `UPDATE communities SET logo = ?, description = ?, images = ?, tags = ? WHERE id = ?`,
-      [data.logo, data.description, JSON.stringify(data.images || []),
-       JSON.stringify(data.tags || []), req.community.id]
+      `UPDATE communities SET logo = ?, description = ?, images = ?, tags = ?,
+       households = ?, family_ratio = ?, elderly_ratio = ?, public_space_area = ?,
+       has_outdoor_plaza = ?, has_commercial = ?, has_school = ?, has_park = ?,
+       merchant_count = ? WHERE id = ?`,
+      [data.logo || null, data.description || '', data.images ? JSON.stringify(data.images) : null,
+       data.tags ? JSON.stringify(Array.isArray(data.tags) ? data.tags : []) : null,
+       data.households || null, data.family_ratio || null, data.elderly_ratio || null, data.public_space_area || null,
+       data.has_outdoor_plaza || 0, data.has_commercial || 0, data.has_school || 0, data.has_park || 0,
+       data.merchant_count || null, req.community.id]
     )
     
     success(res, null, '更新成功')
@@ -684,5 +713,76 @@ exports.getRewards = async (req, res) => {
     success(res, rows)
   } catch (err) {
     error(res, '获取奖励记录失败')
+  }
+}
+
+// 我的留言（留言咨询 - 只看自己发的和回复）
+exports.getMyComments = async (req, res) => {
+  try {
+    const communityId = req.community.id
+
+    // 1. 找出当前社区发出的所有顶级留言（user_type=1, user_id=communityId）
+    const [myComments] = await pool.query(
+      `SELECT c.id, c.content, c.created_at, c.user_type, c.resource_id, c.demand_id,
+       CASE WHEN c.resource_id IS NOT NULL THEN 'resource' ELSE 'demand' END as comment_type,
+       (SELECT title FROM resources WHERE id = c.resource_id) as resource_title,
+       (SELECT title FROM demands WHERE id = c.demand_id) as demand_title,
+       (SELECT company_name FROM merchants WHERE id = r.merchant_id) as merchant_name
+       FROM comments c
+       LEFT JOIN resources r ON c.resource_id = r.id
+       WHERE c.user_type = 1 AND c.user_id = ? AND (c.parent_id IS NULL OR c.parent_id = 0)
+       ORDER BY c.created_at DESC`,
+      [communityId]
+    )
+
+    // 2. 获取所有留言ID（含子回复）
+    const commentIds = myComments.map(c => c.id)
+
+    let repliesMap = {}
+    if (commentIds.length > 0) {
+      // 3. 获取这些留言的所有回复
+      const [allReplies] = await pool.query(
+        `SELECT c.id, c.parent_id, c.content, c.created_at, c.user_type, c.user_id,
+         (SELECT community_name FROM communities WHERE id = c.user_id AND c.user_type = 1) as replier_community,
+         (SELECT company_name FROM merchants WHERE id = c.user_id AND c.user_type = 2) as replier_merchant
+         FROM comments c
+         WHERE c.parent_id IN (${commentIds.map(() => '?').join(',')})
+         ORDER BY c.created_at ASC`,
+        commentIds
+      )
+
+      // 4. 按 parent_id 分组
+      for (const r of allReplies) {
+        if (!repliesMap[r.parent_id]) repliesMap[r.parent_id] = []
+        repliesMap[r.parent_id].push({
+          id: r.id,
+          name: r.user_type === 1
+            ? (r.replier_community || '某社区')
+            : (r.replier_merchant || '商家用户'),
+          avatar: null,
+          text: r.content,
+          time: r.created_at,
+          isMine: r.user_id === communityId && r.user_type === 1
+        })
+      }
+    }
+
+    // 5. 组合结果
+    const result = myComments.map(c => ({
+      id: c.id,
+      sender: c.user_type === 1 ? '我（社区）' : (c.merchant_name || '商家'),
+      avatar: null,
+      content: c.content,
+      time: c.created_at,
+      comment_type: c.comment_type,
+      resource_title: c.resource_title,
+      demand_title: c.demand_title,
+      replies: repliesMap[c.id] || []
+    }))
+
+    success(res, result)
+  } catch (err) {
+    console.error('Get my comments error:', err)
+    error(res, '获取留言失败')
   }
 }

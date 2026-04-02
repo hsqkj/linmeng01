@@ -45,6 +45,7 @@
             type="primary" 
             size="large" 
             class="login-btn"
+            :loading="loading"
             @click="login"
           >
             登录
@@ -72,7 +73,9 @@
 <script setup>
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
 import { Phone, Key } from '@element-plus/icons-vue'
+import { communityLogin } from '@/api/community'
 
 const router = useRouter()
 
@@ -84,13 +87,15 @@ const form = reactive({
 
 const counting = ref(false)
 const countdown = ref(60)
+const loading = ref(false)
 
 const sendCode = () => {
+  if (!form.phone) { ElMessage.warning('请先输入手机号'); return }
   if (counting.value) return
   form.code = '123456'
+  ElMessage.success('验证码已发送（测试版：123456）')
   counting.value = true
   countdown.value = 60
-  
   const timer = setInterval(() => {
     countdown.value--
     if (countdown.value <= 0) {
@@ -100,13 +105,26 @@ const sendCode = () => {
   }, 1000)
 }
 
-const login = () => {
-  router.push('/community')
+const login = async () => {
+  if (!form.phone || !form.code) {
+    ElMessage.warning('请填写手机号和验证码')
+    return
+  }
+  loading.value = true
+  try {
+    const res = await communityLogin({ phone: form.phone, code: form.code })
+    localStorage.setItem('community_token', res.data.token)
+    localStorage.setItem('community_info', JSON.stringify(res.data.community))
+    ElMessage.success('登录成功')
+    router.push('/community')
+  } catch (e) {
+    // 错误已在request拦截器中处理
+  } finally {
+    loading.value = false
+  }
 }
 
-const goBack = () => {
-  router.push('/')
-}
+const goBack = () => { router.push('/') }
 </script>
 
 <style scoped>

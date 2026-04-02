@@ -21,13 +21,13 @@
         <div class="type-cards">
           <div v-for="t in resourceTypes" :key="t.value"
             class="type-card"
-            :class="{ active: form.type === t.value }"
-            @click="form.type = t.value"
+            :class="{ active: form.resource_type === t.value }"
+            @click="form.resource_type = t.value"
           >
             <div class="type-icon">{{ t.icon }}</div>
             <h4>{{ t.label }}</h4>
             <p>{{ t.desc }}</p>
-            <div class="check-badge" v-if="form.type === t.value">✓ 已选</div>
+            <div class="check-badge" v-if="form.resource_type === t.value">✓ 已选</div>
           </div>
         </div>
       </div>
@@ -42,16 +42,16 @@
         </el-form-item>
 
         <!-- 资金赞助 -->
-        <template v-if="form.type === 'fund'">
+        <template v-if="form.resource_type === 'fund'">
           <el-row :gutter="16">
             <el-col :span="12">
               <el-form-item label="可赞助最低金额（元）">
-                <el-input-number v-model="form.fundMin" :min="0" style="width:100%" />
+                <el-input-number v-model="form.min_amount" :min="0" style="width:100%" />
               </el-form-item>
             </el-col>
             <el-col :span="12">
               <el-form-item label="可赞助最高金额（元）" required>
-                <el-input-number v-model="form.fundMax" :min="1000" style="width:100%" />
+                <el-input-number v-model="form.max_amount" :min="1000" style="width:100%" />
               </el-form-item>
             </el-col>
           </el-row>
@@ -68,7 +68,7 @@
         </template>
 
         <!-- 物资提供 -->
-        <template v-if="form.type === 'goods'">
+        <template v-if="form.resource_type === 'goods'">
           <el-form-item label="物资清单" required>
             <el-input v-model="form.goodsDetail" type="textarea" :rows="5"
               placeholder="请详细列出可提供的物资，如：
@@ -84,7 +84,7 @@
             </el-col>
             <el-col :span="12">
               <el-form-item label="领取方式">
-                <el-radio-group v-model="form.goodsDelivery">
+                <el-radio-group v-model="form.pickup_way">
                   <el-radio label="delivery">可配送</el-radio>
                   <el-radio label="pickup">自取</el-radio>
                   <el-radio label="both">均可</el-radio>
@@ -101,16 +101,16 @@
         </template>
 
         <!-- 人力支持 -->
-        <template v-if="form.type === 'manpower'">
+        <template v-if="form.resource_type === 'manpower'">
           <el-row :gutter="16">
             <el-col :span="8">
               <el-form-item label="可派遣人数" required>
-                <el-input-number v-model="form.manpowerCount" :min="1" :max="200" style="width:100%" />
+                <el-input-number v-model="form.staff_count" :min="1" :max="200" style="width:100%" />
               </el-form-item>
             </el-col>
             <el-col :span="8">
               <el-form-item label="单次最长服务时长（小时）">
-                <el-input-number v-model="form.manpowerMaxHours" :min="1" :step="0.5" style="width:100%" />
+                <el-input-number v-model="form.work_duration" :min="1" :step="0.5" style="width:100%" />
               </el-form-item>
             </el-col>
           </el-row>
@@ -120,7 +120,7 @@
         </template>
 
         <!-- 技术支持 -->
-        <template v-if="form.type === 'tech'">
+        <template v-if="form.resource_type === 'tech'">
           <el-form-item label="技术类型（可多选）" required>
             <el-checkbox-group v-model="form.techTypes">
               <el-checkbox label="equipment">设备器材</el-checkbox>
@@ -144,7 +144,7 @@
         </template>
 
         <!-- 专业服务 -->
-        <template v-if="form.type === 'professional'">
+        <template v-if="form.resource_type === 'professional'">
           <el-form-item label="服务类型" required>
             <el-select v-model="form.professionalType" placeholder="选择专业服务类型" style="width:100%">
               <el-option v-for="t in professionalTypes" :key="t" :label="t" :value="t" />
@@ -156,7 +156,7 @@
           <el-row :gutter="16">
             <el-col :span="12">
               <el-form-item label="服务区域">
-                <el-select v-model="form.serviceArea" placeholder="选择服务区域" style="width:100%">
+                <el-select v-model="form.serviceScope" placeholder="选择服务区域" style="width:100%">
                   <el-option label="全市" value="city" />
                   <el-option label="本区" value="district" />
                   <el-option label="本街道" value="street" />
@@ -177,7 +177,7 @@
         </template>
 
         <!-- 媒体报道 -->
-        <template v-if="form.type === 'media'">
+        <template v-if="form.resource_type === 'media'">
           <el-form-item label="可提供媒体类型（可多选）" required>
             <el-checkbox-group v-model="form.mediaChannels">
               <el-checkbox label="news">新闻网站/APP</el-checkbox>
@@ -199,7 +199,7 @@
         <!-- 通用字段 -->
         <el-divider />
         <el-form-item label="详细介绍" required>
-          <el-input v-model="form.description" type="textarea" :rows="5" placeholder="全面介绍您的资源优势、使用方式、适合场景等，越详细越好！" maxlength="1000" show-word-limit />
+          <el-input v-model="form.content" type="textarea" :rows="5" placeholder="全面介绍您的资源优势、使用方式、适合场景等，越详细越好！" maxlength="1000" show-word-limit />
         </el-form-item>
 
         <el-form-item label="资源标签">
@@ -286,6 +286,7 @@ import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { ArrowLeft, Plus, Check, Warning } from '@element-plus/icons-vue'
+import { createResource } from '@/api/merchant'
 
 const router = useRouter()
 const activeStep = ref(0)
@@ -305,18 +306,18 @@ const merchantTagOptions = ['连锁品牌', '本地企业', '上市公司', '高
 const expectedRewardOptions = ['活动冠名权', '现场展台', '社区公众号宣传', '业主群推送', '荣誉证书', '现场横幅', '宣传栏展示', '主持人口播', '媒体报道', '感谢状']
 
 const form = ref({
-  type: '', title: '', description: '', tags: [], resourceImages: [],
-  fundMin: 0, fundMax: 50000, fundScenes: [],
-  goodsDetail: '', goodsExpiry: '', goodsDelivery: 'both', goodsImages: [],
-  manpowerCount: 3, manpowerMaxHours: 8, manpowerDesc: '',
+  resource_type: '', title: '', content: '', tags: [], resourceImages: [],
+  min_amount: 0, max_amount: 50000, fundScenes: [],
+  goodsDetail: '', goodsExpiry: '', pickup_way: 'both', goodsImages: [],
+  staff_count: 3, work_duration: 8, manpowerDesc: '',
   techTypes: [], techDesc: '', techServiceType: 'both',
-  professionalType: '', qualification: '', serviceArea: 'city', pricingType: 'free',
+  professionalType: '', qualification: '', serviceScope: 'city', pricingType: 'free',
   mediaChannels: [], mediaDesc: '',
   expectedRewards: [], expectedRewardDesc: '', targetCommunityTypes: ['any'], validUntil: ''
 })
 
 const resourceTypeLabel = computed(() => {
-  const t = resourceTypes.find(t => t.value === form.value.type)
+  const t = resourceTypes.find(t => t.value === form.value.resource_type)
   return t ? t.label : ''
 })
 
@@ -329,7 +330,7 @@ const titlePlaceholder = computed(() => {
     professional: '如：法律专家免费为居民提供咨询',
     media: '如：公众号15万粉丝免费宣传推广'
   }
-  return map[form.value.type] || '请填写资源标题'
+  return map[form.value.resource_type] || '请填写资源标题'
 })
 
 function toggleTag(arr, val) {
@@ -340,17 +341,42 @@ function removeTag(arr, val) {
 }
 
 function nextStep() {
-  if (activeStep.value === 0 && !form.value.type) { ElMessage.warning('请先选择资源类型'); return }
+  if (activeStep.value === 0 && !form.value.resource_type) { ElMessage.warning('请先选择资源类型'); return }
   if (activeStep.value === 1 && !form.value.title) { ElMessage.warning('请填写资源标题'); return }
   activeStep.value++
 }
 
 async function submitResource() {
   submitting.value = true
-  await new Promise(r => setTimeout(r, 1500))
-  submitting.value = false
-  ElMessage.success('资源已提交审核！审核通过后将推送给匹配社区')
-  setTimeout(() => router.push('/merchant/resources'), 1500)
+  try {
+    const data = {
+      resource_type: form.value.resource_type,
+      title: form.value.title,
+      content: form.value.content || form.value.manpowerDesc || form.value.goodsDetail || form.value.techDesc || form.value.mediaDesc || '',
+      tags: form.value.tags,
+      images: [],
+      min_amount: form.value.min_amount || 0,
+      max_amount: form.value.max_amount || 0,
+      quantity: form.value.quantity || 0,
+      specs: '',
+      pickup_way: form.value.pickup_way || '',
+      staff_count: form.value.staff_count || 0,
+      work_duration: form.value.work_duration || 0,
+      skill_requirements: '',
+      service_scope: form.value.serviceScope || '',
+      certification: form.value.qualification || '',
+      price_range: '',
+      media_type: '',
+      coverage: ''
+    }
+    await createResource(data)
+    ElMessage.success('资源已提交审核！审核通过后将推送给匹配社区')
+    setTimeout(() => router.push('/merchant/resources'), 1500)
+  } catch (err) {
+    ElMessage.error('提交失败，请重试')
+  } finally {
+    submitting.value = false
+  }
 }
 </script>
 

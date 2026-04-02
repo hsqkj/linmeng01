@@ -1,12 +1,12 @@
 <template>
-  <div class="withdraw-page">
+  <div class="withdraw-page" v-loading="loading">
     <h2>提现管理</h2>
     <el-row :gutter="20">
       <el-col :span="12">
         <div class="balance-card">
           <div class="balance-label">账户余额</div>
-          <div class="balance-val">¥ 2,580.00</div>
-          <div class="balance-tip">待结算金额 ¥3,200（下次结算日：05-01）</div>
+          <div class="balance-val">¥ {{ Number(balance).toLocaleString('zh-CN', { minimumFractionDigits: 2 }) }}</div>
+          <div class="balance-tip">待结算金额 ¥{{ Number(summary.pending_commission || 0).toLocaleString() }}（下次结算日：每月1日）</div>
           <el-button type="warning" size="large" style="margin-top:16px" @click="showWithdraw = true" :disabled="balance < 100">申请提现</el-button>
           <div v-if="balance < 100" style="color:#F56C6C;font-size:12px;margin-top:4px">余额不足100元，暂不可提现</div>
         </div>
@@ -15,17 +15,17 @@
         <div class="account-card">
           <h3>绑定收款账户</h3>
           <div class="account-list">
-            <div class="account-item active">
+            <div class="account-item" :class="{ active: accountInfo.account_number }">
               <el-icon><CreditCard /></el-icon>
               <div>
-                <div class="acc-name">招商银行储蓄卡</div>
-                <div class="acc-num">尾号 **** **** 8888</div>
+                <div class="acc-name">{{ accountInfo.account_type === 'bank' ? (accountInfo.account_name || '银行卡') : accountInfo.account_type === 'alipay' ? '支付宝' : '微信钱包' }} {{ accountInfo.account_name ? `(${accountInfo.account_name})` : '' }}</div>
+                <div class="acc-num">{{ accountInfo.account_number ? `尾号 ${accountInfo.account_number.slice(-4)}` : '未设置' }}</div>
               </div>
-              <el-tag type="success" size="small">默认</el-tag>
+              <el-tag v-if="accountInfo.account_number" type="success" size="small">已绑定</el-tag>
             </div>
             <div class="account-item" @click="openAddAccount">
               <el-icon><Plus /></el-icon>
-              <span>添加收款账户</span>
+              <span>{{ accountInfo.account_number ? '更换收款账户' : '添加收款账户' }}</span>
             </div>
           </div>
         </div>
@@ -35,31 +35,41 @@
     <div class="section-card" style="margin-top:20px">
       <h3>提现记录</h3>
       <el-table :data="withdrawRecords" stripe>
-        <el-table-column prop="time" label="申请时间" width="180" />
-        <el-table-column prop="amount" label="提现金额" width="120">
-          <template #default="{ row }"><span class="amount-text">¥{{ row.amount.toLocaleString() }}</span></template>
+        <el-table-column prop="created_at" label="申请时间" width="180">
+          <template #default="{ row }">{{ fmtTime(row.created_at) }}</template>
         </el-table-column>
-        <el-table-column prop="account" label="到账账户" />
-        <el-table-column prop="arrivalTime" label="到账时间" width="180" />
+        <el-table-column prop="amount" label="提现金额" width="120">
+          <template #default="{ row }"><span class="amount-text">¥{{ Number(row.amount || 0).toLocaleString() }}</span></template>
+        </el-table-column>
+        <el-table-column prop="account_number" label="到账账户">
+          <template #default="{ row }">{{ row.account_type === 'bank' ? '银行卡' : row.account_type === 'alipay' ? '支付宝' : '微信' }} {{ row.account_number ? `尾号${row.account_number.slice(-4)}` : '' }}</template>
+        </el-table-column>
+        <el-table-column prop="processed_at" label="到账时间" width="180">
+          <template #default="{ row }">{{ row.processed_at ? fmtTime(row.processed_at) : '处理中' }}</template>
+        </el-table-column>
         <el-table-column prop="status" label="状态" width="100">
           <template #default="{ row }">
-            <el-tag :type="row.status === '已到账' ? 'success' : 'warning'" size="small">{{ row.status }}</el-tag>
+            <el-tag :type="row.status === 1 ? 'success' : row.status === 2 ? 'danger' : 'warning'" size="small">
+              {{ row.status === 0 ? '处理中' : row.status === 1 ? '已到账' : '已拒绝' }}
+            </el-tag>
           </template>
         </el-table-column>
       </el-table>
+      <el-empty v-if="!loading && withdrawRecords.length === 0" description="暂无提现记录" :image-size="60" />
     </div>
 
     <el-dialog v-model="showWithdraw" title="申请提现" width="400px">
       <div class="withdraw-form">
-        <div class="withdraw-balance">可提现余额：<strong>¥ 2,580.00</strong></div>
+        <div class="withdraw-balance">可提现余额：<strong>¥ {{ Number(balance).toLocaleString('zh-CN', { minimumFractionDigits: 2 }) }}</strong></div>
         <el-form label-position="top" style="margin-top:16px">
           <el-form-item label="提现金额">
-            <el-input-number v-model="withdrawAmount" :min="100" :max="2580" style="width:100%" />
+            <el-input-number v-model="withdrawAmount" :min="100" :max="balance" style="width:100%" />
             <div style="font-size:12px;color:#909399;margin-top:4px">最低提现100元</div>
           </el-form-item>
           <el-form-item label="到账账户">
             <el-select v-model="withdrawAccount" style="width:100%">
-              <el-option label="招商银行 尾号8888" value="8888" />
+              <el-option v-if="accountInfo.account_number" :label="`${accountInfo.account_type === 'bank' ? '银行卡' : accountInfo.account_type === 'alipay' ? '支付宝' : '微信'} 尾号${accountInfo.account_number.slice(-4)}`" :value="accountInfo.account_number" />
+              <el-option v-else label="请先设置收款账户" value="" disabled />
             </el-select>
           </el-form-item>
         </el-form>
@@ -112,9 +122,6 @@
             <el-input v-model="accountForm.account" placeholder="绑定微信的手机号" />
           </el-form-item>
         </template>
-        <el-form-item label="设为默认">
-          <el-switch v-model="accountForm.isDefault" />
-        </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="showAddAccount = false">取消</el-button>
@@ -124,43 +131,99 @@
   </div>
 </template>
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import { CreditCard, Plus } from '@element-plus/icons-vue'
-const balance = ref(2580)
+import { getWithdrawAccount, setWithdrawAccount, applyWithdraw, getWithdrawHistory } from '@/api/ambassador'
+import { getCommissionSummary } from '@/api/ambassador'
+
+const summary = ref({})
+const accountInfo = ref({})
+const withdrawRecords = ref([])
+const loading = ref(false)
 const showWithdraw = ref(false), showAddAccount = ref(false)
-const withdrawAmount = ref(2580), withdrawAccount = ref('8888')
+const withdrawAmount = ref(0)
+const withdrawAccount = ref('')
+
+const balance = computed(() => {
+  const total = Number(summary.value.total_commission || 0)
+  const withdrawn = Number(summary.value.withdraw_amount || 0)
+  return Math.max(0, total - withdrawn)
+})
 
 const bankList = ['招商银行', '工商银行', '建设银行', '农业银行', '中国银行', '交通银行', '邮政储蓄银行', '兴业银行', '浦发银行', '民生银行', '平安银行']
 const accountForm = reactive({ type: 'bank', name: '', bankName: '', cardNo: '', cardNoConfirm: '', account: '', isDefault: false })
+
+async function loadData() {
+  loading.value = true
+  try {
+    const [sumRes, accRes, histRes] = await Promise.allSettled([
+      getCommissionSummary(),
+      getWithdrawAccount(),
+      getWithdrawHistory()
+    ])
+    if (sumRes.status === 'fulfilled') summary.value = sumRes.value.data || {}
+    if (accRes.status === 'fulfilled') {
+      const acc = accRes.value.data || {}
+      accountInfo.value = acc
+      withdrawAccount.value = acc.account_number || ''
+      accountForm.type = acc.account_type || 'bank'
+      accountForm.name = acc.account_name || ''
+    }
+    if (histRes.status === 'fulfilled') withdrawRecords.value = histRes.value.data || []
+  } catch {
+    ElMessage.error('加载提现信息失败')
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(() => { loadData() })
 
 function openAddAccount() {
   Object.assign(accountForm, { type: 'bank', name: '', bankName: '', cardNo: '', cardNoConfirm: '', account: '', isDefault: false })
   showAddAccount.value = true
 }
 
-function submitAccount() {
-  if (accountForm.type === 'bank') {
-    if (!accountForm.name || !accountForm.bankName || !accountForm.cardNo) { ElMessage.warning('请填写完整的银行卡信息'); return }
-    if (accountForm.cardNo !== accountForm.cardNoConfirm) { ElMessage.error('两次输入的卡号不一致'); return }
-    ElMessage.success(`${accountForm.bankName}储蓄卡（尾号${accountForm.cardNo.slice(-4)}）已添加`)
-  } else if (accountForm.type === 'alipay') {
-    if (!accountForm.name || !accountForm.account) { ElMessage.warning('请填写完整信息'); return }
-    ElMessage.success(`支付宝账号（${accountForm.account}）已添加`)
-  } else {
-    if (!accountForm.name || !accountForm.account) { ElMessage.warning('请填写完整信息'); return }
-    ElMessage.success('微信钱包已添加')
+async function submitAccount() {
+  try {
+    const data = {
+      account_type: accountForm.type,
+      account_name: accountForm.name,
+      account_number: accountForm.type === 'bank' ? accountForm.cardNo : accountForm.account
+    }
+    if (accountForm.type === 'bank') {
+      if (!accountForm.name || !accountForm.bankName || !accountForm.cardNo) { ElMessage.warning('请填写完整的银行卡信息'); return }
+      if (accountForm.cardNo !== accountForm.cardNoConfirm) { ElMessage.error('两次输入的卡号不一致'); return }
+      data.account_number = accountForm.cardNo
+    } else {
+      if (!accountForm.name || !accountForm.account) { ElMessage.warning('请填写完整信息'); return }
+      data.account_number = accountForm.account
+    }
+    await setWithdrawAccount(data)
+    ElMessage.success('收款账户设置成功')
+    accountInfo.value = { ...accountInfo.value, ...data }
+    showAddAccount.value = false
+  } catch {
+    ElMessage.error('设置失败，请重试')
   }
-  showAddAccount.value = false
 }
-const withdrawRecords = [
-  { time: '2026-03-01 08:00', amount: 3200, account: '招商银行 *8888', arrivalTime: '2026-03-01 14:30', status: '已到账' },
-  { time: '2026-02-01 08:00', amount: 2400, account: '招商银行 *8888', arrivalTime: '2026-02-01 15:00', status: '已到账' },
-  { time: '2026-01-01 08:00', amount: 3100, account: '招商银行 *8888', arrivalTime: '2026-01-01 13:45', status: '已到账' }
-]
-function submitWithdraw() {
-  showWithdraw.value = false
-  ElMessage.success(`提现申请已提交！¥${withdrawAmount.value} 将在1-3个工作日内到账`)
+
+async function submitWithdraw() {
+  try {
+    await applyWithdraw({ amount: withdrawAmount.value })
+    ElMessage.success(`提现申请已提交！¥${withdrawAmount.value} 将在1-3个工作日内到账`)
+    showWithdraw.value = false
+    withdrawAmount.value = 0
+    loadData() // 刷新数据
+  } catch (e) {
+    ElMessage.error(e.message || '申请失败，请重试')
+  }
+}
+
+function fmtTime(t) {
+  if (!t) return ''
+  return String(t).slice(0, 16).replace('T', ' ')
 }
 </script>
 <style scoped>

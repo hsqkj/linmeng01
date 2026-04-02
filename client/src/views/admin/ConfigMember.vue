@@ -139,6 +139,7 @@
 import { ref, reactive } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
+import { saveMemberConfig } from '@/api/admin'
 
 const minLevel = ref(3)
 const filterRules = ref(['phone', 'wechat', 'qq'])
@@ -189,7 +190,14 @@ function deleteBenefit(row) {
     .catch(() => {})
 }
 
-function saveConfig() { ElMessage.success('会员配置已保存') }
+async function saveConfig() {
+  try {
+    await saveMemberConfig({ member_levels: levels.map(l => ({ level: l.level, fee: l.fee, view_contact: l.viewContact, intent_limit: l.intentLimit, priority: l.priority, homepage: l.homepage, activity_count: l.activityCount })), member_benefits: benefits.map(b => ({ name: b.name, desc: b.desc, type: b.type, values: b.values })) })
+    ElMessage.success('会员配置已保存')
+  } catch {
+    ElMessage.error('保存失败，请重试')
+  }
+}
 </script>
 <style scoped>
 .page { max-width: 1200px; margin: 0 auto; }

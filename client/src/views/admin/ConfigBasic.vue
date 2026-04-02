@@ -137,6 +137,7 @@
             <el-button type="primary" @click="addDistrict(null, 0)"><el-icon><Plus /></el-icon> 新增区</el-button>
           </div>
           <el-tree
+            v-loading="districtLoading"
             :data="districtTree"
             :props="{ children: 'children', label: 'name' }"
             node-key="id"
@@ -146,14 +147,12 @@
               <span class="tree-node">
                 <el-icon style="margin-right:4px;color:#909399"><Location /></el-icon>
                 <span v-if="!data.editing">{{ node.label }}</span>
-                <el-input v-else v-model="data.name" size="small" style="width:150px" @blur="data.editing=false" @keyup.enter="data.editing=false" />
-                <span class="tree-level" v-if="!data.children">[社区]</span>
-                <span class="tree-level" v-else-if="data.children && !data.children[0]?.children">[街道]</span>
-                <span class="tree-level" v-else>[区]</span>
+                <el-input v-else v-model="data.name" size="small" style="width:150px" @blur="saveDistrictEdit(data)" @keyup.enter="saveDistrictEdit(data)" />
+                <span class="tree-level">[{{ levelName[node.level] || '区' }}]</span>
                 <span class="tree-actions">
                   <el-button text type="primary" size="small" @click.stop="data.editing=true">编辑</el-button>
-                  <el-button v-if="node.level < 3" text type="success" size="small" @click.stop="addDistrict(data, node.level)">
-                    {{ node.level === 1 ? '加街道' : '加社区' }}
+                  <el-button v-if="(node.level || 1) < 3" text type="success" size="small" @click.stop="addDistrict(data, node.level || 1)">
+                    {{ (node.level || 1) === 1 ? '加街道' : '加社区' }}
                   </el-button>
                   <el-button text type="danger" size="small" @click.stop="deleteDistrict(data, node)">删除</el-button>
                 </span>
@@ -196,15 +195,17 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Location } from '@element-plus/icons-vue'
+import { getRegions, createRegion, updateRegion, deleteRegion as deleteRegionApi } from '@/api/admin'
 
 const activeTab = ref('activity')
 const showAddDialog = ref(false), addDialogTitle = ref(''), newItemName = ref(''), newItemDesc = ref(''), currentList = ref(null)
 const showDistrictDialog = ref(false), districtDialogTitle = ref(''), districtLabel = ref(''), newDistrictName = ref('')
 const districtParent = ref(null), districtLevel = ref(0)
-let districtIdCounter = 200
+const districtLoading = ref(false)
+const levelName = { 1: '区', 2: '街道', 3: '社区' }
 
 const activityTypes = reactive([
   { name: '文艺演出', desc: '音乐、舞蹈、戏剧等文艺表演类活动', count: 12, enabled: true, editing: false },
@@ -254,28 +255,32 @@ const expertTypes = reactive([
   { name: '其他', count: 3, enabled: true, editing: false }
 ])
 
-const districtTree = reactive([
-  {
-    id: 1, name: '浦东新区', editing: false, children: [
-      {
-        id: 11, name: '花木街道', editing: false, children: [
-          { id: 111, name: '阳光花园社区', editing: false, children: [] },
-          { id: 112, name: '幸福里社区', editing: false, children: [] }
-        ]
-      },
-      {
-        id: 12, name: '张江镇', editing: false, children: [
-          { id: 121, name: '翠竹苑社区', editing: false, children: [] }
-        ]
-      },
-      {
-        id: 13, name: '陆家嘴街道', editing: false, children: [
-          { id: 131, name: '新华里社区', editing: false, children: [] }
-        ]
+const districtTree = ref([])
+let districtIdCounter = 200
+
+async function loadDistrictTree() {
+  districtLoading.value = true
+  try {
+    const res = await getRegions()
+    const regions = res.data || []
+    // Build tree from flat list
+    const map = {}
+    const roots = []
+    regions.forEach(r => { map[r.id] = { ...r, editing: false, children: [] } })
+    regions.forEach(r => {
+      if (r.parent_id === 0 || r.parent_id === null || r.parent_id === undefined) {
+        roots.push(map[r.id])
+      } else if (map[r.parent_id]) {
+        map[r.parent_id].children.push(map[r.id])
       }
-    ]
+    })
+    districtTree.value = roots
+  } catch {
+    districtTree.value = []
+  } finally {
+    districtLoading.value = false
   }
-])
+}
 
 function openAdd(listName, title) {
   addDialogTitle.value = title
@@ -310,31 +315,45 @@ function addDistrict(parent, level) {
   showDistrictDialog.value = true
 }
 
-function confirmAddDistrict() {
-  if (!newDistrictName.value.trim()) { ElMessage.warning('请输入名称'); return }
-  const newNode = { id: districtIdCounter++, name: newDistrictName.value.trim(), editing: false, children: districtLevel.value < 2 ? [] : undefined }
-  if (!districtParent.value) {
-    districtTree.push(newNode)
-  } else {
-    if (!districtParent.value.children) districtParent.value.children = []
-    districtParent.value.children.push(newNode)
+async function saveDistrictEdit(data) {
+  if (!data.name.trim()) { ElMessage.warning('名称不能为空'); data.editing = false; loadDistrictTree(); return }
+  try {
+    await updateRegion(data.id, { name: data.name.trim() })
+    data.editing = false
+    ElMessage.success('已更新')
+  } catch {
+    ElMessage.error('更新失败')
+    data.editing = false
   }
-  showDistrictDialog.value = false
-  ElMessage.success('已添加：' + newDistrictName.value)
 }
 
-function deleteDistrict(data, node) {
+async function confirmAddDistrict() {
+  if (!newDistrictName.value.trim()) { ElMessage.warning('请输入名称'); return }
+  try {
+    const data = { name: newDistrictName.value.trim(), level: districtLevel.value + 1, parent_id: districtParent.value ? districtParent.value.id : 0 }
+    await createRegion(data)
+    ElMessage.success('已添加：' + newDistrictName.value)
+    showDistrictDialog.value = false
+    loadDistrictTree()
+  } catch {
+    ElMessage.error('添加失败，请重试')
+  }
+}
+
+async function deleteDistrict(data, node) {
   const hasChildren = data.children && data.children.length > 0
   const msg = hasChildren ? `"${data.name}"下还有子节点，删除后子节点也将一并删除。确认删除？` : `确认删除"${data.name}"？`
-  ElMessageBox.confirm(msg, '删除确认', { type: 'warning' })
-    .then(() => {
-      const parent = node.parent
-      const children = parent.data.children || parent.data
-      const index = children.findIndex(d => d.id === data.id)
-      if (index >= 0) children.splice(index, 1)
-      ElMessage.success('已删除')
-    }).catch(() => {})
+  try {
+    await ElMessageBox.confirm(msg, '删除确认', { type: 'warning' })
+    await deleteRegionApi(data.id)
+    ElMessage.success('已删除')
+    loadDistrictTree()
+  } catch {
+    // 用户取消或删除失败
+  }
 }
+
+onMounted(() => { loadDistrictTree() })
 </script>
 
 <style scoped>

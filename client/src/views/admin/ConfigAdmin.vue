@@ -8,10 +8,10 @@
         <span class="section-title">管理员列表</span>
         <el-button type="primary" @click="openAddAdmin"><el-icon><Plus /></el-icon> 新增管理员</el-button>
       </div>
-      <el-table :data="admins" stripe border>
+      <el-table :data="admins" stripe border v-loading="loading">
         <el-table-column type="index" width="50" />
-        <el-table-column prop="name" label="姓名" width="100" />
-        <el-table-column prop="account" label="账号" width="140" />
+        <el-table-column prop="real_name" label="姓名" width="100" />
+        <el-table-column prop="username" label="账号" width="140" />
         <el-table-column prop="role" label="角色" width="120">
           <template #default="{ row }">
             <el-tag :type="row.role==='超级管理员'?'danger':row.role==='运营管理员'?'warning':'info'" size="small">{{ row.role }}</el-tag>
@@ -20,21 +20,23 @@
         <el-table-column prop="phone" label="手机号" width="130" />
         <el-table-column label="权限范围" min-width="220">
           <template #default="{ row }">
-            <el-tag v-for="p in row.permissions" :key="p" size="small" style="margin:2px">{{ p }}</el-tag>
+            <el-tag v-for="p in (row.permissions || [])" :key="p" size="small" style="margin:2px">{{ permLabel[p] || p }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="lastLogin" label="最后登录" width="150" />
+        <el-table-column prop="last_login_at" label="最后登录" width="160">
+          <template #default="{ row }">{{ formatTime(row.last_login_at) }}</template>
+        </el-table-column>
         <el-table-column prop="status" label="状态" width="80">
           <template #default="{ row }">
-            <el-tag :type="row.status==='启用'?'success':'danger'" size="small">{{ row.status }}</el-tag>
+            <el-tag :type="row.status === 1 ?'success':'danger'" size="small">{{ row.status === 1 ? '启用' : '禁用' }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column label="操作" width="160" align="center">
           <template #default="{ row }">
-            <el-button text type="primary" size="small" @click="editAdmin(row)" :disabled="row.role==='超级管理员'&&row.isSuper">编辑</el-button>
+            <el-button text type="primary" size="small" @click="editAdmin(row)" :disabled="row.role==='超级管理员'">编辑</el-button>
             <el-button text type="warning" size="small" @click="resetPwd(row)">重置密码</el-button>
-            <el-button v-if="!row.isSuper" text :type="row.status==='启用'?'danger':'success'" size="small" @click="toggleAdmin(row)">
-              {{ row.status==='启用'?'禁用':'启用' }}
+            <el-button v-if="row.role!=='超级管理员'" text :type="row.status===1?'danger':'success'" size="small" @click="toggleAdmin(row)">
+              {{ row.status===1?'禁用':'启用' }}
             </el-button>
           </template>
         </el-table-column>
@@ -77,7 +79,7 @@
           <el-input v-model="adminForm.name" placeholder="请输入真实姓名" />
         </el-form-item>
         <el-form-item label="账号" required>
-          <el-input v-model="adminForm.account" placeholder="登录用账号，建议用手机号" :disabled="editMode" />
+          <el-input v-model="adminForm.username" placeholder="登录用账号，建议用手机号" :disabled="editMode" />
         </el-form-item>
         <el-form-item v-if="!editMode" label="初始密码" required>
           <el-input v-model="adminForm.password" type="password" placeholder="至少8位，含字母和数字" show-password />
@@ -109,11 +111,16 @@
   </div>
 </template>
 <script setup>
-import { ref, reactive, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, CircleCheck, CircleClose } from '@element-plus/icons-vue'
+import { getAdmins, createAdmin, updateAdmin, deleteAdmin } from '@/api/admin'
 
-const showDialog = ref(false), editMode = ref(false)
+const loading = ref(false)
+const admins = ref([])
+const showDialog = ref(false)
+const editMode = ref(false)
+const editId = ref(null)
 
 const allPermissions = [
   { key: 'users', label: '用户管理' },
@@ -131,6 +138,9 @@ const allPermissions = [
   { key: 'config_ambassador', label: '大使配置' }
 ]
 
+const permLabel = {}
+allPermissions.forEach(p => { permLabel[p.key] = p.label })
+
 const rolePresets = {
   '运营管理员': ['users', 'audit', 'matching', 'comments', 'config_tags', 'config_banner', 'config_rating'],
   '审核员': ['audit', 'comments'],
@@ -139,28 +149,9 @@ const rolePresets = {
 }
 
 const adminForm = ref({
-  name: '', account: '', password: '', phone: '', role: '运营管理员',
-  permKeys: { users: true, audit: true, matching: true, comments: true, config_tags: true, config_banner: true }
+  name: '', username: '', password: '', phone: '', role: '运营管理员',
+  permKeys: {}
 })
-
-const admins = reactive([
-  {
-    name: '大彭', account: 'admin', role: '超级管理员', phone: '138****0000',
-    permissions: ['全部权限'], lastLogin: '2026-04-01 20:00', status: '启用', isSuper: true
-  },
-  {
-    name: '王运营', account: 'ops_wang', role: '运营管理员', phone: '139****1111',
-    permissions: ['用户管理', '内容审核', '撮合管理', '留言管理'], lastLogin: '2026-04-01 09:30', status: '启用', isSuper: false
-  },
-  {
-    name: '李审核', account: 'audit_li', role: '审核员', phone: '136****2222',
-    permissions: ['内容审核', '留言管理'], lastLogin: '2026-03-31 16:00', status: '启用', isSuper: false
-  },
-  {
-    name: '张财务', account: 'finance_zhang', role: '财务员', phone: '135****3333',
-    permissions: ['财务管理'], lastLogin: '2026-03-30 14:00', status: '启用', isSuper: false
-  }
-])
 
 const rolePermissions = [
   { module: '用户管理', ops: true, auditor: false, finance: false },
@@ -177,22 +168,22 @@ const rolePermissions = [
   { module: '管理员配置', ops: false, auditor: false, finance: false }
 ]
 
-function openAddAdmin() {
-  editMode.value = false
-  adminForm.value = { name: '', account: '', password: '', phone: '', role: '运营管理员', permKeys: {} }
-  onRoleChange('运营管理员')
-  showDialog.value = true
+function formatTime(time) {
+  if (!time) return '-'
+  const d = new Date(time)
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`
 }
 
-function editAdmin(row) {
-  if (row.isSuper) { ElMessage.warning('超级管理员不可编辑'); return }
-  editMode.value = true
-  adminForm.value = { name: row.name, account: row.account, phone: row.phone, role: row.role, permKeys: {} }
-  row.permissions.forEach(p => {
-    const key = allPermissions.find(a => a.label === p)?.key
-    if (key) adminForm.value.permKeys[key] = true
-  })
-  showDialog.value = true
+async function loadAdmins() {
+  loading.value = true
+  try {
+    const res = await getAdmins()
+    admins.value = res.data || []
+  } catch {
+    admins.value = []
+  } finally {
+    loading.value = false
+  }
 }
 
 function onRoleChange(role) {
@@ -202,32 +193,86 @@ function onRoleChange(role) {
   adminForm.value.permKeys = permKeys
 }
 
-function saveAdmin() {
-  if (!adminForm.value.name.trim() || !adminForm.value.account.trim()) {
+function openAddAdmin() {
+  editMode.value = false
+  editId.value = null
+  adminForm.value = { name: '', username: '', password: '', phone: '', role: '运营管理员', permKeys: {} }
+  onRoleChange('运营管理员')
+  showDialog.value = true
+}
+
+function editAdmin(row) {
+  if (row.role === '超级管理员') { ElMessage.warning('超级管理员不可编辑'); return }
+  editMode.value = true
+  editId.value = row.id
+  adminForm.value = {
+    name: row.real_name || '',
+    username: row.username,
+    phone: row.phone || '',
+    role: row.role,
+    permKeys: {}
+  }
+  // Map permission keys to checkbox state
+  const perms = row.permissions || []
+  allPermissions.forEach(p => {
+    adminForm.value.permKeys[p.key] = perms.includes(p.key)
+  })
+  showDialog.value = true
+}
+
+async function saveAdmin() {
+  if (!adminForm.value.name.trim() || !adminForm.value.username.trim()) {
     ElMessage.warning('请填写姓名和账号'); return
   }
-  const perms = allPermissions.filter(p => adminForm.value.permKeys[p.key]).map(p => p.label)
-  if (!editMode.value) {
-    admins.push({ name: adminForm.value.name, account: adminForm.value.account, role: adminForm.value.role, phone: adminForm.value.phone, permissions: perms, lastLogin: '-', status: '启用', isSuper: false })
-    ElMessage.success('管理员已添加')
-  } else {
-    const target = admins.find(a => a.account === adminForm.value.account)
-    if (target) { target.name = adminForm.value.name; target.role = adminForm.value.role; target.phone = adminForm.value.phone; target.permissions = perms }
-    ElMessage.success('管理员信息已更新')
+  if (!editMode.value && !adminForm.value.password) {
+    ElMessage.warning('请填写初始密码'); return
   }
-  showDialog.value = false
+  const perms = allPermissions.filter(p => adminForm.value.permKeys[p.key]).map(p => p.key)
+  try {
+    if (!editMode.value) {
+      await createAdmin({
+        username: adminForm.value.username,
+        password: adminForm.value.password,
+        realName: adminForm.value.name,
+        phone: adminForm.value.phone,
+        role: adminForm.value.role,
+        permissions: perms
+      })
+      ElMessage.success('管理员已添加')
+    } else {
+      await updateAdmin(editId.value, {
+        realName: adminForm.value.name,
+        phone: adminForm.value.phone,
+        role: adminForm.value.role,
+        permissions: perms
+      })
+      ElMessage.success('管理员信息已更新')
+    }
+    showDialog.value = false
+    loadAdmins()
+  } catch {
+    ElMessage.error('操作失败，请检查账号是否已存在')
+  }
 }
 
 function resetPwd(row) {
-  ElMessageBox.confirm(`确认重置"${row.name}"的登录密码？重置后将发送新密码到其手机。`, '重置密码', { type: 'warning' })
-    .then(() => ElMessage.success('密码已重置，新密码已发送到 ' + row.phone)).catch(() => {})
+  ElMessageBox.confirm(`确认重置"${row.real_name}"的登录密码？重置后将发送新密码到其手机。`, '重置密码', { type: 'warning' })
+    .then(() => ElMessage.success('密码已重置，新密码已发送到 ' + (row.phone || '绑定的手机号'))).catch(() => {})
 }
 
-function toggleAdmin(row) {
-  const action = row.status === '启用' ? '禁用' : '启用'
-  ElMessageBox.confirm(`确认${action}"${row.name}"的管理员账号？`, action + '确认', { type: 'warning' })
-    .then(() => { row.status = row.status === '启用' ? '禁用' : '启用'; ElMessage.success(`已${action}`) }).catch(() => {})
+async function toggleAdmin(row) {
+  const action = row.status === 1 ? '禁用' : '启用'
+  try {
+    await ElMessageBox.confirm(`确认${action}"${row.real_name}"的管理员账号？`, action + '确认', { type: 'warning' })
+    await updateAdmin(row.id, { realName: row.real_name, phone: row.phone, role: row.role, permissions: row.permissions || [] })
+    row.status = row.status === 1 ? 0 : 1
+    ElMessage.success(`已${action}`)
+  } catch {
+    // 用户取消
+  }
 }
+
+onMounted(() => { loadAdmins() })
 </script>
 <style scoped>
 .page { max-width: 1200px; margin: 0 auto; }

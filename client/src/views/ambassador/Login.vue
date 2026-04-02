@@ -52,7 +52,7 @@
               </div>
             </el-form-item>
           </el-form>
-          <el-button type="warning" size="large" style="width:100%;margin-top:8px;font-size:16px" @click="doLogin">
+          <el-button type="warning" size="large" style="width:100%;margin-top:8px;font-size:16px" :loading="loading" @click="doLogin">
             登录大使中心
           </el-button>
           <div class="login-links">
@@ -73,9 +73,9 @@
 
     <el-dialog v-model="showApply" title="申请成为招商大使" width="500px">
       <el-form label-position="top">
-        <el-form-item label="姓名"><el-input placeholder="真实姓名" /></el-form-item>
-        <el-form-item label="手机号"><el-input placeholder="手机号" /></el-form-item>
-        <el-form-item label="申请理由"><el-input type="textarea" :rows="3" placeholder="简要说明您的人脉资源和推广能力" /></el-form-item>
+        <el-form-item label="姓名"><el-input v-model="applyForm.real_name" placeholder="真实姓名" /></el-form-item>
+        <el-form-item label="手机号"><el-input v-model="applyForm.phone" placeholder="手机号" /></el-form-item>
+        <el-form-item label="申请理由"><el-input v-model="applyForm.reason" type="textarea" :rows="3" placeholder="简要说明您的人脉资源和推广能力" /></el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="showApply = false">取消</el-button>
@@ -89,31 +89,58 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { ambassadorLogin } from '@/api/ambassador'
+import { applyAmbassador } from '@/api/public'
 
 const router = useRouter()
 const loginForm = ref({ phone: '13900001111', code: '' })
 const countdown = ref(0)
 const showAutoFill = ref(false)
 const showApply = ref(false)
+const loading = ref(false)
+const applyForm = ref({ real_name: '', phone: '', reason: '' })
 
 function sendCode() {
   if (!loginForm.value.phone) { ElMessage.warning('请先输入手机号'); return }
   loginForm.value.code = '888888'
   showAutoFill.value = true
   countdown.value = 60
-  const t = setInterval(() => { countdown.value--; if (countdown.value <= 0) clearInterval(t) }, 1000)
   ElMessage.success('验证码已发送（测试版：888888）')
+  const t = setInterval(() => { countdown.value--; if (countdown.value <= 0) clearInterval(t) }, 1000)
 }
 
-function doLogin() {
+async function doLogin() {
   if (!loginForm.value.phone || !loginForm.value.code) { ElMessage.warning('请填写手机号和验证码'); return }
-  ElMessage.success('登录成功！')
-  setTimeout(() => router.push('/ambassador'), 800)
+  loading.value = true
+  try {
+    const res = await ambassadorLogin({ phone: loginForm.value.phone, code: loginForm.value.code })
+    localStorage.setItem('ambassador_token', res.data.token)
+    localStorage.setItem('ambassador_info', JSON.stringify(res.data.ambassador))
+    ElMessage.success('登录成功！')
+    setTimeout(() => router.push('/ambassador'), 500)
+  } catch (e) {
+    // 错误已在request拦截器中处理
+  } finally {
+    loading.value = false
+  }
 }
 
-function submitApply() {
-  showApply.value = false
-  ElMessage.success('申请已提交！平台将在1-3个工作日内审核')
+async function submitApply() {
+  if (!applyForm.value.real_name || !applyForm.value.phone) {
+    ElMessage.warning('请填写姓名和手机号')
+    return
+  }
+  try {
+    await applyAmbassador({
+      real_name: applyForm.value.real_name,
+      phone: applyForm.value.phone,
+      reason: applyForm.value.reason
+    })
+    showApply.value = false
+    ElMessage.success('申请已提交！平台将在1-3个工作日内审核')
+  } catch (e) {
+    // 错误处理
+  }
 }
 </script>
 

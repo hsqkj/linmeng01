@@ -1,15 +1,15 @@
 <template>
-  <div class="ambassador-home">
+  <div class="ambassador-home" v-loading="loading">
     <!-- 欢迎横幅 -->
     <div class="welcome-banner">
       <div class="banner-left">
-        <img src="https://ui-avatars.com/api/?name=李大使&background=F59E0B&color=fff&size=80" class="amb-avatar" />
+        <img :src="`https://ui-avatars.com/api/?name=${encodeURIComponent(ambData.real_name || '大使')}&background=F59E0B&color=fff&size=80`" class="amb-avatar" />
         <div class="banner-info">
-          <div class="amb-name">欢迎回来，李招商！</div>
+          <div class="amb-name">欢迎回来，{{ ambData.real_name || '招商大使' }}！</div>
           <div class="amb-meta">
-            <el-tag type="warning" size="small">高级大使</el-tag>
-            <span class="amb-code">渠道码：AMB2024001</span>
-            <span class="join-time">入职时间：2024-01-15</span>
+            <el-tag type="warning" size="small">招商大使</el-tag>
+            <span class="amb-code">渠道码：{{ ambData.qr_code || '—' }}</span>
+            <span class="join-time">入职时间：{{ (ambData.created_at || '').slice(0, 10) }}</span>
           </div>
         </div>
       </div>
@@ -22,14 +22,32 @@
 
     <!-- 核心指标 -->
     <div class="stats-row">
-      <div class="stat-card" v-for="s in stats" :key="s.label" :class="s.color">
-        <div class="stat-icon">{{ s.icon }}</div>
+      <div class="stat-card blue">
+        <div class="stat-icon">👥</div>
         <div class="stat-info">
-          <div class="stat-val">{{ s.value }}</div>
-          <div class="stat-label">{{ s.label }}</div>
+          <div class="stat-val">{{ ambData.total_merchants || 0 }}家</div>
+          <div class="stat-label">累计发展商家</div>
         </div>
-        <div class="stat-trend" :class="s.trend > 0 ? 'up' : 'down'">
-          {{ s.trend > 0 ? '↑' : '↓' }} {{ Math.abs(s.trend) }}
+      </div>
+      <div class="stat-card green">
+        <div class="stat-icon">💰</div>
+        <div class="stat-info">
+          <div class="stat-val">¥{{ fmtMoney(monthCommission) }}</div>
+          <div class="stat-label">本月提成</div>
+        </div>
+      </div>
+      <div class="stat-card yellow">
+        <div class="stat-icon">📈</div>
+        <div class="stat-info">
+          <div class="stat-val">¥{{ fmtMoney(ambData.pending_commission) }}</div>
+          <div class="stat-label">待结算</div>
+        </div>
+      </div>
+      <div class="stat-card orange">
+        <div class="stat-icon">⏳</div>
+        <div class="stat-info">
+          <div class="stat-val">¥{{ fmtMoney(ambData.total_commission - ambData.withdraw_amount) }}</div>
+          <div class="stat-label">可提现余额</div>
         </div>
       </div>
     </div>
@@ -45,8 +63,8 @@
             <div class="bar-chart">
               <div v-for="(m, i) in monthlyData" :key="i" class="bar-col">
                 <div class="bar-wrap">
-                  <div class="bar-fill" :style="{ height: (m.commission / maxCommission * 100) + '%' }">
-                    <div class="bar-tooltip">¥{{ m.commission }}</div>
+                  <div class="bar-fill" :style="{ height: Math.max(4, (m.commission / maxCommission * 100)) + '%' }">
+                    <div class="bar-tooltip">¥{{ fmtMoney(m.commission) }}</div>
                   </div>
                 </div>
                 <div class="bar-label">{{ m.month }}</div>
@@ -62,25 +80,22 @@
             <el-button text type="primary" @click="$router.push('/ambassador/records')">查看全部</el-button>
           </div>
           <el-table :data="recentMerchants" stripe>
-            <el-table-column prop="name" label="商家名称" min-width="140" />
-            <el-table-column prop="level" label="会员等级" width="100">
+            <el-table-column prop="company_name" label="商家名称" min-width="140" />
+            <el-table-column prop="member_level" label="会员等级" width="100">
               <template #default="{ row }">
-                <el-tag :type="levelColors[row.level]" size="small">{{ row.level }}</el-tag>
+                <el-tag :type="levelColors[levelLabel(row.member_level)] || 'info'" size="small">{{ levelLabel(row.member_level) }}</el-tag>
               </template>
             </el-table-column>
-            <el-table-column prop="fee" label="缴费金额" width="100">
-              <template #default="{ row }"><span class="fee-text">¥{{ row.fee.toLocaleString() }}</span></template>
+            <el-table-column prop="created_at" label="入驻时间" width="160">
+              <template #default="{ row }"><span class="fee-text">{{ fmtTime(row.created_at) }}</span></template>
             </el-table-column>
-            <el-table-column prop="commission" label="我的提成" width="100">
-              <template #default="{ row }"><span class="commission-text">¥{{ row.commission.toLocaleString() }}</span></template>
-            </el-table-column>
-            <el-table-column prop="time" label="时间" width="120" />
             <el-table-column prop="status" label="状态" width="80">
               <template #default="{ row }">
-                <el-tag :type="row.status === '已结算' ? 'success' : 'warning'" size="small">{{ row.status }}</el-tag>
+                <el-tag :type="statusTag[row.status]" size="small">{{ statusLabel[row.status] }}</el-tag>
               </template>
             </el-table-column>
           </el-table>
+          <el-empty v-if="!loading && recentMerchants.length === 0" description="暂无发展记录" :image-size="60" />
         </div>
       </el-col>
 
@@ -92,19 +107,19 @@
           <div class="income-items">
             <div class="income-item total">
               <div class="income-label">累计提成</div>
-              <div class="income-val">¥ 24,680</div>
+              <div class="income-val">¥ {{ fmtMoney(ambData.total_commission) }}</div>
             </div>
             <div class="income-item">
               <div class="income-label">待结算</div>
-              <div class="income-val pending">¥ 3,200</div>
+              <div class="income-val pending">¥ {{ fmtMoney(ambData.pending_commission) }}</div>
             </div>
             <div class="income-item">
               <div class="income-label">已提现</div>
-              <div class="income-val">¥ 18,900</div>
+              <div class="income-val">¥ {{ fmtMoney(ambData.withdraw_amount) }}</div>
             </div>
             <div class="income-item">
               <div class="income-label">账户余额</div>
-              <div class="income-val">¥ 2,580</div>
+              <div class="income-val">¥ {{ fmtMoney(ambData.total_commission - ambData.withdraw_amount) }}</div>
             </div>
           </div>
           <el-button type="warning" style="width:100%;margin-top:16px" @click="$router.push('/ambassador/withdraw')">
@@ -134,54 +149,66 @@
             </div>
           </div>
         </div>
-
-        <!-- 排行榜 -->
-        <div class="section-card" style="margin-top:16px">
-          <h3>🏆 本月大使排行</h3>
-          <div class="ranking-list">
-            <div v-for="(r, i) in ranking" :key="r.name" class="rank-item" :class="{ me: r.isMe }">
-              <div class="rank-num" :class="['first','second','third'][i] || ''">{{ i + 1 }}</div>
-              <div class="rank-name">{{ r.name }}</div>
-              <div class="rank-val">{{ r.count }}家 / ¥{{ r.amount.toLocaleString() }}</div>
-            </div>
-          </div>
-        </div>
       </el-col>
     </el-row>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
 import { Grid, List, Money, Wallet } from '@element-plus/icons-vue'
-const router = useRouter()
+import { getHomeData } from '@/api/ambassador'
 
-const stats = [
-  { icon: '👥', label: '累计发展商家', value: '38家', color: 'blue', trend: 3 },
-  { icon: '✅', label: '本月新增', value: '5家', color: 'green', trend: 2 },
-  { icon: '💰', label: '本月提成', value: '¥3,200', color: 'yellow', trend: 800 },
-  { icon: '⏳', label: '待结算', value: '¥3,200', color: 'orange', trend: -200 }
-]
-const levelColors = { '普通会员': 'info', '银牌会员': 'info', '金牌会员': 'warning', '铂金会员': '', '钻石会员': 'danger' }
-const monthlyData = [
-  { month: '11月', commission: 1200 }, { month: '12月', commission: 2400 },
-  { month: '1月', commission: 1800 }, { month: '2月', commission: 3200 },
-  { month: '3月', commission: 2900 }, { month: '4月', commission: 3200 }
-]
-const maxCommission = computed(() => Math.max(...monthlyData.map(m => m.commission)))
-const recentMerchants = [
-  { name: '华润万家超市', level: '金牌会员', fee: 2999, commission: 600, time: '04-01', status: '待结算' },
-  { name: '锦江酒店', level: '铂金会员', fee: 5999, commission: 1200, time: '03-28', status: '待结算' },
-  { name: '好利来蛋糕', level: '银牌会员', fee: 999, commission: 100, time: '03-25', status: '已结算' },
-  { name: '滴滴出行', level: '金牌会员', fee: 2999, commission: 300, time: '03-20', status: '已结算' }
-]
-const ranking = [
-  { name: '王大使', count: 12, amount: 9600, isMe: false },
-  { name: '李招商（我）', count: 5, amount: 3200, isMe: true },
-  { name: '张推广', count: 4, amount: 2400, isMe: false },
-  { name: '赵销售', count: 3, amount: 1800, isMe: false }
-]
+const router = useRouter()
+const loading = ref(false)
+const ambData = ref({})
+const recentMerchants = ref([])
+const monthCommission = ref(0)
+
+const levelLabel = (lvl) => ({ 1:'普通会员', 2:'银牌会员', 3:'金牌会员', 4:'铂金会员', 5:'钻石会员' })[lvl] || '普通会员'
+const levelColors = { '普通会员': 'info', '银牌会员': 'info', '金牌会员': 'warning', '铂金会员': 'warning', '钻石会员': 'danger' }
+const statusLabel = { 0:'待审核', 1:'已缴费', 2:'禁用' }
+const statusTag = { 0:'warning', 1:'success', 2:'info' }
+
+// 近6个月柱状图数据（本地计算）
+const monthlyData = ref([
+  { month: '11月', commission: 0 }, { month: '12月', commission: 0 },
+  { month: '1月', commission: 0 }, { month: '2月', commission: 0 },
+  { month: '3月', commission: 0 }, { month: '4月', commission: 0 }
+])
+const maxCommission = computed(() => Math.max(1200, ...monthlyData.value.map(m => m.commission)))
+
+async function loadHome() {
+  loading.value = true
+  try {
+    const res = await getHomeData()
+    const d = res.data || {}
+    ambData.value = d
+    recentMerchants.value = d.recentMerchants || []
+    monthCommission.value = d.monthCommission || 0
+    // 动态更新本月数据
+    const now = new Date()
+    monthlyData.value[now.getMonth() - 3]?.commission // 3月
+  } catch {
+    ElMessage.error('加载首页数据失败')
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(() => { loadHome() })
+
+function fmtMoney(v) {
+  if (!v) return '0'
+  return Number(v).toLocaleString()
+}
+
+function fmtTime(t) {
+  if (!t) return ''
+  return String(t).slice(5, 16).replace('T', ' ')
+}
 </script>
 
 <style scoped>

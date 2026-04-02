@@ -2,21 +2,21 @@
   <div class="page">
     <h2>个人中心</h2>
 
-    <el-row :gutter="20">
+    <el-row :gutter="20" v-loading="loading" element-loading-text="加载中...">
       <!-- 左侧：社区基本信息 -->
       <el-col :span="8">
         <div class="profile-card">
           <div class="avatar-area">
-            <el-avatar :size="80" src="" style="background:#1a56db">
+            <el-avatar :size="80" :src="profile.logo" style="background:#1a56db">
               <el-icon :size="40"><OfficeBuilding /></el-icon>
             </el-avatar>
-            <div class="community-name">{{ profile.communityName }}</div>
+            <div class="community-name">{{ profile.community_name }}</div>
             <div class="district-name">{{ profile.district }} · {{ profile.street }}</div>
           </div>
           <div class="stats-row">
-            <div class="stat-item"><div class="stat-val">{{ profile.demands }}</div><div class="stat-label">发布需求</div></div>
-            <div class="stat-item"><div class="stat-val">{{ profile.matchings }}</div><div class="stat-label">撮合成功</div></div>
-            <div class="stat-item"><div class="stat-val">¥{{ profile.rewards }}</div><div class="stat-label">获得奖励</div></div>
+            <div class="stat-item"><div class="stat-val">{{ profile.demandCount || 0 }}</div><div class="stat-label">发布需求</div></div>
+            <div class="stat-item"><div class="stat-val">{{ profile.intentionCount || 0 }}</div><div class="stat-label">撮合成功</div></div>
+            <div class="stat-item"><div class="stat-val">{{ profile.merchant_count || 0 }}</div><div class="stat-label">社区商户</div></div>
           </div>
           <el-button type="primary" style="width:100%;margin-top:12px" @click="startEdit">编辑社区资料</el-button>
         </div>
@@ -34,34 +34,38 @@
           <el-tabs v-model="infoTab">
             <el-tab-pane label="基本信息" name="basic">
               <el-descriptions :column="2" border>
-                <el-descriptions-item label="社区名称">{{ profile.communityName }}</el-descriptions-item>
-                <el-descriptions-item label="小区名称">{{ profile.estateName }}</el-descriptions-item>
-                <el-descriptions-item label="所属行政区">{{ profile.district }}</el-descriptions-item>
-                <el-descriptions-item label="所属街道">{{ profile.street }}</el-descriptions-item>
-                <el-descriptions-item label="联系人">{{ profile.contactName }}</el-descriptions-item>
-                <el-descriptions-item label="联系手机">{{ profile.phone }}</el-descriptions-item>
-                <el-descriptions-item label="注册时间">2026-01-10</el-descriptions-item>
-                <el-descriptions-item label="审核状态"><el-tag type="success" size="small">已通过</el-tag></el-descriptions-item>
+                <el-descriptions-item label="社区名称">{{ profile.community_name }}</el-descriptions-item>
+                <el-descriptions-item label="小区名称">{{ profile.community }}</el-descriptions-item>
+                <el-descriptions-item label="所属行政区">{{ profile.district || '未填写' }}</el-descriptions-item>
+                <el-descriptions-item label="所属街道">{{ profile.street || '未填写' }}</el-descriptions-item>
+                <el-descriptions-item label="联系人职务">{{ profile.position || '未填写' }}</el-descriptions-item>
+                <el-descriptions-item label="联系手机">{{ profile.username }}</el-descriptions-item>
+                <el-descriptions-item label="详细地址" :span="2">{{ profile.address || '未填写' }}</el-descriptions-item>
+                <el-descriptions-item label="审核状态">
+                  <el-tag :type="profile.status === 1 ? 'success' : 'warning'" size="small">
+                    {{ profile.status === 1 ? '已通过' : '待审核' }}
+                  </el-tag>
+                </el-descriptions-item>
+                <el-descriptions-item label="社区简介" :span="2">{{ profile.description || '暂无简介' }}</el-descriptions-item>
               </el-descriptions>
             </el-tab-pane>
             <el-tab-pane label="社区画像" name="portrait">
               <el-descriptions :column="2" border>
-                <el-descriptions-item label="小区总户数">{{ profile.households }}户</el-descriptions-item>
-                <el-descriptions-item label="社区商户数">{{ profile.merchantCount }}家</el-descriptions-item>
-                <el-descriptions-item label="亲子家庭占比">{{ profile.parentKidRatio }}</el-descriptions-item>
-                <el-descriptions-item label="老年群体占比">{{ profile.elderRatio }}</el-descriptions-item>
-                <el-descriptions-item label="公共空间面积">{{ profile.publicArea }}</el-descriptions-item>
-                <el-descriptions-item label="户外广场">{{ profile.outdoorSquare }}</el-descriptions-item>
-                <el-descriptions-item label="商业体/商业街">{{ profile.commercial }}</el-descriptions-item>
-                <el-descriptions-item label="学校/幼儿园">{{ profile.school }}</el-descriptions-item>
-                <el-descriptions-item label="公园/体育场馆">{{ profile.park }}</el-descriptions-item>
-                <el-descriptions-item label="简介" :span="2">{{ profile.intro }}</el-descriptions-item>
+                <el-descriptions-item label="小区总户数">{{ profile.households || '未填写' }}户</el-descriptions-item>
+                <el-descriptions-item label="社区商户数">{{ profile.merchant_count || 0 }}家</el-descriptions-item>
+                <el-descriptions-item label="亲子家庭占比">{{ profile.family_ratio ? profile.family_ratio + '%' : '未填写' }}</el-descriptions-item>
+                <el-descriptions-item label="老年群体占比">{{ profile.elderly_ratio ? profile.elderly_ratio + '%' : '未填写' }}</el-descriptions-item>
+                <el-descriptions-item label="公共空间面积">{{ profile.public_space_area ? profile.public_space_area + '㎡' : '未填写' }}</el-descriptions-item>
+                <el-descriptions-item label="户外广场">{{ profile.has_outdoor_plaza ? '有户外广场' : '无' }}</el-descriptions-item>
+                <el-descriptions-item label="商业体/商业街">{{ profile.has_commercial ? '有商业配套' : '无' }}</el-descriptions-item>
+                <el-descriptions-item label="学校/幼儿园">{{ profile.has_school ? '有学校/幼儿园' : '无' }}</el-descriptions-item>
+                <el-descriptions-item label="公园/体育场馆">{{ profile.has_park ? '有公园/体育设施' : '无' }}</el-descriptions-item>
               </el-descriptions>
             </el-tab-pane>
             <el-tab-pane label="我的标签" name="tags">
               <p style="color:#909399;font-size:13px;margin-bottom:12px">标签越精准，智能匹配效果越好</p>
               <div class="tag-list">
-                <el-tag v-for="tag in profile.tags" :key="tag" style="margin:4px">{{ tag }}</el-tag>
+                <el-tag v-for="tag in (Array.isArray(profile.tags) ? profile.tags : (profile.tags ? profile.tags.split(',') : []))" :key="tag" style="margin:4px">{{ tag }}</el-tag>
               </div>
               <el-button type="primary" text style="margin-top:12px" @click="startEdit">管理标签</el-button>
             </el-tab-pane>
@@ -76,31 +80,7 @@
               <el-button text @click="editing=false">取消</el-button>
             </div>
           </template>
-          <el-form :model="editForm" label-width="130px" ref="formRef">
-            <el-divider content-position="left">基本信息</el-divider>
-            <el-row :gutter="16">
-              <el-col :span="12">
-                <el-form-item label="社区名称" required>
-                  <el-input v-model="editForm.communityName" />
-                </el-form-item>
-              </el-col>
-              <el-col :span="12">
-                <el-form-item label="小区名称">
-                  <el-input v-model="editForm.estateName" />
-                </el-form-item>
-              </el-col>
-              <el-col :span="12">
-                <el-form-item label="联系人姓名" required>
-                  <el-input v-model="editForm.contactName" />
-                </el-form-item>
-              </el-col>
-              <el-col :span="12">
-                <el-form-item label="联系手机" required>
-                  <el-input v-model="editForm.phone" />
-                </el-form-item>
-              </el-col>
-            </el-row>
-
+          <el-form :model="editForm" label-width="140px" ref="formRef">
             <el-divider content-position="left">社区画像数据</el-divider>
             <el-row :gutter="16">
               <el-col :span="12">
@@ -110,47 +90,47 @@
               </el-col>
               <el-col :span="12">
                 <el-form-item label="社区商户数">
-                  <el-input-number v-model="editForm.merchantCount" :min="0" style="width:100%" />
+                  <el-input-number v-model="editForm.merchant_count" :min="0" style="width:100%" />
                 </el-form-item>
               </el-col>
               <el-col :span="12">
                 <el-form-item label="亲子家庭占比">
-                  <el-input v-model="editForm.parentKidRatio" placeholder="如：35%" />
+                  <el-input v-model="editForm.family_ratio" placeholder="如：35" />%
                 </el-form-item>
               </el-col>
               <el-col :span="12">
                 <el-form-item label="老年群体占比">
-                  <el-input v-model="editForm.elderRatio" placeholder="如：28%" />
+                  <el-input v-model="editForm.elderly_ratio" placeholder="如：28" />%
                 </el-form-item>
               </el-col>
               <el-col :span="12">
-                <el-form-item label="公共空间面积">
-                  <el-input v-model="editForm.publicArea" placeholder="如：2000㎡" />
+                <el-form-item label="公共空间面积(㎡)">
+                  <el-input-number v-model="editForm.public_space_area" :min="0" style="width:100%" />
                 </el-form-item>
               </el-col>
               <el-col :span="12">
                 <el-form-item label="户外广场">
-                  <el-input v-model="editForm.outdoorSquare" placeholder="如：有，约800㎡" />
+                  <el-switch v-model="editForm.has_outdoor_plaza" :active-value="1" :inactive-value="0" />
                 </el-form-item>
               </el-col>
               <el-col :span="12">
                 <el-form-item label="商业体/商业街">
-                  <el-input v-model="editForm.commercial" />
+                  <el-switch v-model="editForm.has_commercial" :active-value="1" :inactive-value="0" />
                 </el-form-item>
               </el-col>
               <el-col :span="12">
                 <el-form-item label="学校/幼儿园">
-                  <el-input v-model="editForm.school" placeholder="如：幼儿园1所、小学1所" />
+                  <el-switch v-model="editForm.has_school" :active-value="1" :inactive-value="0" />
                 </el-form-item>
               </el-col>
-              <el-col :span="24">
+              <el-col :span="12">
                 <el-form-item label="公园/体育场馆">
-                  <el-input v-model="editForm.park" />
+                  <el-switch v-model="editForm.has_park" :active-value="1" :inactive-value="0" />
                 </el-form-item>
               </el-col>
               <el-col :span="24">
                 <el-form-item label="社区简介">
-                  <el-input v-model="editForm.intro" type="textarea" :rows="3" placeholder="简要介绍社区特色..." />
+                  <el-input v-model="editForm.description" type="textarea" :rows="3" placeholder="简要介绍社区特色..." />
                 </el-form-item>
               </el-col>
             </el-row>
@@ -158,13 +138,17 @@
             <el-divider content-position="left">社区标签</el-divider>
             <el-form-item label="选择标签">
               <div class="tag-selector">
-                <el-check-tag v-for="tag in allTags" :key="tag" :checked="editForm.tags.includes(tag)" @change="toggleTag(tag)" style="margin:4px">{{ tag }}</el-check-tag>
+                <el-check-tag
+                  v-for="tag in allTags" :key="tag"
+                  :checked="editForm.tagsList.includes(tag)"
+                  @change="toggleTag(tag)" style="margin:4px"
+                >{{ tag }}</el-check-tag>
               </div>
             </el-form-item>
 
             <div style="text-align:right;margin-top:16px">
               <el-button @click="editing=false">取消</el-button>
-              <el-button type="primary" @click="saveProfile">保存资料</el-button>
+              <el-button type="primary" @click="saveProfile" :loading="saving">保存资料</el-button>
             </div>
           </el-form>
         </el-card>
@@ -174,44 +158,100 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { OfficeBuilding, Edit } from '@element-plus/icons-vue'
+import { getProfile, updateProfile } from '@/api/community'
 
+const loading = ref(true)
+const saving = ref(false)
 const editing = ref(false)
 const infoTab = ref('basic')
-
-const profile = reactive({
-  communityName: '光谷社区', estateName: '光谷花园小区', district: '东湖新技术开发区', street: '关东街道',
-  contactName: '张主任', phone: '138****1234', households: 1500, merchantCount: 120,
-  parentKidRatio: '38%', elderRatio: '25%', publicArea: '3500㎡', outdoorSquare: '有，约1200㎡',
-  commercial: '有，光谷步行街', school: '幼儿园2所、小学1所、中学1所', park: '社区公园2处、健身步道500米',
-  intro: '光谷社区是东湖新技术开发区重点社区，居民结构多元，高科技人才占比高，社区公共空间丰富，年均举办大型活动8~10场。',
-  demands: 8, matchings: 5, rewards: '1000',
-  tags: ['亲子友好', '老年服务', '文化活动', '体育赛事', '教育资源', '健康社区']
-})
+const profile = ref({})
 
 const allTags = ['亲子友好', '老年服务', '文化活动', '体育赛事', '教育资源', '健康社区', '公益活动', '科技创新', '环保绿色', '商业活跃', '居民参与度高', '节庆氛围浓']
 
-const editForm = reactive({ ...profile })
+const editForm = ref({
+  households: null,
+  merchant_count: null,
+  family_ratio: '',
+  elderly_ratio: '',
+  public_space_area: null,
+  has_outdoor_plaza: 0,
+  has_commercial: 0,
+  has_school: 0,
+  has_park: 0,
+  description: '',
+  tagsList: []
+})
+
+async function loadProfile() {
+  loading.value = true
+  try {
+    const res = await getProfile()
+    profile.value = res.data || {}
+  } catch {
+    ElMessage.error('加载社区资料失败')
+  } finally {
+    loading.value = false
+  }
+}
 
 function startEdit() {
-  Object.assign(editForm, JSON.parse(JSON.stringify(profile)))
+  const tags = profile.value.tags
+  const tagsArray = Array.isArray(tags) ? tags : (tags ? tags.split(',') : [])
+  editForm.value = {
+    households: profile.value.households || null,
+    merchant_count: profile.value.merchant_count || null,
+    family_ratio: profile.value.family_ratio || '',
+    elderly_ratio: profile.value.elderly_ratio || '',
+    public_space_area: profile.value.public_space_area || null,
+    has_outdoor_plaza: profile.value.has_outdoor_plaza || 0,
+    has_commercial: profile.value.has_commercial || 0,
+    has_school: profile.value.has_school || 0,
+    has_park: profile.value.has_park || 0,
+    description: profile.value.description || '',
+    tagsList: tagsArray
+  }
   editing.value = true
   infoTab.value = 'basic'
 }
 
 function toggleTag(tag) {
-  const idx = editForm.tags.indexOf(tag)
-  if (idx >= 0) editForm.tags.splice(idx, 1)
-  else editForm.tags.push(tag)
+  const idx = editForm.value.tagsList.indexOf(tag)
+  if (idx >= 0) editForm.value.tagsList.splice(idx, 1)
+  else editForm.value.tagsList.push(tag)
 }
 
-function saveProfile() {
-  Object.assign(profile, JSON.parse(JSON.stringify(editForm)))
-  editing.value = false
-  ElMessage.success('社区资料已保存，等待平台审核后更新显示')
+async function saveProfile() {
+  saving.value = true
+  try {
+    await updateProfile({
+      households: editForm.value.households,
+      merchant_count: editForm.value.merchant_count,
+      family_ratio: editForm.value.family_ratio,
+      elderly_ratio: editForm.value.elderly_ratio,
+      public_space_area: editForm.value.public_space_area,
+      has_outdoor_plaza: editForm.value.has_outdoor_plaza,
+      has_commercial: editForm.value.has_commercial,
+      has_school: editForm.value.has_school,
+      has_park: editForm.value.has_park,
+      description: editForm.value.description,
+      tags: editForm.value.tagsList
+    })
+    await loadProfile()
+    editing.value = false
+    ElMessage.success('社区资料已保存')
+  } catch {
+    ElMessage.error('保存失败')
+  } finally {
+    saving.value = false
+  }
 }
+
+onMounted(() => {
+  loadProfile()
+})
 </script>
 
 <style scoped>

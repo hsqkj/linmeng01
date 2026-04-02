@@ -7,21 +7,39 @@
         <p>邻盟 - 社区资源智能匹配助手</p>
       </div>
 
-      <el-form :model="form" class="login-form">
+      <el-form :model="form" class="login-form" @submit.prevent="login">
         <el-form-item>
           <el-input
-            v-model="form.phone"
-            placeholder="请输入手机号"
+            v-model="form.username"
+            placeholder="请输入用户名"
             size="large"
-            :prefix-icon="Phone"
+            :prefix-icon="User"
+            clearable
           />
         </el-form-item>
         <el-form-item>
-          <div class="code-input">
-            <el-input v-model="form.code" placeholder="验证码" size="large" :prefix-icon="Key" />
-            <el-button type="info" size="large" @click="login">登录</el-button>
-          </div>
+          <el-input
+            v-model="form.password"
+            placeholder="请输入密码"
+            size="large"
+            :prefix-icon="Key"
+            type="password"
+            show-password
+            @keyup.enter="login"
+          />
         </el-form-item>
+        <el-form-item>
+          <el-button
+            type="primary"
+            size="large"
+            class="login-btn"
+            :loading="loading"
+            @click="login"
+          >登录</el-button>
+        </el-form-item>
+        <div class="test-notice">
+          <el-alert title="测试账号：admin / admin123" type="info" :closable="false" show-icon />
+        </div>
       </el-form>
 
       <div class="login-footer">
@@ -32,14 +50,34 @@
 </template>
 
 <script setup>
-import { reactive } from 'vue'
+import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { Phone, Key } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
+import { User, Key } from '@element-plus/icons-vue'
+import { adminLogin } from '@/api/admin'
 
 const router = useRouter()
-const form = reactive({ phone: '13700137000', code: '888888' })
+const form = reactive({ username: 'admin', password: 'admin123' })
+const loading = ref(false)
 
-const login = () => { router.push('/admin') }
+const login = async () => {
+  if (!form.username || !form.password) {
+    ElMessage.warning('请输入用户名和密码')
+    return
+  }
+  loading.value = true
+  try {
+    const res = await adminLogin({ username: form.username, password: form.password })
+    localStorage.setItem('admin_token', res.data.token)
+    localStorage.setItem('admin_info', JSON.stringify(res.data.admin))
+    ElMessage.success('登录成功')
+    router.push('/admin')
+  } catch (e) {
+    // 错误已在request拦截器中处理
+  } finally {
+    loading.value = false
+  }
+}
 const goBack = () => { router.push('/') }
 </script>
 

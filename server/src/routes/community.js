@@ -26,6 +26,10 @@ router.get('/resources/:id', CommunityController.getResourceDetail)
 router.get('/demands', CommunityController.getDemands)
 router.get('/demands/:id', CommunityController.getDemandDetail)
 
+// 留言查询（公开）
+router.get('/comments/demand/:id', CommunityController.getDemandComments)
+router.get('/comments/resource/:id', CommunityController.getResourceComments)
+
 // 需要认证的路由
 router.use(authCommunity)
 
@@ -47,10 +51,8 @@ router.get('/my/intentions', CommunityController.getMyIntentions)
 router.put('/intentions/:id/accept', CommunityController.acceptIntention)
 router.put('/intentions/:id/reject', CommunityController.rejectIntention)
 
-// 留言
-router.get('/comments/demand/:id', CommunityController.getDemandComments)
+// 留言（提交需要认证）
 router.post('/comments/demand/:id', CommunityController.createDemandComment)
-router.get('/comments/resource/:id', CommunityController.getResourceComments)
 router.post('/comments/resource/:id', CommunityController.createResourceComment)
 router.post('/comments/:id/reply', CommunityController.replyComment)
 
@@ -60,5 +62,8 @@ router.put('/profile', CommunityController.updateProfile)
 
 // 奖励明细
 router.get('/rewards', CommunityController.getRewards)
+
+// 我的留言（留言咨询 - 隔离）
+router.get('/my/comments', CommunityController.getMyComments)
 
 module.exports = router

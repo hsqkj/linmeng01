@@ -104,6 +104,7 @@
 <script setup>
 import { ref, reactive } from 'vue'
 import { ElMessage } from 'element-plus'
+import { saveAmbassadorConfig } from '@/api/admin'
 
 const config = reactive({
   firstRate: 20,
@@ -124,9 +125,21 @@ const levelCommissions = reactive([
   { level: 5, name: '钻石会员', fee: 12000, firstRate: 20, renewRate: 10 }
 ])
 
-function saveConfig() { ElMessage.success('提成配置已保存') }
+async function saveConfig() {
+  try {
+    await saveAmbassadorConfig({
+      ambassador_commission: {
+        ...config,
+        level_commissions: levelCommissions.map(l => ({ level: l.level, name: l.name, fee: l.fee, first_rate: l.firstRate, renew_rate: l.renewRate }))
+      }
+    })
+    ElMessage.success('提成配置已保存')
+  } catch {
+    ElMessage.error('保存失败，请重试')
+  }
+}
 function resetConfig() {
-  config.firstRate = 20; config.renewRate = 10; config.minWithdraw = 100
+  config.firstRate = 20; config.renewRate = 10; config.minWithdraw = 100; config.settlePeriod = 'monthly'; config.arrivalDays = '3'; config.maxPerOrder = 0; config.expirePolicy = 'keep_first'
   ElMessage.success('已重置为默认值')
 }
 </script>

@@ -1,71 +1,67 @@
 <template>
-  <div class="dashboard">
+  <div class="dashboard" v-loading="loading">
     <h2>数据大屏</h2>
     
     <div class="stats-row">
       <el-card class="stat-card">
-        <div class="stat-number" style="color:#409EFF">1,234</div>
-        <div class="stat-label">总注册数</div>
-        <div class="stat-trend up">↑ 12%</div>
+        <div class="stat-number" style="color:#409EFF">{{ (stats.total?.communities || 0) + (stats.total?.merchants || 0) }}</div>
+        <div class="stat-label">注册用户</div>
       </el-card>
       <el-card class="stat-card">
-        <div class="stat-number" style="color:#67C23A">328</div>
-        <div class="stat-label">活跃用户</div>
-        <div class="stat-trend up">↑ 8%</div>
+        <div class="stat-number" style="color:#67C23A">{{ stats.total?.communities || 0 }}</div>
+        <div class="stat-label">社区用户</div>
       </el-card>
       <el-card class="stat-card">
-        <div class="stat-number" style="color:#E6A23C">156</div>
+        <div class="stat-number" style="color:#E6A23C">{{ stats.total?.demands || 0 }}</div>
         <div class="stat-label">已发布需求</div>
-        <div class="stat-trend up">↑ 15%</div>
       </el-card>
       <el-card class="stat-card">
-        <div class="stat-number" style="color:#36cfc9">89</div>
+        <div class="stat-number" style="color:#36cfc9">{{ stats.total?.resources || 0 }}</div>
         <div class="stat-label">已发布资源</div>
-        <div class="stat-trend up">↑ 10%</div>
       </el-card>
       <el-card class="stat-card">
-        <div class="stat-number" style="color:#f56c6c">67</div>
+        <div class="stat-number" style="color:#f56c6c">{{ stats.total?.completedMatches || 0 }}</div>
         <div class="stat-label">撮合成功</div>
-        <div class="stat-trend up">↑ 22%</div>
       </el-card>
       <el-card class="stat-card">
-        <div class="stat-number" style="color:#909399">12</div>
+        <div class="stat-number" style="color:#909399">{{ pendingTotal }}</div>
         <div class="stat-label">待审核</div>
-        <el-button type="warning" size="small" style="margin-top:8px">去审核</el-button>
+        <el-button type="warning" size="small" style="margin-top:8px" @click="router.push('/admin/audit-demands')">去审核</el-button>
       </el-card>
     </div>
 
     <el-row :gutter="20">
       <el-col :xs="24" :lg="12">
         <el-card>
-          <template #header><span>待审核列表</span></template>
-          <el-table :data="pendingReviews" size="small">
-            <el-table-column prop="type" label="类型" width="80" />
-            <el-table-column prop="name" label="名称" />
-            <el-table-column prop="time" label="提交时间" width="120" />
-            <el-table-column label="操作" width="120">
-              <template #default>
-                <el-button type="success" size="small">通过</el-button>
-                <el-button type="danger" size="small">驳回</el-button>
-              </template>
-            </el-table-column>
-          </el-table>
+          <template #header><span>待审核统计</span></template>
+          <div class="pending-items">
+            <div class="pending-item">
+              <span>待审核社区</span><strong>{{ stats.pending?.communities || 0 }}</strong>
+              <el-button text type="primary" size="small" @click="router.push('/admin/users-community')">查看</el-button>
+            </div>
+            <div class="pending-item">
+              <span>待审核商家</span><strong>{{ stats.pending?.merchants || 0 }}</strong>
+              <el-button text type="primary" size="small" @click="router.push('/admin/users-merchant')">查看</el-button>
+            </div>
+            <div class="pending-item">
+              <span>待审核需求</span><strong>{{ stats.pending?.demands || 0 }}</strong>
+              <el-button text type="primary" size="small" @click="router.push('/admin/audit-demands')">查看</el-button>
+            </div>
+            <div class="pending-item">
+              <span>待审核资源</span><strong>{{ stats.pending?.resources || 0 }}</strong>
+              <el-button text type="primary" size="small" @click="router.push('/admin/audit-resources')">查看</el-button>
+            </div>
+          </div>
         </el-card>
       </el-col>
       <el-col :xs="24" :lg="12">
         <el-card>
-          <template #header><span>最近撮合</span></template>
-          <el-table :data="recentMatches" size="small">
-            <el-table-column prop="community" label="社区" />
-            <el-table-column prop="merchant" label="商家" />
-            <el-table-column prop="status" label="状态" width="80">
-              <template #default="{ row }">
-                <el-tag :type="row.status === '已完成' ? 'success' : 'warning'" size="small">
-                  {{ row.status }}
-                </el-tag>
-              </template>
-            </el-table-column>
-          </el-table>
+          <template #header><span>平台概况</span></template>
+          <div class="overview-items">
+            <div class="overview-item"><span>招商大使</span><strong>{{ stats.total?.ambassadors || 0 }}人</strong></div>
+            <div class="overview-item"><span>活跃商家</span><strong>{{ stats.total?.merchants || 0 }}家</strong></div>
+            <div class="overview-item"><span>撮合成功</span><strong>{{ stats.total?.completedMatches || 0 }}次</strong></div>
+          </div>
         </el-card>
       </el-col>
     </el-row>
@@ -73,23 +69,26 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { getDashboard } from '@/api/admin'
 
-const pendingReviews = ref([
-  { type: '社区', name: '朝阳公园社区', time: '03-31 20:00' },
-  { type: '需求', name: '端午节龙舟赛赞助', time: '03-31 19:30' },
-  { type: '商家', name: '全家便利店', time: '03-31 18:45' },
-  { type: '资源', name: '少儿编程课程', time: '03-31 17:20' },
-  { type: '需求', name: '社区书画展览', time: '03-31 16:00' }
-])
+const router = useRouter()
+const loading = ref(false)
+const stats = ref({})
+const pendingTotal = ref(0)
 
-const recentMatches = ref([
-  { community: '阳光花园', merchant: '星巴克', status: '已完成' },
-  { community: '幸福里', merchant: '京东健康', status: '对接中' },
-  { community: '翠竹苑', merchant: '平安保险', status: '已完成' },
-  { community: '阳光花园', merchant: '新东方', status: '对接中' },
-  { community: '幸福里', merchant: '华润万家', status: '已完成' }
-])
+async function loadDashboard() {
+  loading.value = true
+  try {
+    const res = await getDashboard()
+    stats.value = res.data || {}
+    pendingTotal.value = res.data?.pending?.total || 0
+  } catch { /* 静默失败 */ }
+  finally { loading.value = false }
+}
+
+onMounted(() => { loadDashboard() })
 </script>
 
 <style scoped>
@@ -122,4 +121,12 @@ const recentMatches = ref([
 .dashboard h2 {
   margin-bottom: 20px;
 }
+.pending-items { display: flex; flex-direction: column; gap: 12px; }
+.pending-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; background: #f8f9fa; border-radius: 8px; font-size: 14px; }
+.pending-item span { flex: 1; color: #606266; }
+.pending-item strong { font-size: 20px; color: #F56C6C; font-weight: 700; min-width: 50px; }
+.overview-items { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+.overview-item { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 16px; background: #f8f9fa; border-radius: 10px; }
+.overview-item span { font-size: 13px; color: #909399; }
+.overview-item strong { font-size: 22px; font-weight: 700; color: #303133; }
 </style>

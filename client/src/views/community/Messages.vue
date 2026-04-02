@@ -2,7 +2,7 @@
   <div class="page">
     <h2>我的消息</h2>
 
-    <el-tabs v-model="activeTab" class="message-tabs">
+    <el-tabs v-model="activeTab" class="message-tabs" @tab-change="onTabChange">
       <el-tab-pane label="系统通知" name="system">
         <div class="message-list">
           <el-card v-for="msg in systemMessages" :key="msg.id" class="message-card" shadow="hover">
@@ -20,24 +20,31 @@
       </el-tab-pane>
 
       <el-tab-pane label="合作意向" name="intent">
-        <div class="message-list">
+        <div class="message-list" v-loading="intentLoading">
+          <el-empty v-if="!intentLoading && intentMessages.length === 0" description="暂无合作意向记录" :image-size="80" />
           <el-card v-for="msg in intentMessages" :key="msg.id" class="message-card" shadow="hover">
             <div class="message-header">
-              <el-avatar :size="32" :src="msg.avatar" />
-              <div class="sender-info">
-                <span class="sender-name">{{ msg.sender }}</span>
-                <span class="sender-type">{{ msg.type }}</span>
+              <div style="display:flex;align-items:center;gap:8px">
+                <img :src="msg.merchant_logo || `https://ui-avatars.com/api/?name=${encodeURIComponent(msg.company_name || '商家')}&background=67C23A&color=fff&size=32`" class="msg-avatar" />
+                <div class="sender-info">
+                  <span class="sender-name">{{ msg.company_name || '商家用户' }}</span>
+                  <span class="sender-type">商家</span>
+                </div>
               </div>
-              <span class="message-time">{{ msg.time }}</span>
+              <el-tag size="small" :type="msg.star_rating >= 4 ? 'warning' : 'info'">
+                ⭐{{ msg.star_rating || 0 }}
+              </el-tag>
+              <el-tag size="small" :type="intentStatusType[msg.status]">{{ intentStatusName[msg.status] }}</el-tag>
+              <span class="message-time">{{ formatTime(msg.created_at) }}</span>
             </div>
             <div class="message-body">
-              <p class="message-content">{{ msg.content }}</p>
-              <div class="demand-ref" v-if="msg.demand">
+              <p class="message-content">{{ msg.intro || '暂无说明' }}</p>
+              <div class="demand-ref" v-if="msg.demand_title">
                 <el-icon><Link /></el-icon>
-                关联需求：{{ msg.demand }}
+                关联需求：{{ msg.demand_title }}
               </div>
             </div>
-            <div class="message-actions">
+            <div class="message-actions" v-if="msg.status === 0">
               <el-button type="success" size="small" @click="acceptIntent(msg)">接受合作</el-button>
               <el-button size="small" @click="viewDemand(msg)">查看需求</el-button>
               <el-button size="small" text type="danger" @click="rejectIntent(msg)">婉拒</el-button>
@@ -47,16 +54,27 @@
       </el-tab-pane>
 
       <el-tab-pane label="留言咨询" name="comment">
-        <div class="message-list">
+        <div class="message-list" v-loading="commentLoading">
+          <el-empty v-if="!commentLoading && commentMessages.length === 0" description="暂无留言记录" />
           <el-card v-for="msg in commentMessages" :key="msg.id" class="message-card" shadow="hover">
             <div class="message-header">
-              <el-avatar :size="32" :src="msg.avatar" />
+              <el-avatar :size="32" :src="msg.avatar">
+                <el-icon><User /></el-icon>
+              </el-avatar>
               <div class="sender-info">
                 <span class="sender-name">{{ msg.sender }}</span>
                 <span class="message-time">{{ msg.time }}</span>
               </div>
+              <el-tag size="small" :type="msg.comment_type === 'resource' ? 'warning' : 'success'">
+                {{ msg.comment_type === 'resource' ? '资源留言' : '需求留言' }}
+              </el-tag>
             </div>
             <p class="message-content">{{ msg.content }}</p>
+            <!-- 关联的资源/需求标题 -->
+            <div class="demand-ref" v-if="msg.resource_title || msg.demand_title">
+              <el-icon><Link /></el-icon>
+              {{ msg.comment_type === 'resource' ? '资源' : '需求' }}：{{ msg.resource_title || msg.demand_title }}
+            </div>
             
             <!-- 层级回复显示 -->
             <div class="comment-replies" v-if="msg.replies && msg.replies.length">
@@ -68,8 +86,10 @@
               <div class="reply-list">
                 <div class="reply-item" v-for="reply in msg.replies" :key="reply.id">
                   <div class="reply-header">
-                    <el-avatar :size="24" :src="reply.avatar" />
-                    <span class="reply-name">{{ reply.name }}</span>
+                    <el-avatar :size="24" :src="reply.avatar">
+                      <el-icon><User /></el-icon>
+                    </el-avatar>
+                    <span class="reply-name">{{ reply.isMine ? '我' : reply.name }}</span>
                     <span class="reply-time">{{ reply.time }}</span>
                   </div>
                   <div class="reply-text">{{ reply.text }}</div>
@@ -88,10 +108,14 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Link } from '@element-plus/icons-vue'
+import { Link, User } from '@element-plus/icons-vue'
+import { getMyComments } from '@/api/community'
+
+const intentStatusName = { 0: '待回复', 1: '已接受', 2: '已拒绝', 3: '已完成' }
+const intentStatusType = { 0: 'warning', 1: 'success', 2: 'info', 3: 'primary' }
 
 const router = useRouter()
 const activeTab = ref('system')
@@ -134,103 +158,99 @@ const systemMessages = ref([
   }
 ])
 
-const intentMessages = ref([
-  {
-    id: 1,
-    sender: '星巴克咖啡',
-    type: '商家',
-    avatar: 'https://ui-avatars.com/api/?name=星巴克&background=00704a&color=fff',
-    content: '我们对这个活动非常感兴趣！可以提供资金5万元和品牌物料，请问场地大概有多大空间可以摆展台？',
-    demand: '六一儿童节亲子嘉年华活动赞助',
-    time: '2026-03-28 14:30'
-  },
-  {
-    id: 2,
-    sender: '新东方教育',
-    type: '商家',
-    avatar: 'https://ui-avatars.com/api/?name=新东方&background=FF6B35&color=fff',
-    content: '我们可以提供亲子教育互动区，免费体验编程课和绘本阅读，请问场地有电源接口吗？',
-    demand: '六一儿童节亲子嘉年华活动赞助',
-    time: '2026-03-29 10:15'
-  }
-])
+// 合作意向 - 从真实API加载
+const intentMessages = ref([])
+const intentLoading = ref(false)
 
-const commentMessages = ref([
-  {
-    id: 1,
-    sender: '京东健康',
-    avatar: 'https://ui-avatars.com/api/?name=京东&background=E1251B&color=fff',
-    content: '我们计划在4月中旬进社区开展义诊活动，请问您这边方便安排在哪个时间段？',
-    time: '2026-03-27 16:45',
-    replies: [
-      {
-        id: 1,
-        name: '光谷社区（您）',
-        avatar: 'https://ui-avatars.com/api/?name=光谷&background=1a56db&color=fff',
-        text: '您好！我们社区4月中旬有两周的时间比较方便，请问能安排在周末吗？',
-        time: '2026-03-27 18:30'
-      }
-    ]
-  },
-  {
-    id: 2,
-    sender: '华润万家',
-    avatar: 'https://ui-avatars.com/api/?name=华润&background=FF4444&color=fff',
-    content: '端午节物资捐赠方案已准备好，随时可以沟通具体细节。',
-    time: '2026-03-25 11:30',
-    replies: []
+async function loadIntentions() {
+  intentLoading.value = true
+  try {
+    const res = await import('@/api/community').then(m => m.getMyIntentions({ page: 1, pageSize: 50 }))
+    intentMessages.value = res.data?.list || []
+  } catch {
+    intentMessages.value = []
+  } finally {
+    intentLoading.value = false
   }
-])
+}
+
+// 留言咨询 - 从真实API加载（只看自己发的和收到的回复）
+const commentMessages = ref([])
+const commentLoading = ref(false)
+
+async function loadMyComments() {
+  commentLoading.value = true
+  try {
+    const res = await getMyComments()
+    commentMessages.value = res.data || []
+  } catch {
+    // 无留言时显示空
+    commentMessages.value = []
+  } finally {
+    commentLoading.value = false
+  }
+}
+
+onMounted(() => {
+  // 默认不加载，等用户切换到留言咨询tab再加载
+})
+
+// 监听 tab 切换，切换到留言时加载数据
+function onTabChange(tab) {
+  if (tab === 'comment') {
+    loadMyComments()
+  } else if (tab === 'intent') {
+    loadIntentions()
+  }
+}
+
+function formatTime(time) {
+  if (!time) return ''
+  const d = new Date(time)
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`
+}
 
 function handleAction(msg) {
   ElMessage.success(`正在跳转到：${msg.title}`)
   router.push('/community/demands')
 }
 
-function acceptIntent(msg) {
-  ElMessageBox.confirm(
-    `确定要接受「${msg.sender}」的合作意向吗？`,
-    '确认接受合作',
-    {
-      confirmButtonText: '确定接受',
-      cancelButtonText: '取消',
-      type: 'success'
-    }
-  ).then(() => {
-    // 从列表中移除该消息
-    const index = intentMessages.value.findIndex(m => m.id === msg.id)
-    if (index > -1) {
-      intentMessages.value.splice(index, 1)
-    }
-    ElMessage.success('已接受合作意向，平台将通知商家进行后续对接')
-  }).catch(() => {
-    // 用户取消操作
-  })
+async function acceptIntent(msg) {
+  try {
+    await ElMessageBox.confirm(
+      `确定要接受「${msg.company_name}」的合作意向吗？`,
+      '确认接受合作',
+      { confirmButtonText: '确定接受', cancelButtonText: '取消', type: 'success' }
+    )
+    const { acceptIntention } = await import('@/api/community')
+    await acceptIntention(msg.id)
+    msg.status = 1
+    ElMessage.success('已接受合作意向')
+  } catch {
+    // 用户取消
+  }
 }
 
 function viewDemand(msg) {
-  router.push('/community/demands')
+  if (msg.demand_id) {
+    router.push(`/community/demands/${msg.demand_id}`)
+  }
 }
 
-function rejectIntent(msg) {
-  ElMessageBox.confirm(
-    `确定要婉拒「${msg.sender}」的合作意向吗？婉拒后对方将收到通知。`,
-    '确认婉拒合作',
-    {
-      confirmButtonText: '确定婉拒',
-      cancelButtonText: '取消',
-      type: 'warning'
-    }
-  ).then(() => {
-    // 从列表中移除该消息
-    const index = intentMessages.value.findIndex(m => m.id === msg.id)
-    if (index > -1) {
-      intentMessages.value.splice(index, 1)
-    }
+async function rejectIntent(msg) {
+  try {
+    await ElMessageBox.confirm(
+      `确定要婉拒「${msg.company_name}」的合作意向吗？`,
+      '确认婉拒合作',
+      { confirmButtonText: '确定婉拒', cancelButtonText: '取消', type: 'warning' }
+    )
+    const { rejectIntention } = await import('@/api/community')
+    await rejectIntention(msg.id, {})
+    msg.status = 2
     ElMessage.info('已婉拒该合作意向')
-  }).catch(() => {
-    // 用户取消操作
-  })
+  } catch {
+    // 用户取消
+  }
 }
 
 function replyComment(msg) {
@@ -243,19 +263,14 @@ function replyComment(msg) {
       inputPattern: /\S+/,
       inputErrorMessage: '回复内容不能为空'
     }
-  ).then(({ value }) => {
-    // 添加回复
-    if (!msg.replies) {
-      msg.replies = []
+  ).then(async ({ value }) => {
+    try {
+      await import('@/api/community').then(m => m.replyComment(msg.id, { content: value }))
+      ElMessage.success('回复已发送')
+      loadMyComments() // 重新加载留言
+    } catch {
+      ElMessage.error('回复失败，请重试')
     }
-    msg.replies.push({
-      id: Date.now(),
-      name: '光谷社区（您）',
-      avatar: 'https://ui-avatars.com/api/?name=光谷&background=1a56db&color=fff',
-      text: value,
-      time: new Date().toLocaleString()
-    })
-    ElMessage.success('回复已发送')
   }).catch(() => {
     // 用户取消操作
   })
@@ -367,6 +382,14 @@ function replyComment(msg) {
 .reply-count {
   font-size: 12px;
   color: #909399;
+}
+
+.msg-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  object-fit: cover;
 }
 
 .reply-list {

@@ -1,5 +1,5 @@
 <template>
-  <div class="qrcode-page">
+  <div class="qrcode-page" v-loading="loading">
     <h2>我的渠道码</h2>
     <div class="qrcode-layout">
       <div class="qrcode-card">
@@ -7,7 +7,7 @@
           <div class="logo-sm">邻</div>
           <div>
             <div class="brand-nm">邻盟招商大使</div>
-            <div class="amb-nm">李招商 专属渠道</div>
+            <div class="amb-nm">{{ homeData.real_name || '招商大使' }} 专属渠道</div>
           </div>
         </div>
         <div class="qr-body">
@@ -19,7 +19,7 @@
               <div class="qr-center-logo">邻</div>
             </div>
           </div>
-          <div class="qr-code-text">AMB2024001</div>
+          <div class="qr-code-text">{{ qrData.qr_code || '加载中...' }}</div>
           <p class="qr-tip">商家扫码注册并缴费，您将获得提成奖励</p>
         </div>
         <div class="qr-footer">
@@ -42,7 +42,7 @@
 
         <div class="link-box">
           <div class="link-label">专属注册链接：</div>
-          <div class="link-text">https://linmeng.com/register?code=AMB2024001</div>
+          <div class="link-text">https://linmeng.com/register?code={{ qrData.qr_code || '' }}</div>
         </div>
 
         <div class="tips-box">
@@ -57,16 +57,16 @@
 
         <div class="stats-mini">
           <div class="mini-stat">
-            <div class="ms-val">38</div>
-            <div class="ms-lab">扫码注册</div>
+            <div class="ms-val">{{ homeData.total_merchants || 0 }}</div>
+            <div class="ms-lab">累计发展</div>
           </div>
           <div class="mini-stat">
-            <div class="ms-val">32</div>
-            <div class="ms-lab">成功缴费</div>
+            <div class="ms-val">¥{{ Number(homeData.total_commission || 0).toLocaleString() }}</div>
+            <div class="ms-lab">累计提成</div>
           </div>
           <div class="mini-stat">
-            <div class="ms-val">84%</div>
-            <div class="ms-lab">转化率</div>
+            <div class="ms-val">¥{{ Number(homeData.pending_commission || 0).toLocaleString() }}</div>
+            <div class="ms-lab">待结算</div>
           </div>
         </div>
       </div>
@@ -75,11 +75,39 @@
 </template>
 
 <script setup>
+import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Download, CopyDocument } from '@element-plus/icons-vue'
-function downloadQR() { ElMessage.success('二维码图片已保存到下载文件夹') }
+import { getQrCode, getHomeData } from '@/api/ambassador'
+
+const qrData = ref({})
+const homeData = ref({})
+const loading = ref(false)
+
+async function loadData() {
+  loading.value = true
+  try {
+    const [qrRes, homeRes] = await Promise.all([
+      getQrCode(),
+      getHomeData()
+    ])
+    qrData.value = qrRes.data || {}
+    homeData.value = homeRes.data || {}
+  } catch {
+    ElMessage.error('加载渠道码信息失败')
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(() => { loadData() })
+
+function downloadQR() {
+  ElMessage.success('请长按保存上方二维码图片')
+}
 function copyLink() {
-  navigator.clipboard?.writeText('https://linmeng.com/register?code=AMB2024001')
+  const code = qrData.value.qr_code || 'AMB000000'
+  navigator.clipboard?.writeText(`https://linmeng.com/register?code=${code}`)
   ElMessage.success('注册链接已复制到剪贴板')
 }
 </script>

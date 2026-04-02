@@ -1,10 +1,10 @@
 <template>
-  <div class="community-home">
+  <div class="community-home" v-loading="loading">
     <!-- 欢迎横幅 -->
     <div class="welcome-banner">
       <div class="welcome-content">
-        <h1>欢迎回来，张主任！</h1>
-        <p>阳光花园社区今日有 <strong>3</strong> 个新商家资源与您匹配</p>
+        <h1>欢迎回来，{{ profile.real_name || profile.community_name || '社区用户' }}！</h1>
+        <p>{{ profile.community_name || '阳光花园社区' }} 今日有 <strong>{{ matchedResources.length }}</strong> 个新商家资源与您匹配</p>
       </div>
       <el-button type="primary" size="large" @click="$router.push('/community/demands/publish')">
         <el-icon><Plus /></el-icon>
@@ -13,7 +13,7 @@
     </div>
 
     <!-- 广告轮播 -->
-    <div class="banner-section">
+    <div class="banner-section" v-if="banners.length">
       <el-carousel height="200px" :interval="5000" arrow="always">
         <el-carousel-item v-for="(banner, index) in banners" :key="index">
           <div class="banner-item" :style="{ background: banner.bg }">
@@ -34,37 +34,37 @@
           <el-icon :size="24"><Document /></el-icon>
         </div>
         <div class="stat-info">
-          <div class="stat-value">12</div>
+          <div class="stat-value">{{ stats.demands }}</div>
           <div class="stat-label">我的需求</div>
         </div>
       </el-card>
-      
+
       <el-card class="stat-card">
         <div class="stat-icon" style="background: #f0f9ff; color: #36cfc9;">
           <el-icon :size="24"><Connection /></el-icon>
         </div>
         <div class="stat-info">
-          <div class="stat-value">8</div>
+          <div class="stat-value">{{ stats.intentions }}</div>
           <div class="stat-label">对接中</div>
         </div>
       </el-card>
-      
+
       <el-card class="stat-card">
         <div class="stat-icon" style="background: #f6ffed; color: #52c41a;">
           <el-icon :size="24"><CircleCheck /></el-icon>
         </div>
         <div class="stat-info">
-          <div class="stat-value">5</div>
+          <div class="stat-value">{{ stats.completed }}</div>
           <div class="stat-label">已完成</div>
         </div>
       </el-card>
-      
+
       <el-card class="stat-card">
         <div class="stat-icon" style="background: #fff7e6; color: #fa8c16;">
           <el-icon :size="24"><Present /></el-icon>
         </div>
         <div class="stat-info">
-          <div class="stat-value">¥1,000</div>
+          <div class="stat-value">{{ stats.rewards }}</div>
           <div class="stat-label">累计奖励</div>
         </div>
       </el-card>
@@ -79,75 +79,51 @@
         </h2>
         <el-link type="primary" @click="$router.push('/community/resources')">查看全部 →</el-link>
       </div>
-      
+
       <div class="resource-list">
-        <el-card 
-          v-for="resource in matchedResources" 
+        <el-empty v-if="matchedResources.length === 0" description="暂无推荐资源" />
+        <el-card
+          v-for="resource in matchedResources"
           :key="resource.id"
           class="resource-card"
           shadow="hover"
         >
           <div class="match-score">
-            <!-- 星级优先显示 -->
             <div class="stars-display">
-              <el-icon v-for="n in 5" :key="n" :class="['star-icon', { filled: n <= (resource.merchant?.starRating || 0) }]">
+              <el-icon v-for="n in 5" :key="n" :class="['star-icon', { filled: n <= (resource.star_rating || 0) }]">
                 <StarFilled />
               </el-icon>
             </div>
             <div class="hearts">
-              <span v-for="n in 5" :key="n" :class="['heart', { filled: n <= resource.matchScore }]">♥</span>
+              <span v-for="n in 5" :key="n" :class="['heart', { filled: n <= (resource.matchHearts || 0) }]">♥</span>
             </div>
-            <span class="score-text">{{ resource.matchScore * 20 }}%匹配</span>
+            <span class="score-text">{{ resource.matchScore ? resource.matchScore * 20 + '%匹配' : '' }}</span>
           </div>
-          
+
           <div class="resource-header">
-            <el-avatar :size="48" :src="resource.merchant?.logo" @error="() => true">
+            <el-avatar :size="48" :src="resource.merchant_logo" @error="() => true">
               <el-icon :size="24"><Shop /></el-icon>
             </el-avatar>
             <div class="merchant-info">
-              <h4 class="merchant-name-link" @click.stop="viewMerchantDetail(resource)">{{ resource.merchant?.name }}</h4>
-              <el-tag size="small" type="info">{{ resource.type }}</el-tag>
+              <h4 class="merchant-name-link" @click.stop="viewMerchantDetail(resource)">{{ resource.company_name }}</h4>
+              <el-tag size="small" type="info">{{ resource.resource_type }}</el-tag>
             </div>
           </div>
-          
+
           <p class="resource-desc">{{ resource.content }}</p>
-          
+
           <div class="resource-tags">
-            <el-tag v-for="tag in resource.merchant?.tags" :key="tag" size="small" effect="plain">
+            <el-tag v-for="tag in (resource.tags || [])" :key="tag" size="small" effect="plain">
               {{ tag }}
             </el-tag>
           </div>
-          
+
           <div class="resource-actions">
             <el-button type="primary" @click="contactMerchant(resource)">立即联系</el-button>
-            <el-button text @click="viewMerchantDetail(resource)">查看详情</el-button>
+            <el-button text @click="router.push('/community/resources/' + resource.id)">查看详情</el-button>
           </div>
         </el-card>
       </div>
-    </div>
-
-    <!-- 最新需求动态 -->
-    <div class="section">
-      <div class="section-header">
-        <h2>
-          <el-icon><TrendCharts /></el-icon>
-          社区最新动态
-        </h2>
-      </div>
-      
-      <el-timeline>
-        <el-timeline-item
-          v-for="(activity, index) in activities"
-          :key="index"
-          :type="activity.type"
-          :icon="activity.icon"
-          :timestamp="activity.time"
-          class="timeline-item-clickable"
-          @click="viewActivityDetail(activity)"
-        >
-          {{ activity.content }}
-        </el-timeline-item>
-      </el-timeline>
     </div>
   </div>
 </template>
@@ -156,49 +132,86 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Shop, StarFilled } from '@element-plus/icons-vue'
+import { Shop, StarFilled, Document, Connection, CircleCheck, Present, Plus } from '@element-plus/icons-vue'
+import { getBanners, getRecommendResources, getProfile, getMyDemands, getMyIntentions } from '@/api/community'
 
 const router = useRouter()
 
-const banners = [
-  { title: '邻盟平台上线啦！', desc: '连接社区与商家，共创美好生活', btn: '了解更多', bg: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' },
-  { title: '发布需求，精准匹配', desc: '填写越详细，匹配越精准', btn: '立即发布', bg: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' },
-  { title: '撮合成功，物资奖励', desc: '每笔成功撮合，平台捐赠200元物资', btn: '查看详情', bg: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)' },
-  { title: '招商大使火热招募', desc: '发展商家会员，获取20%提成', btn: '加入我们', bg: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)' }
-]
-
+const banners = ref([])
 const matchedResources = ref([])
+const activities = ref([])
+const profile = ref({})
+const stats = ref({ demands: 0, intentions: 0, completed: 0, rewards: 0 })
+const loading = ref(false)
 
-const mockResources = [
-  { id: 1, type: '资金赞助', merchant: { name: '星巴克咖啡', logo: '', tags: ['社区建设', '志愿服务'], starRating: 5 }, content: '为社区文化、亲子类活动提供资金支持，资金1万~5万元', matchScore: 5 },
-  { id: 2, type: '专业服务', merchant: { name: '新东方教育', logo: '', tags: ['教育培训', '亲子活动'], starRating: 5 }, content: '专业讲师进社区，开展亲子教育主题讲座', matchScore: 4 },
-  { id: 3, type: '物资提供', merchant: { name: '华润万家', logo: '', tags: ['社区建设', '节庆活动'], starRating: 4 }, content: '在春节、端午、中秋等传统节日提供物资捐赠', matchScore: 3 },
-  { id: 4, type: '专业服务', merchant: { name: '京东健康', logo: '', tags: ['老年服务', '健康医疗'], starRating: 4 }, content: '执业医师到社区开展义诊，提供免费检测', matchScore: 5 }
+const bannerColors = [
+  'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+  'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+  'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+  'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)'
 ]
-
-const activities = ref([
-  { id: 1, content: '星巴克咖啡对"六一儿童节亲子嘉年华"表达了合作意向', time: '10分钟前', type: 'primary', icon: 'Star', demand: '六一儿童节亲子嘉年华活动赞助' },
-  { id: 2, content: '新东方教育发布了新的教育资源', time: '30分钟前', type: 'success', icon: 'Plus', demand: '' },
-  { id: 3, content: '您发布的"社区健康义诊活动"已通过审核', time: '1小时前', type: 'warning', icon: 'Check', demand: '社区健康义诊活动' },
-  { id: 4, content: '京东健康与您完成了合作对接', time: '昨天', type: 'success', icon: 'CircleCheck', demand: '' }
-])
 
 onMounted(async () => {
-  matchedResources.value = mockResources.slice(0, 4)
+  loading.value = true
+  try {
+    const [bannerRes, resourceRes, profileRes, demandsRes, intentionsRes] = await Promise.allSettled([
+      getBanners(),
+      getRecommendResources(),
+      getProfile(),
+      getMyDemands({ pageSize: 1 }),
+      getMyIntentions({ pageSize: 50 })
+    ])
+
+    if (bannerRes.status === 'fulfilled') {
+      banners.value = (bannerRes.value.data || []).map((b, i) => ({
+        title: b.title || '邻盟平台',
+        desc: b.description || '连接社区与商家，共创美好生活',
+        btn: '了解更多',
+        bg: bannerColors[i % bannerColors.length]
+      }))
+      if (banners.value.length === 0) {
+        banners.value = [
+          { title: '邻盟平台上线啦！', desc: '连接社区与商家，共创美好生活', btn: '了解更多', bg: bannerColors[0] },
+          { title: '发布需求，精准匹配', desc: '填写越详细，匹配越精准', btn: '立即发布', bg: bannerColors[1] }
+        ]
+      }
+    }
+
+    if (resourceRes.status === 'fulfilled') {
+      matchedResources.value = (resourceRes.value.data || []).slice(0, 4)
+    }
+
+    if (profileRes.status === 'fulfilled') {
+      profile.value = profileRes.value.data || {}
+    }
+
+    if (demandsRes.status === 'fulfilled') {
+      stats.value.demands = demandsRes.value.data?.pagination?.total || demandsRes.value.data?.total || 0
+    }
+
+    if (intentionsRes.status === 'fulfilled') {
+      const list = intentionsRes.value.data?.list || intentionsRes.value.data || []
+      stats.value.intentions = list.filter(i => i.status === 0).length
+      stats.value.completed = list.filter(i => i.status === 1).length
+    }
+  } catch {
+    // ignore errors, show empty state
+  } finally {
+    loading.value = false
+  }
 })
 
 const contactMerchant = (resource) => {
-  ElMessage.success(`已向${resource.merchant?.name}发送合作意向`)
+  ElMessage.success(`已向${resource.company_name}发送合作意向`)
 }
 
 const viewMerchantDetail = (resource) => {
-  router.push(`/community/merchants/${resource.id}`)
+  router.push(`/community/merchants/${resource.merchant_id}`)
 }
 
 const viewActivityDetail = (activity) => {
-  if (activity.demand) {
-    ElMessage.success(`查看详情：${activity.demand}`)
-    router.push('/community/demands')
+  if (activity.demandId) {
+    router.push(`/community/demands/${activity.demandId}`)
   } else {
     ElMessage.info('该动态暂无详细内容')
   }
@@ -402,18 +415,6 @@ const viewActivityDetail = (activity) => {
 .merchant-name-link:hover {
   color: #66b1ff;
   text-decoration: underline;
-}
-
-.timeline-item-clickable {
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.timeline-item-clickable:hover {
-  background: #f5f7fa;
-  padding: 4px 8px;
-  margin: -4px -8px;
-  border-radius: 4px;
 }
 
 @media (max-width: 768px) {

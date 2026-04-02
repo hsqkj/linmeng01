@@ -46,6 +46,7 @@
             type="success" 
             size="large" 
             class="login-btn"
+            :loading="loading"
             @click="login"
           >
             登录
@@ -75,6 +76,7 @@ import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Phone, Key } from '@element-plus/icons-vue'
+import { merchantLogin } from '@/api/merchant'
 
 const router = useRouter()
 
@@ -86,13 +88,15 @@ const form = reactive({
 
 const counting = ref(false)
 const countdown = ref(60)
+const loading = ref(false)
 
 const sendCode = () => {
+  if (!form.phone) { ElMessage.warning('请先输入手机号'); return }
   if (counting.value) return
   form.code = '123456'
+  ElMessage.success('验证码已发送（测试版：123456）')
   counting.value = true
   countdown.value = 60
-  
   const timer = setInterval(() => {
     countdown.value--
     if (countdown.value <= 0) {
@@ -102,21 +106,32 @@ const sendCode = () => {
   }, 1000)
 }
 
-const login = () => {
-  // 显示基本信息补充提醒
-  ElMessage({
-    type: 'warning',
-    title: '请补充基本信息',
-    message: '为了更好地展示商家形象并获得更多合作机会，请前往个人中心完善商家详细信息。',
-    duration: 5000,
-    offset: 20
-  })
-  router.push('/merchant')
+const login = async () => {
+  if (!form.phone || !form.code) {
+    ElMessage.warning('请填写手机号和验证码')
+    return
+  }
+  loading.value = true
+  try {
+    const res = await merchantLogin({ phone: form.phone, code: form.code })
+    localStorage.setItem('merchant_token', res.data.token)
+    localStorage.setItem('merchant_info', JSON.stringify(res.data.merchant))
+    ElMessage.success('登录成功！')
+    // 如果商家信息不完整，提示补充
+    if (!res.data.merchant.company_name || !res.data.merchant.description) {
+      setTimeout(() => {
+        ElMessage.warning({ message: '请前往个人中心完善商家信息，提升匹配机会！', duration: 5000 })
+      }, 1000)
+    }
+    router.push('/merchant')
+  } catch (e) {
+    // 错误已在request拦截器中处理
+  } finally {
+    loading.value = false
+  }
 }
 
-const goBack = () => {
-  router.push('/')
-}
+const goBack = () => { router.push('/') }
 </script>
 
 <style scoped>

@@ -2,22 +2,22 @@
   <div class="page">
     <h2>商家中心</h2>
 
-    <el-row :gutter="20">
+    <el-row :gutter="20" v-loading="loading" element-loading-text="加载中...">
       <!-- 左侧商家信息卡 -->
       <el-col :span="8">
         <div class="profile-card">
           <div class="avatar-area">
-            <el-avatar :size="80" src="https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png">
+            <el-avatar :size="80" :src="profile.logo">
               <el-icon :size="40"><Shop /></el-icon>
             </el-avatar>
-            <div class="merchant-name">{{ profile.merchantName }}</div>
-            <div class="merchant-type">{{ profile.merchantType }}</div>
-            <el-tag type="warning" style="margin-top:8px">金牌会员 Lv3</el-tag>
+            <div class="merchant-name">{{ profile.company_name }}</div>
+            <div class="merchant-type">{{ profile.industry || '未填写' }}</div>
+            <el-tag type="warning" style="margin-top:8px">{{ memberLevelName[profile.member_level] || '普通会员' }}</el-tag>
           </div>
           <div class="stats-row">
-            <div class="stat-item"><div class="stat-val">{{ profile.resourceCount }}</div><div class="stat-label">发布资源</div></div>
-            <div class="stat-item"><div class="stat-val">{{ profile.matchings }}</div><div class="stat-label">撮合成功</div></div>
-            <div class="stat-item"><div class="stat-val">{{ profile.viewCount }}</div><div class="stat-label">总浏览</div></div>
+            <div class="stat-item"><div class="stat-val">{{ stats.resourceCount }}</div><div class="stat-label">发布资源</div></div>
+            <div class="stat-item"><div class="stat-val">{{ stats.matchings }}</div><div class="stat-label">撮合成功</div></div>
+            <div class="stat-item"><div class="stat-val">{{ profile.view_count || 0 }}</div><div class="stat-label">总浏览</div></div>
           </div>
           <el-button type="primary" style="width:100%;margin-top:12px" @click="startEdit">编辑商家资料</el-button>
         </div>
@@ -35,74 +35,64 @@
           <el-tabs v-model="infoTab">
             <el-tab-pane label="基本信息" name="basic">
               <el-descriptions :column="2" border>
-                <el-descriptions-item label="企业名称">{{ profile.merchantName }}</el-descriptions-item>
-                <el-descriptions-item label="行业分类">{{ profile.industryCategory || '未填写' }}</el-descriptions-item>
-                <el-descriptions-item label="企业规模">{{ profile.scale }}</el-descriptions-item>
-                <el-descriptions-item label="成立时间">{{ profile.foundYear }}</el-descriptions-item>
-                <el-descriptions-item label="联系人">{{ profile.contactName }}</el-descriptions-item>
+                <el-descriptions-item label="企业名称">{{ profile.company_name }}</el-descriptions-item>
+                <el-descriptions-item label="行业分类">{{ profile.industry || '未填写' }}</el-descriptions-item>
+                <el-descriptions-item label="企业规模">{{ profile.scale || '未填写' }}</el-descriptions-item>
+                <el-descriptions-item label="联系人">{{ profile.contact_name || '未填写' }}</el-descriptions-item>
                 <el-descriptions-item label="联系电话">{{ profile.phone }}</el-descriptions-item>
-                <el-descriptions-item label="企业地址" :span="2">{{ profile.address }}</el-descriptions-item>
+                <el-descriptions-item label="企业地址" :span="2">{{ profile.address || '未填写' }}</el-descriptions-item>
                 <el-descriptions-item label="Logo">
-                  <el-avatar :size="40" src="https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png" />
+                  <el-avatar :size="40" :src="profile.logo" />
                 </el-descriptions-item>
-                <el-descriptions-item label="注册时间">{{ profile.registerTime }}</el-descriptions-item>
-                <el-descriptions-item label="审核状态"><el-tag type="success" size="small">已通过</el-tag></el-descriptions-item>
-                <el-descriptions-item label="企业简介" :span="2">{{ profile.intro }}</el-descriptions-item>
+                <el-descriptions-item label="审核状态">
+                  <el-tag :type="profile.status === 1 ? 'success' : 'warning'" size="small">
+                    {{ profile.status === 1 ? '已通过' : '待审核' }}
+                  </el-tag>
+                </el-descriptions-item>
+                <el-descriptions-item label="企业简介" :span="2">{{ profile.description || '暂无简介' }}</el-descriptions-item>
               </el-descriptions>
             </el-tab-pane>
 
             <el-tab-pane label="图文介绍" name="gallery">
               <p style="color:#909399;font-size:13px;margin-bottom:12px">可上传商品图文介绍、成功案例等，让社区更了解您的品牌</p>
-              <el-empty v-if="!profile.gallery || profile.gallery.length === 0" description="暂无图文介绍" />
+              <el-empty v-if="!galleryList.length" description="暂无图文介绍" :image-size="60" />
               <div v-else class="gallery-grid">
-                <div v-for="(img, idx) in profile.gallery" :key="idx" class="gallery-item">
-                  <el-image :src="img.url" fit="cover" style="width:100%;height:120px;border-radius:6px" />
-                  <div class="gallery-label">{{ img.label }}</div>
+                <div v-for="(img, idx) in galleryList" :key="idx" class="gallery-item">
+                  <el-image :src="img" fit="cover" style="width:100%;height:120px;border-radius:6px" />
+                  <div class="gallery-label">{{ idx + 1 }}</div>
                 </div>
               </div>
               <el-button type="primary" text style="margin-top:12px" @click="startEdit">添加/编辑图文</el-button>
             </el-tab-pane>
 
-            <el-tab-pane label="成功案例" name="cases">
-              <p style="color:#909399;font-size:13px;margin-bottom:12px">展示过往社区合作案例，增强社区信任</p>
-              <el-empty v-if="!profile.cases || profile.cases.length === 0" description="暂无成功案例" />
-              <div v-else class="cases-list">
-                <div v-for="c in profile.cases" :key="c.title" class="case-item">
-                  <div class="case-title">{{ c.title }}</div>
-                  <div class="case-desc">{{ c.desc }}</div>
-                  <div class="case-tags">
-                    <el-tag v-for="t in c.tags" :key="t" size="small" style="margin:2px">{{ t }}</el-tag>
-                  </div>
-                </div>
+            <el-tab-pane label="我的标签" name="tags">
+              <p style="color:#909399;font-size:13px;margin-bottom:12px">选择与您的业务相关的标签，帮助社区更精准匹配</p>
+              <div style="display:flex;flex-wrap:wrap;gap:8px">
+                <el-tag v-for="tag in (profile.tags ? profile.tags.split(',') : [])" :key="tag" type="primary" effect="light" style="margin:4px">{{ tag }}</el-tag>
+                <span v-if="!profile.tags" style="color:#909399;font-size:13px">暂无标签</span>
               </div>
-              <el-button type="primary" text style="margin-top:12px" @click="startEdit">添加/编辑案例</el-button>
+              <el-button type="primary" text style="margin-top:12px" @click="startEdit">编辑标签</el-button>
             </el-tab-pane>
 
-            <el-tab-pane label="专家介绍" name="experts">
-              <p style="color:#909399;font-size:13px;margin-bottom:12px">展示可提供专业服务的人员信息</p>
-              <el-empty v-if="!profile.experts || profile.experts.length === 0" description="暂无专家介绍" />
-              <div v-else class="experts-list">
-                <div v-for="e in profile.experts" :key="e.name" class="expert-item">
-                  <el-avatar :size="48" :src="e.avatar"><el-icon><User /></el-icon></el-avatar>
-                  <div class="expert-info">
-                    <div class="expert-name">{{ e.name }} <el-tag size="small" type="info">{{ e.title }}</el-tag></div>
-                    <div class="expert-desc">{{ e.desc }}</div>
+            <el-tab-pane label="会员权益" name="member">
+              <div class="member-info" v-if="profile.member_level > 0">
+                <div class="member-header">
+                  <el-tag type="warning" size="large">{{ memberLevelName[profile.member_level] || '普通会员' }}</el-tag>
+                  <span style="color:#909399;font-size:13px;margin-left:8px">有效期至：{{ profile.member_expire_at || '长期' }}</span>
+                </div>
+                <div class="benefit-grid">
+                  <div class="benefit-item" v-for="b in memberBenefits" :key="b.title">
+                    <div class="benefit-icon">{{ b.icon }}</div>
+                    <div class="benefit-text">{{ b.title }}</div>
                   </div>
                 </div>
+                <el-button type="primary" style="margin-top:16px" @click="$router.push('/merchant/member')">升级会员</el-button>
               </div>
-              <el-button type="primary" text style="margin-top:12px" @click="startEdit">添加/编辑专家</el-button>
-            </el-tab-pane>
-
-            <el-tab-pane label="社会职务" name="duties">
-              <p style="color:#909399;font-size:13px;margin-bottom:12px">展示企业担任的社会职务、荣誉资质等</p>
-              <el-empty v-if="!profile.duties || profile.duties.length === 0" description="暂无社会职务信息" />
               <div v-else>
-                <div v-for="d in profile.duties" :key="d" class="duty-item">
-                  <el-icon color="#67C23A"><CircleCheck /></el-icon>
-                  <span>{{ d }}</span>
-                </div>
+                <el-empty description="您当前是普通会员，升级后可享受更多权益" :image-size="60">
+                  <el-button type="primary" @click="$router.push('/merchant/member')">立即升级</el-button>
+                </el-empty>
               </div>
-              <el-button type="primary" text style="margin-top:12px" @click="startEdit">添加/编辑职务</el-button>
             </el-tab-pane>
           </el-tabs>
         </el-card>
@@ -120,13 +110,13 @@
             <el-row :gutter="16">
               <el-col :span="12">
                 <el-form-item label="企业名称" required>
-                  <el-input v-model="editForm.merchantName" />
+                  <el-input v-model="editForm.company_name" />
                 </el-form-item>
               </el-col>
               <el-col :span="12">
                 <el-form-item label="行业分类">
-                  <el-select v-model="editForm.industryCategory" placeholder="请选择行业分类" style="width:100%" clearable>
-                    <el-option v-for="t in merchantTypes" :key="t" :label="t" :value="t" />
+                  <el-select v-model="editForm.industry" placeholder="请选择行业分类" style="width:100%" clearable>
+                    <el-option v-for="t in industryTypes" :key="t" :label="t" :value="t" />
                   </el-select>
                 </el-form-item>
               </el-col>
@@ -136,13 +126,8 @@
                 </el-form-item>
               </el-col>
               <el-col :span="12">
-                <el-form-item label="成立时间">
-                  <el-date-picker v-model="editForm.foundYear" type="year" style="width:100%" placeholder="选择年份" />
-                </el-form-item>
-              </el-col>
-              <el-col :span="12">
-                <el-form-item label="联系人" required>
-                  <el-input v-model="editForm.contactName" />
+                <el-form-item label="联系人">
+                  <el-input v-model="editForm.contact_name" />
                 </el-form-item>
               </el-col>
               <el-col :span="12">
@@ -157,68 +142,25 @@
               </el-col>
               <el-col :span="24">
                 <el-form-item label="企业简介">
-                  <el-input v-model="editForm.intro" type="textarea" :rows="3" placeholder="简要介绍企业主营业务、优势等..." />
+                  <el-input v-model="editForm.description" type="textarea" :rows="3" placeholder="简要介绍企业主营业务、优势等..." />
                 </el-form-item>
               </el-col>
             </el-row>
 
-            <el-divider content-position="left">图文介绍（可上传多张商品/品牌图片）</el-divider>
-            <el-form-item>
-              <div class="gallery-edit">
-                <div v-for="(img, idx) in editForm.gallery" :key="idx" class="gallery-edit-item">
-                  <el-input v-model="img.label" placeholder="图片说明" style="margin-bottom:4px;width:200px" />
-                  <div class="gallery-img-placeholder">{{ img.label || '图片' }}</div>
-                  <el-button type="danger" size="small" text @click="editForm.gallery.splice(idx,1)">删除</el-button>
-                </div>
-                <el-button type="primary" text @click="editForm.gallery.push({label:'', url:''})">+ 添加图片</el-button>
-              </div>
-            </el-form-item>
-
-            <el-divider content-position="left">成功案例</el-divider>
-            <el-form-item v-for="(c, idx) in editForm.cases" :key="idx">
-              <div class="case-edit-item">
-                <el-input v-model="c.title" placeholder="案例标题" style="margin-bottom:4px" />
-                <el-input v-model="c.desc" type="textarea" :rows="2" placeholder="案例描述" style="margin-bottom:4px" />
-                <el-button type="danger" size="small" text @click="editForm.cases.splice(idx,1)">删除案例</el-button>
-              </div>
-            </el-form-item>
-            <el-form-item>
-              <el-button type="primary" text @click="editForm.cases.push({title:'',desc:'',tags:[]})">+ 添加案例</el-button>
-            </el-form-item>
-
-            <el-divider content-position="left">专家介绍</el-divider>
-            <el-form-item v-for="(e, idx) in editForm.experts" :key="idx">
-              <div class="expert-edit-item">
-                <el-row :gutter="8">
-                  <el-col :span="8"><el-input v-model="e.name" placeholder="专家姓名" /></el-col>
-                  <el-col :span="8"><el-input v-model="e.title" placeholder="职务/头衔" /></el-col>
-                  <el-col :span="8"><el-button type="danger" size="small" @click="editForm.experts.splice(idx,1)">删除</el-button></el-col>
-                </el-row>
-                <el-input v-model="e.desc" type="textarea" :rows="2" placeholder="专家简介" style="margin-top:8px" />
-              </div>
-            </el-form-item>
-            <el-form-item>
-              <el-button type="primary" text @click="editForm.experts.push({name:'',title:'',desc:'',avatar:''})">+ 添加专家</el-button>
-            </el-form-item>
-
-            <el-divider content-position="left">社会职务</el-divider>
-            <el-form-item>
-              <div class="duties-edit">
-                <el-tag v-for="(d, idx) in editForm.duties" :key="idx" style="margin:4px" closable @close="editForm.duties.splice(idx,1)">{{ d }}</el-tag>
-                <el-input v-model="newDuty" placeholder="输入后回车添加" style="width:200px;margin:4px" @keyup.enter="addDuty" />
-              </div>
-            </el-form-item>
-
             <el-divider content-position="left">我的标签</el-divider>
             <el-form-item label="选择标签">
               <div class="tag-selector">
-                <el-check-tag v-for="tag in allTags" :key="tag" :checked="editForm.tags.includes(tag)" @change="toggleTag(tag)" style="margin:4px">{{ tag }}</el-check-tag>
+                <el-check-tag
+                  v-for="tag in allTags" :key="tag"
+                  :checked="editForm.tagsList.includes(tag)"
+                  @change="toggleTag(tag)" style="margin:4px"
+                >{{ tag }}</el-check-tag>
               </div>
             </el-form-item>
 
             <div style="text-align:right;margin-top:16px">
               <el-button @click="editing=false">取消</el-button>
-              <el-button type="primary" @click="saveProfile">保存资料</el-button>
+              <el-button type="primary" @click="saveProfile" :loading="saving">保存资料</el-button>
             </div>
           </el-form>
         </el-card>
@@ -228,87 +170,122 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Shop, Edit, User, CircleCheck } from '@element-plus/icons-vue'
+import { Shop, Edit } from '@element-plus/icons-vue'
+import { getProfile, updateProfile, getMyResources } from '@/api/merchant'
 
+const loading = ref(true)
+const saving = ref(false)
 const editing = ref(false)
 const infoTab = ref('basic')
-const newDuty = ref('')
-const merchantTypes = [
+const profile = ref({})
+const stats = ref({ resourceCount: 0, matchings: 0 })
+
+const memberLevelName = { 0: '普通会员', 1: '普通会员', 2: '银牌会员', 3: '金牌会员', 4: '铂金会员', 5: '钻石会员' }
+
+const industryTypes = [
   '教育培训', '医院诊所', '药店', '餐饮小吃', '生鲜水果', '美业', '保健养生', '体育健身', '银行保险', '电信服务',
   '商超零售', '快递物流', '家政服务', '废旧回收', '五金建材', '家居装修', '家纺布艺', '电子电器', '房产中介', '汽车服务',
   '旅游服务', '鲜花礼品', '电影演出', '娱乐休闲', '服装服饰', '酒店宾馆', '茶艺咖啡', '宠物服务', '眼镜', '酒水饮料',
   '办公用品', '设备租赁', '社工服务', '养老服务', '新闻媒体', '自媒体', 'IT互联网', '软件开发', '图文广告',
   '电子电器维修', '家居维修', '美发', '建筑工程', '其他'
 ]
+
 const allTags = ['亲子活动', '老年服务', '文化活动', '体育赛事', '教育培训', '健康医疗', '科技科普', '节庆活动', '环保公益', '商业推广', '社区建设', '志愿服务']
 
-const profile = reactive({
-  merchantName: '星巴克咖啡',
-  industryCategory: '餐饮小吃',
-  scale: '10万~500人（全国连锁）',
-  foundYear: '1999年',
-  contactName: '李经理',
-  phone: '138-1234-5678',
-  address: '上海市浦东新区花木路888号',
-  intro: '星巴克咖啡是美国连锁咖啡品牌，致力于为社区居民提供优质咖啡文化体验，积极参与社区公益活动。',
-  registerTime: '2026-01-08',
-  resourceCount: 8,
-  matchings: 5,
-  viewCount: 1234,
-  gallery: [
-    { url: '', label: '星巴克门店环境' },
-    { url: '', label: '社区咖啡品鉴活动' }
-  ],
-  cases: [
-    { title: '阳光花园社区咖啡文化节', desc: '2025年端午节，为社区提供咖啡饮品赞助200份，活动参与居民300+', tags: ['亲子活动', '节庆活动'] },
-    { title: '社区志愿者感谢日', desc: '为社区志愿者提供免费咖啡券50张，获得居民一致好评', tags: ['志愿服务', '社区建设'] }
-  ],
-  experts: [
-    { name: '张咖啡', title: '首席咖啡师', desc: '从业12年，擅长各类咖啡品鉴与文化推广', avatar: '' },
-    { name: '李讲师', title: '社区活动策划', desc: '负责星巴克社区活动策划与执行，经验丰富', avatar: '' }
-  ],
-  duties: [
-    '花木街道商会会员',
-    '浦东新区社区公益合作伙伴',
-    '上海连锁经营协会会员'
-  ],
-  tags: ['社区建设', '志愿服务', '商业推广', '文化活动']
+const memberBenefits = [
+  { icon: '🔍', title: '查看联系方式' },
+  { icon: '📊', title: '优先推荐' },
+  { icon: '💬', title: '无限留言' },
+  { icon: '🎁', title: '撮合奖励' }
+]
+
+const galleryList = computed(() => {
+  if (!profile.value.images) return []
+  return profile.value.images.split(',').filter(Boolean)
 })
 
-const editForm = reactive(JSON.parse(JSON.stringify(profile)))
-editForm.gallery = editForm.gallery.map(g => ({ ...g }))
-editForm.cases = editForm.cases.map(c => ({ ...c }))
-editForm.experts = editForm.experts.map(e => ({ ...e }))
+const editForm = ref({
+  company_name: '',
+  industry: '',
+  scale: '',
+  contact_name: '',
+  phone: '',
+  address: '',
+  description: '',
+  tagsList: []
+})
+
+async function loadProfile() {
+  loading.value = true
+  try {
+    const res = await getProfile()
+    profile.value = res.data || {}
+    // 同时加载资源数量
+    try {
+      const r = await getMyResources({ page: 1, pageSize: 1 })
+      stats.value.resourceCount = r.data?.total || 0
+    } catch {}
+  } catch {
+    ElMessage.error('加载商家资料失败')
+  } finally {
+    loading.value = false
+  }
+}
 
 function startEdit() {
-  Object.assign(editForm, JSON.parse(JSON.stringify(profile)))
-  editForm.gallery = (profile.gallery || []).map(g => ({ ...g }))
-  editForm.cases = (profile.cases || []).map(c => ({ ...c }))
-  editForm.experts = (profile.experts || []).map(e => ({ ...e }))
+  editForm.value = {
+    company_name: profile.value.company_name || '',
+    industry: profile.value.industry || '',
+    scale: profile.value.scale || '',
+    contact_name: profile.value.contact_name || '',
+    phone: profile.value.phone || '',
+    address: profile.value.address || '',
+    description: profile.value.description || '',
+    tagsList: profile.value.tags ? profile.value.tags.split(',').filter(Boolean) : []
+  }
   editing.value = true
   infoTab.value = 'basic'
 }
 
-function addDuty() {
-  if (newDuty.value.trim() && !editForm.duties.includes(newDuty.value.trim())) {
-    editForm.duties.push(newDuty.value.trim())
-    newDuty.value = ''
+function toggleTag(tag) {
+  const idx = editForm.value.tagsList.indexOf(tag)
+  if (idx >= 0) editForm.value.tagsList.splice(idx, 1)
+  else editForm.value.tagsList.push(tag)
+}
+
+async function saveProfile() {
+  if (!editForm.value.phone) {
+    ElMessage.warning('联系电话不能为空')
+    return
+  }
+  saving.value = true
+  try {
+    const data = {
+      company_name: editForm.value.company_name,
+      industry: editForm.value.industry,
+      company_type: editForm.value.scale, // scale 映射到 company_type
+      contact_name: editForm.value.contact_name,
+      phone: editForm.value.phone,
+      address: editForm.value.address,
+      description: editForm.value.description,
+      tags: editForm.value.tagsList.join(',')
+    }
+    await updateProfile(data)
+    profile.value = { ...profile.value, ...data }
+    editing.value = false
+    ElMessage.success('商家资料已保存')
+  } catch {
+    ElMessage.error('保存失败')
+  } finally {
+    saving.value = false
   }
 }
 
-function toggleTag(tag) {
-  const idx = editForm.tags.indexOf(tag)
-  if (idx >= 0) editForm.tags.splice(idx, 1)
-  else editForm.tags.push(tag)
-}
-
-function saveProfile() {
-  Object.assign(profile, JSON.parse(JSON.stringify(editForm)))
-  editing.value = false
-  ElMessage.success('商家资料已保存，等待平台审核后更新显示')
-}
+onMounted(() => {
+  loadProfile()
+})
 </script>
 
 <style scoped>
@@ -325,22 +302,11 @@ function saveProfile() {
 .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
 .gallery-item { text-align: center; }
 .gallery-label { font-size: 13px; color: #606266; margin-top: 6px; }
-.cases-list { display: flex; flex-direction: column; gap: 12px; }
-.case-item { background: #f5f7fa; border-radius: 8px; padding: 12px; }
-.case-title { font-weight: 600; margin-bottom: 4px; }
-.case-desc { font-size: 13px; color: #606266; margin-bottom: 8px; }
-.case-tags { display: flex; flex-wrap: wrap; }
-.experts-list { display: flex; flex-direction: column; gap: 12px; }
-.expert-item { display: flex; align-items: center; gap: 12px; }
-.expert-info { flex: 1; }
-.expert-name { font-weight: 600; display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
-.expert-desc { font-size: 13px; color: #606266; }
-.duty-item { display: flex; align-items: center; gap: 8px; padding: 6px 0; font-size: 14px; }
 .tag-selector { display: flex; flex-wrap: wrap; }
-.gallery-edit { display: flex; flex-wrap: wrap; gap: 12px; }
-.gallery-edit-item { display: flex; flex-direction: column; align-items: center; }
-.gallery-img-placeholder { width: 200px; height: 120px; background: #f5f7fa; border: 1px dashed #dcdfe6; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #909399; font-size: 13px; }
-.case-edit-item { background: #f5f7fa; border-radius: 8px; padding: 12px; margin-bottom: 8px; }
-.expert-edit-item { background: #f5f7fa; border-radius: 8px; padding: 12px; margin-bottom: 8px; }
-.duties-edit { display: flex; flex-wrap: wrap; align-items: center; }
+.member-info { padding: 8px 0; }
+.member-header { display: flex; align-items: center; margin-bottom: 16px; }
+.benefit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+.benefit-item { background: #f5f7fa; border-radius: 8px; padding: 12px; display: flex; align-items: center; gap: 8px; }
+.benefit-icon { font-size: 20px; }
+.benefit-text { font-size: 13px; font-weight: 500; }
 </style>

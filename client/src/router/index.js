@@ -38,6 +38,7 @@ const routes = [
       { path: 'demands/publish', name: 'PublishDemand', component: () => import('@/views/community/PublishDemand.vue') },
       { path: 'demands/batch', name: 'BatchImport', component: () => import('@/views/community/BatchImport.vue') },
       { path: 'resources', name: 'CommunityResources', component: () => import('@/views/community/Resources.vue') },
+      { path: 'resources/:id', name: 'CommunityResourceDetail', component: () => import('@/views/community/ResourceDetail.vue') },
       { path: 'merchants/:id', name: 'MerchantDetail', component: () => import('@/views/community/MerchantDetail.vue') },
       { path: 'profile', name: 'CommunityProfile', component: () => import('@/views/community/Profile.vue') },
       { path: 'messages', name: 'CommunityMessages', component: () => import('@/views/community/Messages.vue') },
@@ -62,6 +63,7 @@ const routes = [
     children: [
       { path: '', name: 'MerchantHome', component: () => import('@/views/merchant/Home.vue') },
       { path: 'resources', name: 'MerchantResources', component: () => import('@/views/merchant/Resources.vue') },
+      { path: 'resources/:id', name: 'ResourceDetail', component: () => import('@/views/merchant/ResourceDetail.vue') },
       { path: 'resources/publish', name: 'PublishResource', component: () => import('@/views/merchant/PublishResource.vue') },
       { path: 'demands', name: 'MerchantDemands', component: () => import('@/views/merchant/Demands.vue') },
       { path: 'demands/:id', name: 'DemandDetail', component: () => import('@/views/merchant/DemandDetail.vue') },

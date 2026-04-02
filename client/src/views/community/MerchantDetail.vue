@@ -99,7 +99,7 @@
             <h3>💬 留言与咨询（{{ comments.length }}条）</h3>
             <div class="comment-input" id="comment-area">
               <el-input v-model="commentText" placeholder="有意向合作？可以在这里留言咨询..." type="textarea" :rows="3" />
-              <el-button type="primary" @click="submitComment" style="margin-top:8px">发送留言</el-button>
+              <el-button type="primary" :loading="commentLoading" @click="submitComment" style="margin-top:8px">发送留言</el-button>
             </div>
             <div class="comment-list">
               <div class="comment-item" v-for="c in comments" :key="c.id">
@@ -233,7 +233,8 @@
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { ArrowLeft } from '@element-plus/icons-vue'
+import { ArrowLeft, StarFilled } from '@element-plus/icons-vue'
+import { getResourceComments, createResourceComment } from '@/api/community'
 
 const route = useRoute()
 const router = useRouter()
@@ -241,6 +242,7 @@ const commentText = ref('')
 const messageContent = ref('')
 const showMessageDialog = ref(false)
 const showFullMerchantDialog = ref(false)
+const commentLoading = ref(false)
 
 const levelTagType = {
   '普通会员': 'info',
@@ -339,20 +341,11 @@ onMounted(() => {
   if (merchantPool[id]) {
     currentMerchant.value = merchantPool[id]
   }
+  loadComments() // 加载留言列表
 })
 
-const comments = ref([
-  {
-    id: 1,
-    name: '阳光花园社区',
-    avatar: 'https://ui-avatars.com/api/?name=阳光&background=4A90D9&color=fff',
-    time: '2026-03-25 14:30',
-    text: '请问贵公司对社区活动有什么具体的赞助条件吗？我们社区计划在6月举办一场大型亲子活动。',
-    replies: [
-      { id: 1, name: '星巴克咖啡', text: '您好！我们非常乐意赞助亲子类活动，一般要求活动规模在100人以上，我们会提供1-3万元不等的资金支持。' }
-    ]
-  }
-])
+// 留言数据（兼容API返回格式）
+const comments = ref([])
 
 const similarMerchants = [
   { id: 2, name: '新东方教育', type: '教育', matchScore: 4 },
@@ -360,18 +353,40 @@ const similarMerchants = [
   { id: 4, name: '华润万家', type: '零售', matchScore: 3 }
 ]
 
+// 加载资源留言
+async function loadComments() {
+  try {
+    const id = route.params.id
+    const res = await getResourceComments(id)
+    // API返回的是扁平结构，加工成前端需要的格式
+    comments.value = (res.data || []).map(c => ({
+      id: c.id,
+      name: c.user_name || '社区用户',
+      avatar: c.user_logo || `https://ui-avatars.com/api/?name=${encodeURIComponent(c.user_name || '社区')}&background=4A90D9&color=fff`,
+      time: new Date(c.created_at).toLocaleString('zh-CN'),
+      text: c.content,
+      replies: []
+    }))
+  } catch (e) {
+    console.error('加载留言失败', e)
+  }
+}
+
 function submitComment() {
   if (!commentText.value.trim()) return
-  comments.value.push({
-    id: Date.now(),
-    name: '光谷社区（您）',
-    avatar: 'https://ui-avatars.com/api/?name=光谷&background=1a56db&color=fff',
-    time: '刚刚',
-    text: commentText.value,
-    replies: []
-  })
-  commentText.value = ''
-  ElMessage.success('留言已发送')
+  commentLoading.value = true
+  createResourceComment(route.params.id, { content: commentText.value })
+    .then(() => {
+      ElMessage.success('留言已发送')
+      commentText.value = ''
+      loadComments() // 刷新留言列表
+    })
+    .catch(() => {
+      ElMessage.error('留言失败，请重试')
+    })
+    .finally(() => {
+      commentLoading.value = false
+    })
 }
 
 function leaveMessage() {

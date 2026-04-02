@@ -11,23 +11,38 @@ const { success, pageSuccess, error } = require('../utils/response')
 // 登录
 exports.login = async (req, res) => {
   try {
-    const { phone, password } = req.body
+    const { phone, password, code } = req.body
+    
+    if (!phone) return error(res, '请输入手机号', 400)
     
     const [rows] = await pool.query('SELECT * FROM ambassadors WHERE phone = ?', [phone])
     
     if (rows.length === 0) {
-      return error(res, '账号或密码错误', 401)
+      return error(res, '账号不存在，请先申请成为招商大使', 401)
     }
     
     const ambassador = rows[0]
     
-    if (ambassador.status !== 1) {
-      return error(res, '账号未通过审核', 403)
+    if (ambassador.status === 0) {
+      return error(res, '账号审核中，请等待', 403)
+    }
+    if (ambassador.status === 2) {
+      return error(res, '账号已被禁用', 403)
     }
     
-    const isMatch = await bcrypt.compare(password, ambassador.password)
-    if (!isMatch) {
-      return error(res, '账号或密码错误', 401)
+    // 验证码登录（测试版）
+    if (code !== undefined) {
+      const validCodes = ['123456', '888888']
+      if (!validCodes.includes(code)) {
+        return error(res, '验证码错误', 401)
+      }
+    } else if (password) {
+      const isMatch = await bcrypt.compare(password, ambassador.password)
+      if (!isMatch) {
+        return error(res, '手机号或密码错误', 401)
+      }
+    } else {
+      return error(res, '请输入验证码', 400)
     }
     
     const token = jwt.sign({
