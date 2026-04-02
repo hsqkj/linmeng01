@@ -51,6 +51,9 @@ export const getFinance = () => request.get('/admin/finance')
 
 // ====== 配置管理 ======
 // 会员配置
+export const getBasicTypesConfig = () => request.get('/admin/config/basic-types')
+export const saveBasicTypesConfig = (data) => request.put('/admin/config/basic-types', data)
+
 export const getMemberConfig = () => request.get('/admin/config/members')
 export const saveMemberConfig = (data) => request.put('/admin/config/members', data)
 
@@ -106,3 +109,15 @@ export const updateAdmin = (id, data) => request.put(`/admin/admins/${id}`, {
   password: data.password || undefined
 })
 export const deleteAdmin = (id) => request.delete(`/admin/admins/${id}`)
+
+// ====== 系统通知管理 ======
+export const getNotifications = (params) => request.get('/admin/notifications', { params })
+export const getNotificationDetail = (id) => request.get(`/admin/notifications/${id}`)
+export const createNotification = (data) => request.post('/admin/notifications', data)
+export const updateNotification = (id, data) => request.put(`/admin/notifications/${id}`, data)
+export const deleteNotification = (id) => request.delete(`/admin/notifications/${id}`)
+export const publishNotification = (id) => request.post(`/admin/notifications/${id}/publish`)
+
+// ====== 匹配算法配置 ======
+export const getAlgorithmConfig = () => request.get('/admin/config/algorithm')
+export const saveAlgorithmConfig = (data) => request.put('/admin/config/algorithm', data)

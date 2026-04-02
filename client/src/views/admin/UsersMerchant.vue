@@ -5,7 +5,7 @@
       <el-input v-model="search" placeholder="搜索商家名称/联系人" style="width:200px" clearable />
       <el-select v-model="filterType" placeholder="企业类型" style="width:130px" clearable>
         <el-option label="全部" value="" />
-        <el-option v-for="t in ['餐饮','零售','教育','医疗健康','科技互联网','金融保险','文旅娱乐']":key="t" :label="t" :value="t" />
+        <el-option v-for="t in industryOptions":key="t" :label="t" :value="t" />
       </el-select>
       <el-select v-model="filterLevel" placeholder="会员等级" style="width:130px" clearable>
         <el-option label="全部" value="" />
@@ -181,6 +181,16 @@ const page = ref(1)
 const pageSize = 10
 
 const levelLabel = (lvl) => ({ 1:'普通会员', 2:'银牌会员', 3:'金牌会员', 4:'铂金会员', 5:'钻石会员' })[lvl] || '普通会员'
+const industryOptions = [
+  '教育培训', '医院诊所', '药店', '餐饮小吃', '生鲜水果', '美业',
+  '保健养生', '体育健身', '银行保险', '电信服务', '商超零售', '快递物流',
+  '家政服务', '废旧回收', '五金建材', '家居装修', '家纺布艺', '电子电器',
+  '房产中介', '汽车服务', '旅游服务', '鲜花礼品', '电影演出', '娱乐休闲',
+  '服装服饰', '酒店宾馆', '茶艺咖啡', '宠物服务', '眼镜', '酒水饮料',
+  '办公用品', '设备租赁', '社工服务', '养老服务', '新闻媒体', '自媒体',
+  'IT互联网', '软件开发', '图文广告', '电子电器维修', '家居维修', '美发',
+  '建筑工程', '其他'
+]
 const levelColor = { '普通会员': 'info', '银牌会员': 'info', '金牌会员': 'warning', '铂金会员': 'danger', '钻石会员': 'danger' }
 const levelOptions = [
   { lv: 1, name: '普通会员', fee: '0' },

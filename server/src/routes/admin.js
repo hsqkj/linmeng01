@@ -54,6 +54,9 @@ router.get('/comments', authAdmin, AdminController.getComments)
 router.delete('/comments/:id', authAdmin, AdminController.deleteComment)
 
 // 配置管理
+router.get('/config/basic-types', authAdmin, AdminController.getBasicTypesConfig)
+router.put('/config/basic-types', authAdmin, AdminController.saveBasicTypesConfig)
+
 router.get('/config/members', authAdmin, AdminController.getMemberConfig)
 router.put('/config/members', authAdmin, AdminController.saveMemberConfig)
 
@@ -83,5 +86,17 @@ router.delete('/config/basic/regions/:id', authAdmin, AdminController.deleteRegi
 
 // 财务管理
 router.get('/finance', authAdmin, AdminController.getFinance)
+
+// 系统通知管理
+router.get('/notifications', authAdmin, AdminController.getNotifications)
+router.get('/notifications/:id', authAdmin, AdminController.getNotificationDetail)
+router.post('/notifications', authAdmin, AdminController.createNotification)
+router.put('/notifications/:id', authAdmin, AdminController.updateNotification)
+router.delete('/notifications/:id', authAdmin, AdminController.deleteNotification)
+router.post('/notifications/:id/publish', authAdmin, AdminController.publishNotification)
+
+// 匹配算法配置
+router.get('/config/algorithm', authAdmin, AdminController.getAlgorithmConfig)
+router.put('/config/algorithm', authAdmin, AdminController.saveAlgorithmConfig)
 
 module.exports = router

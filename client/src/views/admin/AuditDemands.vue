@@ -3,7 +3,7 @@
     <h2>需求审核</h2>
     <div class="pending-banner">
       <el-icon color="#F56C6C" :size="20"><Warning /></el-icon>
-      当前待审核需求 <strong>12条</strong>，请及时处理
+      当前待审核需求 <strong>{{ pendingCount }}条</strong>，请及时处理
     </div>
     <div class="filter-bar">
       <el-select v-model="filterType" placeholder="需求类型" style="width:130px">
@@ -105,6 +105,7 @@ const currentRow = ref(null), rejectReason = ref(''), rejectTarget = ref(null)
 const demands = ref([])
 const loading = ref(false)
 const total = ref(0)
+const pendingCount = ref(0)
 const page = ref(1)
 const pageSize = 10
 
@@ -119,6 +120,8 @@ async function loadDemands() {
     const res = await getDemandAuditList({ page: page.value, pageSize })
     demands.value = res.data?.list || res.data || []
     total.value = res.data?.pagination?.total || res.data?.total || demands.value.length
+    // 优先从接口取总数，否则用当前页的待审核数估算
+    pendingCount.value = res.data?.total || res.data?.pagination?.total || demands.value.length
   } catch { demands.value = [] }
   finally { loading.value = false }
 }

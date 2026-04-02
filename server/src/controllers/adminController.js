@@ -757,6 +757,33 @@ exports.deleteComment = async (req, res) => {
 
 // ============ 配置管理 ============
 
+exports.getBasicTypesConfig = async (req, res) => {
+  try {
+    const [rows] = await pool.query("SELECT config_value FROM sys_configs WHERE config_key = 'basic_types'")
+    if (rows.length === 0) {
+      return success(res, {
+        activityTypes: [], enterpriseTypes: [], resourceTypes: [], expertTypes: []
+      })
+    }
+    success(res, JSON.parse(rows[0].config_value))
+  } catch (err) {
+    error(res, '获取配置失败')
+  }
+}
+
+exports.saveBasicTypesConfig = async (req, res) => {
+  try {
+    const config = req.body
+    await pool.query(
+      "INSERT INTO sys_configs (config_key, config_value, config_type, description) VALUES ('basic_types', ?, 'basic', '基础数据类型配置') ON DUPLICATE KEY UPDATE config_value = ?",
+      [JSON.stringify(config), JSON.stringify(config)]
+    )
+    success(res, null, '保存成功')
+  } catch (err) {
+    error(res, '保存失败')
+  }
+}
+
 exports.getMemberConfig = async (req, res) => {
   try {
     const [rows] = await pool.query("SELECT config_key, config_value FROM sys_configs WHERE config_type = 'member'")
@@ -1101,3 +1128,233 @@ exports.getFinance = async (req, res) => {
     error(res, '获取财务数据失败')
   }
 }
+
+// ============ 系统通知管理 ============
+
+exports.getNotifications = async (req, res) => {
+  try {
+    const { page = 1, pageSize = 10, status, target_type } = req.query
+    const offset = (page - 1) * pageSize
+
+    let where = '1=1'
+    const params = []
+
+    if (status !== undefined) {
+      where += ' AND status = ?'
+      params.push(status)
+    }
+    if (target_type) {
+      where += ' AND target_type = ?'
+      params.push(target_type)
+    }
+
+    const [rows] = await pool.query(
+      `SELECT n.id, n.title, n.content, n.target_type, n.priority, n.status, n.published_at, n.created_at,
+       a.real_name as creator_name
+       FROM system_notifications n
+       LEFT JOIN admins a ON n.created_by = a.id
+       WHERE ${where}
+       ORDER BY n.created_at DESC
+       LIMIT ? OFFSET ?`,
+      [...params, parseInt(pageSize), offset]
+    )
+
+    const [[{ total }]] = await pool.query(
+      `SELECT COUNT(*) as total FROM system_notifications WHERE ${where}`,
+      params
+    )
+
+    pageSuccess(res, rows, total, page, pageSize)
+  } catch (err) {
+    console.error('Get notifications error:', err)
+    error(res, '获取通知列表失败')
+  }
+}
+
+exports.getNotificationDetail = async (req, res) => {
+  try {
+    const { id } = req.params
+    const [rows] = await pool.query(
+      'SELECT n.*, a.real_name as creator_name FROM system_notifications n LEFT JOIN admins a ON n.created_by = a.id WHERE n.id = ?',
+      [id]
+    )
+    if (rows.length === 0) return error(res, '通知不存在', 404)
+    success(res, rows[0])
+  } catch (err) {
+    error(res, '获取详情失败')
+  }
+}
+
+exports.createNotification = async (req, res) => {
+  try {
+    const { title, content, target_type = 'all', target_ids, priority = 0, draft = false } = req.body
+    const adminId = req.auth?.id || null
+
+    const [result] = await pool.query(
+      `INSERT INTO system_notifications (title, content, target_type, target_ids, priority, status, published_at, created_by)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        title,
+        content,
+        target_type,
+        target_ids ? JSON.stringify(target_ids) : null,
+        priority,
+        draft ? 0 : 1,
+        draft ? null : new Date(),
+        adminId
+      ]
+    )
+
+    // 非草稿：立即推送给目标用户
+    if (!draft) {
+      await pushNotification(result.insertId, target_type, target_ids)
+    }
+
+    success(res, { id: result.insertId }, draft ? '草稿已保存' : '通知已发布')
+  } catch (err) {
+    console.error('Create notification error:', err)
+    error(res, '创建失败')
+  }
+}
+
+exports.updateNotification = async (req, res) => {
+  try {
+    const { id } = req.params
+    const { title, content, target_type, target_ids, priority, status } = req.body
+
+    await pool.query(
+      `UPDATE system_notifications SET title = ?, content = ?, target_type = ?, target_ids = ?, priority = ?, status = ? WHERE id = ?`,
+      [
+        title,
+        content,
+        target_type,
+        target_ids ? JSON.stringify(target_ids) : null,
+        priority,
+        status,
+        id
+      ]
+    )
+
+    success(res, null, '更新成功')
+  } catch (err) {
+    error(res, '更新失败')
+  }
+}
+
+exports.deleteNotification = async (req, res) => {
+  try {
+    const { id } = req.params
+    await pool.query('UPDATE system_notifications SET status = 3 WHERE id = ?', [id])
+    success(res, null, '删除成功')
+  } catch (err) {
+    error(res, '删除失败')
+  }
+}
+
+exports.publishNotification = async (req, res) => {
+  try {
+    const { id } = req.params
+    const [[notif]] = await pool.query('SELECT * FROM system_notifications WHERE id = ? AND status = 0', [id])
+    if (!notif) return error(res, '通知不存在或已发布', 404)
+
+    await pool.query('UPDATE system_notifications SET status = 1, published_at = NOW() WHERE id = ?', [id])
+    await pushNotification(id, notif.target_type, notif.target_ids)
+
+    success(res, null, '发布成功')
+  } catch (err) {
+    error(res, '发布失败')
+  }
+}
+
+// 推送通知给用户（写入各端消息表）
+async function pushNotification(notificationId, targetType, targetIds) {
+  try {
+    const [[notif]] = await pool.query('SELECT * FROM system_notifications WHERE id = ?', [notificationId])
+    if (!notif) return
+
+    const { title, content } = notif
+    const prefix = `【系统通知】${title}：${content}`
+
+    if (targetType === 'all') {
+      await pool.query(
+        `INSERT IGNORE INTO comments (user_id, user_type, content, created_at) SELECT id, 1, ?, NOW() FROM communities WHERE status = 1`,
+        [prefix]
+      )
+      await pool.query(
+        `INSERT IGNORE INTO comments (user_id, user_type, content, created_at) SELECT id, 2, ?, NOW() FROM merchants WHERE status = 1`,
+        [prefix]
+      )
+      await pool.query(
+        `INSERT IGNORE INTO comments (user_id, user_type, content, created_at) SELECT id, 3, ?, NOW() FROM ambassadors WHERE status = 1`,
+        [prefix]
+      )
+    } else {
+      const userTypeMap = { community: 1, merchant: 2, ambassador: 3 }
+      const userType = userTypeMap[targetType]
+      if (!userType) return
+
+      let userQuery = ''
+      if (targetType === 'community') userQuery = 'SELECT id FROM communities WHERE status = 1'
+      else if (targetType === 'merchant') userQuery = 'SELECT id FROM merchants WHERE status = 1'
+      else if (targetType === 'ambassador') userQuery = 'SELECT id FROM ambassadors WHERE status = 1'
+
+      const [users] = await pool.query(userQuery)
+      for (const user of users) {
+        await pool.query(
+          `INSERT IGNORE INTO comments (user_id, user_type, content, created_at) VALUES (?, ?, ?, NOW())`,
+          [user.id, userType, prefix]
+        )
+      }
+    }
+  } catch (err) {
+    console.error('Push notification error:', err)
+  }
+}
+
+// ============ 匹配算法配置 ============
+
+exports.getAlgorithmConfig = async (req, res) => {
+  try {
+    const [rows] = await pool.query(
+      "SELECT config_value FROM sys_configs WHERE config_key = 'match_algorithm'"
+    )
+
+    if (rows.length === 0) {
+      return success(res, {
+        dimensions: [
+          { name: '地域匹配', key: 'region', weight: 25, enabled: true, description: '基于地图定位的距离计算' },
+          { name: '类型匹配', key: 'type', weight: 20, enabled: true, description: '需求类型与资源类型对应度' },
+          { name: '标签匹配', key: 'tag', weight: 15, enabled: true, description: '双方标签重合度' },
+          { name: '社区画像匹配', key: 'community_profile', weight: 15, enabled: true, description: '户数、人群结构、设施等与商家目标客群匹配' },
+          { name: '商家画像匹配', key: 'merchant_profile', weight: 10, enabled: true, description: '企业类型、服务范围与社区需求匹配' },
+          { name: '语义匹配', key: 'semantic', weight: 10, enabled: true, description: 'NLP提取关键词，语义相似度计算' },
+          { name: '信誉评分', key: 'reputation', weight: 5, enabled: true, description: '历史评价、成功率、响应速度' }
+        ],
+        maxResults: 20,
+        matchRadius: 'city'
+      })
+    }
+
+    success(res, JSON.parse(rows[0].config_value))
+  } catch (err) {
+    console.error('Get algorithm config error:', err)
+    error(res, '获取算法配置失败')
+  }
+}
+
+exports.saveAlgorithmConfig = async (req, res) => {
+  try {
+    const config = req.body
+
+    await pool.query(
+      "INSERT INTO sys_configs (config_key, config_value, config_type, description) VALUES ('match_algorithm', ?, 'match', '匹配算法权重配置') ON DUPLICATE KEY UPDATE config_value = ?",
+      [JSON.stringify(config), JSON.stringify(config)]
+    )
+
+    success(res, null, '算法配置已保存')
+  } catch (err) {
+    console.error('Save algorithm config error:', err)
+    error(res, '保存算法配置失败')
+  }
+}
+

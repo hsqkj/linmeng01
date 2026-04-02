@@ -1,5 +1,5 @@
 <template>
-  <div class="page">
+  <div class="page" v-loading="loading">
     <h2>会员配置</h2>
     <div class="tip-box">💡 修改后立即生效，请谨慎操作</div>
 
@@ -136,14 +136,15 @@
   </div>
 </template>
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
-import { saveMemberConfig } from '@/api/admin'
+import { getMemberConfig, saveMemberConfig } from '@/api/admin'
 
 const minLevel = ref(3)
 const filterRules = ref(['phone', 'wechat', 'qq'])
 const showAddBenefit = ref(false)
+const loading = ref(false)
 
 const levels = reactive([
   { level: 1, name: '普通会员', fee: 0, viewContact: false, intentLimit: 5, priority: false, homepage: false, activityCount: 0 },
@@ -190,14 +191,40 @@ function deleteBenefit(row) {
     .catch(() => {})
 }
 
+async function loadConfig() {
+  loading.value = true
+  try {
+    const res = await getMemberConfig()
+    const data = res.data || {}
+    if (data.member_levels && data.member_levels.length > 0) {
+      levels.splice(0, levels.length, ...data.member_levels.map(l => ({
+        level: l.level, name: l.name || levels[l.level - 1]?.name || '',
+        fee: l.fee, viewContact: !!l.view_contact, intentLimit: l.intent_limit,
+        priority: !!l.priority, homepage: !!l.homepage, activityCount: l.activity_count,
+        editing: false
+      })))
+    }
+    if (data.member_benefits && data.member_benefits.length > 0) {
+      benefits.splice(0, benefits.length, ...data.member_benefits.map(b => ({
+        name: b.name, desc: b.desc || '', type: b.type || '开关',
+        values: b.values || [false, false, false, false, false], editing: false
+      })))
+    }
+  } catch {}
+  finally { loading.value = false }
+}
+
 async function saveConfig() {
   try {
-    await saveMemberConfig({ member_levels: levels.map(l => ({ level: l.level, fee: l.fee, view_contact: l.viewContact, intent_limit: l.intentLimit, priority: l.priority, homepage: l.homepage, activity_count: l.activityCount })), member_benefits: benefits.map(b => ({ name: b.name, desc: b.desc, type: b.type, values: b.values })) })
+    loading.value = true
+    await saveMemberConfig({ member_levels: levels.map(l => ({ level: l.level, name: l.name, fee: l.fee, view_contact: l.viewContact, intent_limit: l.intentLimit, priority: l.priority, homepage: l.homepage, activity_count: l.activityCount })), member_benefits: benefits.map(b => ({ name: b.name, desc: b.desc, type: b.type, values: b.values })) })
     ElMessage.success('会员配置已保存')
   } catch {
     ElMessage.error('保存失败，请重试')
-  }
+  } finally { loading.value = false }
 }
+
+onMounted(() => { loadConfig() })
 </script>
 <style scoped>
 .page { max-width: 1200px; margin: 0 auto; }

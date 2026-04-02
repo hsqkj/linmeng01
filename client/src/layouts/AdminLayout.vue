@@ -53,6 +53,11 @@
           <template #title>留言管理</template>
         </el-menu-item>
 
+        <el-menu-item index="/admin/notifications">
+          <el-icon><Bell /></el-icon>
+          <template #title>系统通知</template>
+        </el-menu-item>
+
         <el-menu-item index="/admin/finance">
           <el-icon><Money /></el-icon>
           <template #title>财务管理</template>
@@ -112,7 +117,7 @@ import { ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import {
   DataAnalysis, User, Document, Share, ChatLineRound, Money, Setting,
-  Fold, Expand
+  Fold, Expand, Bell
 } from '@element-plus/icons-vue'
 
 const route = useRoute()

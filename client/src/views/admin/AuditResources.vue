@@ -1,7 +1,7 @@
 <template>
   <div class="audit-page">
     <h2>资源审核</h2>
-    <div class="pending-banner"><el-icon color="#F56C6C" :size="20"><Warning /></el-icon>当前待审核资源 <strong>8条</strong>，请及时处理</div>
+    <div class="pending-banner"><el-icon color="#F56C6C" :size="20"><Warning /></el-icon>当前待审核资源 <strong>{{ pendingCount }}条</strong>，请及时处理</div>
     <div class="filter-bar">
       <el-select v-model="filterType" placeholder="资源类型" style="width:130px">
         <el-option label="全部" value="" />
@@ -83,6 +83,7 @@ const currentResource = ref(null), rejectReason = ref(''), rejectTarget = ref(nu
 const resources = ref([])
 const loading = ref(false)
 const total = ref(0)
+const pendingCount = ref(0)
 const page = ref(1)
 const pageSize = 10
 
@@ -97,6 +98,7 @@ async function loadResources() {
     const res = await getResourceAuditList({ page: page.value, pageSize })
     resources.value = res.data?.list || res.data || []
     total.value = res.data?.pagination?.total || res.data?.total || resources.value.length
+    pendingCount.value = res.data?.total || res.data?.pagination?.total || resources.value.length
   } catch { resources.value = [] }
   finally { loading.value = false }
 }

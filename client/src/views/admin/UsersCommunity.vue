@@ -5,9 +5,7 @@
       <el-input v-model="search" placeholder="搜索社区名称/姓名" style="width:240px" clearable />
       <el-select v-model="filterDistrict" placeholder="所属街道" style="width:140px" clearable>
         <el-option label="全部" value="" />
-        <el-option label="花木街道" value="花木街道" />
-        <el-option label="张江镇" value="张江镇" />
-        <el-option label="陆家嘴街道" value="陆家嘴街道" />
+        <el-option v-for="d in districtOptions" :key="d.value" :label="d.label" :value="d.value" />
       </el-select>
       <el-select v-model="filterStatus" placeholder="审核状态" style="width:130px">
         <el-option label="全部" value="" /><el-option label="待审核" value="待审核" /><el-option label="已通过" value="已通过" /><el-option label="已禁用" value="已禁用" />
@@ -76,7 +74,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getCommunities, updateCommunityStatus } from '@/api/admin'
+import { getCommunities, updateCommunityStatus, getRegions } from '@/api/admin'
 
 const search = ref(''), filterDistrict = ref(''), filterStatus = ref('')
 const showDetail = ref(false), currentUser = ref(null), detailTab = ref('basic')
@@ -85,6 +83,15 @@ const loading = ref(false)
 const total = ref(0)
 const page = ref(1)
 const pageSize = 10
+const districtOptions = ref([])
+
+async function loadDistrictOptions() {
+  try {
+    const res = await getRegions({ level: 2 })
+    const list = res.data?.list || res.data || []
+    districtOptions.value = list.map(r => ({ label: r.name, value: r.name }))
+  } catch { districtOptions.value = [] }
+}
 
 const statusLabels = { 0: '待审核', 1: '已通过', 2: '已禁用' }
 const statusTag = { 0: 'warning', 1: 'success', 2: 'danger' }
@@ -103,7 +110,7 @@ async function loadUsers() {
   finally { loading.value = false }
 }
 
-onMounted(() => { loadUsers() })
+onMounted(() => { loadUsers(); loadDistrictOptions() })
 
 function viewUser(row) { currentUser.value = row; detailTab.value = 'basic'; showDetail.value = true }
 

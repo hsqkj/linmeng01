@@ -1,15 +1,16 @@
 <template>
-  <div class="page"><h2>匹配算法配置</h2>
-    <div class="tip-box">⚙️ 调整各维度权重影响智能匹配结果，所有权重之和应为100%</div>
+  <div class="page" v-loading="loading">
+    <h2>匹配算法配置</h2>
+    <div class="tip-box">⚙️ 调整各维度权重影响智能匹配结果，所有已启用维度的权重之和应为100%</div>
     <div class="total-weight" :class="totalWeight === 100 ? 'ok' : 'error'">
       当前权重总和：{{ totalWeight }}%（{{ totalWeight === 100 ? '✓ 正确' : '✗ 需调整为100%' }}）
     </div>
     <el-table :data="dimensions" stripe border>
       <el-table-column prop="name" label="匹配维度" min-width="150" />
-      <el-table-column prop="desc" label="说明" min-width="200" />
+      <el-table-column prop="description" label="说明" min-width="200" />
       <el-table-column prop="weight" label="权重（%）" width="180">
         <template #default="{ row }">
-          <el-input-number v-model="row.weight" :min="0" :max="100" :step="5" size="small" style="width:120px" @change="checkTotal" />
+          <el-input-number v-model="row.weight" :min="0" :max="100" :step="5" size="small" style="width:120px" :disabled="!row.enabled" />
         </template>
       </el-table-column>
       <el-table-column prop="enabled" label="启用" width="80" align="center">
@@ -33,7 +34,7 @@
           </el-radio-group>
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" @click="saveAlgorithm">保存算法配置</el-button>
+          <el-button type="primary" @click="saveAlgorithm" :loading="saving">保存算法配置</el-button>
           <el-button @click="resetDefault" style="margin-left:12px">恢复默认</el-button>
         </el-form-item>
       </el-form>
@@ -41,29 +42,84 @@
   </div>
 </template>
 <script setup>
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-const maxResults = ref(20), matchRadius = ref('city')
-const dimensions = reactive([
-  { name: '地域匹配', desc: '基于地图定位的距离计算', weight: 25, enabled: true },
-  { name: '类型匹配', desc: '需求类型与资源类型对应度', weight: 20, enabled: true },
-  { name: '标签匹配', desc: '双方标签重合度', weight: 15, enabled: true },
-  { name: '社区画像匹配', desc: '户数、人群结构、设施等与商家目标客群匹配', weight: 15, enabled: true },
-  { name: '商家画像匹配', desc: '企业类型、服务范围与社区需求匹配', weight: 10, enabled: true },
-  { name: '语义匹配', desc: 'NLP提取关键词，语义相似度计算', weight: 10, enabled: true },
-  { name: '信誉评分', desc: '历史评价、成功率、响应速度', weight: 5, enabled: true }
-])
-const totalWeight = computed(() => dimensions.filter(d => d.enabled).reduce((s, d) => s + d.weight, 0))
-function checkTotal() {}
-function saveAlgorithm() {
-  if (totalWeight.value !== 100) { ElMessage.error('各维度权重之和必须为100%，请调整后保存'); return }
-  ElMessage.success('算法配置已保存')
+import { getAlgorithmConfig, saveAlgorithmConfig } from '@/api/admin'
+
+const loading = ref(false)
+const saving = ref(false)
+const maxResults = ref(20)
+const matchRadius = ref('city')
+
+const defaultDimensions = [
+  { name: '地域匹配', key: 'region', weight: 25, enabled: true, description: '基于地图定位的距离计算' },
+  { name: '类型匹配', key: 'type', weight: 20, enabled: true, description: '需求类型与资源类型对应度' },
+  { name: '标签匹配', key: 'tag', weight: 15, enabled: true, description: '双方标签重合度' },
+  { name: '社区画像匹配', key: 'community_profile', weight: 15, enabled: true, description: '户数、人群结构、设施等与商家目标客群匹配' },
+  { name: '商家画像匹配', key: 'merchant_profile', weight: 10, enabled: true, description: '企业类型、服务范围与社区需求匹配' },
+  { name: '语义匹配', key: 'semantic', weight: 10, enabled: true, description: 'NLP提取关键词，语义相似度计算' },
+  { name: '信誉评分', key: 'reputation', weight: 5, enabled: true, description: '历史评价、成功率、响应速度' }
+]
+
+const dimensions = reactive([])
+
+const totalWeight = computed(() => {
+  return dimensions.filter(d => d.enabled).reduce((sum, d) => sum + (d.weight || 0), 0)
+})
+
+async function loadConfig() {
+  loading.value = true
+  try {
+    const res = await getAlgorithmConfig()
+    const data = res.data || {}
+    if (data.dimensions && data.dimensions.length > 0) {
+      dimensions.splice(0, dimensions.length, ...data.dimensions)
+    } else {
+      dimensions.splice(0, dimensions.length, ...defaultDimensions.map(d => ({ ...d })))
+    }
+    maxResults.value = data.maxResults || 20
+    matchRadius.value = data.matchRadius || 'city'
+  } catch {
+    dimensions.splice(0, dimensions.length, ...defaultDimensions.map(d => ({ ...d })))
+  } finally {
+    loading.value = false
+  }
 }
+
+async function saveAlgorithm() {
+  if (totalWeight.value !== 100) {
+    ElMessage.error('各维度权重之和必须为100%，请调整后保存')
+    return
+  }
+  saving.value = true
+  try {
+    await saveAlgorithmConfig({
+      dimensions: dimensions.map(d => ({
+        name: d.name,
+        key: d.key,
+        weight: d.weight,
+        enabled: d.enabled,
+        description: d.description
+      })),
+      maxResults: maxResults.value,
+      matchRadius: matchRadius.value
+    })
+    ElMessage.success('算法配置已保存')
+  } catch {
+    ElMessage.error('保存失败，请重试')
+  } finally {
+    saving.value = false
+  }
+}
+
 function resetDefault() {
-  dimensions[0].weight=25; dimensions[1].weight=20; dimensions[2].weight=15
-  dimensions[3].weight=15; dimensions[4].weight=10; dimensions[5].weight=10; dimensions[6].weight=5
+  dimensions.splice(0, dimensions.length, ...defaultDimensions.map(d => ({ ...d })))
+  maxResults.value = 20
+  matchRadius.value = 'city'
   ElMessage.success('已恢复默认配置')
 }
+
+onMounted(() => { loadConfig() })
 </script>
 <style scoped>
 .page { max-width: 1000px; margin: 0 auto; }

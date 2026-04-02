@@ -108,6 +108,7 @@ const routes = [
       { path: 'audit/demands', name: 'AdminAuditDemands', component: () => import('@/views/admin/AuditDemands.vue') },
       { path: 'audit/resources', name: 'AdminAuditResources', component: () => import('@/views/admin/AuditResources.vue') },
       { path: 'matching', name: 'AdminMatching', component: () => import('@/views/admin/Matching.vue') },
+      { path: 'notifications', name: 'AdminNotifications', component: () => import('@/views/admin/Notifications.vue') },
       { path: 'comments', name: 'AdminComments', component: () => import('@/views/admin/Comments.vue') },
       { path: 'finance', name: 'AdminFinance', component: () => import('@/views/admin/Finance.vue') },
       { path: 'config/basic', name: 'AdminConfigBasic', component: () => import('@/views/admin/ConfigBasic.vue') },

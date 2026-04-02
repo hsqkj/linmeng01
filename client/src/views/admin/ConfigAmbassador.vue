@@ -1,5 +1,5 @@
 <template>
-  <div class="page">
+  <div class="page" v-loading="loading">
     <h2>招商大使提成配置</h2>
     <div class="tip-box">💡 提成比例调整后仅对新订单生效，历史已结算订单不受影响</div>
 
@@ -102,9 +102,11 @@
   </div>
 </template>
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { saveAmbassadorConfig } from '@/api/admin'
+import { getAmbassadorConfig, saveAmbassadorConfig } from '@/api/admin'
+
+const loading = ref(false)
 
 const config = reactive({
   firstRate: 20,
@@ -125,23 +127,58 @@ const levelCommissions = reactive([
   { level: 5, name: '钻石会员', fee: 12000, firstRate: 20, renewRate: 10 }
 ])
 
+async function loadConfig() {
+  loading.value = true
+  try {
+    const res = await getAmbassadorConfig()
+    const data = res.data || {}
+    const ac = data.ambassador_commission || {}
+    if (ac.firstRate !== undefined) config.firstRate = ac.firstRate
+    if (ac.renewRate !== undefined) config.renewRate = ac.renewRate
+    if (ac.minWithdraw !== undefined) config.minWithdraw = ac.minWithdraw
+    if (ac.settlePeriod) config.settlePeriod = ac.settlePeriod
+    if (ac.arrivalDays) config.arrivalDays = String(ac.arrivalDays)
+    if (ac.maxPerOrder !== undefined) config.maxPerOrder = ac.maxPerOrder
+    if (ac.expirePolicy) config.expirePolicy = ac.expirePolicy
+    if (ac.remark) config.remark = ac.remark
+    if (ac.level_commissions && ac.level_commissions.length > 0) {
+      levelCommissions.splice(0, levelCommissions.length, ...ac.level_commissions.map(l => ({
+        level: l.level, name: l.name || levelCommissions[l.level - 1]?.name || '',
+        fee: l.fee, firstRate: l.first_rate, renewRate: l.renew_rate
+      })))
+    }
+  } catch {}
+  finally { loading.value = false }
+}
+
 async function saveConfig() {
   try {
+    loading.value = true
     await saveAmbassadorConfig({
       ambassador_commission: {
         ...config,
+        arrivalDays: Number(config.arrivalDays),
         level_commissions: levelCommissions.map(l => ({ level: l.level, name: l.name, fee: l.fee, first_rate: l.firstRate, renew_rate: l.renewRate }))
       }
     })
     ElMessage.success('提成配置已保存')
   } catch {
     ElMessage.error('保存失败，请重试')
-  }
+  } finally { loading.value = false }
 }
 function resetConfig() {
-  config.firstRate = 20; config.renewRate = 10; config.minWithdraw = 100; config.settlePeriod = 'monthly'; config.arrivalDays = '3'; config.maxPerOrder = 0; config.expirePolicy = 'keep_first'
+  config.firstRate = 20; config.renewRate = 10; config.minWithdraw = 100; config.settlePeriod = 'monthly'; config.arrivalDays = '3'; config.maxPerOrder = 0; config.expirePolicy = 'keep_first'; config.remark = '招商大使提成政策：成功邀请商家入驻并完成付费后，首次入会按年费的20%结算提成；商家每年续费后，按续费金额的10%追加提成。提成每月1日统一结算，最低提现100元，3个工作日内到账。'
+  levelCommissions.splice(0, levelCommissions.length,
+    { level: 1, name: '普通会员', fee: 0, firstRate: 0, renewRate: 0 },
+    { level: 2, name: '银牌会员', fee: 999, firstRate: 20, renewRate: 10 },
+    { level: 3, name: '金牌会员', fee: 2999, firstRate: 20, renewRate: 10 },
+    { level: 4, name: '铂金会员', fee: 5999, firstRate: 20, renewRate: 10 },
+    { level: 5, name: '钻石会员', fee: 12000, firstRate: 20, renewRate: 10 }
+  )
   ElMessage.success('已重置为默认值')
 }
+
+onMounted(() => { loadConfig() })
 </script>
 <style scoped>
 .page { max-width: 1100px; margin: 0 auto; }

@@ -1,5 +1,5 @@
 <template>
-  <div class="page">
+  <div class="page" v-loading="loading">
     <h2>商家评级标准配置</h2>
     <div class="tip-box">💡 配置商家五星评级的评定标准，影响平台对商家的综合评级管理</div>
 
@@ -140,11 +140,12 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
-import { saveRatingConfig } from '@/api/admin'
+import { getRatingConfig, saveRatingConfig } from '@/api/admin'
 
+const loading = ref(false)
 const showDimensionDialog = ref(false)
 const activeCollapse = ref(['quality', 'response', 'activity', 'cooperation'])
 
@@ -306,20 +307,51 @@ function addCriteria(dim) {
   ElMessage.info('评分项编辑功能开发中...')
 }
 
+async function loadConfig() {
+  loading.value = true
+  try {
+    const res = await getRatingConfig()
+    const data = res.data || {}
+    if (data.dimensions && data.dimensions.length > 0) {
+      dimensions.splice(0, dimensions.length, ...data.dimensions.map((d, i) => ({
+        key: d.key || 'dim_' + i,
+        name: d.name || d.name,
+        description: d.description || '',
+        weight: d.weight || 0,
+        criteria: d.criteria || '',
+        isDefault: !!d.isDefault || false,
+        editing: false,
+        items: d.items || []
+      })))
+    }
+    if (data.starRules && data.starRules.length > 0) {
+      ratingRules.splice(0, ratingRules.length, ...data.starRules.map(r => ({
+        stars: r.star || r.stars || 5,
+        minScore: r.minScore || 0,
+        maxScore: r.maxScore || 100,
+        description: r.description || '',
+        editing: false
+      })))
+    }
+  } catch {}
+  finally { loading.value = false }
+}
+
 async function saveAll() {
   if (totalWeight.value !== 100) {
     ElMessage.warning('权重总和必须为100%')
     return
   }
   try {
+    loading.value = true
     await saveRatingConfig({
-      dimensions: dimensions.map(d => ({ name: d.name, description: d.description, weight: d.weight, criteria: d.criteria })),
+      dimensions: dimensions.map(d => ({ key: d.key, name: d.name, description: d.description, weight: d.weight, criteria: d.criteria, items: d.items })),
       starRules: ratingRules.map(r => ({ star: r.stars, minScore: r.minScore, maxScore: r.maxScore, description: r.description }))
     })
     ElMessage.success('评级标准配置已保存')
   } catch {
     ElMessage.error('保存失败，请重试')
-  }
+  } finally { loading.value = false }
 }
 
 function resetToDefault() {
@@ -328,6 +360,8 @@ function resetToDefault() {
       ElMessage.success('已恢复默认设置')
     }).catch(() => {})
 }
+
+onMounted(() => { loadConfig() })
 </script>
 
 <style scoped>

@@ -369,6 +369,24 @@ async function initDatabase() {
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='行政区划表'
     `)
     console.log('表 regions 创建成功')
+
+    // 16. 系统通知表
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS system_notifications (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        title VARCHAR(200) NOT NULL COMMENT '通知标题',
+        content TEXT NOT NULL COMMENT '通知内容',
+        target_type ENUM('all','community','merchant','ambassador') DEFAULT 'all' COMMENT '发送对象类型',
+        target_ids JSON DEFAULT NULL COMMENT '指定发送对象ID列表',
+        priority TINYINT DEFAULT 0 COMMENT '优先级：0普通 1重要 2紧急',
+        status TINYINT DEFAULT 1 COMMENT '状态：0草稿 1已发布 2已撤回',
+        published_at DATETIME DEFAULT NULL COMMENT '发布时间',
+        created_by INT DEFAULT NULL COMMENT '创建人ID',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='系统通知表'
+    `)
+    console.log('表 system_notifications 创建成功')
     
     // ============ 插入初始数据 ============
     
@@ -389,13 +407,59 @@ async function initDatabase() {
     
     // 插入系统配置默认数据
     const configs = [
-      ['match_algorithm', '{"region":25,"type":20,"tag":15,"community_profile":15,"merchant_profile":10,"semantic":10,"reputation":5}', 'match', '匹配算法权重配置'],
+      ['match_algorithm', JSON.stringify({
+        dimensions: [
+          { name: '地域匹配', key: 'region', weight: 25, enabled: true, description: '基于地图定位的距离计算' },
+          { name: '类型匹配', key: 'type', weight: 20, enabled: true, description: '需求类型与资源类型对应度' },
+          { name: '标签匹配', key: 'tag', weight: 15, enabled: true, description: '双方标签重合度' },
+          { name: '社区画像匹配', key: 'community_profile', weight: 15, enabled: true, description: '户数、人群结构、设施等与商家目标客群匹配' },
+          { name: '商家画像匹配', key: 'merchant_profile', weight: 10, enabled: true, description: '企业类型、服务范围与社区需求匹配' },
+          { name: '语义匹配', key: 'semantic', weight: 10, enabled: true, description: 'NLP提取关键词，语义相似度计算' },
+          { name: '信誉评分', key: 'reputation', weight: 5, enabled: true, description: '历史评价、成功率、响应速度' }
+        ],
+        maxResults: 20,
+        matchRadius: 'city'
+      }), 'match', '匹配算法权重配置'],
       ['member_levels', '{"Lv1":{"name":"普通会员","fee":0},"Lv2":{"name":"银牌会员","fee":999},"Lv3":{"name":"金牌会员","fee":2999},"Lv4":{"name":"铂金会员","fee":5999},"Lv5":{"name":"钻石会员","fee":12000}}', 'member', '会员等级配置'],
       ['member_benefits', '{"Lv3":{"view_contact":true,"intent_limit":0,"priority":true,"customer_service":true}}', 'member', '会员权益配置'],
       ['ambassador_commission', '{"first":20,"renewal":10}', 'ambassador', '招商大使提成配置'],
       ['match_reward', '{"per_success":200}', 'reward', '撮合奖励配置'],
       ['anti_flying_level', 'Lv3', 'reward', '防飞单等级门槛配置'],
-      ['rating_config', '{"dimensions":[{"name":"服务质量","weight":30},{"name":"响应速度","weight":20},{"name":"活跃程度","weight":25},{"name":"合作表现","weight":25}],"starRules":[{"star":5,"minScore":90},{"star":4,"minScore":75},{"star":3,"minScore":60},{"star":2,"minScore":40},{"star":1,"minScore":0}]}', 'rating', '商家评级标准配置']
+      ['rating_config', '{"dimensions":[{"name":"服务质量","weight":30},{"name":"响应速度","weight":20},{"name":"活跃程度","weight":25},{"name":"合作表现","weight":25}],"starRules":[{"star":5,"minScore":90},{"star":4,"minScore":75},{"star":3,"minScore":60},{"star":2,"minScore":40},{"star":1,"minScore":0}]}', 'rating', '商家评级标准配置'],
+      ['basic_types', JSON.stringify({
+        activityTypes: [
+          { name: '文艺演出', desc: '音乐、舞蹈、戏剧等文艺表演类活动' },
+          { name: '体育赛事', desc: '社区运动会、球类比赛等体育竞技活动' },
+          { name: '公益活动', desc: '志愿服务、慈善募捐等公益类活动' },
+          { name: '节庆活动', desc: '传统节日庆典、季节性主题活动' },
+          { name: '亲子活动', desc: '针对亲子家庭的互动娱乐活动' },
+          { name: '健康讲座', desc: '医疗健康、营养养生等知识讲座' },
+          { name: '环保活动', desc: '绿色环保、垃圾分类等环境保护活动' },
+          { name: '法制宣传', desc: '法律知识普及、权益保护宣传活动' },
+          { name: '职业技能培训', desc: '就业指导、职业技能提升培训' },
+          { name: '文化展览', desc: '书画展、摄影展、手工艺展览等' },
+          { name: '趣味运动会', desc: '老少皆宜的趣味运动类活动' },
+          { name: '其他', desc: '未列入以上类型的其他活动' }
+        ],
+        enterpriseTypes: [
+          { name: '餐饮' }, { name: '零售' }, { name: '教育' }, { name: '医疗健康' },
+          { name: '科技互联网' }, { name: '金融保险' }, { name: '文旅娱乐' },
+          { name: '房地产' }, { name: '其他' }
+        ],
+        resourceTypes: [
+          { name: '资金赞助', desc: '提供活动资金支持' },
+          { name: '物资提供', desc: '提供实物物资' },
+          { name: '人力支持', desc: '提供人员服务' },
+          { name: '技术支持', desc: '提供设备器材或技术服务' },
+          { name: '专业服务', desc: '提供专业人士服务' },
+          { name: '媒体报道', desc: '提供媒体宣传资源' }
+        ],
+        expertTypes: [
+          { name: '法律咨询' }, { name: '医疗健康' }, { name: '心理辅导' },
+          { name: '教育培训' }, { name: '金融理财' }, { name: '技能培训' },
+          { name: '营养指导' }, { name: '体育健身' }, { name: '其他' }
+        ]
+      }), 'basic', '基础数据类型配置']
     ]
     
     for (const config of configs) {
@@ -445,9 +509,12 @@ async function initDatabase() {
     
     // 插入默认行政区划
     const regions = [
-      ['北京市', 1, 0, 1], ['朝阳区', 3, 1, 1], ['海淀区', 3, 1, 2], ['西城区', 3, 1, 3],
-      ['望京街道', 4, 2, 1], ['中关村街道', 4, 3, 1], ['金融街街道', 4, 4, 1],
-      ['阳光花园社区', 5, 5, 1], ['望京西园社区', 5, 5, 2]
+      ['武汉市', 1, 0, 1], ['江岸区', 3, 1, 1], ['武昌区', 3, 1, 2], ['洪山区', 3, 1, 3], ['江汉区', 3, 1, 4], ['硚口区', 3, 1, 5], ['汉阳区', 3, 1, 6],
+      ['后湖街道', 4, 2, 1], ['一元街道', 4, 2, 2], ['四唯街道', 4, 2, 3],
+      ['中南路街道', 4, 3, 1], ['水果湖街道', 4, 3, 2], ['黄鹤楼街道', 4, 3, 3],
+      ['珞南街道', 4, 4, 1], ['关山街道', 4, 4, 2], ['狮子山街道', 4, 4, 3],
+      ['百步亭社区', 5, 7, 1], ['汉兴街社区', 5, 8, 1],
+      ['中南社区', 5, 10, 1], ['珞桂社区', 5, 13, 1]
     ]
     
     for (const region of regions) {
