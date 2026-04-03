@@ -1,0 +1,44 @@
+- generic [ref=e3]:
+  - generic [ref=e4]:
+    - generic [ref=e5]:
+      - img [ref=e7]
+      - heading "邻盟" [level=1] [ref=e11]
+    - paragraph [ref=e12]: 社区资源智能匹配助手
+  - generic [ref=e13]:
+    - generic [ref=e14] [cursor=pointer]:
+      - img [ref=e17]
+      - heading "我是社区工作者" [level=3] [ref=e19]
+      - paragraph [ref=e20]: 发布社区需求，寻找商家资源
+      - button "进入社区端" [ref=e21]:
+        - generic [ref=e22]: 进入社区端
+    - generic [ref=e23] [cursor=pointer]:
+      - img [ref=e26]
+      - heading "我是商家" [level=3] [ref=e28]
+      - paragraph [ref=e29]: 发布可赞助资源，对接社区需求
+      - button "进入商家端" [ref=e30]:
+        - generic [ref=e31]: 进入商家端
+    - generic [ref=e32] [cursor=pointer]:
+      - img [ref=e35]
+      - heading "我是招商大使" [level=3] [ref=e37]
+      - paragraph [ref=e38]: 发展商家会员，获取佣金收益
+      - button "进入大使端" [ref=e39]:
+        - generic [ref=e40]: 进入大使端
+    - generic [ref=e41] [cursor=pointer]:
+      - img [ref=e44]
+      - heading "平台管理员" [level=3] [ref=e46]
+      - paragraph [ref=e47]: 系统管理、数据监控、审核
+      - button "进入管理后台" [ref=e48]:
+        - generic [ref=e49]: 进入管理后台
+  - generic [ref=e50]:
+    - generic [ref=e51]:
+      - img [ref=e53]
+      - generic [ref=e56]: 智能匹配
+    - generic [ref=e57]:
+      - img [ref=e59]
+      - generic [ref=e61]: 五心评级
+    - generic [ref=e62]:
+      - img [ref=e64]
+      - generic [ref=e67]: 高效对接
+    - generic [ref=e68]:
+      - img [ref=e70]
+      - generic [ref=e75]: 撮合奖励

@@ -1,0 +1,6 @@
+[     208ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:5173/src/views/merchant/Demands.vue:0
+[     245ms] Failed to fetch dynamically imported module: http://localhost:5173/src/views/merchant/Demands.vue
+[     254ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/logo.svg:0
+[     256ms] [WARNING] [Vue Router warn]: uncaught error during route navigation: @ http://localhost:5173/node_modules/.vite/deps/vue-router.js?v=1e2222ae:52
+[     256ms] [ERROR] TypeError: Failed to fetch dynamically imported module: http://localhost:5173/src/views/merchant/Demands.vue @ http://localhost:5173/node_modules/.vite/deps/vue-router.js?v=1e2222ae:2342
+[     256ms] [WARNING] [Vue Router warn]: Unexpected error when starting the router: TypeError: Failed to fetch dynamically imported module: http://localhost:5173/src/views/merchant/Demands.vue @ http://localhost:5173/node_modules/.vite/deps/vue-router.js?v=1e2222ae:52

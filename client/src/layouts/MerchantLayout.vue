@@ -206,12 +206,26 @@ const logout = () => {
 
 @media (max-width: 768px) {
   .header {
-    padding: 0 15px;
+    padding: 0 12px;
+    height: 52px;
   }
-  
+  .logo-text { font-size: 16px; }
+  .header-right { gap: 12px; }
+
   .main-content {
-    padding: 15px;
+    padding: 12px;
     padding-bottom: 70px;
+  }
+
+  .mobile-nav {
+    padding: 6px 0;
+  }
+  .mobile-nav-item {
+    font-size: 11px;
+    gap: 2px;
+  }
+  .mobile-nav-item :deep(.el-icon) {
+    font-size: 20px;
   }
 }
 </style>

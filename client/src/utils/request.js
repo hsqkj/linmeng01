@@ -11,22 +11,34 @@ const request = axios.create({
   headers: { 'Content-Type': 'application/json' }
 })
 
-// 从 localStorage 获取 token（支持多端）
-function getToken() {
-  // 按顺序查找各端 token
-  return (
-    localStorage.getItem('admin_token') ||
-    localStorage.getItem('community_token') ||
-    localStorage.getItem('merchant_token') ||
-    localStorage.getItem('ambassador_token') ||
-    ''
-  )
+// token 映射表
+const TOKEN_KEYS = {
+  admin: 'admin_token',
+  community: 'community_token',
+  merchant: 'merchant_token',
+  ambassador: 'ambassador_token'
+}
+
+// 从 localStorage 获取对应角色的 token
+function getToken(role) {
+  if (role && TOKEN_KEYS[role]) {
+    return localStorage.getItem(TOKEN_KEYS[role]) || ''
+  }
+  // 未指定角色时返回空（公开接口不需要 token）
+  return ''
 }
 
 // 请求拦截器 - 自动附加 token
 request.interceptors.request.use(
   (config) => {
-    const token = getToken()
+    // 优先使用 config 上的 role，否则尝试从 URL 路径推断
+    const role = config.role ||
+      (config.url?.startsWith('/admin/') ? 'admin' :
+       config.url?.startsWith('/community/') ? 'community' :
+       config.url?.startsWith('/merchant/') ? 'merchant' :
+       config.url?.startsWith('/ambassador/') ? 'ambassador' : null)
+
+    const token = getToken(role)
     if (token) {
       config.headers['Authorization'] = `Bearer ${token}`
     }
@@ -50,21 +62,23 @@ request.interceptors.response.use(
     const status = error.response?.status
     const message = error.response?.data?.message || error.message
 
-    if (status === 401) {
-      // Token 过期，清除本地 token 并提示
-      localStorage.removeItem('admin_token')
-      localStorage.removeItem('community_token')
-      localStorage.removeItem('merchant_token')
-      localStorage.removeItem('ambassador_token')
-      ElMessage.error('登录已过期，请重新登录')
-      // 根据当前路由跳转
-      const path = window.location.pathname
-      if (path.startsWith('/admin')) window.location.href = '/admin/login'
-      else if (path.startsWith('/merchant')) window.location.href = '/login/merchant'
-      else if (path.startsWith('/community')) window.location.href = '/login/community'
-      else if (path.startsWith('/ambassador')) window.location.href = '/login/ambassador'
-    } else if (status === 403) {
-      ElMessage.error('无权限访问')
+    if (status === 401 || status === 403) {
+      // Token 无效/过期，清除对应 token 并跳转登录页
+      const path = error.config?.url || ''
+      let role = null
+      if (path.startsWith('/admin/')) role = 'admin_token'
+      else if (path.startsWith('/community/')) role = 'community_token'
+      else if (path.startsWith('/merchant/')) role = 'merchant_token'
+      else if (path.startsWith('/ambassador/')) role = 'ambassador_token'
+
+      if (role) localStorage.removeItem(role)
+      ElMessage.error(status === 401 ? '登录已过期，请重新登录' : '无权限访问')
+
+      const currentPath = window.location.pathname
+      if (currentPath.startsWith('/admin')) window.location.href = '/admin/login'
+      else if (currentPath.startsWith('/merchant')) window.location.href = '/login/merchant'
+      else if (currentPath.startsWith('/community')) window.location.href = '/login/community'
+      else if (currentPath.startsWith('/ambassador')) window.location.href = '/login/ambassador'
     } else if (status === 404) {
       ElMessage.error('请求的资源不存在')
     } else if (status >= 500) {

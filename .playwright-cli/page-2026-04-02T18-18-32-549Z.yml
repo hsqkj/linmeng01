@@ -1,0 +1,101 @@
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - generic [ref=e6]:
+      - img [ref=e8]
+      - generic [ref=e10]: 邻盟商家端
+    - navigation [ref=e11]:
+      - link "首页" [ref=e12] [cursor=pointer]:
+        - /url: /merchant
+        - img [ref=e14]
+        - generic [ref=e16]: 首页
+      - link "我的资源" [ref=e17] [cursor=pointer]:
+        - /url: /merchant/resources
+        - img [ref=e19]
+        - generic [ref=e21]: 我的资源
+      - link "社区需求" [ref=e22] [cursor=pointer]:
+        - /url: /merchant/demands
+        - img [ref=e24]
+        - generic [ref=e26]: 社区需求
+      - link "商家中心" [ref=e27] [cursor=pointer]:
+        - /url: /merchant/profile
+        - img [ref=e29]
+        - generic [ref=e31]: 商家中心
+    - generic [ref=e32]:
+      - generic [ref=e33] [cursor=pointer]:
+        - img [ref=e35]
+        - superscript [ref=e39]: "5"
+      - button "李经理" [ref=e41] [cursor=pointer]:
+        - img [ref=e43]
+        - generic [ref=e44]: 李经理
+        - img [ref=e46]
+  - main [ref=e48]:
+    - generic [ref=e49]:
+      - generic [ref=e50]:
+        - heading "需求广场" [level=2] [ref=e51]
+        - generic [ref=e52]: 为您智能推荐与业务最匹配的社区需求
+      - generic [ref=e53]:
+        - generic [ref=e55]:
+          - img [ref=e58]
+          - textbox "搜索需求名称/活动描述" [ref=e60]
+        - generic [ref=e62] [cursor=pointer]:
+          - generic:
+            - combobox [ref=e64]
+            - generic [ref=e65]: 需求类型
+          - img [ref=e68]
+        - generic [ref=e71] [cursor=pointer]:
+          - generic:
+            - combobox [ref=e73]
+            - generic [ref=e74]: 最新发布
+          - img [ref=e77]
+        - button "搜索" [ref=e79] [cursor=pointer]:
+          - generic [ref=e80]: 搜索
+        - button "重置" [ref=e81] [cursor=pointer]:
+          - generic [ref=e82]: 重置
+      - generic [ref=e83]:
+        - generic [ref=e85] [cursor=pointer]:
+          - generic [ref=e87]:
+            - generic [ref=e88]: ♥
+            - generic [ref=e89]: ♥
+            - generic [ref=e90]: ♥
+            - generic [ref=e91]: ♥
+            - generic [ref=e92]: ♥
+            - generic [ref=e93]: 匹配
+          - heading [level=4]
+          - generic [ref=e94]:
+            - img [ref=e96]
+            - generic [ref=e99]: "|"
+            - img [ref=e101]
+            - generic [ref=e103]: "-"
+          - generic [ref=e104]:
+            - generic [ref=e106]: 所需：
+            - button "查看详情" [ref=e107]:
+              - generic [ref=e108]: 查看详情
+        - generic [ref=e110] [cursor=pointer]:
+          - generic [ref=e112]:
+            - generic [ref=e113]: ♥
+            - generic [ref=e114]: ♥
+            - generic [ref=e115]: ♥
+            - generic [ref=e116]: ♥
+            - generic [ref=e117]: ♥
+            - generic [ref=e118]: 匹配
+          - heading [level=4]
+          - generic [ref=e119]:
+            - img [ref=e121]
+            - generic [ref=e124]: "|"
+            - img [ref=e126]
+            - generic [ref=e128]: "-"
+          - generic [ref=e129]:
+            - generic [ref=e131]: 所需：
+            - button "查看详情" [ref=e132]:
+              - generic [ref=e133]: 查看详情
+        - img [ref=e136]
+      - generic [ref=e139]:
+        - button "上一页" [disabled] [ref=e140]:
+          - generic:
+            - img
+        - list [ref=e141]:
+          - listitem "第 1 页" [ref=e142]: "1"
+        - button "下一页" [disabled] [ref=e143]:
+          - generic:
+            - img
+        - generic [ref=e144]: 共 3 条

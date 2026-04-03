@@ -7,7 +7,7 @@
       <div class="level-badge">Lv{{ currentLevel.level }}</div>
       <div class="level-info">
         <div class="level-name">{{ currentLevel.name }}</div>
-        <div class="level-expire">有效期至：2027-01-08</div>
+        <div class="level-expire">有效期至：{{ currentLevel.expire || '长期有效' }}</div>
       </div>
       <div class="level-fee">
         <div style="font-size:13px;opacity:0.8">年费</div>
@@ -94,22 +94,29 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { CircleCheck, Key, Phone, Star, Aim, User, TrendCharts } from '@element-plus/icons-vue'
+import { getMemberInfo } from '@/api/merchant'
 
 const showUpgrade = ref(false), selectedUpgrade = ref(null)
 
-const currentLevel = reactive({ level: 3, name: '金牌会员', fee: 2999 })
+const memberLevelName = { 0: '普通会员', 1: '普通会员', 2: '银牌会员', 3: '金牌会员', 4: '铂金会员', 5: '钻石会员' }
+const memberLevelFee = { 0: 0, 1: 0, 2: 999, 3: 2999, 4: 5999, 5: 12000 }
 
-const currentBenefits = [
-  { name: '月发起意向', value: '不限次数', icon: 'Aim', available: true },
-  { name: '优先展示', value: '✅ 已开启', icon: 'Star', available: true },
-  { name: '查看联系方式', value: '✅ 已解锁', icon: 'Phone', available: true },
-  { name: '年参与活动', value: '5次/年', icon: 'User', available: true },
-  { name: '数据分析报告', value: '✅ 已开启', icon: 'TrendCharts', available: true },
-  { name: '专属客服', value: '❌ 需铂金', icon: 'Key', available: false },
-]
+const currentLevel = reactive({ level: 1, name: '普通会员', fee: 0, expire: '' })
+
+const currentBenefits = computed(() => {
+  const lv = currentLevel.level
+  return [
+    { name: '月发起意向', value: lv >= 3 ? '不限次数' : lv >= 2 ? '10次/月' : '5次/月', icon: 'Aim', available: true },
+    { name: '优先展示', value: lv >= 2 ? '✅ 已开启' : '❌ 未开启', icon: 'Star', available: lv >= 2 },
+    { name: '查看联系方式', value: lv >= 3 ? '✅ 已解锁' : '❌ 需金牌', icon: 'Phone', available: lv >= 3 },
+    { name: '年参与活动', value: lv >= 5 ? '不限次数' : lv >= 4 ? '10次/年' : lv >= 3 ? '5次/年' : '2次/年', icon: 'User', available: true },
+    { name: '数据分析报告', value: lv >= 3 ? '✅ 已开启' : '❌ 需金牌', icon: 'TrendCharts', available: lv >= 3 },
+    { name: '专属客服', value: lv >= 4 ? '✅ 已开启' : '❌ 需铂金', icon: 'Key', available: lv >= 4 },
+  ]
+})
 
 const memberLevels = [
   { level: 1, name: '普通会员', fee: 0, benefits: ['发起意向5次/月', '基础匹配展示'] },
@@ -132,6 +139,24 @@ function confirmUpgrade() {
   ElMessage.success(`升级申请已提交！请完成支付 ¥${selectedUpgrade.value.fee.toLocaleString()} 后权益自动生效`)
   showUpgrade.value = false
 }
+
+async function loadMemberInfo() {
+  try {
+    const res = await getMemberInfo()
+    const data = res.data || {}
+    currentLevel.level = data.member_level || data.member_level === 0 ? data.member_level : 1
+    currentLevel.name = memberLevelName[currentLevel.level] || '普通会员'
+    currentLevel.fee = memberLevelFee[currentLevel.level] || 0
+    currentLevel.expire = data.expire_date || data.member_expire_at || ''
+  } catch {
+    // 使用默认值
+  }
+}
+
+onMounted(() => {
+  loadMemberInfo()
+})
+
 </script>
 
 <style scoped>

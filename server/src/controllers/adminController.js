@@ -712,7 +712,7 @@ exports.grantReward = async (req, res) => {
 exports.getComments = async (req, res) => {
   try {
     const { page = 1, pageSize = 10, type, keyword } = req.query
-    const offset = (page - 1) * pageSize
+    const offset = (parseInt(page) - 1) * parseInt(pageSize)
     
     let where = '1=1'
     if (type === 'demand') {
@@ -992,7 +992,7 @@ exports.getTags = async (req, res) => {
       params.push(type)
     }
     
-    const [rows] = await pool.query('SELECT * FROM tags WHERE ' + where + ' ORDER BY type, sort_order', params)
+    const [rows] = await pool.query('SELECT * FROM tags WHERE ' + where + ' ORDER BY type, id', params)
     success(res, rows)
   } catch (err) {
     error(res, '获取标签失败')

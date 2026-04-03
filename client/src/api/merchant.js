@@ -16,7 +16,11 @@ export const getRecommendDemands = (params) => request.get('/merchant/recommend/
 
 // ====== 需求大厅 ======
 export const getDemands = (params) => request.get('/merchant/demands', { params })
-export const getDemandDetail = (id) => request.get(`/merchant/demands/${id}`)
+export const getDemandDetail = (id) => request.get(`/merchant/demands/${id}`, { role: 'merchant' })
+
+// ====== 收藏需求 ======
+export const toggleFavorite = (data) => request.post('/merchant/favorites/toggle', data)
+export const getMyFavorites = (params) => request.get('/merchant/favorites', { params })
 
 // ====== 资源大厅 ======
 export const getResources = (params) => request.get('/merchant/resources', { params })

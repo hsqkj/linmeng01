@@ -132,8 +132,8 @@ async function fetchMyResources() {
     if (filters.type) params.type = filters.type
     if (filters.keyword) params.keyword = filters.keyword
     const res = await getMyResources(params)
-    myResources.value = res.data || []
-    total.value = res.data?.pagination?.total || res.data?.total || myResources.value.length
+    myResources.value = res.data?.list || res.data || []
+    total.value = res.data?.total || 0
   } catch {
     myResources.value = []
   } finally {
@@ -223,4 +223,33 @@ onMounted(() => {
 .filter-bar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; align-items: center; }
 .pagination { margin-top: 20px; display: flex; justify-content: flex-end; }
 .tag-selector { display: flex; flex-wrap: wrap; }
+
+@media (max-width: 768px) {
+  .page { padding-bottom: 70px; }
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .page-header h2 { font-size: 18px; }
+  .page-header .el-button { width: 100%; }
+  .filter-bar { gap: 8px; margin-bottom: 12px; }
+  .filter-bar .el-input,
+  .filter-bar .el-select {
+    width: calc(50% - 4px) !important;
+    font-size: 13px;
+  }
+  .filter-bar .el-button {
+    width: calc(50% - 4px);
+    font-size: 13px;
+  }
+  .pagination { justify-content: center; }
+  :deep(.el-table) {
+    font-size: 13px;
+  }
+  :deep(.el-table__header th) {
+    font-size: 12px;
+  }
+}
 </style>

@@ -88,7 +88,7 @@ exports.getTags = async (req, res) => {
     }
     
     const [rows] = await pool.query(
-      'SELECT * FROM tags WHERE ' + where + ' ORDER BY type, sort_order',
+      'SELECT * FROM tags WHERE ' + where + ' ORDER BY type, id',
       params
     )
     

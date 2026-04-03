@@ -100,6 +100,10 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.page {
+  max-width: 1200px;
+  margin: 0 auto;
+}
 .page-header {
   display: flex;
   justify-content: space-between;
@@ -108,4 +112,17 @@ onMounted(() => {
 }
 .page-header h2 { margin: 0; font-size: 22px; font-weight: 700; }
 .pagination-wrap { display: flex; justify-content: center; margin-top: 20px; }
+
+@media (max-width: 768px) {
+  .page { padding-bottom: 70px; }
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .page-header h2 { font-size: 18px; }
+  .page-header .el-button { width: 100%; }
+  .pagination-wrap { justify-content: center; }
+}
 </style>

@@ -13,7 +13,7 @@
               <div class="demand-meta">
                 <el-tag type="primary" size="large" effect="dark">{{ demandTypeName }}</el-tag>
                 <el-tag type="info" size="small" style="margin-left:8px">{{ demand.location_type === '室外' ? '🌳' : '🏠' }} {{ demand.location_type }}活动</el-tag>
-                <span class="match-hearts" title="匹配度">{{ '❤️'.repeat(demand.match_hearts || 0) }}{{ '🤍'.repeat(5 - (demand.match_hearts || 0)) }}</span>
+                <span class="match-hearts" title="匹配度">{{ '❤️'.repeat(demand.matchHearts || 0) }}{{ '🤍'.repeat(5 - (demand.matchHearts || 0)) }}</span>
               </div>
               <h1 class="demand-title">{{ demand.title }}</h1>
               <div class="community-info">
@@ -38,7 +38,7 @@
                 <div class="info-item">
                   <span class="info-label">目标对象</span>
                   <span class="info-value">
-                    <el-tag v-for="g in (demand.target_audience ? demand.target_audience.split(',') : [])" :key="g" size="small" type="warning" style="margin:2px">{{ g }}</el-tag>
+                    <el-tag v-for="g in (demand.target_audience ? (Array.isArray(demand.target_audience) ? demand.target_audience : demand.target_audience.split(',')) : [])" :key="g" size="small" type="warning" style="margin:2px">{{ g }}</el-tag>
                   </span>
                 </div>
                 <div class="info-item">
@@ -106,7 +106,7 @@
             <!-- 标签 -->
             <div class="section">
               <h3>🏷️ 需求标签</h3>
-              <el-tag v-for="tag in (demand.tags ? demand.tags.split(',') : [])" :key="tag" type="primary" effect="light" style="margin:4px">{{ tag }}</el-tag>
+              <el-tag v-for="tag in (demand.tags ? (Array.isArray(demand.tags) ? demand.tags : demand.tags.split(',')) : [])" :key="tag" type="primary" effect="light" style="margin:4px">{{ tag }}</el-tag>
               <span v-if="!demand.tags" style="color:#909399;font-size:13px">暂无标签</span>
             </div>
 
@@ -144,14 +144,17 @@
           <!-- 操作卡 -->
           <div class="action-card">
             <div class="match-score">
-              <div class="hearts">{{ '❤️'.repeat(demand.match_hearts || 0) }}{{ '🤍'.repeat(5 - (demand.match_hearts || 0)) }}</div>
-              <div class="score-label">与您的匹配度 {{ (demand.match_hearts || 0) * 20 }}%</div>
+              <div class="hearts">{{ '❤️'.repeat(demand.matchHearts || 0) }}{{ '🤍'.repeat(5 - (demand.matchHearts || 0)) }}</div>
+              <div class="score-label">与您的匹配度 {{ (demand.matchHearts || 0) * 20 }}%</div>
             </div>
             <el-button type="primary" size="large" block @click="showIntentDialog = true" style="width:100%;margin-bottom:12px">
               🤝 我要提供赞助
             </el-button>
-            <el-button size="large" block style="width:100%" @click="scrollToComment">
+            <el-button size="large" block style="width:100%;margin-bottom:8px" @click="scrollToComment">
               💬 留言咨询
+            </el-button>
+            <el-button size="large" block style="width:100%" :type="isFavorited ? 'warning' : 'default'" :loading="favoriteLoading" @click="toggleFav">
+              {{ isFavorited ? '⭐ 已收藏' : '☆ 收藏需求' }}
             </el-button>
             <div class="deadline-tip">
               <el-icon color="#F56C6C"><Warning /></el-icon>
@@ -224,7 +227,7 @@
           </div>
           <div class="detail-tags" style="margin-top:16px" v-if="communityDetail.tags">
             <div style="font-weight:600;margin-bottom:8px">社区标签</div>
-            <el-tag v-for="tag in communityDetail.tags.split(',')" :key="tag" size="small" type="primary" effect="light" style="margin:3px">{{ tag }}</el-tag>
+            <el-tag v-for="tag in (Array.isArray(communityDetail.tags) ? communityDetail.tags : communityDetail.tags.split(','))" :key="tag" size="small" type="primary" effect="light" style="margin:3px">{{ tag }}</el-tag>
           </div>
         </div>
         <div v-else style="text-align:center;padding:40px;color:#909399">
@@ -263,7 +266,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { ArrowLeft, InfoFilled, Warning, Lock, Phone, Message, User, Location, Loading } from '@element-plus/icons-vue'
-import { getDemandDetail, getDemandComments, createDemandComment, getCommentReplies, createIntention, getCommunityDetail } from '@/api/merchant'
+import { getDemandDetail, getDemandComments, createDemandComment, getCommentReplies, createIntention, getCommunityDetail, toggleFavorite } from '@/api/merchant'
 
 const route = useRoute()
 const loading = ref(true)
@@ -278,18 +281,22 @@ const intentTypes = ref([])
 const intentDesc = ref('')
 const intentSubmitting = ref(false)
 const communityDetail = ref(null)
+const isFavorited = ref(false)
+const favoriteLoading = ref(false)
 
 const demandTypeMap = {
+  0: '活动赞助', 1: '专家服务', 2: '空间运营',
+  3: '物资赞助', 4: '健康服务', 5: '教育培训',
   '活动赞助': '活动赞助', '专家服务': '专家服务', '空间运营': '空间运营',
   '物资赞助': '物资赞助', '健康服务': '健康服务', '教育培训': '教育培训'
 }
 
-const demandTypeName = computed(() => demandTypeMap[demand.value?.demand_type] || demand.value?.demand_type || '需求')
+const demandTypeName = computed(() => demandTypeMap[demand.value?.demand_type] || demand.value?.demand_type_name || '需求')
 
 function parseRewards(reward) {
   if (!reward) return []
-  // merchant_reward 字段是逗号分隔的回报项，如 "活动冠名权,现场展台,主持人口播"
-  const rewards = reward.split(',').filter(Boolean)
+  // merchant_reward 字段可能是数组或逗号分隔的字符串
+  const rewards = Array.isArray(reward) ? reward : reward.split(',').filter(Boolean)
   const iconMap = {
     '冠名权': '🏅', '展台': '🎪', '展位': '🎪', '口播': '🎤', 'Logo': '📺',
     '群推送': '📣', '荣誉证书': '🏆', '推文': '📰', '宣传栏': '📌',
@@ -324,8 +331,12 @@ async function loadDemand() {
     const res = await getDemandDetail(id)
     demand.value = res.data
   } catch (err) {
-    ElMessage.error('加载需求详情失败')
-    console.error(err)
+    if (err?.response?.status === 404) {
+      ElMessage.error('需求不存在或已下架')
+    } else if (!err?.response) {
+      ElMessage.error('加载需求详情失败，请检查网络')
+    }
+    demand.value = null
   }
 }
 
@@ -409,6 +420,20 @@ function scrollToComment() {
   }, 100)
 }
 
+async function toggleFav() {
+  if (!demand.value) return
+  favoriteLoading.value = true
+  try {
+    const res = await toggleFavorite({ demand_id: demand.value.id })
+    isFavorited.value = res.data?.favorited
+    ElMessage.success(res.data?.favorited ? '已收藏该需求' : '已取消收藏')
+  } catch {
+    // error handled by interceptor
+  } finally {
+    favoriteLoading.value = false
+  }
+}
+
 onMounted(async () => {
   loading.value = true
   await Promise.allSettled([loadDemand(), loadComments()])
@@ -488,8 +513,19 @@ onMounted(async () => {
 .detail-tags { display: flex; flex-wrap: wrap; align-items: center; }
 
 @media (max-width: 768px) {
-  .detail-layout { grid-template-columns: 1fr; }
+  .demand-detail {
+    padding: 12px;
+    padding-bottom: 80px;
+  }
+  .page-header { margin-bottom: 14px; }
+  .page-header .el-button { font-size: 13px; padding: 6px 10px; }
+  .detail-layout { grid-template-columns: 1fr !important; gap: 14px; }
+  .demand-card { padding: 16px; border-radius: 8px; }
+  .demand-title { font-size: 17px; }
   .info-grid { grid-template-columns: 1fr; }
   .reward-grid { grid-template-columns: 1fr; }
+  .action-card { position: sticky; bottom: 70px; z-index: 10; }
+  .community-card { margin-top: 0; }
+  .comment-input textarea { font-size: 14px; }
 }
 </style>

@@ -51,13 +51,24 @@
                 <img :src="msg.user_logo || `https://ui-avatars.com/api/?name=${encodeURIComponent(msg.user_name || '用户')}&background=4A90D9&color=fff&size=32`" class="msg-avatar" />
                 <div class="sender-info">
                   <span class="sender-name">{{ msg.user_name || '社区用户' }}</span>
-                  <span class="sender-type">社区</span>
+                  <span class="sender-type">社区 · {{ msg.resource_title }}</span>
                 </div>
               </div>
               <el-tag size="small" type="warning">资源留言</el-tag>
               <span class="message-time">{{ formatTime(msg.created_at) }}</span>
             </div>
             <p class="message-content">{{ msg.content }}</p>
+            <!-- 回复列表 -->
+            <div class="reply-list" v-if="msg.replies && msg.replies.length">
+              <div v-for="rep in msg.replies" :key="rep.id" class="reply-item">
+                <div class="reply-meta">
+                  <span class="reply-name">{{ rep.user_name || '商家' }}</span>
+                  <el-tag size="small" type="success" style="margin-left:6px">商家回复</el-tag>
+                  <span class="reply-time">{{ rep.time }}</span>
+                </div>
+                <p class="reply-text">{{ rep.content }}</p>
+              </div>
+            </div>
             <div class="message-actions">
               <el-button type="primary" size="small" @click="replyComment(msg)">回复</el-button>
             </div>
@@ -88,7 +99,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Link } from '@element-plus/icons-vue'
-import { getMyIntentions, getMyResources, cancelIntention as apiCancelIntention, getResourceComments, replyComment as apiReplyComment } from '@/api/merchant'
+import { getMyIntentions, getMyResources, cancelIntention as apiCancelIntention, getResourceComments, replyComment as apiReplyComment, getCommentReplies } from '@/api/merchant'
 
 const router = useRouter()
 const activeTab = ref('intentions')
@@ -143,12 +154,26 @@ async function loadComments() {
     // 先获取商家自己的资源
     const res = await getMyResources({ page: 1, pageSize: 100 })
     const resources = res.data?.list || []
-    // 获取每个资源的留言
+    // 获取每个资源的留言（同时加载回复）
     const allComments = []
     await Promise.allSettled(resources.map(async (r) => {
       try {
         const cr = await getResourceComments(r.id)
         const comments = Array.isArray(cr.data) ? cr.data : []
+        // 加载每条留言的回复
+        await Promise.allSettled(comments.map(async (c) => {
+          try {
+            const rr = await getCommentReplies(c.id)
+            c.replies = (rr.data || []).map(rep => ({
+              id: rep.id,
+              user_name: rep.user_name || (rep.user_type === 2 ? '商家' : '社区'),
+              content: rep.content,
+              time: new Date(rep.created_at).toLocaleString('zh-CN')
+            }))
+          } catch {
+            c.replies = []
+          }
+        }))
         comments.forEach(c => { c.resource_title = r.title })
         allComments.push(...comments)
       } catch {}
@@ -216,6 +241,13 @@ onMounted(() => {
 .demand-ref { display: flex; align-items: center; gap: 4px; margin-top: 8px; font-size: 13px; color: #409EFF; }
 .message-actions { display: flex; gap: 8px; margin-top: 12px; }
 .pagination-wrap { display: flex; justify-content: center; margin-top: 20px; }
+.reply-list { background: #f9f9f9; border-radius: 8px; padding: 12px; margin-top: 10px; }
+.reply-item { border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 10px; }
+.reply-item:last-child { border-bottom: none; padding-bottom: 0; margin-bottom: 0; }
+.reply-meta { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+.reply-name { font-weight: 600; font-size: 13px; color: #409EFF; }
+.reply-time { font-size: 12px; color: #909399; margin-left: auto; }
+.reply-text { font-size: 13px; color: #606266; margin: 0; line-height: 1.6; }
 
 @media (max-width: 768px) {
   .message-header { flex-wrap: wrap; }

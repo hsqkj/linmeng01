@@ -1,6 +1,7 @@
 <template>
   <div class="ambassador-layout">
-    <div class="sidebar" :class="{ collapsed: sidebarCollapsed }">
+    <!-- 侧边栏（PC端） -->
+    <div class="sidebar pc-only" :class="{ collapsed: sidebarCollapsed }">
       <div class="sidebar-header">
         <div class="logo-mark">邻</div>
         <div class="brand-text" v-if="!sidebarCollapsed">
@@ -41,8 +42,54 @@
       </div>
     </div>
 
+    <!-- 手机端顶部栏 -->
+    <div class="mobile-header mobile-only">
+      <el-button text @click="mobileDrawerVisible = true">
+        <el-icon :size="22"><Menu /></el-icon>
+      </el-button>
+      <div class="mobile-title">招商大使中心</div>
+      <el-badge :value="3" type="warning" size="small">
+        <el-icon :size="20"><Bell /></el-icon>
+      </el-badge>
+    </div>
+
+    <!-- 手机端抽屉菜单 -->
+    <el-drawer v-model="mobileDrawerVisible" direction="ltr" size="70%" :with-header="false">
+      <div class="drawer-header">
+        <img src="https://ui-avatars.com/api/?name=李大使&background=F59E0B&color=fff" class="drawer-avatar" />
+        <div>
+          <div class="drawer-name">李招商</div>
+          <div class="drawer-sub">我的渠道码：AMB2024001</div>
+        </div>
+      </div>
+      <el-menu :default-active="activeMenu" class="drawer-menu" router @select="mobileDrawerVisible = false">
+        <el-menu-item index="/ambassador">
+          <el-icon><House /></el-icon><span>首页概览</span>
+        </el-menu-item>
+        <el-menu-item index="/ambassador/qrcode">
+          <el-icon><Grid /></el-icon><span>我的渠道码</span>
+        </el-menu-item>
+        <el-menu-item index="/ambassador/records">
+          <el-icon><List /></el-icon><span>发展记录</span>
+        </el-menu-item>
+        <el-menu-item index="/ambassador/commission">
+          <el-icon><Money /></el-icon><span>提成明细</span>
+        </el-menu-item>
+        <el-menu-item index="/ambassador/withdraw">
+          <el-icon><Wallet /></el-icon><span>提现管理</span>
+        </el-menu-item>
+      </el-menu>
+      <div class="drawer-footer">
+        <el-button type="warning" plain style="width:100%" @click="$router.push('/'); mobileDrawerVisible = false">
+          <el-icon><SwitchButton /></el-icon>
+          退出登录
+        </el-button>
+      </div>
+    </el-drawer>
+
+    <!-- 主内容区 -->
     <div class="main-area">
-      <div class="topbar">
+      <div class="topbar pc-only">
         <div class="topbar-left">
           <span class="page-title">{{ pageTitle }}</span>
         </div>
@@ -68,11 +115,12 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { House, Grid, List, Money, Wallet, Bell, Fold, Expand, SwitchButton } from '@element-plus/icons-vue'
+import { House, Grid, List, Money, Wallet, Bell, Fold, Expand, SwitchButton, Menu } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()
 const sidebarCollapsed = ref(false)
+const mobileDrawerVisible = ref(false)
 const activeMenu = computed(() => route.path)
 const pageTitles = {
   '/ambassador': '首页概览',
@@ -90,6 +138,8 @@ const handleLogout = () => {
 
 <style scoped>
 .ambassador-layout { display: flex; min-height: 100vh; background: #f0f2f5; }
+
+/* PC端侧边栏 */
 .sidebar { width: 220px; background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%); transition: width 0.3s; flex-shrink: 0; display: flex; flex-direction: column; }
 .sidebar.collapsed { width: 64px; }
 .sidebar-header { display: flex; align-items: center; padding: 16px 12px; gap: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); }
@@ -107,10 +157,77 @@ const handleLogout = () => {
 :deep(.el-menu-item:hover) { background: rgba(255,255,255,0.08) !important; color: #fff !important; }
 .sidebar-footer { padding: 16px; margin-top: auto; }
 .sidebar-footer :deep(.el-button) { color: rgba(255,255,255,0.5) !important; width: 100%; }
+
+/* 主区域 */
 .main-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
 .topbar { height: 56px; background: #fff; border-bottom: 1px solid #eee; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
 .page-title { font-weight: 600; font-size: 15px; }
 .topbar-right { display: flex; align-items: center; gap: 12px; }
 .badge-item :deep(.el-badge__content) { top: 4px; right: 4px; }
 .content-area { flex: 1; overflow-y: auto; padding: 20px; }
+
+/* 手机端顶部栏 */
+.mobile-header {
+  position: sticky; top: 0; z-index: 200;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  color: #fff; display: flex; align-items: center; gap: 12px;
+  padding: 0 16px; height: 56px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+.mobile-header :deep(.el-icon) { color: #fff; }
+.mobile-title { flex: 1; font-weight: 600; font-size: 15px; color: #F59E0B; }
+
+/* 手机端抽屉 */
+.drawer-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 24px 20px; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+}
+.drawer-avatar { width: 48px; height: 48px; border-radius: 50%; border: 2px solid #F59E0B; }
+.drawer-name { color: #fff; font-weight: 600; font-size: 16px; }
+.drawer-sub { color: rgba(255,255,255,0.5); font-size: 12px; margin-top: 4px; }
+.drawer-menu {
+  border: none !important;
+  background: transparent !important;
+  min-height: calc(100vh - 200px);
+  overflow-y: auto;
+}
+.drawer-menu :deep(.el-menu-item) {
+  height: 50px !important;
+  line-height: 50px !important;
+  font-size: 15px !important;
+  color: rgba(255,255,255,0.65) !important;
+  background: transparent !important;
+}
+.drawer-menu :deep(.el-menu-item:hover) {
+  background: rgba(255,255,255,0.08) !important;
+  color: #fff !important;
+}
+.drawer-menu :deep(.el-menu-item.is-active) {
+  background: #F59E0B !important;
+  color: #fff !important;
+}
+.drawer-footer {
+  padding: 16px 20px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+  .content-area { padding: 12px; }
+  /* 抽屉深色背景 */
+  :deep(.el-drawer__body) {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%) !important;
+    display: flex;
+    flex-direction: column;
+    padding: 0 !important;
+    overflow: hidden;
+  }
+  .drawer-menu { padding: 8px 0; }
+  .drawer-menu::-webkit-scrollbar { width: 4px; }
+  .drawer-menu::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 2px; }
+  .drawer-footer {
+    flex-shrink: 0;
+    position: static;
+  }
+}
 </style>

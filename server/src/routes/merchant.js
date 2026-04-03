@@ -18,8 +18,10 @@ router.get('/config', MerchantController.getConfig)
 // 首页推荐需求
 router.get('/recommend/demands', MerchantController.getRecommendDemands)
 
-// 需求大厅
+// 需求大厅（列表公开，详情也公开，联系方式根据会员等级决定）
 router.get('/demands', MerchantController.getDemands)
+
+// 需求详情（公开接口，联系方式根据会员等级决定）
 router.get('/demands/:id', MerchantController.getDemandDetail)
 
 // 资源大厅
@@ -56,6 +58,10 @@ router.get('/comments/:id/replies', MerchantController.getCommentReplies)
 // 个人中心
 router.get('/profile', MerchantController.getProfile)
 router.put('/profile', MerchantController.updateProfile)
+
+// 收藏需求
+router.post('/favorites/toggle', MerchantController.toggleFavorite)
+router.get('/favorites', MerchantController.getMyFavorites)
 
 // 会员中心
 router.get('/member', MerchantController.getMemberInfo)

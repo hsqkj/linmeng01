@@ -16,7 +16,7 @@ export const getRecommendResources = (params) => request.get('/community/recomme
 
 // ====== 资源大厅 ======
 export const getResources = (params) => request.get('/community/resources', { params })
-export const getResourceDetail = (id) => request.get(`/community/resources/${id}`)
+export const getResourceDetail = (id) => request.get(`/community/resources/${id}`, { role: 'community' })
 
 // ====== 需求大厅 ======
 export const getDemands = (params) => request.get('/community/demands', { params })

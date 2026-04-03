@@ -4,7 +4,7 @@
 
     <el-row :gutter="20" v-loading="loading" element-loading-text="加载中...">
       <!-- 左侧：社区基本信息 -->
-      <el-col :span="8">
+      <el-col :xs="24" :sm="24" :md="8">
         <div class="profile-card">
           <div class="avatar-area">
             <el-avatar :size="80" :src="profile.logo" style="background:#1a56db">
@@ -23,7 +23,7 @@
       </el-col>
 
       <!-- 右侧：详细信息 -->
-      <el-col :span="16">
+      <el-col :xs="24" :sm="24" :md="16">
         <el-card v-if="!editing">
           <template #header>
             <div style="display:flex;justify-content:space-between;align-items:center">
@@ -81,49 +81,98 @@
             </div>
           </template>
           <el-form :model="editForm" label-width="140px" ref="formRef">
+            <el-divider content-position="left">基本信息</el-divider>
+            <el-row :gutter="16">
+              <el-col :xs="24" :sm="12">
+                <el-form-item label="社区名称">
+                  <el-input v-model="editForm.community_name" disabled />
+                </el-form-item>
+              </el-col>
+              <el-col :xs="24" :sm="12">
+                <el-form-item label="小区名称">
+                  <el-input v-model="editForm.community" disabled />
+                </el-form-item>
+              </el-col>
+              <el-col :xs="24" :sm="12">
+                <el-form-item label="所属行政区">
+                  <el-input v-model="editForm.district" disabled />
+                </el-form-item>
+              </el-col>
+              <el-col :xs="24" :sm="12">
+                <el-form-item label="所属街道">
+                  <el-input v-model="editForm.street" disabled />
+                </el-form-item>
+              </el-col>
+              <el-col :xs="24" :sm="12">
+                <el-form-item label="联系人职务">
+                  <el-input v-model="editForm.position" placeholder="如：社区主任" />
+                </el-form-item>
+              </el-col>
+              <el-col :xs="24" :sm="12">
+                <el-form-item label="联系手机">
+                  <el-input v-model="editForm.username" disabled />
+                </el-form-item>
+              </el-col>
+              <el-col :span="24">
+                <el-form-item label="详细地址">
+                  <el-input v-model="editForm.address" placeholder="详细地址（楼栋门牌号等）" />
+                </el-form-item>
+              </el-col>
+              <el-col :span="24">
+                <el-form-item label="社区Logo">
+                  <el-input v-model="editForm.logo" placeholder="输入Logo图片URL" />
+                </el-form-item>
+              </el-col>
+              <el-col :span="24">
+                <el-form-item label="场地图片">
+                  <el-input v-model="editForm.imagesStr" placeholder="输入图片URL，多个用英文逗号分隔" />
+                </el-form-item>
+              </el-col>
+            </el-row>
+
             <el-divider content-position="left">社区画像数据</el-divider>
             <el-row :gutter="16">
-              <el-col :span="12">
+              <el-col :xs="24" :sm="12">
                 <el-form-item label="小区总户数">
                   <el-input-number v-model="editForm.households" :min="0" style="width:100%" />
                 </el-form-item>
               </el-col>
-              <el-col :span="12">
+              <el-col :xs="24" :sm="12">
                 <el-form-item label="社区商户数">
                   <el-input-number v-model="editForm.merchant_count" :min="0" style="width:100%" />
                 </el-form-item>
               </el-col>
-              <el-col :span="12">
+              <el-col :xs="24" :sm="12">
                 <el-form-item label="亲子家庭占比">
                   <el-input v-model="editForm.family_ratio" placeholder="如：35" />%
                 </el-form-item>
               </el-col>
-              <el-col :span="12">
+              <el-col :xs="24" :sm="12">
                 <el-form-item label="老年群体占比">
                   <el-input v-model="editForm.elderly_ratio" placeholder="如：28" />%
                 </el-form-item>
               </el-col>
-              <el-col :span="12">
+              <el-col :xs="24" :sm="12">
                 <el-form-item label="公共空间面积(㎡)">
                   <el-input-number v-model="editForm.public_space_area" :min="0" style="width:100%" />
                 </el-form-item>
               </el-col>
-              <el-col :span="12">
+              <el-col :xs="24" :sm="12">
                 <el-form-item label="户外广场">
                   <el-switch v-model="editForm.has_outdoor_plaza" :active-value="1" :inactive-value="0" />
                 </el-form-item>
               </el-col>
-              <el-col :span="12">
+              <el-col :xs="24" :sm="12">
                 <el-form-item label="商业体/商业街">
                   <el-switch v-model="editForm.has_commercial" :active-value="1" :inactive-value="0" />
                 </el-form-item>
               </el-col>
-              <el-col :span="12">
+              <el-col :xs="24" :sm="12">
                 <el-form-item label="学校/幼儿园">
                   <el-switch v-model="editForm.has_school" :active-value="1" :inactive-value="0" />
                 </el-form-item>
               </el-col>
-              <el-col :span="12">
+              <el-col :xs="24" :sm="12">
                 <el-form-item label="公园/体育场馆">
                   <el-switch v-model="editForm.has_park" :active-value="1" :inactive-value="0" />
                 </el-form-item>
@@ -172,6 +221,15 @@ const profile = ref({})
 const allTags = ['亲子友好', '老年服务', '文化活动', '体育赛事', '教育资源', '健康社区', '公益活动', '科技创新', '环保绿色', '商业活跃', '居民参与度高', '节庆氛围浓']
 
 const editForm = ref({
+  community_name: '',
+  community: '',
+  district: '',
+  street: '',
+  position: '',
+  username: '',
+  address: '',
+  logo: '',
+  imagesStr: '',
   households: null,
   merchant_count: null,
   family_ratio: '',
@@ -200,7 +258,18 @@ async function loadProfile() {
 function startEdit() {
   const tags = profile.value.tags
   const tagsArray = Array.isArray(tags) ? tags : (tags ? tags.split(',') : [])
+  const images = profile.value.images
+  const imagesArray = Array.isArray(images) ? images : (images ? images.split(',').filter(Boolean) : [])
   editForm.value = {
+    community_name: profile.value.community_name || '',
+    community: profile.value.community || '',
+    district: profile.value.district || '',
+    street: profile.value.street || '',
+    position: profile.value.position || '',
+    username: profile.value.username || '',
+    address: profile.value.address || '',
+    logo: profile.value.logo || '',
+    imagesStr: imagesArray.join(','),
     households: profile.value.households || null,
     merchant_count: profile.value.merchant_count || null,
     family_ratio: profile.value.family_ratio || '',
@@ -226,7 +295,14 @@ function toggleTag(tag) {
 async function saveProfile() {
   saving.value = true
   try {
+    const images = editForm.value.imagesStr
+      ? editForm.value.imagesStr.split(',').map(s => s.trim()).filter(Boolean)
+      : []
     await updateProfile({
+      logo: editForm.value.logo,
+      address: editForm.value.address,
+      position: editForm.value.position,
+      images,
       households: editForm.value.households,
       merchant_count: editForm.value.merchant_count,
       family_ratio: editForm.value.family_ratio,
@@ -267,4 +343,14 @@ onMounted(() => {
 .stat-label { font-size: 12px; color: #909399; margin-top: 2px; }
 .tag-list { display: flex; flex-wrap: wrap; }
 .tag-selector { display: flex; flex-wrap: wrap; }
+
+@media (max-width: 768px) {
+  .page { padding-bottom: 70px; }
+  .page h2 { font-size: 18px; margin-bottom: 14px; }
+  .profile-card { padding: 16px; border-radius: 8px; }
+  .avatar-area .el-avatar { width: 64px !important; height: 64px !important; }
+  .community-name { font-size: 15px; }
+  :deep(.el-descriptions) { font-size: 13px; }
+  :deep(.el-descriptions__label) { width: 100px; font-size: 12px; }
+}
 </style>

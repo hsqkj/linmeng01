@@ -125,16 +125,7 @@ exports.getConfig = async (req, res) => {
 // 推荐资源
 exports.getRecommendResources = async (req, res) => {
   try {
-    const { community_id } = req.community
-    
-    // 获取当前社区信息
-    const [[community]] = await pool.query('SELECT * FROM communities WHERE id = ?', [community_id])
-    
-    // 获取匹配算法配置
-    const [[config]] = await pool.query("SELECT config_value FROM sys_configs WHERE config_key = 'match_algorithm'")
-    const algorithmConfig = config?.config_value || '{}'
-    
-    // 获取商家资源
+    // 获取商家资源（公开接口，不需要登录）
     const [resources] = await pool.query(
       `SELECT r.*, m.company_name, m.logo as merchant_logo, m.star_rating, m.member_level
        FROM resources r
@@ -143,17 +134,14 @@ exports.getRecommendResources = async (req, res) => {
        ORDER BY m.member_level DESC, m.star_rating DESC
        LIMIT 20`
     )
-    
-    // 计算匹配度
-    const result = resources.map(r => {
-      const matchScore = calculateMatchScore({ tags: community.tags }, r, algorithmConfig)
-      return {
-        ...r,
-        matchScore: Math.round(matchScore),
-        matchHearts: getMatchHearts(matchScore)
-      }
-    }).sort((a, b) => b.matchScore - a.matchScore)
-    
+
+    // 公开接口统一返回中等匹配度，登录后展示个性化
+    const result = resources.map(r => ({
+      ...r,
+      matchScore: 3,
+      matchHearts: 3
+    }))
+
     success(res, result)
   } catch (err) {
     console.error('Get recommend resources error:', err)
@@ -164,7 +152,7 @@ exports.getRecommendResources = async (req, res) => {
 // 资源大厅
 exports.getResources = async (req, res) => {
   try {
-    const { page = 1, pageSize = 10, type, level, sort } = req.query
+    const { page = 1, pageSize = 10, type, level, sort, keyword, distance } = req.query
     const offset = (page - 1) * pageSize
     
     let where = 'r.status = 1 AND m.status = 1'
@@ -180,10 +168,17 @@ exports.getResources = async (req, res) => {
       params.push(level)
     }
     
-    let orderBy = 'm.member_level DESC, m.star_rating DESC, r.created_at DESC'
-    if (sort === 'match') {
-      orderBy = 'match_score DESC'
+    if (keyword) {
+      where += ' AND (r.title LIKE ? OR r.content LIKE ? OR m.company_name LIKE ?)'
+      params.push(`%${keyword}%`, `%${keyword}%`, `%${keyword}%`)
     }
+    
+    // distance参数：前端筛选用（暂无坐标数据，暂不实际过滤）
+    
+    let orderBy = 'm.member_level DESC, m.star_rating DESC, r.created_at DESC'
+    if (sort === 'newest') orderBy = 'r.created_at DESC'
+    if (sort === 'rating') orderBy = 'm.star_rating DESC, r.created_at DESC'
+    if (sort === 'hot') orderBy = 'r.view_count DESC, r.created_at DESC'
     
     const [rows] = await pool.query(
       `SELECT r.*, m.company_name, m.logo as merchant_logo, m.star_rating, m.member_level
@@ -196,25 +191,27 @@ exports.getResources = async (req, res) => {
     )
     
     // 获取匹配度
-    const [[community]] = await pool.query('SELECT tags FROM communities WHERE id = ?', [req.community.id])
-    const [[config]] = await pool.query("SELECT config_value FROM sys_configs WHERE config_key = 'match_algorithm'")
-    const algorithmConfig = config?.config_value || '{}'
-    
-    const result = rows.map(r => {
-      const matchScore = calculateMatchScore({ tags: community?.tags }, r, algorithmConfig)
-      return {
-        ...r,
-        matchScore: Math.round(matchScore),
-        matchHearts: getMatchHearts(matchScore)
-      }
-    })
+    let matchResult = rows.map(r => ({ ...r, matchScore: 3, matchHearts: 3 }))
+    if (req.community?.id) {
+      const [[community]] = await pool.query('SELECT tags FROM communities WHERE id = ?', [req.community.id])
+      const [[config]] = await pool.query("SELECT config_value FROM sys_configs WHERE config_key = 'match_algorithm'")
+      const algorithmConfig = config?.config_value || '{}'
+      matchResult = rows.map(r => {
+        const matchScore = calculateMatchScore({ tags: community?.tags }, r, algorithmConfig)
+        return {
+          ...r,
+          matchScore: Math.round(matchScore),
+          matchHearts: getMatchHearts(matchScore)
+        }
+      })
+    }
     
     const [[{ total }]] = await pool.query(
       `SELECT COUNT(*) as total FROM resources r JOIN merchants m ON r.merchant_id = m.id WHERE ${where}`,
       params
     )
     
-    pageSuccess(res, result, total, page, pageSize)
+    pageSuccess(res, matchResult, total, page, pageSize)
   } catch (err) {
     error(res, '获取资源列表失败')
   }
@@ -241,12 +238,26 @@ exports.getResourceDetail = async (req, res) => {
     // 更新浏览数
     await pool.query('UPDATE resources SET view_count = view_count + 1 WHERE id = ?', [id])
     
+    // 计算匹配度（根据社区标签与商家标签匹配）
+    let matchScore = 3
+    let matchHearts = 3
+    if (req.community?.id) {
+      try {
+        const [[community]] = await pool.query('SELECT tags FROM communities WHERE id = ?', [req.community.id])
+        const [[config]] = await pool.query("SELECT config_value FROM sys_configs WHERE config_key = 'match_algorithm'")
+        const algorithmConfig = config?.config_value || '{}'
+        matchScore = calculateMatchScore({ tags: community?.tags }, rows[0], algorithmConfig)
+        matchHearts = getMatchHearts(matchScore)
+      } catch {}
+    }
+    
     // 检查是否可以查看联系方式（金牌会员Lv3及以上）
     const canViewContact = rows[0].member_level >= 3
     
     const result = {
       ...rows[0],
-      canViewContact
+      matchScore: Math.round(matchScore),
+      matchHearts
     }
     
     if (!canViewContact) {
@@ -290,7 +301,7 @@ exports.getMerchantDetail = async (req, res) => {
 // 需求大厅
 exports.getDemands = async (req, res) => {
   try {
-    const { page = 1, pageSize = 10, type, audience } = req.query
+    const { page = 1, pageSize = 10, type, audience, sort } = req.query
     const offset = (page - 1) * pageSize
     
     let where = 'd.status = 1'
@@ -301,12 +312,17 @@ exports.getDemands = async (req, res) => {
       params.push(type)
     }
     
+    let orderBy = 'd.created_at DESC'
+    if (sort === 'hot') {
+      orderBy = 'd.view_count DESC, d.created_at DESC'
+    }
+    
     const [rows] = await pool.query(
-      `SELECT d.*, c.community_name, c.district, c.street
+      `SELECT d.*, c.community_name, c.district, c.street, c.households, c.family_ratio, c.elderly_ratio
        FROM demands d
        JOIN communities c ON d.community_id = c.id
        WHERE ${where}
-       ORDER BY d.created_at DESC
+       ORDER BY ${orderBy}
        LIMIT ? OFFSET ?`,
       [...params, parseInt(pageSize), offset]
     )
@@ -316,7 +332,8 @@ exports.getDemands = async (req, res) => {
       params
     )
     
-    pageSuccess(res, rows, total, page, pageSize)
+    const result = rows.map(d => ({ ...d, matchScore: 3, matchHearts: 3 }))
+    pageSuccess(res, result, total, page, pageSize)
   } catch (err) {
     error(res, '获取需求列表失败')
   }
@@ -683,12 +700,12 @@ exports.updateProfile = async (req, res) => {
       `UPDATE communities SET logo = ?, description = ?, images = ?, tags = ?,
        households = ?, family_ratio = ?, elderly_ratio = ?, public_space_area = ?,
        has_outdoor_plaza = ?, has_commercial = ?, has_school = ?, has_park = ?,
-       merchant_count = ? WHERE id = ?`,
+       merchant_count = ?, position = ?, address = ? WHERE id = ?`,
       [data.logo || null, data.description || '', data.images ? JSON.stringify(data.images) : null,
        data.tags ? JSON.stringify(Array.isArray(data.tags) ? data.tags : []) : null,
        data.households || null, data.family_ratio || null, data.elderly_ratio || null, data.public_space_area || null,
        data.has_outdoor_plaza || 0, data.has_commercial || 0, data.has_school || 0, data.has_park || 0,
-       data.merchant_count || null, req.community.id]
+       data.merchant_count || null, data.position || '', data.address || '', req.community.id]
     )
     
     success(res, null, '更新成功')

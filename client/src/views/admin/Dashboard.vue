@@ -129,4 +129,19 @@ onMounted(() => { loadDashboard() })
 .overview-item { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 16px; background: #f8f9fa; border-radius: 10px; }
 .overview-item span { font-size: 13px; color: #909399; }
 .overview-item strong { font-size: 22px; font-weight: 700; color: #303133; }
+
+@media (max-width: 768px) {
+  .dashboard h2 { font-size: 18px; margin-bottom: 14px; }
+  .stats-row {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .stat-number { font-size: 22px; }
+  .stat-label { font-size: 12px; margin: 4px 0; }
+  .overview-items { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .overview-item { padding: 10px 6px; }
+  .overview-item strong { font-size: 16px; }
+  .overview-item span { font-size: 11px; }
+}
 </style>

@@ -19,6 +19,9 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }))
 // 静态文件服务
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')))
 
+// 前端构建文件（cpolar部署时只暴露3000端口）
+app.use(express.static(path.join(__dirname, '../../client/dist')))
+
 // 路由
 const adminRoutes = require('./routes/admin')
 const communityRoutes = require('./routes/community')
@@ -37,9 +40,13 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', time: new Date().toISOString() })
 })
 
-// 404处理
+// 404处理（非API路径返回前端index.html，支持SPA路由）
 app.use((req, res) => {
-  res.status(404).json({ code: 404, message: '接口不存在' })
+  if (!req.path.startsWith('/api')) {
+    res.sendFile(path.join(__dirname, '../../client/dist/index.html'))
+  } else {
+    res.status(404).json({ code: 404, message: '接口不存在' })
+  }
 })
 
 // 错误处理

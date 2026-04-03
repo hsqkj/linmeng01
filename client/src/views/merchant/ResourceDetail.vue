@@ -16,7 +16,7 @@
               <el-tag :type="statusTypeTag[currentResource.status]" size="small" style="margin-left:8px">
                 {{ statusName[currentResource.status] }}
               </el-tag>
-              <span class="match-hearts">{{ '❤️'.repeat(4) }}{{ '🤍'.repeat(1) }}</span>
+              <span class="match-hearts">{{ '❤️'.repeat(currentResource.match_hearts || 0) }}{{ '🤍'.repeat(5 - (currentResource.match_hearts || 0)) }}</span>
             </div>
             <h1 class="resource-title">{{ currentResource.title }}</h1>
           </div>

@@ -1,0 +1,13 @@
+- generic [ref=e5]:
+  - generic [ref=e6]: "[plugin:vite:vue] Invalid end tag."
+  - generic [ref=e7]: C:/Users/12494/WorkBuddy/20260331205655/client/src/views/merchant/Demands.vue:130:1
+  - generic [ref=e8]: "128| }) 129| </script> 130| </script> | ^ 131| 132| <style scoped>"
+  - generic [ref=e9]: at createCompilerError (C:\Users\12494\WorkBuddy\20260331205655\client\node_modules\@vue\compiler-core\dist\compiler-core.cjs.js:1378:17) at emitError (C:\Users\12494\WorkBuddy\20260331205655\client\node_modules\@vue\compiler-core\dist\compiler-core.cjs.js:3014:5) at Object.onclosetag (C:\Users\12494\WorkBuddy\20260331205655\client\node_modules\@vue\compiler-core\dist\compiler-core.cjs.js:2391:9) at Tokenizer.stateInClosingTagName (C:\Users\12494\WorkBuddy\20260331205655\client\node_modules\@vue\compiler-core\dist\compiler-core.cjs.js:799:16) at Tokenizer.parse (C:\Users\12494\WorkBuddy\20260331205655\client\node_modules\@vue\compiler-core\dist\compiler-core.cjs.js:1157:16) at Object.baseParse (C:\Users\12494\WorkBuddy\20260331205655\client\node_modules\@vue\compiler-core\dist\compiler-core.cjs.js:3053:13) at Object.parse (C:\Users\12494\WorkBuddy\20260331205655\client\node_modules\@vue\compiler-dom\dist\compiler-dom.cjs.js:910:23) at Object.parse$1 [as parse] (C:\Users\12494\WorkBuddy\20260331205655\client\node_modules\@vue\compiler-sfc\dist\compiler-sfc.cjs.js:1824:24) at createDescriptor (C:\Users\12494\WorkBuddy\20260331205655\client\node_modules\@vitejs\plugin-vue\dist\index.cjs:86:43) at transformMain (C:\Users\12494\WorkBuddy\20260331205655\client\node_modules\@vitejs\plugin-vue\dist\index.cjs:2331:34
+  - generic [ref=e10]:
+    - text: Click outside, press Esc key, or fix the code to dismiss.
+    - text: You can also disable this overlay by setting
+    - code [ref=e11]: server.hmr.overlay
+    - text: to
+    - code [ref=e12]: "false"
+    - text: in
+    - code [ref=e13]: vite.config.js.

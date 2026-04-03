@@ -10,10 +10,16 @@
     "build": "cd client && npm run build",
     "start": "cd server && npm start"
   },
-  "keywords": ["社区", "商家", "资源匹配", "邻盟"],
+  "keywords": [
+    "社区",
+    "商家",
+    "资源匹配",
+    "邻盟"
+  ],
   "author": "大彭",
   "license": "MIT",
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    "concurrently": "^8.2.2",
+    "playwright": "^1.59.1"
   }
 }

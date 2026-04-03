@@ -155,8 +155,8 @@
               </span>
               <span style="margin-left:4px;color:#909399">({{ currentMerchant.starRating || 0 }}星)</span>
             </el-descriptions-item>
-            <el-descriptions-item label="联系人">{{ currentMerchant.contact || '-' }}</el-descriptions-item>
-            <el-descriptions-item label="联系电话"><span style="color:#909399">平台保护，联系需通过平台</span></el-descriptions-item>
+            <el-descriptions-item label="联系人"><el-link type="primary" @click="contactService">请联系平台客服</el-link></el-descriptions-item>
+            <el-descriptions-item label="联系电话"><el-link type="primary" @click="contactService">请联系平台客服</el-link></el-descriptions-item>
           </el-descriptions>
           <el-alert type="info" :closable="false" show-icon style="margin-top:12px">
             <template #default>留言内容将经平台审核后推送给商家。</template>
@@ -213,8 +213,8 @@
           </span>
           <span style="margin-left:4px;color:#909399">({{ currentMerchant.starRating || 0 }}星)</span>
         </el-descriptions-item>
-        <el-descriptions-item label="联系人">{{ currentMerchant.contact || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="联系电话"><span style="color:#909399">平台保护，联系需通过平台</span></el-descriptions-item>
+        <el-descriptions-item label="联系人"><el-link type="primary" @click="contactService">请联系平台客服</el-link></el-descriptions-item>
+        <el-descriptions-item label="联系电话"><el-link type="primary" @click="contactService">请联系平台客服</el-link></el-descriptions-item>
         <el-descriptions-item label="企业地址" :span="2">{{ currentMerchant.address || '-' }}</el-descriptions-item>
         <el-descriptions-item label="擅长领域" :span="2">
           <el-tag v-for="tag in currentMerchant.tags" :key="tag" size="small" style="margin:2px">{{ tag }}</el-tag>
@@ -392,6 +392,11 @@ function submitComment() {
 function leaveMessage() {
   messageContent.value = ''
   showMessageDialog.value = true
+}
+
+// 联系平台客服 - 跳转到留言咨询页
+function contactService() {
+  router.push('/community/messages')
 }
 
 function submitMessage() {

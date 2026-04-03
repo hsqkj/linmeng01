@@ -19,9 +19,9 @@
           </div>
           <div class="match-display">
             <div class="hearts">
-              <span v-for="n in 5" :key="n" class="heart" :class="{ filled: n <= resource.matchHearts }">♥</span>
+              <span v-for="n in 5" :key="n" class="heart" :class="{ filled: n <= (resource.matchHearts || resource.star_rating || 0) }">♥</span>
             </div>
-            <span class="match-label">匹配度 {{ resource.matchScore * 20 }}%</span>
+            <span class="match-label">匹配度 {{ ((resource.matchScore || resource.star_rating || 0) * 20) }}%</span>
           </div>
         </div>
 
@@ -54,12 +54,10 @@
               <el-tag :type="memberLevelType[resource.member_level]" size="small">{{ memberLevelName[resource.member_level] }}</el-tag>
             </el-descriptions-item>
             <el-descriptions-item label="联系人">
-              <span v-if="resource.member_level >= 3">{{ resource.contact_name }}</span>
-              <span v-else style="color:#909399">平台保护，金牌会员可见</span>
+              <el-link type="primary" @click="contactService">请联系平台客服</el-link>
             </el-descriptions-item>
             <el-descriptions-item label="联系电话">
-              <span v-if="resource.member_level >= 3">{{ resource.merchant_phone }}</span>
-              <span v-else style="color:#909399">平台保护，金牌会员可见联系方式</span>
+              <el-link type="primary" @click="contactService">请联系平台客服</el-link>
             </el-descriptions-item>
             <el-descriptions-item label="商家简介" :span="2">{{ resource.merchant_description || '-' }}</el-descriptions-item>
           </el-descriptions>
@@ -220,6 +218,11 @@ async function submitReply(comment) {
   } catch {
     // error handled by interceptor
   }
+}
+
+// 联系平台客服 - 跳转到留言咨询页
+function contactService() {
+  router.push('/community/messages')
 }
 
 onMounted(() => {

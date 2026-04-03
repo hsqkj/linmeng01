@@ -104,9 +104,9 @@
           </div>
 
           <div class="demand-header">
-            <el-avatar :size="48" :src="demand.community?.logo" />
+            <el-avatar :size="48" :src="demand.community?.logo || `https://ui-avatars.com/api/?name=${encodeURIComponent(demand.community_name || '社')}&background=4A90D9&color=fff`" />
             <div class="community-info">
-              <h4>{{ demand.community_name }}</h4>
+              <h4 style="cursor:pointer;color:#409EFF" @click.stop="viewCommunityDetail(demand)">{{ demand.community_name }}</h4>
               <el-tag size="small" type="info">{{ demand.demand_type }}</el-tag>
             </div>
           </div>
@@ -131,6 +131,45 @@
         </el-card>
       </div>
     </div>
+
+    <!-- 社区详情弹窗 -->
+    <el-dialog v-model="showCommunityDialog" title="社区基本信息" width="560px">
+      <div v-if="communityDetail">
+        <div class="detail-header" style="display:flex;align-items:center;gap:16px;margin-bottom:16px">
+          <img :src="communityDetail.logo || `https://ui-avatars.com/api/?name=${encodeURIComponent(communityDetail.community_name || '社')}&background=4A90D9&color=fff`" style="width:64px;height:64px;border-radius:12px;object-fit:cover" />
+          <div>
+            <div style="font-size:20px;font-weight:700">{{ communityDetail.community_name }}</div>
+            <div style="color:#909399;font-size:13px;margin-top:4px">{{ communityDetail.district }}{{ communityDetail.street ? ' · ' + communityDetail.street : '' }}</div>
+          </div>
+        </div>
+        <el-divider />
+        <el-descriptions :column="2" border size="small">
+          <el-descriptions-item label="户数规模">{{ communityDetail.households ? communityDetail.households + ' 户' : '未知' }}</el-descriptions-item>
+          <el-descriptions-item label="亲子家庭">{{ communityDetail.family_ratio || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="老年群体">{{ communityDetail.elderly_ratio || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="公共空间">{{ communityDetail.public_space_area ? communityDetail.public_space_area + '㎡' : '-' }}</el-descriptions-item>
+          <el-descriptions-item label="详细地址" :span="2">{{ communityDetail.address || '暂无' }}</el-descriptions-item>
+        </el-descriptions>
+        <div style="margin-top:16px" v-if="communityDetail.description">
+          <div style="font-weight:600;margin-bottom:8px">社区简介</div>
+          <p style="color:#606266;line-height:1.8;font-size:14px;margin:0">{{ communityDetail.description }}</p>
+        </div>
+        <div style="margin-top:16px" v-if="communityDetail.tags">
+          <div style="font-weight:600;margin-bottom:8px">社区标签</div>
+          <el-tag v-for="tag in communityDetail.tags.split(',')" :key="tag" size="small" type="primary" effect="light" style="margin:3px">{{ tag }}</el-tag>
+        </div>
+        <div style="margin-top:16px">
+          <div style="font-weight:600;margin-bottom:8px">社区特点</div>
+          <el-tag v-if="communityDetail.has_outdoor_plaza" size="small" type="info" effect="light" style="margin:3px">有户外广场</el-tag>
+          <el-tag v-if="communityDetail.has_school" size="small" type="info" effect="light" style="margin:3px">有幼儿园/小学</el-tag>
+          <el-tag v-if="communityDetail.has_commercial" size="small" type="info" effect="light" style="margin:3px">有商业体</el-tag>
+          <el-tag v-if="communityDetail.has_park" size="small" type="info" effect="light" style="margin:3px">有公园</el-tag>
+        </div>
+      </div>
+      <div v-else style="text-align:center;padding:40px;color:#909399">
+        <el-icon :size="40"><Loading /></el-icon>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -138,8 +177,8 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { getBanners, getRecommendDemands, getProfile, getMyResources, getMyIntentions } from '@/api/merchant'
-import { Medal, StarFilled, Goods, View, Connection, CircleCheck, User, Calendar } from '@element-plus/icons-vue'
+import { getBanners, getRecommendDemands, getProfile, getMyResources, getMyIntentions, getMemberInfo, getCommunityDetail } from '@/api/merchant'
+import { Medal, StarFilled, Goods, View, Connection, CircleCheck, User, Calendar, Loading } from '@element-plus/icons-vue'
 
 const router = useRouter()
 
@@ -150,6 +189,22 @@ const stats = ref({ resources: 0, intentions: 0, completed: 0 })
 const loading = ref(false)
 const memberLevelName = { 0: '普通会员', 1: '普通会员', 2: '银牌会员', 3: '金牌会员', 4: '铂金会员', 5: '钻石会员' }
 
+// 社区详情弹窗
+const showCommunityDialog = ref(false)
+const communityDetail = ref(null)
+
+async function viewCommunityDetail(demand) {
+  if (!demand.community_id) return
+  showCommunityDialog.value = true
+  communityDetail.value = null
+  try {
+    const res = await getCommunityDetail(demand.community_id)
+    communityDetail.value = res.data
+  } catch {
+    ElMessage.error('加载社区资料失败')
+  }
+}
+
 const bannerColors = [
   'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
   'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
@@ -159,10 +214,11 @@ const bannerColors = [
 onMounted(async () => {
   loading.value = true
   try {
-    const [bannerRes, demandsRes, profileRes, resourcesRes, intentionsRes] = await Promise.allSettled([
+    const [bannerRes, demandsRes, profileRes, memberRes, resourcesRes, intentionsRes] = await Promise.allSettled([
       getBanners(),
       getRecommendDemands(),
       getProfile(),
+      getMemberInfo(),
       getMyResources({ pageSize: 1 }),
       getMyIntentions({ pageSize: 50 })
     ])
@@ -190,6 +246,17 @@ onMounted(async () => {
       profile.value = profileRes.value.data || {}
     }
 
+    // 优先用 getMemberInfo 的数据（更准确）
+    if (memberRes.status === 'fulfilled') {
+      const mdata = memberRes.value.data || {}
+      if (mdata.member_level !== undefined && mdata.member_level !== null) {
+        profile.value.member_level = mdata.member_level
+      }
+      if (mdata.expire_date || mdata.member_expire_at) {
+        profile.value.member_expire_at = mdata.expire_date || mdata.member_expire_at
+      }
+    }
+
     if (resourcesRes.status === 'fulfilled') {
       stats.value.resources = resourcesRes.value.data?.pagination?.total || resourcesRes.value.data?.total || 0
     }
@@ -213,6 +280,10 @@ function viewDemandDetail(demand) {
 const contactCommunity = (demand) => {
   ElMessage.success(`已向${demand.community_name}发送合作意向`)
 }
+
+// 会员等级名称映射（用于详情弹窗）
+const memberLevelNameMap = { 0: '普通会员', 1: '普通会员', 2: '银牌会员', 3: '金牌会员', 4: '铂金会员', 5: '钻石会员' }
+const memberLevelTagType = { 0: 'info', 1: 'info', 2: '', 3: 'warning', 4: 'danger', 5: 'danger' }
 </script>
 
 <style scoped>
@@ -428,15 +499,100 @@ const contactCommunity = (demand) => {
 @media (max-width: 768px) {
   .membership-card {
     flex-direction: column;
-    gap: 20px;
+    gap: 16px;
+    padding: 16px;
+    border-radius: 8px;
   }
-  
+
+  .membership-info {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .level-badge {
+    padding: 12px;
+  }
+
+  .membership-details h3 {
+    font-size: 15px;
+    text-align: center;
+  }
+
+  .membership-actions {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .membership-actions .el-button {
+    width: 100%;
+  }
+
+  .banner-item {
+    padding: 0 16px;
+  }
+
+  .banner-content h3 {
+    font-size: 16px;
+  }
+
+  .banner-content p {
+    font-size: 13px;
+  }
+
   .stats-row {
     grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-bottom: 16px;
   }
-  
+
+  .stat-card :deep(.el-card__body) {
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .stat-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 8px;
+    flex-shrink: 0;
+  }
+
+  .stat-value {
+    font-size: 18px;
+  }
+
+  .stat-label {
+    font-size: 12px;
+  }
+
+  .section {
+    margin-bottom: 20px;
+  }
+
+  .section-header {
+    margin-bottom: 12px;
+  }
+
+  .section-header h2 {
+    font-size: 15px;
+  }
+
   .demand-list {
     grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .demand-header {
+    gap: 8px;
+    padding-right: 70px;
+  }
+
+  .demand-actions {
+    flex-direction: column;
+  }
+
+  .demand-actions .el-button {
+    width: 100%;
   }
 }
 </style>

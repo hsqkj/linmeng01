@@ -60,7 +60,7 @@
         <el-icon><HomeFilled /></el-icon>
         <span>首页</span>
       </router-link>
-      <router-link to="/community/demands" class="mobile-nav-item" :class="{ active: $route.path.includes('/demands') }">
+      <router-link to="/community/demands" class="mobile-nav-item" :class="{ active: $route.path.includes('/demands') && !$route.path.includes('/resources') }">
         <el-icon><Document /></el-icon>
         <span>需求</span>
       </router-link>
@@ -78,6 +78,7 @@
 
 <script setup>
 import { useRouter } from 'vue-router'
+import { Document } from '@element-plus/icons-vue'
 
 const router = useRouter()
 
@@ -206,12 +207,26 @@ const logout = () => {
 
 @media (max-width: 768px) {
   .header {
-    padding: 0 15px;
+    padding: 0 12px;
+    height: 52px;
   }
-  
+  .logo-text { font-size: 16px; }
+  .header-right { gap: 12px; }
+
   .main-content {
-    padding: 15px;
+    padding: 12px;
     padding-bottom: 70px;
+  }
+
+  .mobile-nav {
+    padding: 6px 0;
+  }
+  .mobile-nav-item {
+    font-size: 11px;
+    gap: 2px;
+  }
+  .mobile-nav-item :deep(.el-icon) {
+    font-size: 20px;
   }
 }
 </style>

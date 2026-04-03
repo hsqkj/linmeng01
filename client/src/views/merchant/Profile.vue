@@ -4,7 +4,7 @@
 
     <el-row :gutter="20" v-loading="loading" element-loading-text="加载中...">
       <!-- 左侧商家信息卡 -->
-      <el-col :span="8">
+      <el-col :xs="24" :sm="24" :md="8">
         <div class="profile-card">
           <div class="avatar-area">
             <el-avatar :size="80" :src="profile.logo">
@@ -24,7 +24,7 @@
       </el-col>
 
       <!-- 右侧详细信息 -->
-      <el-col :span="16">
+      <el-col :xs="24" :sm="24" :md="16">
         <el-card v-if="!editing">
           <template #header>
             <div style="display:flex;justify-content:space-between;align-items:center">
@@ -108,29 +108,29 @@
           <el-form :model="editForm" label-width="130px">
             <el-divider content-position="left">基本信息</el-divider>
             <el-row :gutter="16">
-              <el-col :span="12">
+              <el-col :xs="24" :sm="12">
                 <el-form-item label="企业名称" required>
                   <el-input v-model="editForm.company_name" />
                 </el-form-item>
               </el-col>
-              <el-col :span="12">
+              <el-col :xs="24" :sm="12">
                 <el-form-item label="行业分类">
                   <el-select v-model="editForm.industry" placeholder="请选择行业分类" style="width:100%" clearable>
                     <el-option v-for="t in industryTypes" :key="t" :label="t" :value="t" />
                   </el-select>
                 </el-form-item>
               </el-col>
-              <el-col :span="12">
+              <el-col :xs="24" :sm="12">
                 <el-form-item label="企业规模">
                   <el-input v-model="editForm.scale" placeholder="如：50~200人" />
                 </el-form-item>
               </el-col>
-              <el-col :span="12">
+              <el-col :xs="24" :sm="12">
                 <el-form-item label="联系人">
                   <el-input v-model="editForm.contact_name" />
                 </el-form-item>
               </el-col>
-              <el-col :span="12">
+              <el-col :xs="24" :sm="12">
                 <el-form-item label="联系电话" required>
                   <el-input v-model="editForm.phone" />
                 </el-form-item>
@@ -141,8 +141,39 @@
                 </el-form-item>
               </el-col>
               <el-col :span="24">
+                <el-form-item label="企业Logo">
+                  <el-input v-model="editForm.logo" placeholder="输入Logo图片URL" />
+                  <div v-if="editForm.logo" style="margin-top:8px">
+                    <el-avatar :size="48" :src="editForm.logo" />
+                  </div>
+                </el-form-item>
+              </el-col>
+              <el-col :span="24">
+                <el-form-item label="图文介绍">
+                  <el-input v-model="editForm.imagesStr" type="textarea" :rows="2" placeholder="输入图片URL，多个用英文逗号分隔" />
+                  <div v-if="editForm.imagesList && editForm.imagesList.length" style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+                    <el-image v-for="(img,idx) in editForm.imagesList" :key="idx" :src="img" fit="cover" style="width:60px;height:60px;border-radius:6px" />
+                  </div>
+                </el-form-item>
+              </el-col>
+              <el-col :span="24">
                 <el-form-item label="企业简介">
                   <el-input v-model="editForm.description" type="textarea" :rows="3" placeholder="简要介绍企业主营业务、优势等..." />
+                </el-form-item>
+              </el-col>
+              <el-col :span="24">
+                <el-form-item label="社会身份">
+                  <el-input v-model="editForm.social_identity" type="textarea" :rows="2" placeholder="如：XX协会会员、XX机构合作方等" />
+                </el-form-item>
+              </el-col>
+              <el-col :span="24">
+                <el-form-item label="荣誉资质">
+                  <el-input v-model="editForm.honors" type="textarea" :rows="2" placeholder="如：2024年度最具社会责任感企业、XX行业标杆等" />
+                </el-form-item>
+              </el-col>
+              <el-col :span="24">
+                <el-form-item label="专家介绍">
+                  <el-input v-model="editForm.expert_intro" type="textarea" :rows="2" placeholder="介绍专家团队的专业背景、擅长领域、代表案例等" />
                 </el-form-item>
               </el-col>
             </el-row>
@@ -213,7 +244,13 @@ const editForm = ref({
   contact_name: '',
   phone: '',
   address: '',
+  logo: '',
+  imagesStr: '',
+  imagesList: [],
   description: '',
+  social_identity: '',
+  honors: '',
+  expert_intro: '',
   tagsList: []
 })
 
@@ -235,6 +272,10 @@ async function loadProfile() {
 }
 
 function startEdit() {
+  const tags = profile.value.tags
+  const tagsArray = Array.isArray(tags) ? tags : (tags ? tags.split(',') : [])
+  const images = profile.value.images
+  const imagesArray = Array.isArray(images) ? images : (images ? images.split(',').filter(Boolean) : [])
   editForm.value = {
     company_name: profile.value.company_name || '',
     industry: profile.value.industry || '',
@@ -242,8 +283,14 @@ function startEdit() {
     contact_name: profile.value.contact_name || '',
     phone: profile.value.phone || '',
     address: profile.value.address || '',
+    logo: profile.value.logo || '',
+    imagesStr: imagesArray.join(','),
+    imagesList: imagesArray,
     description: profile.value.description || '',
-    tagsList: profile.value.tags ? profile.value.tags.split(',').filter(Boolean) : []
+    social_identity: profile.value.social_identity || '',
+    honors: profile.value.honors || '',
+    expert_intro: profile.value.expert_intro || '',
+    tagsList: tagsArray
   }
   editing.value = true
   infoTab.value = 'basic'
@@ -265,11 +312,16 @@ async function saveProfile() {
     const data = {
       company_name: editForm.value.company_name,
       industry: editForm.value.industry,
-      company_type: editForm.value.scale, // scale 映射到 company_type
+      company_type: editForm.value.scale,
       contact_name: editForm.value.contact_name,
       phone: editForm.value.phone,
       address: editForm.value.address,
+      logo: editForm.value.logo,
+      images: editForm.value.imagesStr.split(',').map(s => s.trim()).filter(Boolean).join(','),
       description: editForm.value.description,
+      social_identity: editForm.value.social_identity,
+      honors: editForm.value.honors,
+      expert_intro: editForm.value.expert_intro,
       tags: editForm.value.tagsList.join(',')
     }
     await updateProfile(data)
@@ -309,4 +361,16 @@ onMounted(() => {
 .benefit-item { background: #f5f7fa; border-radius: 8px; padding: 12px; display: flex; align-items: center; gap: 8px; }
 .benefit-icon { font-size: 20px; }
 .benefit-text { font-size: 13px; font-weight: 500; }
+
+@media (max-width: 768px) {
+  .page { padding-bottom: 70px; }
+  .page h2 { font-size: 18px; margin-bottom: 14px; }
+  .profile-card { padding: 16px; border-radius: 8px; }
+  .avatar-area .el-avatar { width: 64px !important; height: 64px !important; }
+  .merchant-name { font-size: 15px; }
+  :deep(.el-descriptions) { font-size: 13px; }
+  :deep(.el-descriptions__label) { width: 100px; font-size: 12px; }
+  .gallery-grid { grid-template-columns: repeat(2, 1fr); }
+  .benefit-grid { grid-template-columns: 1fr; }
+}
 </style>

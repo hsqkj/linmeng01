@@ -143,7 +143,7 @@
 import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Warning } from '@element-plus/icons-vue'
-import { getComments, deleteComment } from '@/api/admin'
+import { getComments, deleteComment as deleteCommentApi } from '@/api/admin'
 
 const activeTab = ref('demand')
 const loading = ref(false)
@@ -229,7 +229,7 @@ function deleteComment(row) {
   ElMessageBox.confirm('确认删除该留言？删除后不可恢复。', '删除确认', { type: 'warning' })
     .then(async () => {
       try {
-        await deleteComment(row.id)
+        await deleteCommentApi(row.id)
         ElMessage.success('已删除')
         row.status = 0
         // 刷新列表
@@ -247,7 +247,8 @@ function deleteComment(row) {
 
 function formatTime(time) {
   if (!time) return '-'
-  return new Date(time).toLocaleString('zh-CN')
+  const d = new Date(time)
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`
 }
 
 onMounted(() => {

@@ -37,6 +37,7 @@ const routes = [
       { path: 'demands', name: 'CommunityDemands', component: () => import('@/views/community/Demands.vue') },
       { path: 'demands/publish', name: 'PublishDemand', component: () => import('@/views/community/PublishDemand.vue') },
       { path: 'demands/batch', name: 'BatchImport', component: () => import('@/views/community/BatchImport.vue') },
+      { path: 'demands/:id', name: 'CommunityDemandDetail', component: () => import('@/views/community/DemandDetail.vue') },
       { path: 'resources', name: 'CommunityResources', component: () => import('@/views/community/Resources.vue') },
       { path: 'resources/:id', name: 'CommunityResourceDetail', component: () => import('@/views/community/ResourceDetail.vue') },
       { path: 'merchants/:id', name: 'MerchantDetail', component: () => import('@/views/community/MerchantDetail.vue') },

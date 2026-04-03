@@ -120,15 +120,9 @@ exports.getConfig = async (req, res) => {
   }
 }
 
-// 推荐需求
+// 推荐需求（公开接口，不需要登录）
 exports.getRecommendDemands = async (req, res) => {
   try {
-    const merchant_id = req.merchant.id
-    
-    const [[merchant]] = await pool.query('SELECT * FROM merchants WHERE id = ?', [merchant_id])
-    const [[config]] = await pool.query("SELECT config_value FROM sys_configs WHERE config_key = 'match_algorithm'")
-    const algorithmConfig = config?.config_value || '{}'
-    
     const [demands] = await pool.query(
       `SELECT d.*, c.community_name, c.district, c.street, c.households
        FROM demands d
@@ -137,16 +131,14 @@ exports.getRecommendDemands = async (req, res) => {
        ORDER BY d.created_at DESC
        LIMIT 20`
     )
-    
-    const result = demands.map(d => {
-      const matchScore = calculateMatchScore(d, { tags: merchant.tags }, algorithmConfig)
-      return {
-        ...d,
-        matchScore: Math.round(matchScore),
-        matchHearts: getMatchHearts(matchScore)
-      }
-    }).sort((a, b) => b.matchScore - a.matchScore)
-    
+
+    // 公开接口统一返回中等匹配度，登录后展示个性化
+    const result = demands.map(d => ({
+      ...d,
+      matchScore: 3,
+      matchHearts: 3
+    }))
+
     success(res, result)
   } catch (err) {
     console.error('Get recommend demands error:', err)
@@ -155,17 +147,31 @@ exports.getRecommendDemands = async (req, res) => {
 }
 
 // 需求大厅
+const DEMAND_TYPE_MAP = { 0: '活动赞助', 1: '专家服务', 2: '空间运营', 3: '物资赞助', 4: '健康服务', 5: '教育培训' }
+const DEMAND_TYPE_NAME = { '活动赞助': '活动赞助', '专家服务': '专家服务', '空间运营': '空间运营', '物资赞助': '物资赞助', '健康服务': '健康服务', '教育培训': '教育培训' }
+
 exports.getDemands = async (req, res) => {
   try {
-    const { page = 1, pageSize = 10, type, district, sort } = req.query
+    const { page = 1, pageSize = 10, type, district, street, community, sort, keyword } = req.query
     const offset = (page - 1) * pageSize
     
     let where = 'd.status = 1 AND c.status = 1'
     const params = []
     
     if (type) {
-      where += ' AND d.demand_type = ?'
-      params.push(type)
+      // 支持数字或字符串
+      const typeNum = parseInt(type)
+      if (!isNaN(typeNum)) {
+        where += ' AND d.demand_type = ?'
+        params.push(typeNum)
+      } else {
+        // 字符串类型名，转数字
+        const typeVal = DEMAND_TYPE_NAME[type]
+        if (typeVal) {
+          const idx = Object.values(DEMAND_TYPE_MAP).indexOf(typeVal)
+          if (idx >= 0) { where += ' AND d.demand_type = ?'; params.push(idx) }
+        }
+      }
     }
     
     if (district) {
@@ -173,10 +179,22 @@ exports.getDemands = async (req, res) => {
       params.push(`%${district}%`)
     }
     
-    let orderBy = 'd.created_at DESC'
-    if (sort === 'match') {
-      orderBy = 'match_score DESC'
+    if (street) {
+      where += ' AND c.street LIKE ?'
+      params.push(`%${street}%`)
     }
+    
+    if (community) {
+      where += ' AND c.community_name LIKE ?'
+      params.push(`%${community}%`)
+    }
+    
+    if (keyword) {
+      where += ' AND (d.title LIKE ? OR d.content LIKE ?)'
+      params.push(`%${keyword}%`, `%${keyword}%`)
+    }
+    
+    const orderBy = 'd.created_at DESC'
     
     const [rows] = await pool.query(
       `SELECT d.*, c.community_name, c.district, c.street, c.households
@@ -185,27 +203,35 @@ exports.getDemands = async (req, res) => {
        WHERE ${where}
        ORDER BY ${orderBy}
        LIMIT ? OFFSET ?`,
-      [...params, parseInt(pageSize), offset]
+      [...params, parseInt(pageSize), parseInt(offset)]
     )
     
     const [[{ total }]] = await pool.query(
       `SELECT COUNT(*) as total FROM demands d JOIN communities c ON d.community_id = c.id WHERE ${where}`,
       params
     )
+
+    const result = rows.map(d => ({
+      ...d,
+      demand_type_name: DEMAND_TYPE_MAP[d.demand_type] || '需求',
+      matchScore: 3,
+      matchHearts: 3
+    }))
     
-    pageSuccess(res, rows, total, page, pageSize)
+    pageSuccess(res, result, total, page, pageSize)
   } catch (err) {
+    console.error('getDemands error:', err)
     error(res, '获取需求列表失败')
   }
 }
 
-// 需求详情
+// 需求详情（公开接口，联系方式根据会员等级决定）
 exports.getDemandDetail = async (req, res) => {
   try {
     const { id } = req.params
     
     const [rows] = await pool.query(
-      `SELECT d.*, c.community_name, c.district, c.street, c.address, c.households, c.households
+      `SELECT d.*, c.community_name, c.district, c.street, c.address, c.households
        FROM demands d
        JOIN communities c ON d.community_id = c.id
        WHERE d.id = ?`,
@@ -218,18 +244,24 @@ exports.getDemandDetail = async (req, res) => {
     
     await pool.query('UPDATE demands SET view_count = view_count + 1 WHERE id = ?', [id])
     
-    // 检查会员等级是否可查看联系方式
-    const [[merchant]] = await pool.query('SELECT member_level FROM merchants WHERE id = ?', [req.merchant.id])
-    const canViewContact = merchant.member_level >= 3
+    const row = rows[0]
+    row.demand_type_name = DEMAND_TYPE_MAP[row.demand_type] || '需求'
     
-    const result = { ...rows[0], canViewContact }
+    // 联系方式：仅金牌会员（Lv3）及以上可见
+    let canViewContact = false
+    if (req.merchant?.id) {
+      const [[merchant]] = await pool.query('SELECT member_level FROM merchants WHERE id = ?', [req.merchant.id])
+      canViewContact = merchant?.member_level >= 3
+    }
     
+    const result = { ...row, canViewContact }
     if (!canViewContact) {
       delete result.address
     }
     
     success(res, result)
   } catch (err) {
+    console.error('getDemandDetail error:', err)
     error(res, '获取详情失败')
   }
 }
@@ -264,30 +296,42 @@ exports.getCommunityDetail = async (req, res) => {
   }
 }
 
-// 资源大厅
+// 资源大厅（公开接口）
 exports.getResources = async (req, res) => {
   try {
-    const { page = 1, pageSize = 10, type } = req.query
-    const offset = (page - 1) * pageSize
+    const { page = 1, pageSize = 10, type, keyword } = req.query
+    const offset = (parseInt(page) - 1) * parseInt(pageSize)
     
-    let where = 'status = 1 AND merchant_id = ?'
+    let where = 'r.status = 1 AND m.status = 1'
+    const params = []
     
     if (type) {
-      where += ' AND resource_type = ?'
+      where += ' AND r.resource_type = ?'
+      params.push(type)
+    }
+    
+    if (keyword) {
+      where += ' AND (r.title LIKE ? OR r.description LIKE ?)'
+      params.push(`%${keyword}%`, `%${keyword}%`)
     }
     
     const [rows] = await pool.query(
-      `SELECT * FROM resources WHERE ${where} ORDER BY created_at DESC LIMIT ? OFFSET ?`,
-      [req.merchant.id, type, parseInt(pageSize), offset].filter(v => v !== undefined)
+      `SELECT r.*, m.company_name, m.logo as merchant_logo, m.member_level, m.star_rating
+       FROM resources r JOIN merchants m ON r.merchant_id = m.id
+       WHERE ${where}
+       ORDER BY m.member_level DESC, m.star_rating DESC, r.created_at DESC
+       LIMIT ? OFFSET ?`,
+      [...params, parseInt(pageSize), offset]
     )
     
     const [[{ total }]] = await pool.query(
-      'SELECT COUNT(*) as total FROM resources WHERE ' + where,
-      [req.merchant.id, type].filter(v => v !== undefined)
+      `SELECT COUNT(*) as total FROM resources r JOIN merchants m ON r.merchant_id = m.id WHERE ${where}`,
+      params
     )
     
     pageSuccess(res, rows, total, page, pageSize)
   } catch (err) {
+    console.error('getResources error:', err)
     error(res, '获取资源列表失败')
   }
 }
@@ -617,7 +661,7 @@ exports.getProfile = async (req, res) => {
     const [rows] = await pool.query(
       `SELECT m.id, m.company_name, m.logo, m.description, m.company_type, m.industry,
        m.resource_types, m.contact_name, m.phone, m.address, m.tags, m.member_level, m.star_rating,
-       m.images, m.status,
+       m.images, m.status, m.social_identity, m.honors, m.expert_intro,
        (SELECT COALESCE(SUM(view_count), 0) FROM resources WHERE merchant_id = m.id) as view_count,
        (SELECT MAX(end_date) FROM member_payments WHERE merchant_id = m.id AND status = 1) as member_expire_at
        FROM merchants m WHERE m.id = ?`,
@@ -646,6 +690,66 @@ exports.getProfile = async (req, res) => {
   }
 }
 
+// 收藏需求
+exports.toggleFavorite = async (req, res) => {
+  try {
+    const { demand_id } = req.body
+    if (!demand_id) return error(res, '缺少demand_id', 400)
+    
+    const [existing] = await pool.query(
+      'SELECT id FROM demand_favorite WHERE merchant_id = ? AND demand_id = ?',
+      [req.merchant.id, demand_id]
+    )
+    
+    if (existing.length > 0) {
+      // 取消收藏
+      await pool.query('DELETE FROM demand_favorite WHERE merchant_id = ? AND demand_id = ?', [req.merchant.id, demand_id])
+      success(res, { favorited: false }, '已取消收藏')
+    } else {
+      // 添加收藏
+      await pool.query('INSERT INTO demand_favorite (merchant_id, demand_id) VALUES (?, ?)', [req.merchant.id, demand_id])
+      success(res, { favorited: true }, '已收藏')
+    }
+  } catch (err) {
+    error(res, '操作失败')
+  }
+}
+
+exports.getMyFavorites = async (req, res) => {
+  try {
+    const { page = 1, pageSize = 10 } = req.query
+    const offset = (page - 1) * pageSize
+    
+    const [rows] = await pool.query(
+      `SELECT df.id, df.create_time, d.*, c.community_name, c.district, c.street
+       FROM demand_favorite df
+       JOIN demands d ON df.demand_id = d.id
+       JOIN communities c ON d.community_id = c.id
+       WHERE df.merchant_id = ?
+       ORDER BY df.create_time DESC
+       LIMIT ? OFFSET ?`,
+      [req.merchant.id, parseInt(pageSize), parseInt(offset)]
+    )
+    
+    const [[{ total }]] = await pool.query(
+      'SELECT COUNT(*) as total FROM demand_favorite WHERE merchant_id = ?',
+      [req.merchant.id]
+    )
+    
+    const result = rows.map(d => ({
+      ...d,
+      demand_type_name: DEMAND_TYPE_MAP[d.demand_type] || '需求',
+      favorited: true,
+      matchScore: 3,
+      matchHearts: 3
+    }))
+    
+    pageSuccess(res, result, total, page, pageSize)
+  } catch (err) {
+    error(res, '获取收藏失败')
+  }
+}
+
 exports.updateProfile = async (req, res) => {
   try {
     const data = req.body
@@ -653,11 +757,12 @@ exports.updateProfile = async (req, res) => {
     await pool.query(
       `UPDATE merchants SET company_name = ?, logo = ?, description = ?, company_type = ?,
        industry = ?, resource_types = ?, contact_name = ?, phone = ?, address = ?,
-       tags = ? WHERE id = ?`,
+       tags = ?, social_identity = ?, honors = ?, expert_intro = ? WHERE id = ?`,
       [data.company_name, data.logo, data.description, data.company_type, data.industry,
        typeof data.resource_types === 'string' ? data.resource_types : JSON.stringify(data.resource_types || []),
        data.contact_name, data.phone, data.address,
        typeof data.tags === 'string' ? data.tags : JSON.stringify(data.tags || []),
+       data.social_identity || '', data.honors || '', data.expert_intro || '',
        req.merchant.id]
     )
     

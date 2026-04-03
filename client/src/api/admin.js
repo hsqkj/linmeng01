@@ -75,11 +75,7 @@ export const createRegion = (data) => request.post('/admin/config/basic/regions'
 export const updateRegion = (id, data) => request.put(`/admin/config/basic/regions/${id}`, data)
 export const deleteRegion = (id) => request.delete(`/admin/config/basic/regions/${id}`)
 
-// 算法配置（前端本地管理，暂无后端）
-export const getAlgorithmConfig = () => Promise.resolve({ data: null })
-export const saveAlgorithmConfig = (data) => request.post('/admin/config/algorithm', data)
-
-// ====== 轮播图 ======
+// ====== 匹配算法配置 ======
 export const getBanners = (params) => request.get('/admin/config/banners', { params })
 export const createBanner = (data) => request.post('/admin/config/banners', data)
 export const updateBanner = (id, data) => request.put(`/admin/config/banners/${id}`, data)

@@ -421,15 +421,90 @@ const viewActivityDetail = (activity) => {
   .welcome-banner {
     flex-direction: column;
     text-align: center;
-    gap: 16px;
+    gap: 14px;
+    padding: 20px 16px;
+    border-radius: 8px;
   }
-  
+
+  .welcome-content h1 {
+    font-size: 18px;
+  }
+
+  .welcome-content p {
+    font-size: 13px;
+  }
+
+  .banner-item {
+    padding: 0 20px;
+  }
+
+  .banner-content h3 {
+    font-size: 16px;
+  }
+
+  .banner-content p {
+    font-size: 13px;
+  }
+
   .stats-row {
     grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-bottom: 16px;
   }
-  
+
+  .stat-card :deep(.el-card__body) {
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .stat-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 8px;
+    flex-shrink: 0;
+  }
+
+  .stat-value {
+    font-size: 18px;
+  }
+
+  .stat-label {
+    font-size: 12px;
+  }
+
+  .section {
+    margin-bottom: 20px;
+  }
+
+  .section-header {
+    margin-bottom: 12px;
+  }
+
+  .section-header h2 {
+    font-size: 15px;
+  }
+
   .resource-list {
     grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .resource-header {
+    gap: 8px;
+    padding-right: 70px;
+  }
+
+  .resource-desc {
+    font-size: 13px;
+    -webkit-line-clamp: 2;
+  }
+
+  .resource-actions {
+    flex-direction: column;
+  }
+
+  .resource-actions .el-button {
+    width: 100%;
   }
 }
 </style>
