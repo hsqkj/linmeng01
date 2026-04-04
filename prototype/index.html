@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>邻盟 - 社区资源智能匹配助手</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+*,::before,::after{margin:0;padding:0;box-sizing:border-box}
+:root{--admin:#1a5fb4;--admin-d:#14407a;--admin-l:#e8f0fb;--comm:#26a269;--comm-d:#1a7a4c;--comm-l:#e8f7ed;--merch:#e66100;--merch-d:#b84d00;--merch-l:#fff0e0;--amb:#813d9c;--amb-d:#5e2b74;--amb-l:#f5ebf7;--text:#1a1a1a;--muted:#666;--light:#f5f6f8;--border:#eee}
+body{font-family:'PingFang SC','Microsoft YaHei',sans-serif;background:var(--light);color:var(--text);line-height:1.6}
+.page{display:none}.page.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.page.active>*{animation:fadeIn .3s ease-out}
+
+/* 登录 */
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;position:relative}
+.admin-bg{background:linear-gradient(135deg,var(--admin),var(--admin-d))}
+.comm-bg{background:linear-gradient(135deg,var(--comm),var(--comm-d))}
+.merch-bg{background:linear-gradient(135deg,var(--merch),var(--merch-d))}
+.amb-bg{background:linear-gradient(135deg,var(--amb),var(--amb-d))}
+.login-brand{position:absolute;top:24px;left:32px;z-index:2}
+.login-brand-logo{font-size:24px;font-weight:700;color:#fff;letter-spacing:1px}
+.login-brand-sub{font-size:13px;color:rgba(255,255,255,.75)}
+.login-back{position:absolute;top:24px;right:32px;z-index:2}
+.login-back a{color:rgba(255,255,255,.85);text-decoration:none;font-size:14px}
+.login-card{background:#fff;border-radius:20px;padding:48px 40px;width:100%;max-width:440px;box-shadow:0 24px 60px rgba(0,0,0,.15);position:relative;z-index:1}
+.login-header{text-align:center;margin-bottom:32px}
+.login-header .icon{font-size:44px;margin-bottom:12px}
+.login-header h2{font-size:26px;font-weight:700;color:var(--text);margin-bottom:6px}
+.login-header p{color:var(--muted);font-size:14px}
+.form-group{margin-bottom:18px}
+.form-group label{display:block;font-size:14px;font-weight:500;color:#333;margin-bottom:7px}
+.form-control{width:100%;padding:12px 14px;border:2px solid #e0e0e0;border-radius:10px;font-size:15px;outline:none;transition:border-color .2s;background:#fff}
+.form-control:focus{border-color:var(--primary,#1a5fb4)}
+.input-addon{display:flex}
+.input-addon .addon{padding:12px 14px;background:#f5f5f5;border:2px solid #e0e0e0;border-right:none;border-radius:10px 0 0 10px;font-size:15px;color:#555;white-space:nowrap}
+.input-addon .form-control{border-radius:0 10px 10px 0}
+.code-btn{padding:10px 14px;background:var(--comm-l);color:var(--comm);border:2px solid var(--comm);border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .2s}
+.code-btn:hover{background:var(--comm);color:#fff}
+.btn-login{width:100%;padding:14px;border:none;border-radius:10px;font-size:16px;font-weight:600;cursor:pointer;color:#fff;transition:all .2s}
+.btn-login.admin{background:linear-gradient(135deg,var(--admin),var(--admin-d))}
+.btn-login.comm{background:linear-gradient(135deg,var(--comm),var(--comm-d))}
+.btn-login.merch{background:linear-gradient(135deg,var(--merch),var(--merch-d))}
+.btn-login.amb{background:linear-gradient(135deg,var(--amb),var(--amb-d))}
+.btn-login:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(0,0,0,.2)}
+.login-test{padding:12px;background:#f0f7ff;border-radius:10px;font-size:12px;text-align:center;border:1px dashed var(--admin);color:var(--admin);margin-top:16px}
+.login-divider{border-top:1px solid var(--border);margin-top:24px;padding-top:24px}
+.login-tips{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;text-align:center}
+.login-tip{padding:12px 6px;background:#f9f9f9;border-radius:10px}
+.login-tip i{font-size:22px;margin-bottom:6px;display:block}
+.login-tip span{display:block;font-size:12px;font-weight:500;color:#333}
+.login-footer{text-align:center;margin-top:20px;font-size:13px;color:var(--muted)}
+.login-footer a{font-weight:600;text-decoration:none}
+
+/* 导航 */
+.top-nav{background:#fff;border-bottom:1px solid var(--border);height:64px;display:flex;align-items:center;justify-content:space-between;padding:0 32px;position:sticky;top:0;z-index:100}
+.top-nav .brand{font-size:20px;font-weight:700}
+.top-nav .brand.admin{color:var(--admin)}
+.top-nav .brand.comm{color:var(--comm)}
+.top-nav .brand.merch{color:var(--merch)}
+.top-nav .brand.amb{color:var(--amb)}
+.top-nav nav{display:flex;gap:4px}
+.top-nav nav a{padding:6px 14px;border-radius:20px;font-size:14px;text-decoration:none;transition:all .2s;color:#666}
+.top-nav nav a:hover{background:#f0f0f0}
+.top-nav nav a.active.admin{background:var(--admin);color:#fff}
+.top-nav nav a.active.comm{background:var(--comm);color:#fff}
+.top-nav nav a.active.merch{background:var(--merch);color:#fff}
+.top-nav nav a.active.amb{background:var(--amb);color:#fff}
+.top-nav .right{display:flex;align-items:center;gap:16px}
+.avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px;cursor:pointer}
+.badge{position:relative}
+.badge-num{position:absolute;top:-6px;right:-8px;background:#ff4d4f;color:#fff;width:18px;height:18px;border-radius:50%;font-size:10px;display:flex;align-items:center;justify-content:center;line-height:1}
+.back-link{color:var(--muted);text-decoration:none;font-size:14px}
+
+/* 内容 */
+.content{max-width:1200px;margin:0 auto;padding:28px 32px}
+.page-title{font-size:26px;font-weight:700;margin-bottom:6px}
+.page-sub{color:var(--muted);font-size:14px;margin-bottom:28px}
+.card{background:#fff;border-radius:16px;padding:24px;box-shadow:0 2px 12px rgba(0,0,0,.05);margin-bottom:20px}
+
+/* Banner */
+.banner{background:linear-gradient(135deg,var(--comm),var(--comm-d));border-radius:16px;padding:48px 40px;color:#fff;margin-bottom:24px;position:relative;overflow:hidden;min-height:200px}
+.banner::before{content:'';position:absolute;top:-60px;right:-40px;width:300px;height:300px;background:rgba(255,255,255,.08);border-radius:50%}
+.banner h2{font-size:28px;font-weight:700;margin-bottom:10px;position:relative;z-index:1}
+.banner p{font-size:16px;opacity:.85;margin-bottom:20px;position:relative;z-index:1}
+.banner-btns{display:flex;gap:12px;flex-wrap:wrap;position:relative;z-index:1}
+.btn-white{padding:10px 24px;background:#fff;color:var(--comm);border:none;border-radius:20px;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;text-decoration:none;display:inline-block}
+.btn-white:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.2)}
+.btn-outline{padding:10px 24px;background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.4);border-radius:20px;font-size:14px;cursor:pointer;transition:all .2s;text-decoration:none;display:inline-block}
+.btn-outline:hover{background:rgba(255,255,255,.3)}
+.banner-dots{position:absolute;right:40px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:6px}
+.banner-dots span{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.4);cursor:pointer}
+.banner-dots span.active{background:#fff;width:24px;border-radius:4px}
+
+/* 快捷入口 */
+.quick-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px}
+.quick-item{background:#fff;border-radius:14px;padding:20px;text-align:center;cursor:pointer;transition:all .2s;box-shadow:0 2px 8px rgba(0,0,0,.04);border:1px solid transparent}
+.quick-item:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.1)}
+.quick-item i{font-size:32px;margin-bottom:10px;display:block}
+.quick-item .label{font-size:14px;font-weight:600}
+.quick-item .sub{font-size:12px;color:var(--muted);margin-top:4px}
+
+/* 资源卡片 */
+.resource-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-bottom:24px}
+.resource-card{background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.06);transition:all .2s;cursor:pointer;border:1px solid transparent}
+.resource-card:hover{transform:translateY(-3px);box-shadow:0 12px 32px rgba(0,0,0,.12)}
+.card-banner{height:130px;display:flex;align-items:center;justify-content:center;position:relative}
+.card-banner .tag{position:absolute;top:10px;right:10px;background:rgba(255,255,255,.9);padding:3px 10px;border-radius:8px;font-size:12px;font-weight:600}
+.card-banner i{font-size:44px}
+.card-body{padding:16px}
+.card-body .title{font-size:15px;font-weight:700;margin-bottom:6px}
+.card-body .desc{font-size:13px;color:var(--muted);margin-bottom:10px;line-height:1.5}
+.card-footer{display:flex;justify-content:space-between;align-items:center}
+.hearts{color:#ff4d4f;letter-spacing:-1px}
+.level-tag{padding:2px 8px;border-radius:6px;font-size:11px;font-weight:600}
+.level-gold{background:#fff7e6;color:#e66100}
+.level-silver{background:#f0f0f0;color:#666}
+
+/* 表格 */
+.data-table{width:100%;border-collapse:collapse}
+.data-table th{text-align:left;padding:12px 16px;font-size:13px;color:var(--muted);font-weight:500;border-bottom:1px solid var(--border);background:#fafafa}
+.data-table td{padding:14px 16px;font-size:14px;border-bottom:1px solid #f8f8f8}
+.data-table tr:hover{background:#fafafa}
+.badge{display:inline-block;padding:2px 10px;border-radius:10px;font-size:12px;font-weight:500}
+.badge-green{background:#e8f7ed;color:var(--comm)}
+.badge-orange{background:#fff0e0;color:var(--merch)}
+.badge-blue{background:#e8f0fb;color:var(--admin)}
+.badge-purple{background:#f5ebf7;color:var(--amb)}
+.badge-red{background:#fff1f0;color:#ff4d4f}
+
+/* 按钮 */
+.btn{padding:8px 18px;border-radius:8px;font-size:14px;cursor:pointer;transition:all .2s;border:none;font-weight:600}
+.btn-sm{padding:6px 14px;font-size:13px}
+.btn-primary{background:var(--comm);color:#fff}
+.btn-primary.admin{background:var(--admin)}
+.btn-primary.merch{background:var(--merch)}
+.btn-primary.amb{background:var(--amb)}
+.btn-outline{background:#fff;border:2px solid var(--border);color:#333}
+.btn-outline.admin{border-color:var(--admin);color:var(--admin)}
+.btn-outline.merch{border-color:var(--merch);color:var(--merch)}
+.btn-outline.amb{border-color:var(--amb);color:var(--amb)}
+.btn:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.15)}
+
+/* 管理后台 */
+.admin-layout{display:flex;min-height:100vh}
+.admin-sidebar{width:240px;background:#fff;border-right:1px solid var(--border);flex-shrink:0;display:flex;flex-direction:column}
+.sidebar-logo{padding:20px 24px;border-bottom:1px solid var(--border);font-size:18px;font-weight:700;color:var(--admin)}
+.sidebar-logo span{font-size:12px;color:var(--muted);font-weight:400;display:block;margin-top:2px}
+.sidebar-nav{flex:1;padding:16px 12px;overflow-y:auto}
+.sidebar-section{font-size:11px;color:var(--muted);padding:0 12px;margin:12px 0 6px;letter-spacing:.5px;text-transform:uppercase}
+.sidebar-item{padding:10px 12px;border-radius:8px;font-size:14px;cursor:pointer;transition:all .15s;color:#333;display:flex;align-items:center;gap:8px;margin-bottom:2px}
+.sidebar-item:hover{background:#f0f0f0}
+.sidebar-item.active{background:var(--admin-l);color:var(--admin);font-weight:600}
+.sidebar-footer{padding:16px 20px;border-top:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.sidebar-avatar{width:36px;height:36px;background:var(--admin);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px;flex-shrink:0}
+.admin-main{flex:1;padding:28px 32px;overflow-y:auto}
+.admin-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:28px}
+.admin-header h1{font-size:24px;font-weight:700}
+.stat-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;margin-bottom:28px}
+.stat-card{background:#fff;border-radius:16px;padding:24px;box-shadow:0 2px 12px rgba(0,0,0,.05)}
+.stat-card .num{font-size:36px;font-weight:700}
+.stat-card .label{font-size:14px;color:var(--muted);margin-top:6px}
+.stat-card .trend{font-size:13px;color:#52c41a;margin-top:4px}
+
+/* 表单 */
+textarea.form-control{resize:vertical;min-height:80px}
+select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 8L1 3h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:36px}
+.form-row{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+.tag-list{display:flex;flex-wrap:wrap;gap:6px}
+.tag-item{padding:4px 12px;border-radius:14px;font-size:12px;cursor:pointer;border:1px solid transparent;transition:all .15s}
+.tag-item.comm{background:#e8f7ed;color:var(--comm)}
+.tag-item.merch{background:#fff0e0;color:var(--merch)}
+.tag-item.comm.active{background:var(--comm);color:#fff}
+.tag-item.merch.active{background:var(--merch);color:#fff}
+.tag-item.default{background:#f5f5f5;color:#666}
+.tag-item.default.active{background:#333;color:#fff}
+
+/* 详情 */
+.detail-grid{display:grid;grid-template-columns:1fr 340px;gap:24px}
+.info-section{margin-bottom:24px}
+.info-section h3{font-size:15px;font-weight:600;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.info-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+.info-item .key{font-size:12px;color:var(--muted);margin-bottom:3px}
+.info-item .val{font-size:14px;font-weight:500}
+.reward-card{background:#e8f7ed;border-radius:12px;padding:20px;text-align:center;margin-bottom:16px}
+.reward-amount{font-size:40px;font-weight:700;color:var(--comm)}
+.reward-label{font-size:13px;color:var(--muted);margin-top:4px}
+.sidebar-card{background:#fff;border-radius:16px;padding:24px;box-shadow:0 2px 12px rgba(0,0,0,.05);position:sticky;top:88px}
+.sidebar-card h3{font-size:15px;font-weight:600;margin-bottom:16px}
+.msg-item{padding:16px 0;border-bottom:1px solid #f5f5f5;cursor:pointer;transition:background .15s}
+.msg-item:hover{background:#f9fafb}
+.msg-user{display:flex;gap:12px;align-items:center;margin-bottom:6px}
+.msg-avatar{width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:16px;flex-shrink:0}
+.msg-name{font-size:14px;font-weight:600}
+.msg-time{font-size:11px;color:var(--muted);margin-left:auto}
+.msg-title{font-size:13px;color:var(--muted);margin-left:52px}
+
+/* 入口 */
+.portal-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;max-width:1000px;margin:0 auto}
+.portal-card{border-radius:20px;padding:40px 24px;text-align:center;cursor:pointer;text-decoration:none;color:#fff;transition:all .3s;position:relative;overflow:hidden}
+.portal-card::before{content:'';position:absolute;top:-50%;right:-50%;width:200%;height:200%;background:radial-gradient(ellipse at 70% 30%,rgba(255,255,255,.15) 0%,transparent 60%)}
+.portal-card:hover{transform:translateY(-6px);box-shadow:0 20px 50px rgba(0,0,0,.25)}
+.portal-card.admin{background:linear-gradient(135deg,var(--admin),var(--admin-d))}
+.portal-card.comm{background:linear-gradient(135deg,var(--comm),var(--comm-d))}
+.portal-card.merch{background:linear-gradient(135deg,var(--merch),var(--merch-d))}
+.portal-card.amb{background:linear-gradient(135deg,var(--amb),var(--amb-d))}
+.portal-card i{font-size:52px;margin-bottom:16px;display:block}
+.portal-card h3{font-size:20px;margin-bottom:6px}
+.portal-card p{font-size:13px;opacity:.8}
+
+@media(max-width:768px){
+  .content{padding:16px}
+  .quick-grid,.stat-cards{grid-template-columns:repeat(2,1fr)}
+  .resource-grid{grid-template-columns:repeat(2,1fr)}
+  .detail-grid{grid-template-columns:1fr}
+  .admin-sidebar{display:none}
+  .top-nav{padding:0 16px}
+  .top-nav nav{display:none}
+}
+.pagination{display:flex;justify-content:center;gap:8px;margin-top:28px}
+.pagination button{padding:8px 14px;border:2px solid var(--border);border-radius:8px;background:#fff;font-size:14px;cursor:pointer;transition:all .15s}
+.pagination button:hover{border-color:var(--primary,#1a5fb4);color:var(--primary,#1a5fb4)}
+.pagination button.active{background:var(--primary,#1a5fb4);border-color:var(--primary,#1a5fb4);color:#fff}
+</style>
+</head>
+<body>
+
+<!-- ==================== 四端入口 ==================== -->
+<div id="p-index" class="page active">
+  <div style="background:linear-gradient(135deg,var(--admin) 0%,var(--comm) 50%,var(--merch) 100%);min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:60px 20px 40px;position:relative;overflow:hidden">
+    <div style="position:absolute;inset:0;background:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 1440 320%22><path fill=%22rgba(255,255,255,0.05)%22 d=%22M0,96L48,112C96,128,192,160,288,186.7C384,213,480,235,576,213.3C672,192,768,128,864,128C960,128,1056,192,1152,208C1248,224,1344,192,1392,176L1440,160L1440,320L0,320Z%22/></svg>') bottom/cover no-repeat"></div>
+    <div style="position:relative;z-index:1">
+      <h1 style="font-size:72px;font-weight:800;color:#fff;letter-spacing:4px;line-height:1;margin-bottom:16px">邻盟</h1>
+      <p style="font-size:20px;color:rgba(255,255,255,.85);max-width:500px;margin:0 auto 32px">社区资源智能匹配助手<br>连接社区与商家，共创美好生活</p>
+      <div style="display:flex;gap:12px;margin-bottom:60px;flex-wrap:wrap;justify-content:center">
+        <a href="#" onclick="goto('community-login')" class="btn-white" style="border-radius:30px;padding:14px 32px;font-size:16px;font-weight:600;background:#fff;color:var(--comm)">社区端入口</a>
+        <a href="#" onclick="goto('merchant-login')" class="btn-outline" style="border-color:#fff;color:#fff;border-radius:30px;padding:14px 32px;font-size:16px">商家端入口</a>
+      </div>
+      <div class="portal-grid" style="width:100%">
+        <div class="portal-card admin" onclick="goto('admin-login')"><i class="fas fa-cog"></i><h3>管理后台</h3><p>系统配置、数据统计、运营管理</p></div>
+        <div class="portal-card comm" onclick="goto('community-login')"><i class="fas fa-building"></i><h3>社区端</h3><p>发布需求、寻找资源、管理合作</p></div>
+        <div class="portal-card merch" onclick="goto('merchant-login')"><i class="fas fa-store"></i><h3>商家端</h3><p>发布资源、响应需求、拓展社区</p></div>
+        <div class="portal-card amb" onclick="goto('ambassador-login')"><i class="fas fa-medal"></i><h3>招商大使</h3><p>邀请商家、查看提成、推广裂变</p></div>
+      </div>
+    </div>
+    <div style="text-align:center;padding:20px;color:rgba(255,255,255,.5);font-size:13px;position:relative;z-index:1">邻盟平台 · 社区资源智能匹配助手 · 武汉邻盟科技有限公司</div>
+  </div>
+</div>
+
+<!-- ==================== 管理后台登录 ==================== -->
+<div id="p-admin-login" class="page">
+  <div class="login-wrap admin-bg">
+    <div class="login-brand"><div class="login-brand-logo">邻盟</div><div class="login-brand-sub">社区资源智能匹配助手</div></div>
+    <div class="login-back"><a href="#" onclick="goto('index')"><i class="fas fa-arrow-left"></i> 返回首页</a></div>
+    <div class="login-card">
+      <div class="login-header"><div class="icon" style="color:var(--admin)"><i class="fas fa-cog"></i></div><h2>管理后台</h2><p>邻盟平台运营管理系统</p></div>
+      <div class="form-group"><label>管理员账号</label><input type="text" class="form-control" value="admin" style="border-color:var(--admin)"></div>
+      <div class="form-group"><label>登录密码</label><input type="password" class="form-control" value="admin123"></div>
+      <button class="btn-login admin" onclick="login('admin')"><i class="fas fa-sign-in-alt"></i> 登录</button>
+      <div class="login-test"><i class="fas fa-flask"></i> 测试账号：admin / admin123</div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 管理后台首页 ==================== -->
+<div id="p-admin-home" class="page">
+  <div class="admin-layout">
+    <aside class="admin-sidebar">
+      <div class="sidebar-logo">邻盟 <span>管理后台</span></div>
+      <div class="sidebar-nav">
+        <div class="sidebar-section">数据概览</div>
+        <div class="sidebar-item active"><i class="fas fa-chart-line"></i> 数据统计</div>
+        <div class="sidebar-item"><i class="fas fa-users"></i> 用户管理</div>
+        <div class="sidebar-item"><i class="fas fa-clipboard-check"></i> 内容审核</div>
+        <div class="sidebar-section">系统配置</div>
+        <div class="sidebar-item"><i class="fas fa-sliders-h"></i> 基础配置</div>
+        <div class="sidebar-item"><i class="fas fa-images"></i> 轮播图管理</div>
+        <div class="sidebar-item"><i class="fas fa-tags"></i> 标签管理</div>
+        <div class="sidebar-item"><i class="fas fa-gem"></i> 会员管理</div>
+        <div class="sidebar-item"><i class="fas fa-coins"></i> 奖励配置</div>
+        <div class="sidebar-item"><i class="fas fa-medal"></i> 大使管理</div>
+        <div class="sidebar-item"><i class="fas fa-star"></i> 评级管理</div>
+        <div class="sidebar-item"><i class="fas fa-brain"></i> 算法配置</div>
+        <div class="sidebar-item"><i class="fas fa-bell"></i> 系统通知</div>
+      </div>
+      <div class="sidebar-footer"><div class="sidebar-avatar">A</div><div><div style="font-size:14px;font-weight:600">管理员</div><div style="font-size:12px;color:var(--muted)">系统管理员</div></div></div>
+    </aside>
+    <main class="admin-main">
+      <div class="admin-header">
+        <div><h1>数据统计</h1><p style="color:var(--muted);font-size:14px;margin-top:4px">实时数据概览 · 今日更新</p></div>
+        <div style="display:flex;gap:8px"><span class="badge badge-orange"><i class="fas fa-exclamation-triangle"></i> 待审核 12</span><span class="badge badge-green"><i class="fas fa-check-circle"></i> 正常运营</span></div>
+      </div>
+      <div class="stat-cards">
+        <div class="stat-card"><div style="color:var(--admin);font-size:14px;margin-bottom:12px"><i class="fas fa-building"></i> 社区总数</div><div class="num">248</div><div class="trend"><i class="fas fa-arrow-up"></i> 较上月 +12</div></div>
+        <div class="stat-card"><div style="color:var(--merch);font-size:14px;margin-bottom:12px"><i class="fas fa-store"></i> 商家总数</div><div class="num">536</div><div class="trend"><i class="fas fa-arrow-up"></i> 较上月 +28</div></div>
+        <div class="stat-card"><div class="num" style="color:var(--comm)">1,284</div><div class="label"><i class="fas fa-handshake" style="color:var(--comm)"></i> 撮合成功</div><div class="trend"><i class="fas fa-arrow-up"></i> 本月 +86</div></div>
+        <div class="stat-card"><div class="num" style="color:var(--amb)">¥25.6万</div><div class="label"><i class="fas fa-coins" style="color:var(--amb)"></i> 奖励发放</div><div class="trend" style="color:var(--muted)">本月已发放</div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:2fr 1fr;gap:20px;margin-bottom:24px">
+        <div class="card">
+          <div style="font-size:15px;font-weight:600;margin-bottom:20px"><i class="fas fa-chart-area" style="color:var(--admin);margin-right:6px"></i>近30天撮合趋势</div>
+          <div style="display:flex;align-items:flex-end;gap:5px;height:140px">
+            <div style="flex:1;background:linear-gradient(to top,var(--admin),#5b9bd5);border-radius:4px 4px 0 0;height:45%"></div>
+            <div style="flex:1;background:linear-gradient(to top,var(--admin),#5b9bd5);border-radius:4px 4px 0 0;height:52%"></div>
+            <div style="flex:1;background:linear-gradient(to top,var(--admin),#5b9bd5);border-radius:4px 4px 0 0;height:38%"></div>
+            <div style="flex:1;background:linear-gradient(to top,var(--admin),#5b9bd5);border-radius:4px 4px 0 0;height:65%"></div>
+            <div style="flex:1;background:linear-gradient(to top,var(--admin),#5b9bd5);border-radius:4px 4px 0 0;height:58%"></div>
+            <div style="flex:1;background:linear-gradient(to top,var(--admin),#5b9bd5);border-radius:4px 4px 0 0;height:72%"></div>
+            <div style="flex:1;background:linear-gradient(to top,var(--admin),#5b9bd5);border-radius:4px 4px 0 0;height:48%"></div>
+            <div style="flex:1;background:linear-gradient(to top,var(--admin),#5b9bd5);border-radius:4px 4px 0 0;height:83%"></div>
+            <div style="flex:1;background:linear-gradient(to top,var(--admin),#5b9bd5);border-radius:4px 4px 0 0;height:76%"></div>
+            <div style="flex:1;background:linear-gradient(to top,var(--admin),#5b9bd5);border-radius:4px 4px 0 0;height:92%"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:11px;color:var(--muted)"><span>3月6日</span><span>3月10日</span><span>3月15日</span></div>
+        </div>
+        <div class="card">
+          <div style="font-size:15px;font-weight:600;margin-bottom:16px"><i class="fas fa-pie-chart" style="color:var(--merch);margin-right:6px"></i>商家行业分布</div>
+          <div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px"><span>教育培训</span><span style="color:var(--admin);font-weight:600">32%</span></div><div style="background:#e8f0fb;border-radius:4px;height:8px"><div style="background:var(--admin);height:8px;border-radius:4px;width:32%"></div></div></div>
+          <div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px"><span>餐饮小吃</span><span style="color:var(--merch);font-weight:600">24%</span></div><div style="background:#fff0e0;border-radius:4px;height:8px"><div style="background:var(--merch);height:8px;border-radius:4px;width:24%"></div></div></div>
+          <div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px"><span>生活服务</span><span style="color:var(--comm);font-weight:600">18%</span></div><div style="background:#e8f7ed;border-radius:4px;height:8px"><div style="background:var(--comm);height:8px;border-radius:4px;width:18%"></div></div></div>
+          <div><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px"><span>其他</span><span style="color:var(--muted);font-weight:600">26%</span></div><div style="background:#f0f0f0;border-radius:4px;height:8px"><div style="background:#999;height:8px;border-radius:4px;width:26%"></div></div></div>
+        </div>
+      </div>
+      <div class="card">
+        <div style="font-size:15px;font-weight:600;margin-bottom:16px"><i class="fas fa-clock" style="color:var(--merch);margin-right:6px"></i>最新待审核</div>
+        <table class="data-table"><thead><tr><th>类型</th><th>标题</th><th>发布方</th><th>提交时间</th><th>操作</th></tr></thead>
+        <tbody>
+          <tr><td><span class="badge badge-green">资源</span></td><td style="font-weight:500">社区亲子运动会赞助</td><td>武汉飞腾体育</td><td style="color:var(--muted)">2026-04-04 21:30</td><td><button class="btn btn-sm btn-primary admin">通过</button> <button class="btn btn-sm" style="background:#fff1f0;color:#ff4d4f;border:1px solid #ffccc7">拒绝</button></td></tr>
+          <tr><td><span class="badge badge-orange">需求</span></td><td style="font-weight:500">社区老年健康讲座</td><td>江岸区花桥社区</td><td style="color:var(--muted)">2026-04-04 20:15</td><td><button class="btn btn-sm btn-primary admin">通过</button> <button class="btn btn-sm" style="background:#fff1f0;color:#ff4d4f;border:1px solid #ffccc7">拒绝</button></td></tr>
+          <tr><td><span class="badge badge-purple">商家</span></td><td style="font-weight:500">武汉乐学教育咨询</td><td>待认证</td><td style="color:var(--muted)">2026-04-04 19:42</td><td><button class="btn btn-sm btn-primary admin">通过</button> <button class="btn btn-sm" style="background:#fff1f0;color:#ff4d4f;border:1px solid #ffccc7">拒绝</button></td></tr>
+        </tbody></table>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- ==================== 社区登录 ==================== -->
+<div id="p-community-login" class="page">
+  <div class="login-wrap comm-bg">
+    <div class="login-brand"><div class="login-brand-logo">邻盟</div><div class="login-brand-sub">社区资源智能匹配助手</div></div>
+    <div class="login-back"><a href="#" onclick="goto('index')"><i class="fas fa-arrow-left"></i> 返回首页</a></div>
+    <div class="login-card">
+      <div class="login-header"><div class="icon" style="color:var(--comm)"><i class="fas fa-building"></i></div><h2>社区端登录</h2><p>连接社区，精准匹配，共创美好生活</p></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:20px">
+        <div style="text-align:center;padding:10px;background:var(--comm);color:#fff;border-radius:10px;font-size:14px;font-weight:600"><i class="fas fa-shield-alt"></i> 验证码登录</div>
+        <div style="text-align:center;padding:10px;background:#f5f5f5;color:#666;border-radius:10px;font-size:14px"><i class="fas fa-key"></i> 密码登录</div>
+      </div>
+      <div class="form-group"><label>手机号</label><div class="input-addon"><span class="addon">+86</span><input type="tel" class="form-control" value="13800138000" style="border-color:var(--comm)"></div></div>
+      <div class="form-group"><label>验证码</label><div style="display:flex;gap:8px"><input type="text" class="form-control" value="123456" placeholder="请输入验证码"><button class="code-btn" style="background:var(--comm-l);color:var(--comm);border-color:var(--comm)">获取验证码</button></div></div>
+      <button class="btn-login comm" onclick="login('community')"><i class="fas fa-sign-in-alt"></i> 登录</button>
+      <div class="login-divider">
+        <div class="login-tips">
+          <div class="login-tip"><i class="fas fa-bullseye" style="color:var(--comm)"></i><span>智能匹配</span></div>
+          <div class="login-tip"><i class="fas fa-link" style="color:var(--comm)"></i><span>高效对接</span></div>
+          <div class="login-tip"><i class="fas fa-coins" style="color:var(--comm)"></i><span>撮合奖励</span></div>
+        </div>
+      </div>
+      <div class="login-footer">还没有账号？<a href="#" class="comm" onclick="goto('community-register')">立即注册</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 社区注册 ==================== -->
+<div id="p-community-register" class="page">
+  <div class="login-wrap comm-bg">
+    <div class="login-brand"><div class="login-brand-logo">邻盟</div><div class="login-brand-sub">社区资源智能匹配助手</div></div>
+    <div class="login-back"><a href="#" onclick="goto('index')"><i class="fas fa-arrow-left"></i> 返回首页</a></div>
+    <div class="login-card" style="max-width:500px;max-height:92vh;overflow-y:auto">
+      <div class="login-header"><div class="icon" style="color:var(--comm)"><i class="fas fa-building"></i></div><h2>社区注册</h2><p>完善社区信息，开启智能匹配之旅</p></div>
+      <div class="form-row">
+        <div class="form-group"><label>所在省/市/区 <span style="color:#ff4d4f">*</span></label><select class="form-control"><option>湖北省</option></select></div>
+        <div class="form-group"><label>街道/社区 <span style="color:#ff4d4f">*</span></label><input type="text" class="form-control" placeholder="请输入街道名称"></div>
+      </div>
+      <div class="form-group"><label>社区名称 <span style="color:#ff4d4f">*</span></label><input type="text" class="form-control" placeholder="请输入社区名称"></div>
+      <div class="form-group"><label>联系人 <span style="color:#ff4d4f">*</span></label><input type="text" class="form-control" placeholder="请输入联系人姓名"></div>
+      <div class="form-group"><label>联系电话 <span style="color:#ff4d4f">*</span></label><div class="input-addon"><span class="addon">+86</span><input type="tel" class="form-control" placeholder="手机号用于登录"></div></div>
+      <div class="form-group"><label>验证码</label><div style="display:flex;gap:8px"><input type="text" class="form-control" placeholder="短信验证码"><button class="code-btn" style="background:var(--comm-l);color:var(--comm);border-color:var(--comm)">获取验证码</button></div></div>
+      <div class="form-group"><label>小区户数</label><input type="number" class="form-control" placeholder="约有多少户"></div>
+      <div class="form-group"><label>社区标签（可多选）</label>
+        <div class="tag-list">
+          <span class="tag-item comm active">高档住宅</span>
+          <span class="tag-item comm">儿童较多</span>
+          <span class="tag-item comm">老年为主</span>
+          <span class="tag-item comm">教育资源</span>
+          <span class="tag-item comm">医疗配套</span>
+          <span class="tag-item comm">商业配套</span>
+        </div>
+      </div>
+      <button class="btn-login comm" onclick="login('community')"><i class="fas fa-user-plus"></i> 立即注册</button>
+      <div class="login-footer">已有账号？<a href="#" class="comm" onclick="goto('community-login')">立即登录</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 社区首页 ==================== -->
+<div id="p-community-home" class="page">
+  <div class="top-nav">
+    <div class="brand comm"><i class="fas fa-building"></i> 邻盟 · 社区端</div>
+    <nav>
+      <a href="#" class="active comm">首页</a>
+      <a href="#" onclick="showPage('community-square');return false">资源广场</a>
+      <a href="#" onclick="showPage('community-messages');return false">消息中心</a>
+    </nav>
+    <div class="right">
+      <span class="badge"><i class="fas fa-bell" style="font-size:18px"></i><span class="badge-num">3</span></span>
+      <div class="avatar" style="background:var(--comm)" onclick="showPage('community-profile')">花</div>
+    </div>
+  </div>
+  <div class="content">
+    <div class="banner">
+      <div style="font-size:13px;opacity:.8;margin-bottom:8px"><i class="fas fa-bullhorn"></i> 平台公告</div>
+      <h2>邻盟平台 v3.2 全新上线</h2>
+      <p>智能匹配升级，撮合奖励加码，连接更多优质商家资源</p>
+      <div class="banner-btns">
+        <button class="btn-white">了解更多</button>
+        <button class="btn-outline" onclick="showPage('community-demand-publish');return false">发布需求</button>
+      </div>
+      <div class="banner-dots"><span></span><span class="active"></span><span></span></div>
+    </div>
+    <div class="quick-grid">
+      <div class="quick-item" onclick="showPage('community-demand-publish')"><i class="fas fa-edit" style="color:var(--comm)"></i><div class="label">发布需求</div><div class="sub">寻找合适商家</div></div>
+      <div class="quick-item" onclick="showPage('community-square')"><i class="fas fa-search" style="color:var(--comm)"></i><div class="label">资源广场</div><div class="sub">浏览优质商家</div></div>
+      <div class="quick-item" onclick="showPage('community-messages')"><i class="fas fa-envelope" style="color:var(--comm)"></i><div class="label">消息中心</div><div class="sub">查看意向与合作</div></div>
+      <div class="quick-item" onclick="showPage('community-profile')"><i class="fas fa-user" style="color:var(--comm)"></i><div class="label">个人中心</div><div class="sub">管理我的信息</div></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <h2 style="font-size:18px;font-weight:700"><i class="fas fa-store" style="color:var(--comm);margin-right:6px"></i>为您推荐</h2>
+      <a href="#" onclick="showPage('community-square');return false" style="color:var(--comm);font-size:14px;text-decoration:none">查看更多 <i class="fas fa-arrow-right"></i></a>
+    </div>
+    <div class="resource-grid">
+      <div class="resource-card" onclick="showPage('community-resource-detail')">
+        <div class="card-banner" style="background:linear-gradient(135deg,#e66100,#ff8c00)"><span class="tag" style="color:#e66100">教育培训</span><i class="fas fa-dumbbell" style="color:rgba(255,255,255,.9)"></i></div>
+        <div class="card-body"><div class="title">武汉飞腾体育</div><div class="desc">提供社区运动会策划与执行，赠送器材赞助</div><div class="card-footer"><div class="hearts"><i class="fas fa-heart" style="color:#ff4d4f"></i><i class="fas fa-heart" style="color:#ff4d4f"></i><i class="fas fa-heart" style="color:#ff4d4f"></i><i class="fas fa-heart" style="color:#ff4d4f"></i><i class="far fa-heart" style="color:#ccc"></i></div><span class="level-tag level-gold">金牌会员</span></div></div>
+      </div>
+      <div class="resource-card" onclick="showPage('community-resource-detail')">
+        <div class="card-banner" style="background:linear-gradient(135deg,#26a269,#52c41a)"><span class="tag" style="color:#26a269">餐饮小吃</span><i class="fas fa-utensils" style="color:rgba(255,255,255,.9)"></i></div>
+        <div class="card-body"><div class="title">邻里私房菜</div><div class="desc">社区团购餐饮服务，新鲜食材直供，专属折扣</div><div class="card-footer"><div class="hearts"><i class="fas fa-heart" style="color:#ff4d4f"></i><i class="fas fa-heart" style="color:#ff4d4f"></i><i class="fas fa-heart" style="color:#ff4d4f"></i><i class="fas fa-heart" style="color:#ff4d4f"></i><i class="fas fa-heart" style="color:#ff4d4f"></i></div><span class="level-tag level-silver">银牌会员</span></div></div>
+      </div>
+      <div class="resource-card" onclick="showPage('community-resource-detail')">
+        <div class="card-banner" style="background:linear-gradient(135deg,#1a5fb4,#5b9bd5)"><span class="tag" style="color:#1a5fb4">教育培训</span><i class="fas fa-book" style="color:rgba(255,255,255,.9)"></i></div>
+        <div class="card-body"><div class="title">智慧学堂</div><div class="desc">儿童托管、兴趣班、社区图书馆合作</div><div class="card-footer"><div class="hearts"><i class="fas fa-heart" style="color:#ff4d4f"></i><i class="fas fa-heart" style="color:#ff4d4f"></i><i class="fas fa-heart" style="color:#ff4d4f"></i><i class="far fa-heart" style="color:#ccc"></i><i class="far fa-heart" style="color:#ccc"></i></div><span class="level-tag level-gold">金牌会员</span></div></div>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;margin-top:8px">
+      <h2 style="font-size:18px;font-weight:700"><i class="fas fa-list-alt" style="color:var(--comm);margin-right:6px"></i>我的需求</h2>
+      <button class="btn btn-primary" onclick="showPage('community-demand-publish')"><i class="fas fa-plus"></i> 发布需求</button>
+    </div>
+    <div class="card">
+      <table class="data-table"><thead><tr><th>需求标题</th><th>类型</th><th>状态</th><th>浏览</th><th>意向</th><th>发布时间</th></tr></thead>
+      <tbody>
+        <tr style="cursor:pointer" onclick="showPage('community-demand-detail')"><td style="font-weight:500">社区亲子运动会策划</td><td><span class="badge badge-orange">活动策划</span></td><td><span class="badge badge-green">对接中</span></td><td>256</td><td>3</td><td style="color:var(--muted)">04-02</td></tr>
+        <tr><td style="font-weight:500">社区老年健康讲座</td><td><span class="badge badge-blue">健康医疗</span></td><td><span class="badge badge-purple">已撮合</span></td><td>189</td><td>1</td><td style="color:var(--muted)">03-28</td></tr>
+      </tbody></table>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 资源广场 ==================== -->
+<div id="p-community-square" class="page">
+  <div class="top-nav">
+    <div class="brand comm"><i class="fas fa-building"></i> 邻盟 · 社区端</div>
+    <nav>
+      <a href="#" onclick="showPage('community-home');return false">首页</a>
+      <a href="#" class="active comm">资源广场</a>
+      <a href="#" onclick="showPage('community-messages');return false">消息中心</a>
+    </nav>
+    <div class="right"><div class="avatar" style="background:var(--comm)">花</div></div>
+  </div>
+  <div class="content">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+      <h1 class="page-title" style="margin:0"><i class="fas fa-store" style="color:var(--comm);margin-right:8px"></i>资源广场</h1>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <input type="text" class="form-control" placeholder="搜索商家名称、资源类型..." style="width:240px;border-color:var(--comm)">
+        <select class="form-control" style="width:130px"><option>行业分类</option><option>教育培训</option><option>餐饮小吃</option><option>体育健身</option></select>
+        <select class="form-control" style="width:130px"><option>距离</option><option>3公里内</option><option>5公里内</option></select>
+      </div>
+    </div>
+    <div class="resource-grid">
+      <div class="resource-card" onclick="showPage('community-resource-detail')"><div class="card-banner" style="background:linear-gradient(135deg,#e66100,#ff8c00)"><span class="tag" style="color:#e66100">教育培训</span><i class="fas fa-dumbbell" style="color:rgba(255,255,255,.9)"></i></div><div class="card-body"><div class="title">武汉飞腾体育</div><div class="desc">社区运动会策划与执行，赠送器材赞助</div><div class="card-footer"><div class="hearts"><i class="fas fa-heart" style="color:#ff4d4f"></i><i class="fas fa-heart" style="color:#ff4d4f"></i><i class="fas fa-heart" style="color:#ff4d4f"></i><i class="fas fa-heart" style="color:#ff4d4f"></i><i class="far fa-heart" style="color:#ccc"></i></div><span class="level-tag level-gold">金牌</span></div></div></div>
+      <div class="resource-card" onclick="showPage('community-resource-detail')"><div class="card-banner" style="background:linear-gradient(135deg,#26a269,#52c41a)"><span class="tag" style="color:#26a269">餐饮小吃</span><i class="fas fa-utensils" style="color:rgba(255,255,255,.9)"></i></div><div class="card-body"><div class="title">邻里私房菜</div><div class="desc">社区团购餐饮服务，新鲜食材直供</div><div class="card-footer"><div class="hearts"><i class="fas fa-heart" style="color:#ff4d4f"></i><i class="fas fa-heart" style="color:#ff4d4f"></i><i class="fas fa-heart" style="color:#ff4d4f"></i><i class="fas fa-heart" style="color:#ff4d4f"></i><i class="fas fa-heart" style="color:#ff4d4f"></i></div><span class="level-tag level-silver">银牌</span></div></div></div>
+      <div class="resource-card" onclick="showPage('community-resource-detail')"><div class="card-banner" style="background:linear-gradient(135deg,#1a5fb4,#5b9bd5)"><span class="tag" style="color:#1a5fb4">教育培训</span><i class="fas fa-book" style="color:rgba(255,255,255,.9)"></i></div><div class="card-body"><div class="title">智慧学堂</div><div class="desc">儿童托管、兴趣班、社区图书馆</div><div class="card-footer"><div class="hearts"><i class="fas fa-heart" style="color:#ff4d4f"></i><i class="fas fa-heart" style="color:#ff4d4f"></i><i class="fas fa-heart" style="color:#ff4d4f"></i><i class="far fa-heart" style="color:#ccc"></i><i class="far fa-heart" style="color:#ccc"></i></div><span class="level-tag level-gold">金牌</span></div></div></div>
+      <div class="resource-card" onclick="showPage('community-resource-detail')"><div class="card-banner" style="background:linear-gradient(135deg,#813d9c,#b07cc6)"><span class="tag" style="color:#813d9c">健康医疗</span><i class="fas fa-pills" style="color:rgba(255,255,255,.9)"></i></div><div class="card-body"><div class="title">康健大药房</div><div class="desc">社区义诊、健康讲座、优惠购药</div><div class="card-footer"><div class="hearts"><i class="fas fa-heart" style="color:#ff4d4f"></i><i class="fas fa-heart" style="color:#ff4d4f"></i><i class="far fa-heart" style="color:#ccc"></i><i class="far fa-heart" style="color:#ccc"></i><i class="far fa-heart" style="color:#ccc"></i></div><span class="level-tag" style="background:#f5f5f5;color:#999">免费</span></div></div></div>
+      <div class="resource-card" onclick="showPage('community-resource-detail')"><div class="card-banner" style="background:linear-gradient(135deg,#fa8c16,#ffc53d)"><span class="tag" style="color:#fa8c16">商超零售</span><i class="fas fa-shopping-cart" style="color:rgba(255,255,255,.9)"></i></div><div class="card-body"><div class="title">社区便利购</div><div class="desc">日常生活用品团购，配送到社区</div><div class="card-footer"><div class="hearts"><i class="fas fa-heart" style="color:#ff4d4f"></i><i class="fas fa-heart" style="color:#ff4d4f"></i><i class="fas fa-heart" style="color:#ff4d4f"></i><i class="fas fa-heart" style="color:#ff4d4f"></i><i class="far fa-heart" style="color:#ccc"></i></div><span class="level-tag level-silver">银牌</span></div></div></div>
+      <div class="resource-card" onclick="showPage('community-resource-detail')"><div class="card-banner" style="background:linear-gradient(135deg,#0891b2,#22d3ee)"><span class="tag" style="color:#0891b2">家政服务</span><i class="fas fa-home" style="color:rgba(255,255,255,.9)"></i></div><div class="card-body"><div class="title">放心家政</div><div class="desc">日常保洁、家电清洗、养老陪护</div><div class="card-footer"><div class="hearts"><i class="fas fa-heart" style="color:#ff4d4f"></i><i class="fas fa-heart" style="color:#ff4d4f"></i><i class="fas fa-heart" style="color:#ff4d4f"></i><i class="far fa-heart" style="color:#ccc"></i><i class="far fa-heart" style="color:#ccc"></i></div><span class="level-tag" style="background:#f5f5f5;color:#999">免费</span></div></div></div>
+    </div>
+    <div class="pagination"><button>上一页</button><button class="active">1</button><button>2</button><button>3</button><button>下一页</button></div>
+  </div>
+</div>
+
+<!-- ==================== 资源详情 ==================== -->
+<div id="p-community-resource-detail" class="page">
+  <div class="top-nav">
+    <div class="brand comm"><i class="fas fa-building"></i> 邻盟 · 社区端</div>
+    <nav>
+      <a href="#" onclick="showPage('community-home');return false">首页</a>
+      <a href="#" class="active comm">资源广场</a>
+      <a href="#" onclick="showPage('community-messages');return false">消息中心</a>
+    </nav>
+    <div class="right">
+      <a href="#" class="back-link" onclick="showPage('community-square');return false"><i class="fas fa-arrow-left"></i> 返回</a>
+      <div class="avatar" style="background:var(--comm)">花</div>
+    </div>
+  </div>
+  <div class="content">
+    <div class="detail-grid">
+      <div>
+        <div class="card">
+          <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap"><span class="badge badge-orange"><i class="fas fa-dumbbell"></i> 体育健身</span><span class="badge badge-green">金牌会员</span><span class="badge badge-blue"><i class="fas fa-star"></i> 五星商家</span></div>
+          <h1 style="font-size:28px;font-weight:700;margin-bottom:14px">武汉飞腾体育</h1>
+          <div style="display:flex;gap:20px;color:var(--muted);font-size:14px;margin-bottom:24px;flex-wrap:wrap"><span><i class="fas fa-map-marker-alt" style="color:var(--merch)"></i> 武昌区水果湖街道</span><span><i class="fas fa-star" style="color:#ffc53d"></i> 五星商家</span><span><i class="fas fa-handshake" style="color:var(--comm)"></i> 合作 28 次</span><span><i class="fas fa-eye" style="color:var(--muted)"></i> 浏览 1,234 次</span></div>
+          <div class="info-section">
+            <h3><i class="fas fa-info-circle" style="color:var(--merch);margin-right:6px"></i>资源介绍</h3>
+            <p style="line-height:1.8;font-size:15px;color:#444">飞腾体育是一家专注于社区体育服务的专业机构。我们提供：</p>
+            <ul style="color:#555;line-height:2.2;font-size:15px;margin:12px 0 12px 20px">
+              <li><strong>社区运动会策划：</strong>提供完整的活动方案、专业器材、持证教练</li>
+              <li><strong>器材赞助：</strong>活动期间免费提供专业器材使用</li>
+              <li><strong>专业指导：</strong>持证教练现场指导，保障活动安全</li>
+              <li><strong>宣传支持：</strong>提供活动摄影、宣传海报设计服务</li>
+            </ul>
+          </div>
+          <div class="info-section">
+            <h3><i class="fas fa-gift" style="color:var(--merch);margin-right:6px"></i>赞助回报</h3>
+            <div style="display:flex;flex-wrap:wrap;gap:8px"><span class="badge badge-blue">品牌曝光</span><span class="badge badge-blue">活动冠名</span><span class="badge badge-blue">荣誉证书</span><span class="badge badge-blue">社群推广</span><span class="badge badge-blue">产品展示</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><h3 style="margin:0"><i class="fas fa-comments" style="color:var(--comm);margin-right:6px"></i>留言咨询</h3><span style="color:var(--muted);font-size:13px">共 2 条留言</span></div>
+          <div style="display:flex;gap:12px;margin-bottom:16px"><textarea class="form-control" placeholder="对此资源有疑问？在此留言..." style="flex:1"></textarea><button class="btn btn-primary" style="align-self:flex-end;white-space:nowrap"><i class="fas fa-paper-plane"></i> 发送</button></div>
+          <div style="border-top:1px solid var(--border);padding-top:16px">
+            <div style="display:flex;gap:10px;margin-bottom:14px"><div style="width:32px;height:32px;background:var(--comm);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:12px;flex-shrink:0">花</div><div><div style="font-size:13px;font-weight:600">花桥社区</div><div style="font-size:13px;color:#555;margin:4px 0">请问活动策划收费吗？有哪些套餐可选？</div><div style="font-size:11px;color:var(--muted)">04-04 14:30</div></div></div>
+            <div style="display:flex;gap:10px"><div style="width:32px;height:32px;background:var(--merch);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:12px;flex-shrink:0">飞</div><div><div style="font-size:13px;font-weight:600;color:var(--merch)">飞腾体育 回复</div><div style="font-size:13px;color:#555;margin:4px 0">您好！我们有免费基础套餐和付费增值套餐，社区可根据预算选择，详情可联系平台客服~</div><div style="font-size:11px;color:var(--muted)">04-04 15:12 <span style="color:var(--comm);cursor:pointer">回复</span></div></div></div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="sidebar-card">
+          <div style="display:flex;gap:14px;align-items:center;margin-bottom:20px"><div style="width:60px;height:60px;background:linear-gradient(135deg,#e66100,#ff8c00);border-radius:12px;display:flex;align-items:center;justify-content:center"><i class="fas fa-dumbbell" style="font-size:28px;color:#fff"></i></div><div><div style="font-size:16px;font-weight:700">武汉飞腾体育</div><div style="font-size:13px;color:var(--muted);margin-top:3px">体育健身 | 教育培训</div></div></div>
+          <div style="color:#ffc53d;font-size:16px;margin-bottom:16px"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
+          <div style="background:#f9fafb;border-radius:10px;padding:14px;margin-bottom:16px"><div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:13px"><span style="color:var(--muted)">匹配度</span><span style="color:#ff4d4f;font-weight:600">4/5 红心</span></div><div style="background:#f0f0f0;border-radius:4px;height:6px"><div style="background:#ff4d4f;width:80%;height:6px;border-radius:4px"></div></div></div>
+          <button class="btn btn-primary" onclick="showPage('community-intention')" style="width:100%;margin-bottom:10px"><i class="fas fa-handshake"></i> 发起合作意向</button>
+          <button class="btn" style="width:100%;background:#f5f5f5;color:#333;border:1px solid var(--border);margin-bottom:10px"><i class="fas fa-comment-dots"></i> 留言咨询</button>
+          <button class="btn btn-outline" style="width:100%;margin-bottom:16px"><i class="far fa-star"></i> 收藏商家</button>
+          <div style="border-top:1px solid var(--border);padding-top:16px"><div style="font-size:12px;color:var(--muted);margin-bottom:8px"><i class="fas fa-info-circle"></i> 金牌及以上会员可查看完整联系方式</div><div style="background:#fff7e6;padding:10px;border-radius:8px;font-size:12px;color:#856404"><i class="fas fa-gem" style="color:var(--merch)"></i> 当前：<strong>免费会员</strong> · <a href="#" style="color:var(--merch)">升级金牌</a> 解锁更多</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 合作意向页 ==================== -->
+<div id="p-community-intention" class="page">
+  <div class="top-nav"><div class="brand comm"><i class="fas fa-building"></i> 邻盟 · 社区端</div><div class="right"><a href="#" class="back-link" onclick="showPage('community-messages');return false"><i class="fas fa-arrow-left"></i> 返回</a><div class="avatar" style="background:var(--comm)">花</div></div></div>
+  <div class="content">
+    <div class="detail-grid">
+      <div>
+        <div class="card">
+          <div style="display:flex;gap:12px;align-items:center;margin-bottom:20px;flex-wrap:wrap"><span class="badge badge-orange">待确认</span><span style="color:var(--muted);font-size:13px">意向编号：20260404001</span></div>
+          <h1 style="font-size:22px;font-weight:700;margin-bottom:16px">武汉飞腾体育 - 社区运动会合作</h1>
+          <div style="background:#f9fafb;border-radius:12px;padding:20px;margin-bottom:20px"><div style="font-size:14px;font-weight:600;color:#333;margin-bottom:10px"><i class="fas fa-comment-dots" style="color:var(--merch);margin-right:6px"></i>商家留言</div><p style="color:#555;line-height:1.8;font-size:14px">您好！飞腾体育长期深耕社区体育服务，我们非常期待与花桥社区合作开展「社区亲子运动会」活动。我们可以提供：专业教练团队、活动策划方案、活动器材赞助，并承诺活动期间全程配备安全人员。期待您的回复！</p></div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px">
+            <div style="background:#f0f7ff;padding:14px;border-radius:10px;text-align:center"><i class="fas fa-calendar-alt" style="font-size:18px;color:var(--admin);margin-bottom:6px;display:block"></i><div style="font-size:12px;color:var(--muted)">预计时间</div><div style="font-size:14px;font-weight:600;color:var(--admin)">4月中旬</div></div>
+            <div style="background:#fff7e6;padding:14px;border-radius:10px;text-align:center"><i class="fas fa-users" style="font-size:18px;color:var(--merch);margin-bottom:6px;display:block"></i><div style="font-size:12px;color:var(--muted)">预计人数</div><div style="font-size:14px;font-weight:600;color:var(--merch)">50-80人</div></div>
+            <div style="background:#f5ebf7;padding:14px;border-radius:10px;text-align:center"><i class="fas fa-gift" style="font-size:18px;color:var(--amb);margin-bottom:6px;display:block"></i><div style="font-size:12px;color:var(--muted)">商家赞助</div><div style="font-size:14px;font-weight:600;color:var(--amb)">器材全包</div></div>
+          </div>
+          <div style="border-top:1px solid var(--border);padding-top:16px"><div style="display:flex;gap:10px"><textarea class="form-control" placeholder="回复商家..." style="flex:1"></textarea><button class="btn btn-primary" style="align-self:flex-end;white-space:nowrap"><i class="fas fa-paper-plane"></i> 发送</button></div></div>
+        </div>
+      </div>
+      <div>
+        <div class="sidebar-card" style="margin-bottom:20px"><h3><i class="fas fa-users" style="color:var(--comm);margin-right:6px"></i>双方信息</h3><div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid #f5f5f5"><div style="font-size:12px;color:var(--muted);margin-bottom:8px">商家</div><div style="display:flex;gap:10px;align-items:center"><div style="width:36px;height:36px;background:var(--merch);border-radius:8px;display:flex;align-items:center;justify-content:center"><i class="fas fa-dumbbell" style="color:#fff;font-size:16px"></i></div><div><div style="font-size:14px;font-weight:600">武汉飞腾体育</div><div style="font-size:12px;color:var(--merch)">金牌 · 五星</div></div></div></div><div><div style="font-size:12px;color:var(--muted);margin-bottom:8px">社区</div><div style="display:flex;gap:10px;align-items:center"><div style="width:36px;height:36px;background:var(--comm);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:16px">花</div><div><div style="font-size:14px;font-weight:600">花桥社区</div><div style="font-size:12px;color:var(--comm)">免费会员</div></div></div></div></div>
+        <div class="sidebar-card"><h3><i class="fas fa-coins" style="color:var(--comm);margin-right:6px"></i>撮合奖励</h3><div class="reward-card"><div class="reward-amount">¥200</div><div class="reward-label">成功合作后发放给社区</div></div><button class="btn btn-primary" style="width:100%;margin-bottom:8px;background:#52c41a"><i class="fas fa-check"></i> 接受合作</button><button class="btn btn-outline" style="width:100%"><i class="fas fa-times"></i> 婉拒合作</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 消息中心 ==================== -->
+<div id="p-community-messages" class="page">
+  <div class="top-nav"><div class="brand comm"><i class="fas fa-building"></i> 邻盟 · 社区端</div><nav><a href="#" onclick="showPage('community-home');return false">首页</a><a href="#" onclick="showPage('community-square');return false">资源广场</a><a href="#" class="active comm">消息中心</a></nav><div class="right"><div class="avatar" style="background:var(--comm)">花</div></div></div>
+  <div class="content">
+    <div style="display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap"><button class="btn btn-primary" onclick="showPage('community-messages')"><i class="fas fa-handshake"></i> 合作意向 (3)</button><button class="btn btn-outline" style="border-color:var(--comm);color:var(--comm)"><i class="fas fa-comment-dots"></i> 留言咨询 (5)</button><button class="btn btn-outline" style="border-color:var(--comm);color:var(--comm)"><i class="fas fa-bell"></i> 系统通知 (2)</button></div>
+    <div class="card">
+      <div class="msg-item" onclick="showPage('community-intention')"><div class="msg-user"><div class="msg-avatar" style="background:var(--merch)"><i class="fas fa-dumbbell"></i></div><div class="msg-name">武汉飞腾体育 发起合作意向</div><span class="msg-time">10分钟前</span></div><div class="msg-title">飞腾体育希望与您合作开展社区亲子运动会</div><div style="margin-left:52px;margin-top:6px"><span class="badge badge-orange">待确认</span></div></div>
+      <div class="msg-item" onclick="showPage('community-intention')"><div class="msg-user"><div class="msg-avatar" style="background:var(--comm)"><i class="fas fa-utensils"></i></div><div class="msg-name">邻里私房菜 发起合作意向</div><span class="msg-time">1小时前</span></div><div class="msg-title">希望为社区提供节日团购餐饮服务</div><div style="margin-left:52px;margin-top:6px"><span class="badge badge-orange">待确认</span></div></div>
+      <div class="msg-item"><div class="msg-user"><div class="msg-avatar" style="background:var(--admin)"><i class="fas fa-pills"></i></div><div class="msg-name">康健大药房 发起合作意向</div><span class="msg-time">昨天</span></div><div class="msg-title">计划在社区开展免费健康义诊活动</div><div style="margin-left:52px;margin-top:6px"><span class="badge badge-green"><i class="fas fa-check"></i> 已接受</span></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 个人中心 ==================== -->
+<div id="p-community-profile" class="page">
+  <div class="top-nav"><div class="brand comm"><i class="fas fa-building"></i> 邻盟 · 社区端</div><div class="right"><a href="#" class="back-link" onclick="showPage('community-home');return false"><i class="fas fa-arrow-left"></i> 返回首页</a></div></div>
+  <div class="content">
+    <div style="display:grid;grid-template-columns:260px 1fr;gap:24px">
+      <div>
+        <div class="card" style="text-align:center"><div style="width:80px;height:80px;background:linear-gradient(135deg,var(--comm),var(--comm-d));border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:32px;font-weight:700;margin:0 auto 16px">花</div><div style="font-size:18px;font-weight:700">花桥社区</div><div style="font-size:13px;color:var(--muted);margin-bottom:14px">江岸区花桥街道</div><div style="background:#f0f0f0;padding:5px 16px;border-radius:20px;font-size:13px;color:#666;display:inline-block;margin-bottom:20px"><i class="fas fa-gem"></i> 免费会员</div><div style="border-top:1px solid var(--border);padding-top:16px;text-align:left"><div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:13px"><span style="color:var(--muted)">发布需求</span><span style="font-weight:600">3</span></div><div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:13px"><span style="color:var(--muted)">收到意向</span><span style="font-weight:600">5</span></div><div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:13px"><span style="color:var(--muted)">撮合成功</span><span style="font-weight:600;color:var(--comm)">2</span></div><div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--muted)">获得奖励</span><span style="font-weight:600;color:var(--merch)">¥400</span></div></div></div>
+      </div>
+      <div>
+        <div class="card" style="margin-bottom:20px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px"><h3 style="margin:0"><i class="fas fa-building" style="color:var(--comm);margin-right:6px"></i>社区资料</h3><button class="btn btn-primary btn-sm"><i class="fas fa-edit"></i> 编辑资料</button></div><div class="info-grid"><div class="info-item"><div class="key">社区名称</div><div class="val">花桥社区</div></div><div class="info-item"><div class="key">联系人</div><div class="val">张三</div></div><div class="info-item"><div class="key">联系电话</div><div class="val">138****8000</div></div><div class="info-item"><div class="key">所在地区</div><div class="val">武汉市江岸区</div></div><div class="info-item"><div class="key">小区户数</div><div class="val">约 850 户</div></div><div class="info-item"><div class="key">注册时间</div><div class="val">2026-03-15</div></div></div><div style="margin-top:16px"><div class="key" style="font-size:12px;color:var(--muted);margin-bottom:8px">社区标签</div><div class="tag-list"><span class="tag-item comm active">高档住宅</span><span class="tag-item comm active">儿童较多</span><span class="tag-item comm">老年为主</span><span class="tag-item comm">教育资源</span></div></div></div>
+        <div class="card"><h3 style="margin:0 0 16px 0"><i class="fas fa-gem" style="color:var(--merch);margin-right:6px"></i>会员升级</h3><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px"><div style="border:2px solid var(--border);border-radius:12px;padding:16px 12px;text-align:center;cursor:pointer"><div style="font-size:12px;color:#999">免费</div><div style="font-size:18px;font-weight:700;color:#666;margin:4px 0">¥0</div><div style="font-size:11px;color:#999">基础功能</div></div><div style="border:2px solid var(--admin);background:#e8f0fb;border-radius:12px;padding:16px 12px;text-align:center;cursor:pointer"><div style="font-size:12px;color:var(--admin)">银牌</div><div style="font-size:18px;font-weight:700;color:var(--admin);margin:4px 0">¥999/年</div><div style="font-size:11px;color:var(--admin)">优先展示</div></div><div style="border:2px solid var(--merch);background:#fff7e6;border-radius:12px;padding:16px 12px;text-align:center;cursor:pointer"><div style="font-size:12px;color:var(--merch)">金牌</div><div style="font-size:18px;font-weight:700;color:var(--merch);margin:4px 0">¥2999/年</div><div style="font-size:11px;color:var(--merch)">完整联系方式</div></div><div style="border:2px solid var(--amb);background:#f5ebf7;border-radius:12px;padding:16px 12px;text-align:center;cursor:pointer"><div style="font-size:12px;color:var(--amb)">钻石</div><div style="font-size:18px;font-weight:700;color:var(--amb);margin:4px 0">¥5999/年</div><div style="font-size:11px;color:var(--amb)">全部权益</div></div></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 发布需求 ==================== -->
+<div id="p-community-demand-publish" class="page">
+  <div class="top-nav"><div class="brand comm"><i class="fas fa-building"></i> 邻盟 · 社区端</div><div class="right"><a href="#" class="back-link" onclick="showPage('community-home');return false"><i class="fas fa-arrow-left"></i> 返回</a><div class="avatar" style="background:var(--comm)">花</div></div></div>
+  <div class="content">
+    <h1 class="page-title"><i class="fas fa-edit" style="color:var(--comm);margin-right:8px"></i>发布需求</h1><p class="page-sub">填写需求信息，精准匹配商家资源</p>
+    <div class="card" style="max-width:680px">
+      <div class="form-group"><label>需求标题 <span style="color:#ff4d4f">*</span></label><input type="text" class="form-control" placeholder="请输入需求标题，如：社区亲子运动会策划"></div>
+      <div class="form-row">
+        <div class="form-group"><label>需求类型 <span style="color:#ff4d4f">*</span></label><select class="form-control"><option>请选择类型</option><option>活动策划</option><option>教育培训</option><option>健康医疗</option><option>生活服务</option><option>餐饮服务</option></select></div>
+        <div class="form-group"><label>目标人群</label><select class="form-control"><option>请选择</option><option>儿童</option><option>老年人</option><option>全体居民</option><option>家庭</option></select></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>预算范围</label><select class="form-control"><option>面议</option><option>1万以下</option><option>1-3万</option><option>3-5万</option><option>5万以上</option></select></div>
+        <div class="form-group"><label>期望合作时间</label><input type="date" class="form-control"></div>
+      </div>
+      <div class="form-group"><label>详细描述 <span style="color:#ff4d4f">*</span></label><textarea class="form-control" placeholder="请详细描述您的需求，包括活动规模、预期效果、合作方式等"></textarea></div>
+      <div class="form-group"><label>回报方式（可选）</label><div class="tag-list"><span class="tag-item default active">品牌曝光</span><span class="tag-item default">活动冠名</span><span class="tag-item default">产品展示</span><span class="tag-item default">社群推广</span><span class="tag-item default">荣誉证书</span></div></div>
+      <div style="display:flex;gap:12px;margin-top:8px"><button class="btn btn-primary" onclick="showPage('community-home')"><i class="fas fa-paper-plane"></i> 发布需求</button><button class="btn btn-outline" onclick="showPage('community-home')"><i class="fas fa-arrow-left"></i> 返回</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 商家登录 ==================== -->
+<div id="p-merchant-login" class="page">
+  <div class="login-wrap merch-bg">
+    <div class="login-brand"><div class="login-brand-logo">邻盟</div><div class="login-brand-sub">社区资源智能匹配助手</div></div>
+    <div class="login-back"><a href="#" onclick="goto('index')"><i class="fas fa-arrow-left"></i> 返回首页</a></div>
+    <div class="login-card">
+      <div class="login-header"><div class="icon" style="color:var(--merch)"><i class="fas fa-store"></i></div><h2>商家端登录</h2><p>发布资源，精准触达社区</p></div>
+      <div class="form-group"><label>手机号</label><div class="input-addon"><span class="addon">+86</span><input type="tel" class="form-control" value="13900139000" style="border-color:var(--merch)"></div></div>
+      <div class="form-group"><label>验证码</label><div style="display:flex;gap:8px"><input type="text" class="form-control" value="123456" placeholder="请输入验证码"><button class="code-btn" style="background:var(--merch-l);color:var(--merch);border-color:var(--merch)">获取验证码</button></div></div>
+      <button class="btn-login merch" onclick="login('merchant')"><i class="fas fa-sign-in-alt"></i> 登录</button>
+      <div class="login-divider"><div class="login-tips"><div class="login-tip"><i class="fas fa-bullseye" style="color:var(--merch)"></i><span>精准触达</span></div><div class="login-tip"><i class="fas fa-link" style="color:var(--merch)"></i><span>高效对接</span></div><div class="login-tip"><i class="fas fa-handshake" style="color:var(--merch)"></i><span>合作奖励</span></div></div></div>
+      <div class="login-footer">还没有账号？<a href="#" class="merch" onclick="goto('merchant-register')">立即入驻</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 商家注册 ==================== -->
+<div id="p-merchant-register" class="page">
+  <div class="login-wrap merch-bg">
+    <div class="login-brand"><div class="login-brand-logo">邻盟</div><div class="login-brand-sub">社区资源智能匹配助手</div></div>
+    <div class="login-back"><a href="#" onclick="goto('index')"><i class="fas fa-arrow-left"></i> 返回首页</a></div>
+    <div class="login-card" style="max-width:520px;max-height:92vh;overflow-y:auto">
+      <div class="login-header"><div class="icon" style="color:var(--merch)"><i class="fas fa-store"></i></div><h2>商家入驻</h2><p>完善商家信息，快速触达目标社区</p></div>
+      <div class="form-group"><label>商家名称 <span style="color:#ff4d4f">*</span></label><input type="text" class="form-control" placeholder="请输入商家名称"></div>
+      <div class="form-group"><label>行业分类 <span style="color:#ff4d4f">*</span></label><select class="form-control"><option>请选择行业分类</option><option>教育培训</option><option>餐饮小吃</option><option>体育健身</option><option>健康医疗</option><option>商超零售</option><option>家政服务</option><option>房产中介</option><option>银行保险</option><option>其他</option></select></div>
+      <div class="form-group"><label>所在地址 <span style="color:#ff4d4f">*</span></label><div style="display:flex;gap:8px;margin-bottom:8px"><select class="form-control" style="flex:1"><option>湖北省</option></select><select class="form-control" style="flex:1"><option>武汉市</option></select></div><input type="text" class="form-control" placeholder="详细地址"></div>
+      <div class="form-row">
+        <div class="form-group"><label>联系人 <span style="color:#ff4d4f">*</span></label><input type="text" class="form-control" placeholder="请输入联系人姓名"></div>
+        <div class="form-group"><label>联系电话 <span style="color:#ff4d4f">*</span></label><div class="input-addon"><span class="addon">+86</span><input type="tel" class="form-control" placeholder="手机号用于登录"></div></div>
+      </div>
+      <div class="form-group"><label>验证码</label><div style="display:flex;gap:8px"><input type="text" class="form-control" placeholder="短信验证码"><button class="code-btn" style="background:var(--merch-l);color:var(--merch);border-color:var(--merch)">获取验证码</button></div></div>
+      <div class="form-group"><label>商家标签（可多选）</label><div class="tag-list"><span class="tag-item merch">品质保障</span><span class="tag-item merch">信誉商家</span><span class="tag-item merch">价格实惠</span><span class="tag-item merch">准时送达</span><span class="tag-item merch">服务优质</span></div></div>
+      <button class="btn-login merch" onclick="login('merchant')"><i class="fas fa-user-plus"></i> 立即入驻</button>
+      <div class="login-footer">已有账号？<a href="#" class="merch" onclick="goto('merchant-login')">立即登录</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 商家首页 ==================== -->
+<div id="p-merchant-home" class="page">
+  <div class="top-nav"><div class="brand merch"><i class="fas fa-store"></i> 邻盟 · 商家端</div><nav><a href="#" class="active merch">首页</a><a href="#" onclick="showPage('merchant-demand-square');return false">需求广场</a><a href="#" onclick="showPage('merchant-messages');return false">消息中心</a></nav><div class="right"><span class="badge"><i class="fas fa-bell" style="font-size:18px"></i><span class="badge-num">2</span></span><div class="avatar" style="background:var(--merch)" onclick="showPage('merchant-profile')">飞</div></div></div>
+  <div class="content">
+    <div class="banner" style="background:linear-gradient(135deg,var(--merch),var(--merch-d))"><div style="font-size:13px;opacity:.8;margin-bottom:8px"><i class="fas fa-star"></i> 欢迎回来，武汉飞腾体育</div><h2>发布资源，精准触达目标社区</h2><p>立即发布您的商家资源，让社区主动找到您</p><div class="banner-btns"><button class="btn-white" style="color:var(--merch)" onclick="showPage('merchant-publish')"><i class="fas fa-plus"></i> 发布资源</button><button class="btn-outline" onclick="showPage('merchant-demand-square')">浏览社区需求</button></div><div class="banner-dots"><span class="active"></span><span></span><span></span></div></div>
+    <div class="stat-cards" style="margin-bottom:28px">
+      <div class="stat-card"><div style="color:var(--merch);font-size:14px;margin-bottom:12px"><i class="fas fa-eye"></i> 资源浏览</div><div class="num">1,284</div><div class="trend"><i class="fas fa-arrow-up"></i> 本周 +86</div></div>
+      <div class="stat-card"><div style="color:var(--comm);font-size:14px;margin-bottom:12px"><i class="fas fa-envelope"></i> 收到意向</div><div class="num">12</div><div class="trend"><i class="fas fa-arrow-up"></i> 本月 +3</div></div>
+      <div class="stat-card"><div style="color:var(--admin);font-size:14px;margin-bottom:12px"><i class="fas fa-handshake"></i> 合作成功</div><div class="num">28</div><div class="trend" style="color:var(--comm)"><i class="fas fa-check-circle"></i> 合作率 78%</div></div>
+      <div class="stat-card"><div style="color:var(--amb);font-size:14px;margin-bottom:12px"><i class="fas fa-star"></i> 商家评级</div><div class="num" style="color:var(--amb)">五星</div><div class="trend"><i class="fas fa-medal"></i> 金牌会员</div></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><h2 style="font-size:18px;font-weight:700"><i class="fas fa-list" style="color:var(--merch);margin-right:6px"></i>我的资源</h2><button class="btn btn-primary merch" onclick="showPage('merchant-publish')"><i class="fas fa-plus"></i> 发布资源</button></div>
+    <div class="card"><table class="data-table"><thead><tr><th>资源标题</th><th>类型</th><th>状态</th><th>浏览</th><th>收到意向</th><th>发布时间</th></tr></thead><tbody><tr><td style="font-weight:500">社区运动会赞助策划</td><td><span class="badge badge-orange">活动策划</span></td><td><span class="badge badge-green">已上线</span></td><td>1,284</td><td>5</td><td style="color:var(--muted)">04-01</td></tr><tr><td style="font-weight:500">青少年体育培训</td><td><span class="badge badge-blue">教育培训</span></td><td><span class="badge badge-green">已上线</span></td><td>856</td><td>3</td><td style="color:var(--muted)">03-25</td></tr></tbody></table></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;margin-top:8px"><h2 style="font-size:18px;font-weight:700"><i class="fas fa-bullseye" style="color:var(--merch);margin-right:6px"></i>最新社区需求</h2><a href="#" onclick="showPage('merchant-demand-square');return false" style="color:var(--merch);font-size:14px;text-decoration:none">查看更多 <i class="fas fa-arrow-right"></i></a></div>
+    <div class="card">
+      <div style="padding:16px 0;border-bottom:1px solid #f5f5f5">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+          <div><div style="font-size:14px;font-weight:600;margin-bottom:4px">社区亲子运动会策划</div><div style="font-size:12px;color:var(--muted)"><i class="fas fa-building" style="color:var(--comm)"></i> 花桥社区 · 江岸区 · 04-02发布</div></div>
+          <div style="display:flex;align-items:center;gap:10px"><div><div style="font-size:12px;color:var(--muted)">匹配度</div><div style="color:#ff4d4f;font-size:16px"><i class="fas fa-heart"></i><i class="fas fa-heart"></i><i class="fas fa-heart"></i><i class="fas fa-heart"></i><i class="far fa-heart"></i></div></div><button class="btn btn-sm btn-primary merch"><i class="fas fa-paper-plane"></i> 响应</button></div>
+        </div>
+      </div>
+      <div style="padding:16px 0">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+          <div><div style="font-size:14px;font-weight:600;margin-bottom:4px">儿童暑期兴趣班合作</div><div style="font-size:12px;color:var(--muted)"><i class="fas fa-building" style="color:var(--comm)"></i> 翠湖社区 · 洪山区 · 03-20发布</div></div>
+          <div style="display:flex;align-items:center;gap:10px"><div><div style="font-size:12px;color:var(--muted)">匹配度</div><div style="color:#ff4d4f;font-size:16px"><i class="fas fa-heart"></i><i class="fas fa-heart"></i><i class="fas fa-heart"></i><i class="far fa-heart"></i><i class="far fa-heart"></i></div></div><button class="btn btn-sm btn-primary merch"><i class="fas fa-paper-plane"></i> 响应</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 商家需求广场 ==================== -->
+<div id="p-merchant-demand-square" class="page">
+  <div class="top-nav"><div class="brand merch"><i class="fas fa-store"></i> 邻盟 · 商家端</div><nav><a href="#" onclick="showPage('merchant-home');return false">首页</a><a href="#" class="active merch">需求广场</a><a href="#" onclick="showPage('merchant-messages');return false">消息中心</a></nav><div class="right"><div class="avatar" style="background:var(--merch)">飞</div></div></div>
+  <div class="content">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px"><h1 class="page-title" style="margin:0"><i class="fas fa-bullseye" style="color:var(--merch);margin-right:8px"></i>需求广场</h1><div style="display:flex;gap:10px"><input type="text" class="form-control" placeholder="搜索需求标题..." style="width:240px;border-color:var(--merch)"><select class="form-control" style="width:130px"><option>全部类型</option><option>活动策划</option><option>教育培训</option></select><select class="form-control" style="width:130px"><option>全部区域</option><option>江岸区</option><option>武昌区</option></select></div></div>
+    <div class="card" style="margin-bottom:16px">
+      <div style="padding:16px 0;border-bottom:1px solid #f5f5f5">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+          <div><div style="display:flex;gap:8px;margin-bottom:6px"><span class="badge badge-orange">活动策划</span></div><div style="font-size:15px;font-weight:600;margin-bottom:4px">社区亲子运动会策划</div><div style="font-size:13px;color:var(--muted)"><i class="fas fa-building" style="color:var(--comm)"></i> 花桥社区 · 浏览 256</div></div>
+          <div style="display:flex;align-items:center;gap:12px"><div style="text-align:center"><div style="font-size:12px;color:var(--muted)">匹配度</div><div style="color:#ff4d4f;font-size:16px"><i class="fas fa-heart"></i><i class="fas fa-heart"></i><i class="fas fa-heart"></i><i class="fas fa-heart"></i><i class="far fa-heart"></i></div></div><button class="btn btn-primary merch"><i class="fas fa-paper-plane"></i> 响应需求</button></div>
+        </div>
+      </div>
+      <div style="padding:16px 0;border-bottom:1px solid #f5f5f5">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+          <div><div style="display:flex;gap:8px;margin-bottom:6px"><span class="badge badge-blue">教育培训</span></div><div style="font-size:15px;font-weight:600;margin-bottom:4px">儿童暑期兴趣班合作</div><div style="font-size:13px;color:var(--muted)"><i class="fas fa-building" style="color:var(--comm)"></i> 翠湖社区 · 浏览 189</div></div>
+          <div style="display:flex;align-items:center;gap:12px"><div style="text-align:center"><div style="font-size:12px;color:var(--muted)">匹配度</div><div style="color:#ff4d4f;font-size:16px"><i class="fas fa-heart"></i><i class="fas fa-heart"></i><i class="fas fa-heart"></i><i class="far fa-heart"></i><i class="far fa-heart"></i></div></div><button class="btn btn-primary merch"><i class="fas fa-paper-plane"></i> 响应需求</button></div>
+        </div>
+      </div>
+      <div style="padding:16px 0">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+          <div><div style="display:flex;gap:8px;margin-bottom:6px"><span class="badge badge-purple">生活服务</span></div><div style="font-size:15px;font-weight:600;margin-bottom:4px">社区便民服务日</div><div style="font-size:13px;color:var(--muted)"><i class="fas fa-building" style="color:var(--comm)"></i> 阳光社区 · 浏览 142</div></div>
+          <div style="display:flex;align-items:center;gap:12px"><div style="text-align:center"><div style="font-size:12px;color:var(--muted)">匹配度</div><div style="color:#ff4d4f;font-size:16px"><i class="fas fa-heart"></i><i class="fas fa-heart"></i><i class="far fa-heart"></i><i class="far fa-heart"></i><i class="far fa-heart"></i></div></div><button class="btn btn-outline merch"><i class="fas fa-paper-plane"></i> 响应需求</button></div>
+        </div>
+      </div>
+    </div>
+    <div class="pagination"><button>上一页</button><button class="active">1</button><button>2</button><button>下一页</button></div>
+  </div>
+</div>
+
+<!-- ==================== 商家消息 ==================== -->
+<div id="p-merchant-messages" class="page">
+  <div class="top-nav"><div class="brand merch"><i class="fas fa-store"></i> 邻盟 · 商家端</div><nav><a href="#" onclick="showPage('merchant-home');return false">首页</a><a href="#" onclick="showPage('merchant-demand-square');return false">需求广场</a><a href="#" class="active merch">消息中心</a></nav><div class="right"><div class="avatar" style="background:var(--merch)">飞</div></div></div>
+  <div class="content">
+    <div style="display:flex;gap:8px;margin-bottom:24px"><button class="btn btn-primary merch"><i class="fas fa-handshake"></i> 合作意向 (2)</button><button class="btn btn-outline merch"><i class="fas fa-comment-dots"></i> 留言咨询 (3)</button></div>
+    <div class="card">
+      <div class="msg-item"><div class="msg-user"><div class="msg-avatar" style="background:var(--comm)">花</div><div class="msg-name">花桥社区</div><span class="msg-time">10分钟前</span></div><div class="msg-title">收到合作意向：社区亲子运动会策划，请尽快处理！</div><div style="margin-left:52px;margin-top:6px"><span class="badge badge-orange">待处理</span></div></div>
+      <div class="msg-item"><div class="msg-user"><div class="msg-avatar" style="background:var(--comm)">阳</div><div class="msg-name">阳光社区</div><span class="msg-time">昨天</span></div><div class="msg-title">对您发布的「社区运动会赞助策划」感兴趣</div><div style="margin-left:52px;margin-top:6px"><span class="badge badge-green"><i class="fas fa-check"></i> 已接受</span></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 招商大使登录 ==================== -->
+<div id="p-ambassador-login" class="page">
+  <div class="login-wrap amb-bg">
+    <div class="login-brand"><div class="login-brand-logo">邻盟</div><div class="login-brand-sub">社区资源智能匹配助手</div></div>
+    <div class="login-back"><a href="#" onclick="goto('index')"><i class="fas fa-arrow-left"></i> 返回首页</a></div>
+    <div class="login-card">
+      <div class="login-header"><div class="icon" style="color:var(--amb)"><i class="fas fa-medal"></i></div><h2>招商大使登录</h2><p>邀请商家入驻，享高额提成奖励</p></div>
+      <div class="form-group"><label>手机号</label><div class="input-addon"><span class="addon">+86</span><input type="tel" class="form-control" value="13900001111" style="border-color:var(--amb)"></div></div>
+      <div class="form-group"><label>验证码</label><div style="display:flex;gap:8px"><input type="text" class="form-control" value="888888" placeholder="请输入验证码"><button class="code-btn" style="background:var(--amb-l);color:var(--amb);border-color:var(--amb)">获取验证码</button></div></div>
+      <button class="btn-login amb" onclick="login('ambassador')"><i class="fas fa-sign-in-alt"></i> 登录</button>
+      <div class="login-divider"><div class="login-tips"><div class="login-tip"><i class="fas fa-users" style="color:var(--amb)"></i><span>邀请商家</span></div><div class="login-tip"><i class="fas fa-coins" style="color:var(--amb)"></i><span>高额提成</span></div><div class="login-tip"><i class="fas fa-chart-line" style="color:var(--amb)"></i><span>推广裂变</span></div></div></div>
+      <div class="login-footer">还不是大使？<a href="#" class="amb" onclick="goto('index')">了解如何申请</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 招商大使首页 ==================== -->
+<div id="p-ambassador-home" class="page">
+  <div class="top-nav"><div class="brand amb"><i class="fas fa-medal"></i> 邻盟 · 招商大使</div><nav><a href="#" class="active amb">首页</a><a href="#" onclick="showPage('ambassador-invite');return false">邀请商家</a><a href="#" onclick="showPage('ambassador-earnings');return false">我的收益</a></nav><div class="right"><span class="badge"><i class="fas fa-bell" style="font-size:18px"></i></span><div class="avatar" style="background:var(--amb)">李</div></div></div>
+  <div class="content">
+    <div style="background:linear-gradient(135deg,var(--amb),var(--amb-d));border-radius:16px;padding:36px 40px;color:#fff;margin-bottom:24px;position:relative;overflow:hidden"><div style="position:absolute;top:-30px;right:-30px;width:180px;height:180px;background:rgba(255,255,255,.1);border-radius:50%"></div><div style="position:relative;z-index:1"><div style="font-size:14px;opacity:.8;margin-bottom:8px"><i class="fas fa-medal"></i> 欢迎，李大使</div><h2 style="font-size:26px;font-weight:700;margin-bottom:6px">累计收益：¥8,580</h2><p style="font-size:15px;opacity:.8">已邀请 12 家商家入驻 · 本月新增 3 家</p><button class="btn-white" style="color:var(--amb);margin-top:16px" onclick="showPage('ambassador-invite')"><i class="fas fa-user-plus"></i> 立即邀请商家</button></div></div>
+    <div class="stat-cards" style="margin-bottom:28px">
+      <div class="stat-card"><div style="color:var(--amb);font-size:14px;margin-bottom:12px"><i class="fas fa-store"></i> 邀请商家</div><div class="num">12</div><div class="trend"><i class="fas fa-arrow-up"></i> 本月 +3</div></div>
+      <div class="stat-card"><div style="color:#52c41a;font-size:14px;margin-bottom:12px"><i class="fas fa-wallet"></i> 待结算</div><div class="num" style="color:#52c41a">¥1,200</div><div class="trend">预计下月到账</div></div>
+      <div class="stat-card"><div style="color:var(--merch);font-size:14px;margin-bottom:12px"><i class="fas fa-coins"></i> 已提现</div><div class="num" style="color:var(--merch)">¥7,380</div><div class="trend"><i class="fas fa-check"></i> 全部到账</div></div>
+      <div class="stat-card"><div style="color:var(--admin);font-size:14px;margin-bottom:12px"><i class="fas fa-percentage"></i> 当前提成</div><div class="num" style="color:var(--admin)">20%</div><div class="trend">首次合作提成</div></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><h2 style="font-size:18px;font-weight:700"><i class="fas fa-history" style="color:var(--amb);margin-right:6px"></i>收益记录</h2><a href="#" onclick="showPage('ambassador-earnings');return false" style="color:var(--amb);font-size:14px;text-decoration:none">查看全部 <i class="fas fa-arrow-right"></i></a></div>
+    <div class="card"><table class="data-table"><thead><tr><th>商家名称</th><th>合作类型</th><th>提成比例</th><th>收益金额</th><th>状态</th><th>时间</th></tr></thead><tbody><tr><td style="font-weight:500">武汉飞腾体育</td><td><span class="badge badge-orange">首次合作</span></td><td>20%</td><td style="color:#52c41a;font-weight:600">¥600</td><td><span class="badge badge-green">已结算</span></td><td style="color:var(--muted)">04-02</td></tr><tr><td style="font-weight:500">邻里私房菜</td><td><span class="badge badge-blue">续费合作</span></td><td>10%</td><td style="color:#52c41a;font-weight:600">¥200</td><td><span class="badge badge-green">已结算</span></td><td style="color:var(--muted)">03-28</td></tr><tr><td style="font-weight:500">智慧学堂</td><td><span class="badge badge-orange">首次合作</span></td><td>20%</td><td style="color:#52c41a;font-weight:600">¥600</td><td><span class="badge badge-orange">待结算</span></td><td style="color:var(--muted)">03-20</td></tr></tbody></table></div>
+  </div>
+</div>
+
+<!-- ==================== 邀请商家 ==================== -->
+<div id="p-ambassador-invite" class="page">
+  <div class="top-nav"><div class="brand amb"><i class="fas fa-medal"></i> 邻盟 · 招商大使</div><div class="right"><a href="#" class="back-link" onclick="showPage('ambassador-home');return false"><i class="fas fa-arrow-left"></i> 返回</a><div class="avatar" style="background:var(--amb)">李</div></div></div>
+  <div class="content">
+    <h1 class="page-title"><i class="fas fa-user-plus" style="color:var(--amb);margin-right:8px"></i>邀请商家入驻</h1><p class="page-sub">分享您的专属邀请链接，商家成功入驻后即可获得奖励</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:800px">
+      <div class="card"><h3 style="margin:0 0 16px 0"><i class="fas fa-link" style="color:var(--amb);margin-right:6px"></i>邀请链接</h3><div style="background:#f5f5f5;padding:12px 14px;border-radius:8px;font-size:14px;color:var(--muted);margin-bottom:12px;word-break:break-all">https://linmeng.com/join?ref=amb_13900001111</div><button class="btn btn-primary amb" style="width:100%"><i class="fas fa-copy"></i> 复制邀请链接</button></div>
+      <div class="card"><h3 style="margin:0 0 16px 0"><i class="fas fa-gift" style="color:var(--amb);margin-right:6px"></i>邀请奖励规则</h3><div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px"><span>首次合作提成</span><span style="color:var(--amb);font-weight:700">20%</span></div><div style="background:#f5f5f5;border-radius:4px;height:6px"><div style="background:var(--amb);height:6px;border-radius:4px;width:20%"></div></div></div><div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px"><span>续费合作提成</span><span style="color:var(--admin);font-weight:700">10%</span></div><div style="background:#f5f5f5;border-radius:4px;height:6px"><div style="background:var(--admin);height:6px;border-radius:4px;width:10%"></div></div></div><p style="font-size:12px;color:var(--muted);margin-top:12px;padding-top:12px;border-top:1px solid var(--border)"><i class="fas fa-info-circle"></i> 提成按商家首次/年费金额计算，自动结算至您的账户</p></div>
+    </div>
+    <h3 style="font-size:16px;font-weight:600;margin:24px 0 14px;max-width:800px"><i class="fas fa-share-alt" style="color:var(--amb);margin-right:6px"></i>分享到</h3>
+    <div style="display:flex;gap:12px;max-width:800px;flex-wrap:wrap"><button class="btn" style="background:#07c160;color:#fff;border:none"><i class="fab fa-weixin"></i> 微信</button><button class="btn" style="background:#ff4d4f;color:#fff;border:none"><i class="fab fa-weibo"></i> 微博</button><button class="btn" style="background:#1890ff;color:#fff;border:none"><i class="fab fa-qq"></i> QQ</button><button class="btn btn-outline amb"><i class="fas fa-envelope"></i> 邮件</button><button class="btn btn-outline amb"><i class="fas fa-sms"></i> 短信</button></div>
+  </div>
+</div>
+
+<!-- ==================== 商家个人中心 ==================== -->
+<div id="p-merchant-profile" class="page">
+  <div class="top-nav"><div class="brand merch"><i class="fas fa-store"></i> 邻盟 · 商家端</div><div class="right"><a href="#" class="back-link" onclick="showPage('merchant-home');return false"><i class="fas fa-arrow-left"></i> 返回首页</a></div></div>
+  <div class="content">
+    <div style="display:grid;grid-template-columns:260px 1fr;gap:24px">
+      <div><div class="card" style="text-align:center"><div style="width:80px;height:80px;background:linear-gradient(135deg,var(--merch),var(--merch-d));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:32px;color:#fff;margin:0 auto 16px"><i class="fas fa-dumbbell"></i></div><div style="font-size:18px;font-weight:700">武汉飞腾体育</div><div style="font-size:13px;color:var(--muted);margin-bottom:14px">武昌区水果湖街道</div><div style="background:#fff7e6;padding:5px 16px;border-radius:20px;font-size:13px;color:var(--merch);display:inline-block;margin-bottom:20px"><i class="fas fa-gem"></i> 金牌会员</div><div style="border-top:1px solid var(--border);padding-top:16px;text-align:left"><div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:13px"><span style="color:var(--muted)">发布资源</span><span style="font-weight:600">2</span></div><div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:13px"><span style="color:var(--muted)">收到意向</span><span style="font-weight:600">12</span></div><div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:13px"><span style="color:var(--muted)">合作成功</span><span style="font-weight:600;color:var(--comm)">28</span></div><div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--muted)">商家评级</span><span style="color:#ffc53d"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></span></div></div></div></div>
+      <div><div class="card" style="margin-bottom:20px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px"><h3 style="margin:0"><i class="fas fa-store" style="color:var(--merch);margin-right:6px"></i>商家资料</h3><button class="btn btn-sm btn-primary merch"><i class="fas fa-edit"></i> 编辑资料</button></div><div class="info-grid"><div class="info-item"><div class="key">商家名称</div><div class="val">武汉飞腾体育</div></div><div class="info-item"><div class="key">行业分类</div><div class="val">教育培训 / 体育健身</div></div><div class="info-item"><div class="key">联系人</div><div class="val">李经理</div></div><div class="info-item"><div class="key">联系电话</div><div class="val">139****9000</div></div><div class="info-item"><div class="key">所在地区</div><div class="val">武汉市武昌区</div></div><div class="info-item"><div class="key">入驻时间</div><div class="val">2026-03-10</div></div></div><div style="margin-top:16px"><div class="key" style="font-size:12px;color:var(--muted);margin-bottom:8px">商家标签</div><div class="tag-list"><span class="tag-item merch active">品质保障</span><span class="tag-item merch active">信誉商家</span><span class="tag-item merch">服务优质</span></div></div></div><div class="card"><h3 style="margin:0 0 14px 0"><i class="fas fa-gem" style="color:var(--merch);margin-right:6px"></i>会员权益</h3><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px"><div style="border:2px solid var(--border);border-radius:12px;padding:14px;text-align:center;opacity:.5"><div style="font-size:12px;color:#999">免费</div><div style="font-size:16px;font-weight:700;color:#999;margin:4px 0">¥0</div><div style="font-size:11px;color:#999">基础展示</div></div><div style="border:2px solid var(--admin);background:#e8f0fb;border-radius:12px;padding:14px;text-align:center;opacity:.5"><div style="font-size:12px;color:var(--admin)">银牌</div><div style="font-size:16px;font-weight:700;color:var(--admin);margin:4px 0">¥999/年</div><div style="font-size:11px;color:var(--admin)">优先展示</div></div><div style="border:2px solid var(--merch);background:#fff7e6;border-radius:12px;padding:14px;text-align:center"><div style="font-size:12px;color:var(--merch)">金牌</div><div style="font-size:16px;font-weight:700;color:var(--merch);margin:4px 0">¥2999/年</div><div style="font-size:11px;color:var(--merch)">当前</div></div><div style="border:2px solid var(--amb);background:#f5ebf7;border-radius:12px;padding:14px;text-align:center;opacity:.5"><div style="font-size:12px;color:var(--amb)">钻石</div><div style="font-size:16px;font-weight:700;color:var(--amb);margin:4px 0">¥5999/年</div><div style="font-size:11px;color:var(--amb)">全部权益</div></div></div></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 发布资源 ==================== -->
+<div id="p-merchant-publish" class="page">
+  <div class="top-nav"><div class="brand merch"><i class="fas fa-store"></i> 邻盟 · 商家端</div><div class="right"><a href="#" class="back-link" onclick="showPage('merchant-home');return false"><i class="fas fa-arrow-left"></i> 返回</a><div class="avatar" style="background:var(--merch)">飞</div></div></div>
+  <div class="content">
+    <h1 class="page-title"><i class="fas fa-plus-circle" style="color:var(--merch);margin-right:8px"></i>发布资源</h1><p class="page-sub">填写商家资源信息，精准触达目标社区</p>
+    <div class="card" style="max-width:680px">
+      <div class="form-group"><label>资源标题 <span style="color:#ff4d4f">*</span></label><input type="text" class="form-control" placeholder="请输入资源标题，如：社区运动会赞助策划"></div>
+      <div class="form-row">
+        <div class="form-group"><label>资源类型 <span style="color:#ff4d4f">*</span></label><select class="form-control"><option>请选择类型</option><option>活动策划</option><option>教育培训</option><option>健康医疗</option><option>产品赞助</option></select></div>
+        <div class="form-group"><label>行业分类</label><select class="form-control"><option>请选择</option><option>教育培训</option><option>体育健身</option><option>餐饮小吃</option><option>健康医疗</option></select></div>
+      </div>
+      <div class="form-group"><label>详细描述 <span style="color:#ff4d4f">*</span></label><textarea class="form-control" placeholder="请详细描述您的资源，包括可提供的服务、赞助内容、合作方式等"></textarea></div>
+      <div class="form-group"><label>赞助回报（可选）</label><div class="tag-list"><span class="tag-item merch active">品牌曝光</span><span class="tag-item merch">活动冠名</span><span class="tag-item merch">产品展示</span><span class="tag-item merch">社群推广</span><span class="tag-item merch">荣誉证书</span></div></div>
+      <div style="display:flex;gap:12px;margin-top:8px"><button class="btn btn-primary merch" onclick="showPage('merchant-home')"><i class="fas fa-paper-plane"></i> 发布资源</button><button class="btn btn-outline merch" onclick="showPage('merchant-home')"><i class="fas fa-arrow-left"></i> 返回</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 需求详情 ==================== -->
+<div id="p-community-demand-detail" class="page">
+  <div class="top-nav"><div class="brand comm"><i class="fas fa-building"></i> 邻盟 · 社区端</div><div class="right"><a href="#" class="back-link" onclick="showPage('community-home');return false"><i class="fas fa-arrow-left"></i> 返回</a><div class="avatar" style="background:var(--comm)">花</div></div></div>
+  <div class="content">
+    <div class="detail-grid">
+      <div>
+        <div class="card">
+          <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap"><span class="badge badge-orange">活动策划</span><span class="badge badge-blue">健康医疗</span><span class="badge badge-green">对接中</span></div>
+          <h1 style="font-size:26px;font-weight:700;margin-bottom:14px">社区亲子运动会策划</h1>
+          <div style="display:flex;gap:20px;color:var(--muted);font-size:14px;margin-bottom:24px;flex-wrap:wrap"><span><i class="fas fa-building" style="color:var(--comm)"></i> 花桥社区</span><span><i class="fas fa-map-marker-alt" style="color:var(--merch)"></i> 武汉市江岸区</span><span><i class="fas fa-eye" style="color:var(--muted)"></i> 浏览 256 次</span><span><i class="fas fa-envelope" style="color:var(--merch)"></i> 收到 3 个意向</span></div>
+          <div class="info-section">
+            <h3><i class="fas fa-info-circle" style="color:var(--comm);margin-right:6px"></i>需求描述</h3>
+            <p style="line-height:1.8;font-size:15px;color:#444">我社区计划于4月中旬开展一场亲子运动会，预计参与家庭50-80组。活动需要专业团队策划执行，包括运动项目设计、器材准备、教练指导等。希望合作方有社区活动经验，能够提供器材赞助，并配合做好安全保障工作。</p>
+          </div>
+          <div class="info-section">
+            <h3><i class="fas fa-gift" style="color:var(--merch);margin-right:6px"></i>可提供的回报</h3>
+            <div style="display:flex;flex-wrap:wrap;gap:8px"><span class="badge badge-blue">品牌曝光</span><span class="badge badge-blue">活动冠名</span><span class="badge badge-blue">社群推广</span><span class="badge badge-blue">荣誉证书</span></div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="sidebar-card">
+          <h3><i class="fas fa-store" style="color:var(--comm);margin-right:6px"></i>发布方信息</h3>
+          <div style="display:flex;gap:10px;align-items:center;margin-bottom:16px"><div style="width:48px;height:48px;background:var(--comm);border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px;font-weight:700">花</div><div><div style="font-size:15px;font-weight:600">花桥社区</div><div style="font-size:12px;color:var(--comm)">免费会员</div></div></div>
+          <div style="background:#f9fafb;border-radius:10px;padding:14px;margin-bottom:16px"><div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:13px"><span style="color:var(--muted)">匹配商家数</span><span style="color:#ff4d4f;font-weight:600">6 家</span></div><div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--muted)">收到意向</span><span style="font-weight:600">3</span></div></div>
+          <button class="btn btn-primary" style="width:100%;margin-bottom:10px"><i class="fas fa-envelope"></i> 我也要响应</button>
+          <button class="btn btn-outline" style="width:100%;margin-bottom:16px"><i class="fas fa-star"></i> 收藏需求</button>
+          <div style="border-top:1px solid var(--border);padding-top:16px"><div style="font-size:12px;color:var(--muted);margin-bottom:8px"><i class="fas fa-coins"></i> 撮合成功后奖励发布方</div><div style="background:#e8f7ed;padding:10px;border-radius:8px;text-align:center"><span style="font-size:24px;font-weight:700;color:var(--comm)">¥200</span><div style="font-size:12px;color:var(--muted);margin-top:4px">平台奖励</div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// 页面导航
+function showPage(id){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));var target=document.getElementById('p-'+id);if(target)target.classList.add('active');window.scrollTo(0,0)}
+function goto(id){showPage(id)}
+function login(type){if(type==='community')showPage('community-home');else if(type==='merchant')showPage('merchant-home');else if(type==='ambassador')showPage('ambassador-home');else if(type==='admin')showPage('admin-home')}
+
+// 标签点击
+document.addEventListener('click',function(e){if(e.target.classList.contains('tag-item')){e.target.classList.toggle('active')}});
+
+// 翻页
+document.addEventListener('click',function(e){if(e.target.tagName==='BUTTON'&&e.target.classList.contains('active')&&e.target.textContent.match(/^\d+$/)){document.querySelectorAll('.pagination button').forEach(b=>b.classList.remove('active'));e.target.classList.add('active')}});
+</script>
+</body>
+</html>
