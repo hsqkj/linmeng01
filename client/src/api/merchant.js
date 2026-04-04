@@ -57,3 +57,9 @@ export const getMemberInfo = () => request.get('/merchant/member')
 export const getMemberLevels = () => request.get('/merchant/member/levels')
 export const upgradeMember = (data) => request.post('/merchant/member/upgrade', data)
 export const getPaymentHistory = () => request.get('/merchant/member/payments')
+
+// ====== 发布页类型配置 ======
+export const getPublishTypes = () => request.get('/public/publish-types')
+
+// ====== 系统通知 ======
+export const getMyNotifications = (params) => request.get('/merchant/notifications', { params })

@@ -24,6 +24,10 @@ router.get('/resources/:id', CommunityController.getResourceDetail)
 
 // 需求大厅
 router.get('/demands', CommunityController.getDemands)
+
+// 批量导入（必须在 /demands/:id 之前）
+router.get('/demands/template', CommunityController.downloadTemplate)
+router.post('/demands/import', CommunityController.importDemands)
 router.get('/demands/:id', CommunityController.getDemandDetail)
 
 // 留言查询（公开）
@@ -42,9 +46,7 @@ router.post('/demands', CommunityController.createDemand)
 router.put('/demands/:id', CommunityController.updateDemand)
 router.delete('/demands/:id', CommunityController.deleteDemand)
 
-// 批量导入
-router.post('/demands/import', CommunityController.importDemands)
-router.get('/demands/template', CommunityController.downloadTemplate)
+
 
 // 对接管理
 router.get('/my/intentions', CommunityController.getMyIntentions)
@@ -62,8 +64,16 @@ router.put('/profile', CommunityController.updateProfile)
 
 // 奖励明细
 router.get('/rewards', CommunityController.getRewards)
+router.put('/rewards/claim', CommunityController.claimReward)
 
 // 我的留言（留言咨询 - 隔离）
 router.get('/my/comments', CommunityController.getMyComments)
+
+// 收藏资源
+router.post('/favorites/toggle', CommunityController.toggleFavorite)
+router.get('/favorites', CommunityController.getMyFavorites)
+
+// 系统通知
+router.get('/notifications', CommunityController.getMyNotifications)
 
 module.exports = router

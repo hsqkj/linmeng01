@@ -265,6 +265,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { requireAuth } from '@/utils/useAuth'
 import { ArrowLeft, InfoFilled, Warning, Lock, Phone, Message, User, Location, Loading } from '@element-plus/icons-vue'
 import { getDemandDetail, getDemandComments, createDemandComment, getCommentReplies, createIntention, getCommunityDetail, toggleFavorite } from '@/api/merchant'
 
@@ -377,6 +378,9 @@ async function loadCommunityDetail() {
 }
 
 async function submitComment() {
+  if (!localStorage.getItem('merchant_token')) {
+    return requireAuth('merchant')
+  }
   if (!commentText.value.trim()) return
   commentSubmitting.value = true
   try {
@@ -392,6 +396,9 @@ async function submitComment() {
 }
 
 async function submitIntent() {
+  if (!localStorage.getItem('merchant_token')) {
+    return requireAuth('merchant')
+  }
   if (!intentTypes.value.length) {
     ElMessage.warning('请至少选择一种赞助类型')
     return
@@ -421,6 +428,9 @@ function scrollToComment() {
 }
 
 async function toggleFav() {
+  if (!localStorage.getItem('merchant_token')) {
+    return requireAuth('merchant')
+  }
   if (!demand.value) return
   favoriteLoading.value = true
   try {

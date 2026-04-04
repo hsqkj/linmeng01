@@ -4,6 +4,9 @@
 
 const { pool } = require('../config/db')
 const { success, error } = require('../utils/response')
+const multer = require('multer')
+const path = require('path')
+const fs = require('fs')
 
 // 发送验证码（模拟）
 exports.sendSms = async (req, res) => {
@@ -27,19 +30,18 @@ exports.sendSms = async (req, res) => {
 // 检查手机号是否已注册
 exports.checkPhone = async (req, res) => {
   try {
-    const { phone } = req.body
+    const { phone, role } = req.body
     
-    const [communities] = await pool.query('SELECT id FROM communities WHERE phone = ?', [phone])
-    const [merchants] = await pool.query('SELECT id FROM merchants WHERE phone = ?', [phone])
-    const [ambassadors] = await pool.query('SELECT id FROM ambassadors WHERE phone = ?', [phone])
+    let table = 'communities'
+    if (role === 'merchant') table = 'merchants'
+    else if (role === 'ambassador') table = 'ambassadors'
     
-    const exists = {
-      community: communities.length > 0,
-      merchant: merchants.length > 0,
-      ambassador: ambassadors.length > 0
-    }
+    const [rows] = await pool.query(
+      `SELECT id FROM ${table} WHERE username = ? LIMIT 1`,
+      [phone]
+    )
     
-    success(res, exists)
+    success(res, { exists: rows.length > 0 })
   } catch (err) {
     error(res, '查询失败')
   }
@@ -48,15 +50,10 @@ exports.checkPhone = async (req, res) => {
 // 获取地区列表
 exports.getRegions = async (req, res) => {
   try {
-    const { level, parent_id } = req.query
+    const { parent_id } = req.query
     
     let where = '1=1'
     const params = []
-    
-    if (level) {
-      where += ' AND level = ?'
-      params.push(level)
-    }
     
     if (parent_id !== undefined) {
       where += ' AND parent_id = ?'
@@ -138,5 +135,73 @@ exports.applyAmbassador = async (req, res) => {
   } catch (err) {
     console.error('Apply ambassador error:', err)
     error(res, '申请失败')
+  }
+}
+
+// 图片上传配置
+const uploadDir = path.join(__dirname, '../../uploads')
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true })
+}
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, uploadDir),
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname)
+    cb(null, `${Date.now()}-${Math.random().toString(36).substr(2, 9)}${ext}`)
+  }
+})
+
+const upload = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  fileFilter: (req, file, cb) => {
+    const allowed = ['.jpg', '.jpeg', '.png', '.gif', '.webp']
+    const ext = path.extname(file.originalname).toLowerCase()
+    if (allowed.includes(ext)) {
+      cb(null, true)
+    } else {
+      cb(new Error('只支持 JPG/PNG/GIF/WEBP 图片格式'))
+    }
+  }
+})
+
+// 图片上传接口
+exports.uploadImage = [
+  upload.single('image'),
+  (req, res) => {
+    if (!req.file) {
+      return error(res, '未选择图片')
+    }
+    const url = `/uploads/${req.file.filename}`
+    success(res, { url }, '上传成功')
+  }
+]
+
+// 获取发布页类型配置
+exports.getPublishTypes = async (req, res) => {
+  try {
+    const [rows] = await pool.query("SELECT config_key, config_value FROM sys_configs WHERE config_key IN ('activity_types', 'expert_types', 'sponsor_types', 'reward_types', 'target_groups', 'community_tags', 'merchant_tags')")
+    const result = {}
+    rows.forEach(r => {
+      try {
+        result[r.config_key] = JSON.parse(r.config_value)
+      } catch {
+        result[r.config_key] = r.config_value
+      }
+    })
+    // 如果数据库没有配置，返回默认值
+    if (Object.keys(result).length === 0) {
+      result.activity_types = ['文艺演出', '体育赛事', '公益活动', '节庆活动', '亲子活动', '健康讲座', '环保活动', '法制宣传', '职业技能培训', '文化展览', '趣味运动会', '其他']
+      result.expert_types = ['法律咨询', '医疗健康', '心理辅导', '教育培训', '技能培训', '金融理财', '社会工作', '文艺指导', '体育健身', '营养指导', '其他']
+      result.target_groups = ['青少年/儿童', '中老年', '青年', '宝妈', '退役军人', '残疾群体', '孤寡老人', '困难家庭', '全体居民']
+      result.sponsor_types = [{ label: '💵 资金赞助', value: 'fund' }, { label: '📦 物资提供', value: 'goods' }, { label: '👥 人力支持', value: 'manpower' }, { label: '💻 技术支持', value: 'tech' }, { label: '📰 媒体报道', value: 'media' }]
+      result.reward_types = ['活动冠名权', '现场展台/展位', '主持人口播', '背景板/横幅Logo展示', '活动物料品牌露出', '社区公众号推文宣传', '网格群/小区业主群宣传', '荣誉证书', '现场宣传横幅', '宣传栏长期展示', '媒体报道', '现场派发宣传资料']
+      result.community_tags = ['老旧小区', '新建社区', '亲子社区', '老龄化社区', '学区社区', '商圈社区', '文化社区', '体育社区', '绿色社区', '公共空间丰富', '商业密集', '志愿服务活跃']
+      result.merchant_tags = ['连锁品牌', '本地企业', '上市公司', '高端品牌', '大众品牌', '公益导向', '长期合作', '亲子品牌', '老年服务', '全国服务', '精准获客', '社会责任']
+    }
+    success(res, result)
+  } catch (err) {
+    error(res, '获取类型配置失败')
   }
 }

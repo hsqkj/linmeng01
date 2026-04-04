@@ -4,7 +4,8 @@
 
     <el-tabs v-model="activeTab" class="message-tabs" @tab-change="onTabChange">
       <el-tab-pane label="系统通知" name="system">
-        <div class="message-list">
+        <div class="message-list" v-loading="systemLoading">
+          <el-empty v-if="!systemLoading && systemMessages.length === 0" description="暂无系统通知" :image-size="80" />
           <el-card v-for="msg in systemMessages" :key="msg.id" class="message-card" shadow="hover">
             <div class="message-header">
               <el-tag :type="msg.tagType" size="small">{{ msg.tag }}</el-tag>
@@ -120,43 +121,22 @@ const intentStatusType = { 0: 'warning', 1: 'success', 2: 'info', 3: 'primary' }
 const router = useRouter()
 const activeTab = ref('system')
 
-const systemMessages = ref([
-  {
-    id: 1,
-    tag: '审核通知',
-    tagType: 'success',
-    title: '您的需求已通过审核',
-    content: '您发布的"六一儿童节亲子嘉年华活动赞助"需求已通过平台审核，现在可以被商家查看了。',
-    time: '2026-04-01 10:30',
-    action: '查看需求'
-  },
-  {
-    id: 2,
-    tag: '匹配提醒',
-    tagType: 'warning',
-    title: '有新商家资源与您匹配',
-    content: '星巴克咖啡发布了"活动赞助资金最高5万元"资源，与您的"六一儿童节亲子嘉年华"需求匹配度达95%。',
-    time: '2026-03-30 14:20',
-    action: '查看详情'
-  },
-  {
-    id: 3,
-    tag: '撮合成功',
-    tagType: 'primary',
-    title: '合作对接成功',
-    content: '您与京东健康就"社区健康义诊活动"达成合作意向，平台将持续跟进撮合进展。',
-    time: '2026-03-28 09:15',
-    action: '查看详情'
-  },
-  {
-    id: 4,
-    tag: '系统公告',
-    tagType: 'info',
-    title: '邻盟平台上线通知',
-    content: '欢迎使用邻盟社区资源智能匹配助手！平台已正式上线，祝您使用愉快。',
-    time: '2026-03-01 08:00'
+// 系统通知 - 从真实API加载
+const systemMessages = ref([])
+const systemLoading = ref(false)
+
+async function loadSystemNotifications() {
+  systemLoading.value = true
+  try {
+    const { getMyNotifications } = await import('@/api/community')
+    const res = await getMyNotifications({ page: 1, pageSize: 50 })
+    systemMessages.value = res.data?.list || res.data || []
+  } catch {
+    systemMessages.value = []
+  } finally {
+    systemLoading.value = false
   }
-])
+}
 
 // 合作意向 - 从真实API加载
 const intentMessages = ref([])
@@ -192,12 +172,15 @@ async function loadMyComments() {
 }
 
 onMounted(() => {
-  // 默认不加载，等用户切换到留言咨询tab再加载
+  // 系统通知默认加载
+  loadSystemNotifications()
 })
 
 // 监听 tab 切换，切换到留言时加载数据
 function onTabChange(tab) {
-  if (tab === 'comment') {
+  if (tab === 'system') {
+    loadSystemNotifications()
+  } else if (tab === 'comment') {
     loadMyComments()
   } else if (tab === 'intent') {
     loadIntentions()
@@ -211,8 +194,28 @@ function formatTime(time) {
 }
 
 function handleAction(msg) {
-  ElMessage.success(`正在跳转到：${msg.title}`)
-  router.push('/community/demands')
+  // 根据消息类型跳转到不同页面
+  if (msg.tag === '匹配提醒') {
+    // 匹配提醒 -> 跳转到资源详情页（如果有resource_id）或资源广场
+    if (msg.resource_id) {
+      router.push(`/community/resources/${msg.resource_id}`)
+    } else {
+      router.push('/community/resources')
+    }
+  } else if (msg.tag === '审核通知') {
+    // 审核通知 -> 跳转到需求详情页
+    if (msg.demand_id) {
+      router.push(`/community/demands/${msg.demand_id}`)
+    } else {
+      router.push('/community/demands')
+    }
+  } else if (msg.tag === '撮合成功') {
+    // 撮合成功 -> 跳转到意向页面（合作意向tab）
+    router.push('/community/messages?tab=intent')
+  } else {
+    // 其他消息类型 -> 消息列表
+    ElMessage.info('该消息暂无详细内容')
+  }
 }
 
 async function acceptIntent(msg) {

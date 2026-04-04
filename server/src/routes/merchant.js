@@ -69,4 +69,7 @@ router.get('/member/levels', MerchantController.getMemberLevels)
 router.post('/member/upgrade', MerchantController.upgradeMember)
 router.get('/member/payments', MerchantController.getPaymentHistory)
 
+// 系统通知
+router.get('/notifications', MerchantController.getMyNotifications)
+
 module.exports = router

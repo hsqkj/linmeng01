@@ -603,7 +603,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import {
@@ -617,22 +617,43 @@ const submitting = ref(false)
 const customTag = ref('')
 const formRef = ref(null)
 
-const activityTypes = ['文艺演出', '体育赛事', '公益活动', '节庆活动', '亲子活动', '健康讲座', '环保活动', '法制宣传', '职业技能培训', '文化展览', '趣味运动会', '其他']
-const expertTypes = ['法律咨询', '医疗健康', '心理辅导', '教育培训', '技能培训', '金融理财', '社会工作', '文艺指导', '体育健身', '营养指导', '其他']
-const targetGroupOptions = ['青少年/儿童', '中老年', '青年', '宝妈', '退役军人', '残疾群体', '孤寡老人', '困难家庭', '全体居民']
-const sponsorTypeOptions = [
+// 发布类型配置 - 从后端API加载
+const activityTypes = ref(['文艺演出', '体育赛事', '公益活动', '节庆活动', '亲子活动', '健康讲座', '环保活动', '法制宣传', '职业技能培训', '文化展览', '趣味运动会', '其他'])
+const expertTypes = ref(['法律咨询', '医疗健康', '心理辅导', '教育培训', '技能培训', '金融理财', '社会工作', '文艺指导', '体育健身', '营养指导', '其他'])
+const targetGroupOptions = ref(['青少年/儿童', '中老年', '青年', '宝妈', '退役军人', '残疾群体', '孤寡老人', '困难家庭', '全体居民'])
+const sponsorTypeOptions = ref([
   { label: '💵 资金赞助', value: 'fund' },
   { label: '📦 物资提供', value: 'goods' },
   { label: '👥 人力支持', value: 'manpower' },
   { label: '💻 技术支持', value: 'tech' },
   { label: '📰 媒体报道', value: 'media' }
-]
-const rewardOptions = [
+])
+const rewardOptions = ref([
   '活动冠名权', '现场展台/展位', '主持人口播', '背景板/横幅Logo展示',
   '活动物料品牌露出', '社区公众号推文宣传', '网格群/小区业主群宣传',
   '荣誉证书', '现场宣传横幅', '宣传栏长期展示', '媒体报道', '现场派发宣传资料'
-]
-const communityTagOptions = ['老旧小区', '新建社区', '亲子社区', '老龄化社区', '学区社区', '商圈社区', '文化社区', '体育社区', '绿色社区', '公共空间丰富', '商业密集', '志愿服务活跃']
+])
+const communityTagOptions = ref(['老旧小区', '新建社区', '亲子社区', '老龄化社区', '学区社区', '商圈社区', '文化社区', '体育社区', '绿色社区', '公共空间丰富', '商业密集', '志愿服务活跃'])
+
+async function loadPublishTypes() {
+  try {
+    const { getPublishTypes } = await import('@/api/community')
+    const res = await getPublishTypes()
+    const data = res.data || {}
+    if (data.activity_types) activityTypes.value = data.activity_types
+    if (data.expert_types) expertTypes.value = data.expert_types
+    if (data.target_groups) targetGroupOptions.value = data.target_groups
+    if (data.sponsor_types) sponsorTypeOptions.value = data.sponsor_types
+    if (data.reward_types) rewardOptions.value = data.reward_types
+    if (data.community_tags) communityTagOptions.value = data.community_tags
+  } catch {
+    // 使用默认值
+  }
+}
+
+onMounted(() => {
+  loadPublishTypes()
+})
 const typeLabels = { activity: '活动赞助', expert: '专家服务', space: '空间运营' }
 const sponsorTypeLabels = { fund: '资金赞助', goods: '物资提供', manpower: '人力支持', tech: '技术支持', media: '媒体报道' }
 

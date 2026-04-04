@@ -22,7 +22,7 @@
     <div class="banner-section" v-if="banners.length">
       <el-carousel height="180px" :interval="5000" arrow="always">
         <el-carousel-item v-for="(banner, index) in banners" :key="index">
-          <div class="banner-item" :style="{ background: banner.bg }">
+          <div class="banner-item" :style="{ background: banner.bg }" @click="banner.link && window.open(banner.link, '_blank')" :title="banner.link ? '点击跳转' : ''">
             <div class="banner-content">
               <h3>{{ banner.title }}</h3>
               <p>{{ banner.desc }}</p>
@@ -177,6 +177,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { requireAuth } from '@/utils/useAuth'
 import { getBanners, getRecommendDemands, getProfile, getMyResources, getMyIntentions, getMemberInfo, getCommunityDetail } from '@/api/merchant'
 import { Medal, StarFilled, Goods, View, Connection, CircleCheck, User, Calendar, Loading } from '@element-plus/icons-vue'
 
@@ -228,12 +229,13 @@ onMounted(async () => {
         title: b.title || '邻盟商家端',
         desc: b.description || '连接社区，精准匹配',
         btn: '了解更多',
-        bg: bannerColors[i % bannerColors.length]
+        bg: b.image_url ? `url(${b.image_url}) center/cover no-repeat` : bannerColors[i % bannerColors.length],
+        link: b.link_url || ''
       }))
       if (!banners.value.length) {
         banners.value = [
-          { title: '发布资源，精准触达', desc: '让社区主动找到您', btn: '立即发布', bg: bannerColors[0] },
-          { title: '撮合成功，品牌曝光', desc: '提升品牌在社区的影响力', btn: '查看案例', bg: bannerColors[1] }
+          { title: '发布资源，精准触达', desc: '让社区主动找到您', btn: '立即发布', bg: bannerColors[0], link: '' },
+          { title: '撮合成功，品牌曝光', desc: '提升品牌在社区的影响力', btn: '查看案例', bg: bannerColors[1], link: '' }
         ]
       }
     }
@@ -278,6 +280,9 @@ function viewDemandDetail(demand) {
 }
 
 const contactCommunity = (demand) => {
+  if (!localStorage.getItem('merchant_token')) {
+    return requireAuth('merchant')
+  }
   ElMessage.success(`已向${demand.community_name}发送合作意向`)
 }
 
@@ -349,6 +354,8 @@ const memberLevelTagType = { 0: 'info', 1: 'info', 2: '', 3: 'warning', 4: 'dang
   align-items: center;
   padding: 0 30px;
   color: white;
+  cursor: default;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.4);
 }
 
 .banner-content h3 {

@@ -51,6 +51,17 @@ export const updateProfile = (data) => request.put('/community/profile', data)
 
 // ====== 奖励明细 ======
 export const getRewards = (params) => request.get('/community/rewards', { params })
+export const claimReward = (data) => request.put('/community/rewards/claim', data)
 
 // ====== 我的留言（留言咨询） ======
 export const getMyComments = () => request.get('/community/my/comments')
+
+// ====== 收藏资源 ======
+export const toggleFavorite = (data) => request.post('/community/favorites/toggle', data)
+export const getMyFavorites = (params) => request.get('/community/favorites', { params })
+
+// ====== 系统通知 ======
+export const getMyNotifications = (params) => request.get('/community/notifications', { params })
+
+// ====== 公共配置 ======
+export const getPublishTypes = () => request.get('/public/publish-types')

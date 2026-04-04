@@ -1,5 +1,33 @@
 <template>
   <div class="register-page">
+    <!-- 功能介绍区域 -->
+    <div class="feature-intro">
+      <h1>邻盟 · 商家资源精准触达平台</h1>
+      <p class="tagline">发布资源，精准匹配，高效合作</p>
+      <div class="features">
+        <div class="feature-item">
+          <el-icon><Goods /></el-icon>
+          <span>资源曝光</span>
+          <small>面向武汉300+社区展示</small>
+        </div>
+        <div class="feature-item">
+          <el-icon><Connection /></el-icon>
+          <span>精准匹配</span>
+          <small>AI推荐最适合的社区需求</small>
+        </div>
+        <div class="feature-item">
+          <el-icon><Medal /></el-icon>
+          <span>会员权益</span>
+          <small>多等级权益，差异化服务</small>
+        </div>
+        <div class="feature-item">
+          <el-icon><Trophy /></el-icon>
+          <span>品牌合作</span>
+          <small>提升在社区的影响力</small>
+        </div>
+      </div>
+    </div>
+
     <div class="register-container">
       <div class="register-header">
         <el-icon :size="40" color="#67C23A"><Shop /></el-icon>
@@ -23,51 +51,9 @@
             placeholder="请选择行业分类"
             size="large"
             style="width: 100%"
+            :loading="loadingIndustries"
           >
-            <el-option label="教育培训" value="教育培训" />
-            <el-option label="医院诊所" value="医院诊所" />
-            <el-option label="药店" value="药店" />
-            <el-option label="餐饮小吃" value="餐饮小吃" />
-            <el-option label="生鲜水果" value="生鲜水果" />
-            <el-option label="美业" value="美业" />
-            <el-option label="保健养生" value="保健养生" />
-            <el-option label="体育健身" value="体育健身" />
-            <el-option label="银行保险" value="银行保险" />
-            <el-option label="电信服务" value="电信服务" />
-            <el-option label="商超零售" value="商超零售" />
-            <el-option label="快递物流" value="快递物流" />
-            <el-option label="家政服务" value="家政服务" />
-            <el-option label="废旧回收" value="废旧回收" />
-            <el-option label="五金建材" value="五金建材" />
-            <el-option label="家居装修" value="家居装修" />
-            <el-option label="家纺布艺" value="家纺布艺" />
-            <el-option label="电子电器" value="电子电器" />
-            <el-option label="房产中介" value="房产中介" />
-            <el-option label="汽车服务" value="汽车服务" />
-            <el-option label="旅游服务" value="旅游服务" />
-            <el-option label="鲜花礼品" value="鲜花礼品" />
-            <el-option label="电影演出" value="电影演出" />
-            <el-option label="娱乐休闲" value="娱乐休闲" />
-            <el-option label="服装服饰" value="服装服饰" />
-            <el-option label="酒店宾馆" value="酒店宾馆" />
-            <el-option label="茶艺咖啡" value="茶艺咖啡" />
-            <el-option label="宠物服务" value="宠物服务" />
-            <el-option label="眼镜" value="眼镜" />
-            <el-option label="酒水饮料" value="酒水饮料" />
-            <el-option label="办公用品" value="办公用品" />
-            <el-option label="设备租赁" value="设备租赁" />
-            <el-option label="社工服务" value="社工服务" />
-            <el-option label="养老服务" value="养老服务" />
-            <el-option label="新闻媒体" value="新闻媒体" />
-            <el-option label="自媒体" value="自媒体" />
-            <el-option label="IT互联网" value="IT互联网" />
-            <el-option label="软件开发" value="软件开发" />
-            <el-option label="图文广告" value="图文广告" />
-            <el-option label="电子电器维修" value="电子电器维修" />
-            <el-option label="家居维修" value="家居维修" />
-            <el-option label="美发" value="美发" />
-            <el-option label="建筑工程" value="建筑工程" />
-            <el-option label="其他" value="其他" />
+            <el-option v-for="ind in industries" :key="ind" :label="ind" :value="ind" />
           </el-select>
         </el-form-item>
 
@@ -138,13 +124,17 @@
 </template>
 
 <script setup>
-import { reactive, ref } from 'vue'
+import { reactive, ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Phone, Key, User, Shop } from '@element-plus/icons-vue'
+import { Phone, Key, User, Shop, Goods, Connection, Medal, Trophy } from '@element-plus/icons-vue'
+import { getIndustries } from '@/api/public'
+import { sendSms } from '@/api/public'
 
 const router = useRouter()
 const formRef = ref(null)
+const industries = ref([])
+const loadingIndustries = ref(false)
 
 const form = reactive({
   name: '',
@@ -166,24 +156,44 @@ const rules = {
 const counting = ref(false)
 const countdown = ref(60)
 
-const sendCode = () => {
+// 加载行业分类
+async function loadIndustries() {
+  loadingIndustries.value = true
+  try {
+    const res = await getIndustries()
+    industries.value = res.data || []
+  } catch {
+    ElMessage.error('加载行业分类失败')
+    industries.value = []
+  } finally {
+    loadingIndustries.value = false
+  }
+}
+
+// 发送验证码
+async function sendCode() {
   if (!form.phone) {
     ElMessage.warning('请先输入手机号')
     return
   }
   if (counting.value) return
 
-  form.code = '123456'
-  counting.value = true
-  countdown.value = 60
+  try {
+    await sendSms({ phone: form.phone, type: 'register' })
+    ElMessage.success('验证码已发送')
+    counting.value = true
+    countdown.value = 60
 
-  const timer = setInterval(() => {
-    countdown.value--
-    if (countdown.value <= 0) {
-      clearInterval(timer)
-      counting.value = false
-    }
-  }, 1000)
+    const timer = setInterval(() => {
+      countdown.value--
+      if (countdown.value <= 0) {
+        clearInterval(timer)
+        counting.value = false
+      }
+    }, 1000)
+  } catch (e) {
+    ElMessage.error(e.message || '发送验证码失败')
+  }
 }
 
 const register = () => {
@@ -199,6 +209,10 @@ const register = () => {
     }, 1500)
   })
 }
+
+onMounted(() => {
+  loadIndustries()
+})
 </script>
 
 <style scoped>
@@ -261,7 +275,192 @@ const register = () => {
 
 @media (max-width: 768px) {
   .register-container {
-    padding: 30px 20px;
+    padding: 24px 16px;
+    border-radius: 12px;
+  }
+  .register-header {
+    margin-bottom: 20px;
+  }
+  .register-header h2 {
+    font-size: 20px;
+    margin: 10px 0 5px;
+  }
+  .register-header p {
+    font-size: 12px;
+  }
+  .code-input :deep(.el-input) {
+    width: 55%;
+  }
+  .code-input .el-button {
+    flex: 1;
+    min-width: 0;
+  }
+  .register-footer {
+    text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .register-container {
+    padding: 20px 14px;
+    margin: 10px 0;
+  }
+  .register-page {
+    padding: 10px;
+    align-items: flex-start;
+    padding-top: 20px;
+  }
+}
+
+/* 功能介绍样式 */
+.feature-intro {
+  position: fixed;
+  left: 5%;
+  top: 50%;
+  transform: translateY(-50%);
+  color: white;
+  max-width: 400px;
+  padding-right: 60px;
+}
+
+.feature-intro h1 {
+  font-size: 32px;
+  margin-bottom: 12px;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.feature-intro .tagline {
+  font-size: 18px;
+  opacity: 0.95;
+  margin-bottom: 32px;
+}
+
+.feature-intro .features {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.feature-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.feature-item .el-icon {
+  font-size: 28px;
+  margin-bottom: 4px;
+}
+
+.feature-item span {
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.feature-item small {
+  font-size: 13px;
+  opacity: 0.85;
+}
+
+@media (max-width: 1100px) {
+  .feature-intro {
+    position: static;
+    transform: none;
+    max-width: 100%;
+    padding: 20px 16px;
+    margin-bottom: 0;
+    text-align: center;
+  }
+  .feature-intro h1 {
+    font-size: 24px;
+  }
+  .feature-intro .tagline {
+    font-size: 14px;
+    margin-bottom: 20px;
+  }
+  .feature-intro .features {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    max-width: 400px;
+    margin: 0 auto;
+  }
+  .feature-item {
+    align-items: center;
+  }
+  .feature-item .el-icon {
+    font-size: 24px;
+  }
+  .feature-item span {
+    font-size: 14px;
+  }
+  .feature-item small {
+    font-size: 11px;
+  }
+  .register-page {
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding-top: 20px;
+  }
+  .register-container {
+    max-width: 480px;
+    width: 100%;
+    border-radius: 16px;
+    margin: 0 16px;
+    padding: 24px;
+  }
+  .register-header {
+    margin-bottom: 20px;
+  }
+  .register-header h2 {
+    font-size: 20px;
+    margin: 10px 0 5px;
+  }
+  .register-header p {
+    font-size: 12px;
+  }
+  .register-form :deep(.el-form-item) {
+    margin-bottom: 16px;
+  }
+  .code-input :deep(.el-input) {
+    width: 55%;
+  }
+  .code-input .el-button {
+    flex: 1;
+    min-width: 0;
+  }
+  .register-footer {
+    text-align: center;
+    padding-top: 16px;
+  }
+}
+
+@media (max-width: 768px) {
+  .feature-intro {
+    padding: 16px 14px;
+  }
+  .feature-intro h1 {
+    font-size: 20px;
+  }
+  .feature-intro .features {
+    gap: 8px;
+  }
+  .feature-item .el-icon {
+    font-size: 22px;
+  }
+  .feature-item span {
+    font-size: 13px;
+  }
+  .feature-item small {
+    font-size: 10px;
+  }
+  .register-container {
+    padding: 20px 14px;
+    border-radius: 12px;
+    margin: 0 10px;
+  }
+  .register-form :deep(.el-form-item) {
+    margin-bottom: 14px;
   }
 }
 </style>

@@ -8,7 +8,7 @@ export const adminLogin = (data) => request.post('/admin/login', data)
 export const adminLogout = () => { localStorage.removeItem('admin_token') }
 
 // ====== 仪表盘 ======
-export const getDashboard = () => request.get('/admin/dashboard')
+export const getDashboard = (params) => request.get('/admin/dashboard', { params })
 
 // ====== 社区管理 ======
 export const getCommunities = (params) => request.get('/admin/users/communities', { params })
@@ -48,6 +48,8 @@ export const deleteComment = (id) => request.delete(`/admin/comments/${id}`)
 
 // ====== 财务管理 ======
 export const getFinance = () => request.get('/admin/finance')
+export const getRewardRecords = (params) => request.get('/admin/finance/rewards', { params })
+export const getCommissionRecords = (params) => request.get('/admin/finance/commissions', { params })
 
 // ====== 配置管理 ======
 // 会员配置
@@ -80,6 +82,14 @@ export const getBanners = (params) => request.get('/admin/config/banners', { par
 export const createBanner = (data) => request.post('/admin/config/banners', data)
 export const updateBanner = (id, data) => request.put(`/admin/config/banners/${id}`, data)
 export const deleteBanner = (id) => request.delete(`/admin/config/banners/${id}`)
+
+// ====== 防飞单配置 ======
+export const getAntiFlyingConfig = () => request.get('/admin/config/anti-flying')
+export const saveAntiFlyingConfig = (data) => request.put('/admin/config/anti-flying', data)
+
+// ====== 内容审核配置 ======
+export const getAuditConfig = () => request.get('/admin/config/audit')
+export const saveAuditConfig = (data) => request.put('/admin/config/audit', data)
 
 // ====== 标签管理 ======
 export const getTags = (params) => request.get('/admin/config/tags', { params })

@@ -134,6 +134,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { requireAuth } from '@/utils/useAuth'
 import { Search, Location, Calendar, Loading, Star, View } from '@element-plus/icons-vue'
 import { getDemands, getCommunityDetail, toggleFavorite, getMyFavorites } from '@/api/merchant'
 
@@ -235,6 +236,9 @@ async function loadFavorites() {
 }
 
 async function toggleFav(demand) {
+  if (!localStorage.getItem('merchant_token')) {
+    return requireAuth('merchant')
+  }
   demand.isFavorited = !demand.isFavorited
   try {
     await toggleFavorite({ demand_id: demand.id })

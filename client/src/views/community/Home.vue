@@ -16,7 +16,7 @@
     <div class="banner-section" v-if="banners.length">
       <el-carousel height="200px" :interval="5000" arrow="always">
         <el-carousel-item v-for="(banner, index) in banners" :key="index">
-          <div class="banner-item" :style="{ background: banner.bg }">
+          <div class="banner-item" :style="{ background: banner.bg }" @click="banner.link && window.open(banner.link, '_blank')" :title="banner.link ? '点击跳转' : ''">
             <div class="banner-content">
               <h3>{{ banner.title }}</h3>
               <p>{{ banner.desc }}</p>
@@ -88,16 +88,12 @@
           class="resource-card"
           shadow="hover"
         >
+          <!-- 右上角匹配度 -->
           <div class="match-score">
-            <div class="stars-display">
-              <el-icon v-for="n in 5" :key="n" :class="['star-icon', { filled: n <= (resource.star_rating || 0) }]">
-                <StarFilled />
-              </el-icon>
-            </div>
             <div class="hearts">
+              <span class="score-label">匹配度</span>
               <span v-for="n in 5" :key="n" :class="['heart', { filled: n <= (resource.matchHearts || 0) }]">♥</span>
             </div>
-            <span class="score-text">{{ resource.matchScore ? resource.matchScore * 20 + '%匹配' : '' }}</span>
           </div>
 
           <div class="resource-header">
@@ -106,7 +102,14 @@
             </el-avatar>
             <div class="merchant-info">
               <h4 class="merchant-name-link" @click.stop="viewMerchantDetail(resource)">{{ resource.company_name }}</h4>
-              <el-tag size="small" type="info">{{ resource.resource_type }}</el-tag>
+              <!-- 商家评级+会员等级+浏览量 -->
+              <div class="merchant-meta-row">
+                <span class="star-rating-text">{{ resource.star_rating || 0 }}星</span>
+                <el-divider direction="vertical" />
+                <el-tag size="small" type="info">{{ resource.member_level || '普通会员' }}</el-tag>
+                <el-divider direction="vertical" />
+                <span class="view-count"><el-icon :size="12"><View /></el-icon> {{ resource.view_count || 0 }}</span>
+              </div>
             </div>
           </div>
 
@@ -132,7 +135,8 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Shop, StarFilled, Document, Connection, CircleCheck, Present, Plus } from '@element-plus/icons-vue'
+import { requireAuth } from '@/utils/useAuth'
+import { Shop, StarFilled, Document, Connection, CircleCheck, Present, Plus, View } from '@element-plus/icons-vue'
 import { getBanners, getRecommendResources, getProfile, getMyDemands, getMyIntentions } from '@/api/community'
 
 const router = useRouter()
@@ -167,12 +171,13 @@ onMounted(async () => {
         title: b.title || '邻盟平台',
         desc: b.description || '连接社区与商家，共创美好生活',
         btn: '了解更多',
-        bg: bannerColors[i % bannerColors.length]
+        bg: b.image_url ? `url(${b.image_url}) center/cover no-repeat` : bannerColors[i % bannerColors.length],
+        link: b.link_url || ''
       }))
       if (banners.value.length === 0) {
         banners.value = [
-          { title: '邻盟平台上线啦！', desc: '连接社区与商家，共创美好生活', btn: '了解更多', bg: bannerColors[0] },
-          { title: '发布需求，精准匹配', desc: '填写越详细，匹配越精准', btn: '立即发布', bg: bannerColors[1] }
+          { title: '邻盟平台上线啦！', desc: '连接社区与商家，共创美好生活', btn: '了解更多', bg: bannerColors[0], link: '' },
+          { title: '发布需求，精准匹配', desc: '填写越详细，匹配越精准', btn: '立即发布', bg: bannerColors[1], link: '' }
         ]
       }
     }
@@ -202,6 +207,9 @@ onMounted(async () => {
 })
 
 const contactMerchant = (resource) => {
+  if (!localStorage.getItem('community_token')) {
+    return requireAuth('community')
+  }
   ElMessage.success(`已向${resource.company_name}发送合作意向`)
 }
 
@@ -254,6 +262,8 @@ const viewActivityDetail = (activity) => {
   align-items: center;
   padding: 0 40px;
   color: white;
+  cursor: default;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.4);
 }
 
 .banner-content h3 {
@@ -335,27 +345,11 @@ const viewActivityDetail = (activity) => {
   text-align: right;
 }
 
-.stars-display {
-  display: flex;
-  gap: 2px;
-  color: #dcdfe6;
-  margin-bottom: 2px;
-  justify-content: flex-end;
-}
-
-.stars-display .star-icon {
-  font-size: 14px;
-}
-
-.stars-display .star-icon.filled {
-  color: #f5a623;
-}
-
 .hearts {
   display: flex;
   gap: 2px;
-  margin-bottom: 2px;
   justify-content: flex-end;
+  align-items: center;
 }
 
 .heart {
@@ -367,9 +361,11 @@ const viewActivityDetail = (activity) => {
   color: #f56c6c;
 }
 
-.score-text {
+.score-label {
   font-size: 11px;
-  color: #909399;
+  color: #606266;
+  font-weight: 500;
+  margin-right: 4px;
 }
 
 .resource-header {
@@ -380,8 +376,35 @@ const viewActivityDetail = (activity) => {
   padding-right: 80px;
 }
 
+.merchant-info {
+  flex: 1;
+  min-width: 0;
+}
+
 .merchant-info h4 {
-  margin-bottom: 4px;
+  margin: 0 0 6px;
+  font-size: 16px;
+}
+
+.merchant-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.star-rating-text {
+  color: #f5a623;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.view-count {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  color: #909399;
+  font-size: 12px;
 }
 
 .resource-desc {
@@ -491,7 +514,23 @@ const viewActivityDetail = (activity) => {
 
   .resource-header {
     gap: 8px;
-    padding-right: 70px;
+    padding-right: 60px;
+  }
+
+  .merchant-info h4 {
+    font-size: 14px;
+  }
+
+  .merchant-meta-row {
+    gap: 4px;
+  }
+
+  .star-rating-text {
+    font-size: 12px;
+  }
+
+  .view-count {
+    font-size: 11px;
   }
 
   .resource-desc {

@@ -78,8 +78,8 @@
 
       <!-- 系统通知 -->
       <el-tab-pane label="系统通知" name="system">
-        <div class="message-list">
-          <el-empty v-if="systemMessages.length === 0" description="暂无系统通知" :image-size="80" />
+        <div class="message-list" v-loading="systemLoading">
+          <el-empty v-if="!systemLoading && systemMessages.length === 0" description="暂无系统通知" :image-size="80" />
           <el-card v-for="msg in systemMessages" :key="msg.id" class="message-card" shadow="hover">
             <div class="message-header">
               <el-tag :type="msg.tagType" size="small">{{ msg.tag }}</el-tag>
@@ -205,10 +205,25 @@ async function replyComment(msg) {
 
 // 系统通知（Mock）
 const systemMessages = ref([])
+const systemLoading = ref(false)
+
+async function loadSystemNotifications() {
+  systemLoading.value = true
+  try {
+    const { getMyNotifications } = await import('@/api/merchant')
+    const res = await getMyNotifications({ page: 1, pageSize: 50 })
+    systemMessages.value = res.data?.list || res.data || []
+  } catch {
+    systemMessages.value = []
+  } finally {
+    systemLoading.value = false
+  }
+}
 
 function onTabChange(tab) {
   if (tab === 'intentions') loadIntentions()
   else if (tab === 'comments') loadComments()
+  else if (tab === 'system') loadSystemNotifications()
 }
 
 function formatTime(time) {
@@ -219,6 +234,7 @@ function formatTime(time) {
 
 onMounted(() => {
   loadIntentions()
+  loadSystemNotifications()
 })
 </script>
 

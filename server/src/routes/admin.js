@@ -86,6 +86,8 @@ router.delete('/config/basic/regions/:id', authAdmin, AdminController.deleteRegi
 
 // 财务管理
 router.get('/finance', authAdmin, AdminController.getFinance)
+router.get('/finance/rewards', authAdmin, AdminController.getRewardRecords)
+router.get('/finance/commissions', authAdmin, AdminController.getCommissionRecords)
 
 // 系统通知管理
 router.get('/notifications', authAdmin, AdminController.getNotifications)
@@ -98,5 +100,13 @@ router.post('/notifications/:id/publish', authAdmin, AdminController.publishNoti
 // 匹配算法配置
 router.get('/config/algorithm', authAdmin, AdminController.getAlgorithmConfig)
 router.put('/config/algorithm', authAdmin, AdminController.saveAlgorithmConfig)
+
+// 防飞单配置
+router.get('/config/anti-flying', authAdmin, AdminController.getAntiFlyingConfig)
+router.put('/config/anti-flying', authAdmin, AdminController.saveAntiFlyingConfig)
+
+// 内容审核配置
+router.get('/config/audit', authAdmin, AdminController.getAuditConfig)
+router.put('/config/audit', authAdmin, AdminController.saveAuditConfig)
 
 module.exports = router

@@ -37,6 +37,69 @@
         </div>
       </el-tab-pane>
 
+      <!-- 专家类型 -->
+      <el-tab-pane label="专家类型" name="expert">
+        <div class="config-section">
+          <div class="section-header">
+            <p class="section-desc">专家类型用于专家服务类需求中选择</p>
+            <el-button type="primary" @click="openAdd('expertTypes','专家类型')"><el-icon><Plus /></el-icon> 新增</el-button>
+          </div>
+          <el-table :data="expertTypes" stripe border>
+            <el-table-column type="index" width="60" />
+            <el-table-column prop="name" label="专家类型" min-width="150">
+              <template #default="{ row }">
+                <el-input v-if="row.editing" v-model="row.name" size="small" @blur="row.editing=false" />
+                <span v-else>{{ row.name }}</span>
+              </template>
+            </el-table-column>
+            <el-table-column prop="desc" label="说明" min-width="200">
+              <template #default="{ row }">
+                <el-input v-if="row.editing" v-model="row.desc" size="small" />
+                <span v-else style="color:#909399;font-size:13px">{{ row.desc }}</span>
+              </template>
+            </el-table-column>
+            <el-table-column prop="count" label="已关联需求" width="110" align="center" />
+            <el-table-column prop="enabled" label="启用" width="80" align="center">
+              <template #default="{ row }"><el-switch v-model="row.enabled" /></template>
+            </el-table-column>
+            <el-table-column label="操作" width="130" align="center">
+              <template #default="{ row }">
+                <el-button text type="primary" size="small" @click="row.editing=true">编辑</el-button>
+                <el-button text type="danger" size="small" @click="deleteItem(expertTypes.value, row)">删除</el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+        </div>
+      </el-tab-pane>
+
+      <!-- 行业分类 -->
+      <el-tab-pane label="行业分类" name="industry">
+        <div class="config-section">
+          <div class="section-header">
+            <p class="section-desc">行业分类用于商家注册时选择，影响智能匹配和筛选</p>
+            <el-button type="primary" @click="openAdd('industryTypes','行业分类')"><el-icon><Plus /></el-icon> 新增</el-button>
+          </div>
+          <el-table :data="industryTypes" stripe border>
+            <el-table-column type="index" width="60" />
+            <el-table-column prop="name" label="行业名称" min-width="150">
+              <template #default="{ row }">
+                <el-input v-if="row.editing" v-model="row.name" size="small" @blur="row.editing=false; saveInlineEdit(row)" @keyup.enter="row.editing=false; saveInlineEdit(row)" />
+                <span v-else>{{ row.name }}</span>
+              </template>
+            </el-table-column>
+            <el-table-column prop="enabled" label="启用" width="80" align="center">
+              <template #default="{ row }"><el-switch v-model="row.enabled" @change="saveTypes" /></template>
+            </el-table-column>
+            <el-table-column label="操作" width="130" align="center">
+              <template #default="{ row }">
+                <el-button text type="primary" size="small" @click="row.editing=true">编辑</el-button>
+                <el-button text type="danger" size="small" @click="deleteItem(industryTypes, row)">删除</el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+        </div>
+      </el-tab-pane>
+
       <!-- 企业类型 -->
       <el-tab-pane label="企业类型" name="enterprise">
         <div class="config-section">
@@ -94,35 +157,6 @@
               <template #default="{ row }">
                 <el-button text type="primary" size="small" @click="row.editing=true">编辑</el-button>
                 <el-button text type="danger" size="small" @click="deleteItem(resourceTypes.value, row)">删除</el-button>
-              </template>
-            </el-table-column>
-          </el-table>
-        </div>
-      </el-tab-pane>
-
-      <!-- 专家类型 -->
-      <el-tab-pane label="专家类型" name="expert">
-        <div class="config-section">
-          <div class="section-header">
-            <p class="section-desc">专家类型用于专家服务需求中选择</p>
-            <el-button type="primary" @click="openAdd('expertTypes','专家类型')"><el-icon><Plus /></el-icon> 新增</el-button>
-          </div>
-          <el-table :data="expertTypes" stripe border>
-            <el-table-column type="index" width="60" />
-            <el-table-column prop="name" label="专家类型" min-width="150">
-              <template #default="{ row }">
-                <el-input v-if="row.editing" v-model="row.name" size="small" @blur="row.editing=false" />
-                <span v-else>{{ row.name }}</span>
-              </template>
-            </el-table-column>
-            <el-table-column prop="count" label="已关联需求" width="110" align="center" />
-            <el-table-column prop="enabled" label="启用" width="80" align="center">
-              <template #default="{ row }"><el-switch v-model="row.enabled" /></template>
-            </el-table-column>
-            <el-table-column label="操作" width="130" align="center">
-              <template #default="{ row }">
-                <el-button text type="primary" size="small" @click="row.editing=true">编辑</el-button>
-                <el-button text type="danger" size="small" @click="deleteItem(expertTypes.value, row)">删除</el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -212,6 +246,7 @@ const activityTypes = ref([])
 const enterpriseTypes = ref([])
 const resourceTypes = ref([])
 const expertTypes = ref([])
+const industryTypes = ref([])
 const districtTree = ref([])
 
 async function loadBasicTypes() {
@@ -219,20 +254,89 @@ async function loadBasicTypes() {
   try {
     const res = await getBasicTypesConfig()
     const data = res.data || {}
-    activityTypes.value = (data.activityTypes || []).map(t => ({ ...t, count: t.count || 0, enabled: t.enabled !== false, editing: false }))
-    enterpriseTypes.value = (data.enterpriseTypes || []).map(t => ({ ...t, count: t.count || 0, enabled: t.enabled !== false, editing: false }))
-    resourceTypes.value = (data.resourceTypes || []).map(t => ({ ...t, enabled: t.enabled !== false, editing: false }))
-    expertTypes.value = (data.expertTypes || []).map(t => ({ ...t, count: t.count || 0, enabled: t.enabled !== false, editing: false }))
+
+    const defaultActivityTypes = [
+      { name: '社区文化活动', desc: '居民文艺演出、节庆活动等', count: 0, enabled: true },
+      { name: '教育培训', desc: '公益课、讲座、培训等活动', count: 0, enabled: true },
+      { name: '健康运动', desc: '健身、太极、广场舞等体育活动', count: 0, enabled: true },
+      { name: '志愿服务', desc: '社区公益服务、义务劳动等', count: 0, enabled: true },
+      { name: '便民服务', desc: '理发、缝补、维修等便民活动', count: 0, enabled: true },
+      { name: '专家咨询', desc: '法律、心理、医疗等专业咨询', count: 0, enabled: true },
+    ]
+    const defaultEnterpriseTypes = [
+      { name: '国有企业', count: 0, enabled: true },
+      { name: '民营企业', count: 0, enabled: true },
+      { name: '外资企业', count: 0, enabled: true },
+      { name: '个体工商户', count: 0, enabled: true },
+      { name: '社会企业', count: 0, enabled: true },
+      { name: '非营利组织', count: 0, enabled: true },
+    ]
+    const defaultResourceTypes = [
+      { name: '专业服务', desc: '咨询、法律、设计等专业服务', enabled: true },
+      { name: '教育培训', desc: '课程、培训、讲座等服务', enabled: true },
+      { name: '场地资源', desc: '活动室、运动场等场地支持', enabled: true },
+      { name: '物资捐赠', desc: '图书、设备、食品等物资', enabled: true },
+      { name: '志愿服务', desc: '人力支持、活动协助等', enabled: true },
+    ]
+    const defaultExpertTypes = [
+      { name: '法律咨询', desc: '法律顾问、纠纷调解等服务', count: 0, enabled: true },
+      { name: '心理健康', desc: '心理咨询、心理辅导等服务', count: 0, enabled: true },
+      { name: '医疗健康', desc: '义诊、健康讲座等服务', count: 0, enabled: true },
+      { name: '财务税务', desc: '财税顾问、代理记账等服务', count: 0, enabled: true },
+      { name: '工程技术', desc: '水电维修、网络技术等服务', count: 0, enabled: true },
+    ]
+    const defaultIndustryTypes = [
+      '教育培训', '医院诊所', '药店', '餐饮小吃', '生鲜水果',
+      '美业', '保健养生', '体育健身', '银行保险', '电信服务',
+      '商超零售', '快递物流', '家政服务', '废旧回收', '五金建材',
+      '家居装修', '家纺布艺', '电子电器', '房产中介', '汽车服务',
+      '旅游服务', '鲜花礼品', '电影演出', '娱乐休闲', '服装服饰',
+      '酒店宾馆', '茶艺咖啡', '宠物服务', '眼镜', '酒水饮料',
+      '办公用品', '设备租赁', '社工服务', '养老服务', '新闻媒体',
+      '自媒体', 'IT互联网', '软件开发', '图文广告', '电子电器维修',
+      '家居维修', '美发', '建筑工程', '其他'
+    ].map(name => ({ name, enabled: true, editing: false }))
+
+    if (!data.activityTypes || data.activityTypes.length === 0) {
+      activityTypes.value = defaultActivityTypes.map(t => ({ ...t, editing: false }))
+    } else {
+      activityTypes.value = data.activityTypes.map(t => ({ ...t, count: t.count || 0, enabled: t.enabled !== false, editing: false }))
+    }
+
+    if (!data.expertTypes || data.expertTypes.length === 0) {
+      expertTypes.value = defaultExpertTypes.map(t => ({ ...t, editing: false }))
+    } else {
+      expertTypes.value = data.expertTypes.map(t => ({ ...t, count: t.count || 0, enabled: t.enabled !== false, editing: false }))
+    }
+
+    if (!data.enterpriseTypes || data.enterpriseTypes.length === 0) {
+      enterpriseTypes.value = defaultEnterpriseTypes.map(t => ({ ...t, editing: false }))
+    } else {
+      enterpriseTypes.value = data.enterpriseTypes.map(t => ({ ...t, count: t.count || 0, enabled: t.enabled !== false, editing: false }))
+    }
+
+    if (!data.resourceTypes || data.resourceTypes.length === 0) {
+      resourceTypes.value = defaultResourceTypes.map(t => ({ ...t, editing: false }))
+    } else {
+      resourceTypes.value = data.resourceTypes.map(t => ({ ...t, enabled: t.enabled !== false, editing: false }))
+    }
+
+    if (!data.industryTypes || data.industryTypes.length === 0) {
+      industryTypes.value = defaultIndustryTypes
+    } else {
+      industryTypes.value = data.industryTypes.map(t => ({ ...t, enabled: t.enabled !== false, editing: false }))
+    }
   } catch {}
   finally { loading.value = false }
 }
 
 async function saveTypes() {
   await saveBasicTypesConfig({
-    activityTypes: activityTypes.value.map(t => ({ name: t.name, desc: t.desc })),
-    enterpriseTypes: enterpriseTypes.value.map(t => ({ name: t.name })),
-    resourceTypes: resourceTypes.value.map(t => ({ name: t.name, desc: t.desc })),
-    expertTypes: expertTypes.value.map(t => ({ name: t.name }))
+    activityTypes: activityTypes.value.map(t => ({ name: t.name, desc: t.desc, enabled: t.enabled })),
+    enterpriseTypes: enterpriseTypes.value.map(t => ({ name: t.name, enabled: t.enabled })),
+    resourceTypes: resourceTypes.value.map(t => ({ name: t.name, desc: t.desc, enabled: t.enabled })),
+    expertTypes: expertTypes.value.map(t => ({ name: t.name, desc: t.desc, enabled: t.enabled })),
+    industryTypes: industryTypes.value.map(t => ({ name: t.name, enabled: t.enabled }))
   })
 }
 
@@ -270,7 +374,7 @@ function openAdd(listName, title) {
 
 async function confirmAdd() {
   if (!newItemName.value.trim()) { ElMessage.warning('请输入名称'); return }
-  const lists = { activityTypes, enterpriseTypes, resourceTypes, expertTypes }
+  const lists = { activityTypes, enterpriseTypes, resourceTypes, expertTypes, industryTypes }
   const listRef = lists[currentList.value]
   if (listRef) {
     const item = { name: newItemName.value.trim(), count: 0, enabled: true, editing: false, desc: newItemDesc.value }
@@ -285,6 +389,15 @@ async function confirmAdd() {
     }
   }
   showAddDialog.value = false
+}
+
+async function saveInlineEdit(row) {
+  try {
+    await saveTypes()
+    ElMessage.success('已更新')
+  } catch {
+    ElMessage.error('更新失败')
+  }
 }
 
 async function deleteItem(list, row) {

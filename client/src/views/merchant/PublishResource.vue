@@ -282,7 +282,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { ArrowLeft, Plus, Check, Warning } from '@element-plus/icons-vue'
@@ -292,18 +292,34 @@ const router = useRouter()
 const activeStep = ref(0)
 const submitting = ref(false)
 
-const resourceTypes = [
+// 发布类型配置 - 从后端API加载
+const resourceTypes = ref([
   { value: 'fund', icon: '💵', label: '资金赞助', desc: '提供活动资金支持，金额可面议' },
   { value: 'goods', icon: '📦', label: '物资提供', desc: '提供实物物资，如饮品、礼品、物料等' },
   { value: 'manpower', icon: '👥', label: '人力支持', desc: '提供人员服务，如主持人、志愿者、专业团队' },
   { value: 'tech', icon: '💻', label: '技术支持', desc: '提供设备器材或技术服务，如音响、灯光、直播' },
   { value: 'professional', icon: '🎓', label: '专业服务', desc: '提供专业人士服务，如法律、医疗、教育等' },
   { value: 'media', icon: '📰', label: '媒体报道', desc: '提供媒体宣传资源，如公众号、抖音、新闻等' }
-]
+])
 
-const professionalTypes = ['法律咨询', '医疗健康', '心理辅导', '教育培训', '金融理财', '技能培训', '营养指导', '体育健身', '文艺指导', '社会工作', '其他']
-const merchantTagOptions = ['连锁品牌', '本地企业', '上市公司', '高端品牌', '大众品牌', '公益导向', '长期合作', '亲子品牌', '老年服务', '全国服务', '精准获客', '社会责任']
-const expectedRewardOptions = ['活动冠名权', '现场展台', '社区公众号宣传', '业主群推送', '荣誉证书', '现场横幅', '宣传栏展示', '主持人口播', '媒体报道', '感谢状']
+const professionalTypes = ref(['法律咨询', '医疗健康', '心理辅导', '教育培训', '金融理财', '技能培训', '营养指导', '体育健身', '文艺指导', '社会工作', '其他'])
+const merchantTagOptions = ref(['连锁品牌', '本地企业', '上市公司', '高端品牌', '大众品牌', '公益导向', '长期合作', '亲子品牌', '老年服务', '全国服务', '精准获客', '社会责任'])
+const expectedRewardOptions = ref(['活动冠名权', '现场展台', '社区公众号宣传', '业主群推送', '荣誉证书', '现场横幅', '宣传栏展示', '主持人口播', '媒体报道', '感谢状'])
+
+async function loadPublishTypes() {
+  try {
+    const { getPublishTypes } = await import('@/api/merchant')
+    const res = await getPublishTypes()
+    const data = res.data || {}
+    if (data.merchant_tags) merchantTagOptions.value = data.merchant_tags
+  } catch {
+    // 使用默认值
+  }
+}
+
+onMounted(() => {
+  loadPublishTypes()
+})
 
 const form = ref({
   resource_type: '', title: '', content: '', tags: [], resourceImages: [],

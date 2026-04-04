@@ -41,29 +41,49 @@
     <div class="resource-list" v-loading="loading">
       <el-empty v-if="!loading && resources.length === 0" description="暂无资源" />
       <el-card v-for="resource in resources" :key="resource.id" shadow="hover" class="resource-card" @click="viewDetail(resource)">
-        <div class="card-header">
-          <div class="rating-stars">
-            <span v-for="n in 5" :key="n" class="star" :class="{filled: n <= (resource.star_rating || 0)}">★</span>
-          </div>
+        <!-- 第一行：类型标签(左上) + 匹配度(右上) -->
+        <div class="card-row-top">
+          <el-tag size="small" type="danger" effect="dark" class="type-tag">{{ getResourceTypeName(resource.resource_type) }}</el-tag>
           <div class="match-score">
             <span class="score-pct">匹配度</span>
             <span v-for="n in 5" :key="n" class="heart" :class="{filled: n <= (resource.matchHearts || 0)}">♥</span>
           </div>
         </div>
-        <h4 class="res-title">{{ resource.title }}</h4>
-          <div class="res-meta">
-          <el-tag size="small">{{ resource.resource_type }}</el-tag>
-          <span class="merchant-name" @click.stop="router.push(`/community/merchants/${resource.merchant_id}`)">{{ resource.company_name }}</span>
-        </div>
-        <p class="res-desc">{{ resource.content }}</p>
-        <div class="res-footer">
-          <div class="footer-left">
-            <el-tag size="small" :type="memberLevelType[resource.member_level] || 'info'">
-              {{ memberLevelName[resource.member_level] || '普通会员' }}
-            </el-tag>
-            <span class="view-count"><el-icon :size="12"><View /></el-icon> {{ resource.view_count || 0 }}</span>
+
+        <!-- 第二行：Logo + 商家信息（评级+会员等级+商家名） -->
+        <div class="resource-header">
+          <el-avatar :size="44" :src="resource.merchant_logo" class="merchant-logo" @error="() => true">
+            <el-icon :size="20"><Shop /></el-icon>
+          </el-avatar>
+          <div class="merchant-info">
+            <h4 class="res-title">{{ resource.title }}</h4>
+            <div class="res-meta">
+              <span class="star-rating">{{ resource.star_rating || 0 }}星</span>
+              <el-tag size="small" :type="memberLevelType[resource.member_level] || 'info'" style="margin:0 4px">
+                {{ memberLevelName[resource.member_level] || '普通会员' }}
+              </el-tag>
+              <span class="merchant-name" @click.stop="router.push(`/community/merchants/${resource.merchant_id}`)">{{ resource.company_name }}</span>
+            </div>
           </div>
-          <el-button type="primary" size="small" @click.stop="viewDetail(resource)">查看详情</el-button>
+        </div>
+
+        <!-- 第三行：内容摘要 -->
+        <p class="res-desc">{{ resource.content }}</p>
+
+        <!-- 第四行：标签（5个） -->
+        <div class="resource-tags" v-if="resource.tags && resource.tags.length">
+          <el-tag v-for="tag in (Array.isArray(resource.tags) ? resource.tags : resource.tags.split(',')).slice(0, 5)" :key="tag" size="small" effect="plain" style="margin:2px">{{ tag }}</el-tag>
+        </div>
+
+        <!-- 第五行：浏览量(右下) + 收藏(中) + 分享(右) -->
+        <div class="card-footer">
+          <div class="footer-center">
+            <el-icon class="favorite-icon" :class="{active: favoritedIds.has(resource.id)}" @click.stop="handleFavorite(resource)"><Star /></el-icon>
+          </div>
+          <div class="footer-right">
+            <span class="view-count"><el-icon :size="12"><View /></el-icon> {{ resource.view_count || 0 }}</span>
+            <el-icon class="share-icon" @click.stop="handleShare(resource)"><Share /></el-icon>
+          </div>
         </div>
       </el-card>
     </div>
@@ -108,18 +128,22 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Search, View } from '@element-plus/icons-vue'
-import { getResources } from '@/api/community'
+import { requireAuth } from '@/utils/useAuth'
+import { Search, View, Star, Shop, Share } from '@element-plus/icons-vue'
+import { getResources, toggleFavorite, getMyFavorites } from '@/api/community'
 
 const router = useRouter()
 const showMerchantInfo = ref(false)
 const currentMerchantInfo = ref(null)
 const loading = ref(false)
+const favoritedIds = ref(new Set())
 
 const filters = reactive({ keyword: '', type: '', rating: '', distance: '', matchOrder: 'match' })
-const resourceTypes = ['资金赞助', '物资提供', '人力支持', '技术支持', '专业服务', '媒体报道']
+const resourceTypeMap = { 0: '便民服务', 1: '教育培训', 2: '健康医疗', 3: '体育健身', 4: '文化娱乐', 5: '养老服务', 6: '社区商业', 7: '公益活动', 8: '活动赞助', 9: '技能培训' }
+const resourceTypes = Object.values(resourceTypeMap)
 const memberLevelName = { 0: '普通会员', 1: '普通会员', 2: '银牌会员', 3: '金牌会员', 4: '铂金会员', 5: '钻石会员' }
 const memberLevelType = { 0: 'info', 1: 'info', 2: '', 3: 'warning', 4: 'danger', 5: 'danger' }
+const getResourceTypeName = (type) => resourceTypeMap[type] ?? '便民服务'
 
 const resources = ref([])
 const total = ref(0)
@@ -172,8 +196,48 @@ function onPageChange(page) {
   fetchResources()
 }
 
+// 加载收藏状态
+async function loadFavorites() {
+  try {
+    const res = await getMyFavorites()
+    const list = res.data?.list || res.data || []
+    favoritedIds.value = new Set(list.map(i => i.resource_id || i.id))
+  } catch {}
+}
+
+// 切换收藏
+async function handleFavorite(res) {
+  if (!localStorage.getItem('community_token')) {
+    return requireAuth('community')
+  }
+  try {
+    await toggleFavorite({ resource_id: res.id })
+    if (favoritedIds.value.has(res.id)) {
+      favoritedIds.value.delete(res.id)
+    } else {
+      favoritedIds.value.add(res.id)
+    }
+    favoritedIds.value = new Set(favoritedIds.value)
+    ElMessage.success(favoritedIds.value.has(res.id) ? '已收藏' : '已取消收藏')
+  } catch {
+    ElMessage.error('操作失败')
+  }
+}
+
+function handleShare(res) {
+  const url = `${window.location.origin}/community/resources/${res.id}`
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(url).then(() => {
+      ElMessage.success('链接已复制到剪贴板')
+    })
+  } else {
+    ElMessage.info(`分享链接：${url}`)
+  }
+}
+
 onMounted(() => {
   fetchResources()
+  loadFavorites()
 })
 
 </script>
@@ -186,56 +250,53 @@ onMounted(() => {
 .resource-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
 .resource-card { cursor: pointer; transition: transform 0.2s; }
 .resource-card:hover { transform: translateY(-2px); }
-.card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-.rating-stars { display: flex; align-items: center; gap: 1px; }
-.star { color: #dcdfe6; font-size: 14px; }
-.star.filled { color: #f5a623; }
-.match-score { display: flex; align-items: center; gap: 4px; }
-.heart { color: #ddd; font-size: 12px; }
+
+/* 顶部行 */
+.card-row-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.type-tag { font-weight: 700; letter-spacing: 1px; }
+.match-score { display: flex; align-items: center; gap: 2px; }
+.score-pct { font-size: 11px; color: #606266; font-weight: 600; margin-right: 2px; }
+.heart { color: #ddd; font-size: 13px; }
 .heart.filled { color: #f56c6c; }
-.score-pct { font-size: 12px; color: #606266; font-weight: 500; margin-right: 2px; }
-.res-title { margin: 0 0 8px; font-size: 15px; font-weight: 600; line-height: 1.4; }
-.res-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
-.merchant-name { font-size: 13px; color: #409EFF; font-weight: 500; cursor: pointer; text-decoration: underline; }
-.merchant-type { font-size: 12px; color: #909399; }
-.res-desc { font-size: 13px; color: #606266; margin: 0 0 12px; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.res-footer { display: flex; align-items: center; justify-content: space-between; }
-.footer-left { display: flex; align-items: center; gap: 8px; }
+
+/* Logo + 商家信息 */
+.resource-header { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 8px; }
+.merchant-logo { flex-shrink: 0; }
+.merchant-info { flex: 1; min-width: 0; }
+.res-title { margin: 0 0 4px; font-size: 15px; font-weight: 600; line-height: 1.4; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.res-meta { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.star-rating { font-size: 12px; color: #f5a623; font-weight: 700; }
+.merchant-name { font-size: 13px; color: #409EFF; font-weight: 500; cursor: pointer; }
+.merchant-name:hover { text-decoration: underline; }
+
+/* 内容摘要 */
+.res-desc { font-size: 13px; color: #606266; margin: 0 0 8px; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* 标签 */
+.resource-tags { margin-bottom: 8px; }
+
+/* 底部三列 */
+.card-footer { display: flex; align-items: center; justify-content: space-between; }
+.footer-center { display: flex; align-items: center; }
+.footer-right { display: flex; align-items: center; gap: 12px; }
+.favorite-icon { font-size: 20px; color: #dcdfe6; cursor: pointer; transition: color 0.2s; }
+.favorite-icon.active { color: #f56c6c; }
+.favorite-icon:hover { color: #f56c6c; }
 .view-count { display: flex; align-items: center; gap: 3px; font-size: 12px; color: #909399; }
+.share-icon { font-size: 16px; color: #909399; cursor: pointer; transition: color 0.2s; }
+.share-icon:hover { color: #409EFF; }
+
 .pagination { margin-top: 20px; display: flex; justify-content: flex-end; }
 
 @media (max-width: 768px) {
   .page { padding-bottom: 70px; }
   .page-header { flex-direction: column; gap: 4px; margin-bottom: 12px; }
   .page-header h2 { font-size: 18px; }
-  .filter-bar {
-    gap: 8px;
-    margin-bottom: 14px;
-  }
+  .filter-bar { gap: 8px; margin-bottom: 14px; }
   .filter-bar .el-input,
-  .filter-bar .el-select {
-    width: calc(50% - 4px) !important;
-    font-size: 13px;
-  }
-  .filter-bar .el-button {
-    width: calc(50% - 4px);
-    font-size: 13px;
-  }
-  .resource-list {
-    grid-template-columns: 1fr;
-    gap: 12px;
-  }
-  .res-footer {
-    flex-direction: column;
-    gap: 8px;
-    align-items: stretch;
-  }
-  .footer-left { justify-content: space-between; }
-  .res-footer .el-button {
-    width: 100%;
-  }
-  .pagination {
-    justify-content: center;
-  }
+  .filter-bar .el-select { width: calc(50% - 4px) !important; font-size: 13px; }
+  .filter-bar .el-button { width: calc(50% - 4px); font-size: 13px; }
+  .resource-list { grid-template-columns: 1fr; gap: 12px; }
+  .pagination { justify-content: center; }
 }
 </style>

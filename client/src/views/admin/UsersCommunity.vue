@@ -72,7 +72,7 @@
   </div>
 </template>
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getCommunities, updateCommunityStatus, getRegions } from '@/api/admin'
 
@@ -111,6 +111,11 @@ async function loadUsers() {
 }
 
 onMounted(() => { loadUsers(); loadDistrictOptions() })
+
+watch([search, filterDistrict, filterStatus], () => {
+  page.value = 1
+  loadUsers()
+})
 
 function viewUser(row) { currentUser.value = row; detailTab.value = 'basic'; showDetail.value = true }
 

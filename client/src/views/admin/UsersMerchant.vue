@@ -3,9 +3,13 @@
     <h2>商家用户管理</h2>
     <div class="filter-bar">
       <el-input v-model="search" placeholder="搜索商家名称/联系人" style="width:200px" clearable />
-      <el-select v-model="filterType" placeholder="企业类型" style="width:130px" clearable>
+      <el-select v-model="filterEnterprise" placeholder="企业类型" style="width:130px" clearable>
         <el-option label="全部" value="" />
-        <el-option v-for="t in industryOptions":key="t" :label="t" :value="t" />
+        <el-option v-for="t in enterpriseOptions" :key="t" :label="t" :value="t" />
+      </el-select>
+      <el-select v-model="filterIndustry" placeholder="行业分类" style="width:130px" clearable>
+        <el-option label="全部" value="" />
+        <el-option v-for="t in industryOptions" :key="t" :label="t" :value="t" />
       </el-select>
       <el-select v-model="filterLevel" placeholder="会员等级" style="width:130px" clearable>
         <el-option label="全部" value="" />
@@ -167,9 +171,9 @@
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getMerchants, updateMerchantStatus, updateMerchantLevel, updateMerchantRating } from '@/api/admin'
+import { getMerchants, updateMerchantStatus, updateMerchantLevel, updateMerchantRating, getBasicTypesConfig, getMemberConfig } from '@/api/admin'
 
-const search = ref(''), filterType = ref(''), filterLevel = ref(''), filterStatus = ref('')
+const search = ref(''), filterEnterprise = ref(''), filterIndustry = ref(''), filterLevel = ref(''), filterStatus = ref('')
 const showDetail = ref(false), showLevelDialog = ref(false), showRatingDialog = ref(false)
 const currentMerchant = ref(null), detailTab = ref('basic')
 const newLevel = ref(0), levelReason = ref('')
@@ -181,24 +185,16 @@ const page = ref(1)
 const pageSize = 10
 
 const levelLabel = (lvl) => ({ 1:'普通会员', 2:'银牌会员', 3:'金牌会员', 4:'铂金会员', 5:'钻石会员' })[lvl] || '普通会员'
-const industryOptions = [
-  '教育培训', '医院诊所', '药店', '餐饮小吃', '生鲜水果', '美业',
-  '保健养生', '体育健身', '银行保险', '电信服务', '商超零售', '快递物流',
-  '家政服务', '废旧回收', '五金建材', '家居装修', '家纺布艺', '电子电器',
-  '房产中介', '汽车服务', '旅游服务', '鲜花礼品', '电影演出', '娱乐休闲',
-  '服装服饰', '酒店宾馆', '茶艺咖啡', '宠物服务', '眼镜', '酒水饮料',
-  '办公用品', '设备租赁', '社工服务', '养老服务', '新闻媒体', '自媒体',
-  'IT互联网', '软件开发', '图文广告', '电子电器维修', '家居维修', '美发',
-  '建筑工程', '其他'
-]
-const levelColor = { '普通会员': 'info', '银牌会员': 'info', '金牌会员': 'warning', '铂金会员': 'danger', '钻石会员': 'danger' }
-const levelOptions = [
+const enterpriseOptions = ref([])
+const industryOptions = ref([])
+const levelColor = { '普通会员': 'info', '银牌会员': '', '金牌会员': 'warning', '铂金会员': 'danger', '钻石会员': 'danger' }
+const levelOptions = ref([
   { lv: 1, name: '普通会员', fee: '0' },
   { lv: 2, name: '银牌会员', fee: '999' },
   { lv: 3, name: '金牌会员', fee: '2999' },
   { lv: 4, name: '铂金会员', fee: '5999' },
   { lv: 5, name: '钻石会员', fee: '12000' }
-]
+])
 const statusLabels = { 0: '待审核', 1: '正常', 2: '已禁用' }
 const statusTag = { 0: 'warning', 1: 'success', 2: 'danger' }
 
@@ -208,20 +204,41 @@ async function loadMerchants() {
     const params = { page: page.value, pageSize }
     if (filterStatus.value !== '') params.status = filterStatus.value
     if (filterLevel.value) params.level = filterLevel.value
+    if (filterIndustry.value) params.industry = filterIndustry.value
     if (search.value) params.keyword = search.value
     const res = await getMerchants(params)
-    // 行业过滤（后端暂不支持，客户端过滤）
+    // 企业类型过滤（后端暂不支持，客户端过滤）
     let list = res.data?.list || res.data || []
-    if (filterType.value) list = list.filter(m => m.industry === filterType.value)
+    if (filterEnterprise.value) list = list.filter(m => m.enterprise_type === filterEnterprise.value)
     merchants.value = list
     total.value = res.data?.pagination?.total || res.data?.total || list.length
   } catch { merchants.value = [] }
   finally { loading.value = false }
 }
 
-onMounted(() => { loadMerchants() })
+async function loadFilterOptions() {
+  try {
+    const [basicRes, memberRes] = await Promise.all([
+      getBasicTypesConfig(),
+      getMemberConfig()
+    ])
+    if (basicRes.data?.enterpriseTypes?.length > 0) {
+      enterpriseOptions.value = basicRes.data.enterpriseTypes.map(t => t.name).filter(Boolean)
+    }
+    if (basicRes.data?.industryTypes?.length > 0) {
+      industryOptions.value = basicRes.data.industryTypes.map(t => t.name).filter(Boolean)
+    }
+    if (memberRes.data?.member_levels?.length > 0) {
+      levelOptions.value = memberRes.data.member_levels.map(l => ({
+        lv: l.level, name: l.name || 'Lv' + l.level, fee: l.fee || 0
+      }))
+    }
+  } catch {}
+}
 
-watch([filterStatus, filterLevel], () => { page.value = 1; loadMerchants() })
+onMounted(() => { loadFilterOptions(); loadMerchants() })
+
+watch([filterStatus, filterLevel, filterIndustry, filterEnterprise], () => { page.value = 1; loadMerchants() })
 watch(search, () => { page.value = 1; loadMerchants() })
 
 function viewMerchant(row) { currentMerchant.value = row; detailTab.value = 'basic'; showDetail.value = true }

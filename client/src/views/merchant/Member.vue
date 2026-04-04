@@ -3,7 +3,7 @@
     <h2>我的会员</h2>
 
     <!-- 当前等级卡片 -->
-    <div class="current-level-card" :class="'level-'+currentLevel.level">
+    <div class="current-level-card" :style="levelCardStyle">
       <div class="level-badge">Lv{{ currentLevel.level }}</div>
       <div class="level-info">
         <div class="level-name">{{ currentLevel.name }}</div>
@@ -57,7 +57,7 @@
     <!-- 续费记录 -->
     <div class="section-card" style="margin-top:20px">
       <div class="section-title">缴费记录</div>
-      <el-table :data="payRecords" stripe>
+      <el-table v-loading="payLoading" :data="payRecords" stripe>
         <el-table-column prop="time" label="缴费时间" width="180" />
         <el-table-column prop="level" label="会员等级" width="120"><template #default="{ row }"><el-tag size="small">{{ row.level }}</el-tag></template></el-table-column>
         <el-table-column prop="amount" label="缴费金额" width="120"><template #default="{ row }"><span style="color:#E6A23C;font-weight:600">¥{{ row.amount.toLocaleString() }}</span></template></el-table-column>
@@ -97,40 +97,87 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { CircleCheck, Key, Phone, Star, Aim, User, TrendCharts } from '@element-plus/icons-vue'
-import { getMemberInfo } from '@/api/merchant'
+import { getMemberInfo, getMemberLevels } from '@/api/merchant'
 
 const showUpgrade = ref(false), selectedUpgrade = ref(null)
-
-const memberLevelName = { 0: '普通会员', 1: '普通会员', 2: '银牌会员', 3: '金牌会员', 4: '铂金会员', 5: '钻石会员' }
-const memberLevelFee = { 0: 0, 1: 0, 2: 999, 3: 2999, 4: 5999, 5: 12000 }
+const memberLevelsData = ref([])
+const memberBenefitsData = ref([])  // 权益类型配置 [{name, desc, type, values:[lv1,lv2,...]}]
 
 const currentLevel = reactive({ level: 1, name: '普通会员', fee: 0, expire: '' })
 
+// 当前用户等级权益：从 member_benefits 配置中读取当前等级对应值
 const currentBenefits = computed(() => {
   const lv = currentLevel.level
-  return [
-    { name: '月发起意向', value: lv >= 3 ? '不限次数' : lv >= 2 ? '10次/月' : '5次/月', icon: 'Aim', available: true },
-    { name: '优先展示', value: lv >= 2 ? '✅ 已开启' : '❌ 未开启', icon: 'Star', available: lv >= 2 },
-    { name: '查看联系方式', value: lv >= 3 ? '✅ 已解锁' : '❌ 需金牌', icon: 'Phone', available: lv >= 3 },
-    { name: '年参与活动', value: lv >= 5 ? '不限次数' : lv >= 4 ? '10次/年' : lv >= 3 ? '5次/年' : '2次/年', icon: 'User', available: true },
-    { name: '数据分析报告', value: lv >= 3 ? '✅ 已开启' : '❌ 需金牌', icon: 'TrendCharts', available: lv >= 3 },
-    { name: '专属客服', value: lv >= 4 ? '✅ 已开启' : '❌ 需铂金', icon: 'Key', available: lv >= 4 },
-  ]
+  if (memberBenefitsData.value.length === 0) return []
+
+  const ICON_MAP = { '查看联系方式': 'Phone', '月发起意向次数': 'Aim', '优先展示': 'Star',
+    '首页推荐': 'TrendCharts', '年参与活动次数': 'User', '专属客服': 'Key',
+    '资源置顶次数/月': 'Star', '数据分析报告': 'TrendCharts', '品牌故事展示': 'TrendCharts' }
+
+  return memberBenefitsData.value.map(b => {
+    const val = b.values[lv - 1]
+    let displayVal = ''
+    let available = false
+    if (b.type === '开关') {
+      available = !!val
+      displayVal = available ? '✅ 已开启' : '❌ 未开启'
+    } else if (b.type === '数量') {
+      available = true
+      displayVal = `${val}次${b.name.includes('月') ? '月' : '年'}`
+    } else {
+      available = true
+      displayVal = val || '—'
+    }
+    return { name: b.name, value: displayVal, icon: ICON_MAP[b.name] || 'TrendCharts', available }
+  }).filter(b => b.name !== '会员有效期') // 有效期单独处理
+    .concat([{ name: '会员有效期', value: '购买后' + (currentLevel.validityPeriod || 12) + '个月', icon: 'Key', available: true }])
 })
 
-const memberLevels = [
-  { level: 1, name: '普通会员', fee: 0, benefits: ['发起意向5次/月', '基础匹配展示'] },
-  { level: 2, name: '银牌会员', fee: 999, benefits: ['发起意向10次/月', '优先展示', '参与活动2次/年'] },
-  { level: 3, name: '金牌会员', fee: 2999, benefits: ['不限意向次数', '查看联系方式', '优先展示', '参与活动5次/年', '数据分析报告'] },
-  { level: 4, name: '铂金会员', fee: 5999, benefits: ['金牌全部权益', '首页推荐', '专属客服', '资源置顶10次/月', '参与活动10次/年'] },
-  { level: 5, name: '钻石会员', fee: 12000, benefits: ['全部权益', '品牌故事展示', '不限活动次数', '年度峰会邀请', '资源无限置顶'] }
-]
+// 等级列表及对比权益
+const memberLevels = computed(() => memberLevelsData.value.map(lv => {
+  // 从 member_benefits 拼接各等级权益描述
+  const benefits = memberBenefitsData.value.map(b => {
+    const val = b.values[lv.level - 1]
+    if (b.type === '开关') return val ? b.name : null
+    if (b.type === '数量') return `${b.name} ${val}次`
+    return val ? `${b.name}: ${val}` : null
+  }).filter(Boolean)
+  return {
+    level: lv.level, name: lv.name, fee: lv.fee || 0,
+    validityPeriod: lv.validity_period || 12, benefits
+  }
+}))
 
-const upgradeOptions = computed(() => memberLevels.filter(l => l.level > currentLevel.level))
+const upgradeOptions = computed(() => memberLevels.value.filter(l => l.level > currentLevel.level))
 
-const payRecords = [
-  { time: '2026-03-31 14:30', level: '金牌会员', amount: 2999, validUntil: '2027-03-31', ambassador: '李招商', status: '已生效' }
+const LEVEL_GRADIENTS = [
+  'linear-gradient(135deg, #606266 0%, #909399 100%)',  // Lv1 普通
+  'linear-gradient(135deg, #6f85b3 0%, #a8b8d8 100%)',  // Lv2 银牌
+  'linear-gradient(135deg, #e07b00 0%, #f59f00 100%)',  // Lv3 金牌
+  'linear-gradient(135deg, #3d4fc9 0%, #5e72e4 100%)',  // Lv4 铂金
+  'linear-gradient(135deg, #1171ef 0%, #11cdef 100%)',  // Lv5 钻石
 ]
+const levelCardStyle = computed(() => ({
+  background: LEVEL_GRADIENTS[(currentLevel.level - 1)] || LEVEL_GRADIENTS[0],
+  color: '#fff'
+}))
+
+// 缴费记录 - 从真实API加载
+const payRecords = ref([])
+const payLoading = ref(false)
+
+async function loadPaymentHistory() {
+  payLoading.value = true
+  try {
+    const { getPaymentHistory } = await import('@/api/merchant')
+    const res = await getPaymentHistory()
+    payRecords.value = res.data?.list || res.data || []
+  } catch {
+    payRecords.value = []
+  } finally {
+    payLoading.value = false
+  }
+}
 
 function upgradeToLevel(lv) { selectedUpgrade.value = lv; showUpgrade.value = true }
 
@@ -144,30 +191,94 @@ async function loadMemberInfo() {
   try {
     const res = await getMemberInfo()
     const data = res.data || {}
-    currentLevel.level = data.member_level || data.member_level === 0 ? data.member_level : 1
-    currentLevel.name = memberLevelName[currentLevel.level] || '普通会员'
-    currentLevel.fee = memberLevelFee[currentLevel.level] || 0
+    // member_level 0 或 null 均视为 Lv1 普通会员
+    const lvNum = (typeof data.member_level === 'number' && data.member_level >= 1) ? data.member_level : 1
+    currentLevel.level = lvNum
+
+    // 从 levels 数组或对象中查找当前等级信息
+    let levelDetail = null
+    // 权益类型配置
+    if (data.benefits && Array.isArray(data.benefits)) {
+      memberBenefitsData.value = data.benefits
+    }
+    // 当前等级配置
+    if (Array.isArray(data.levels)) {
+      levelDetail = data.levels.find(l => l.level === lvNum)
+      if (data.levels.length > 0 && memberLevelsData.value.length === 0) {
+        memberLevelsData.value = data.levels
+      }
+    } else if (data.levels && typeof data.levels === 'object') {
+      levelDetail = data.levels[`Lv${lvNum}`]
+    }
+    const defaultNames = ['普通会员','银牌会员','金牌会员','铂金会员','钻石会员']
+    currentLevel.name = levelDetail?.name || defaultNames[lvNum - 1] || '普通会员'
+    currentLevel.fee = levelDetail?.fee ?? 0
     currentLevel.expire = data.expire_date || data.member_expire_at || ''
+    currentLevel.validityPeriod = levelDetail?.validity_period || 12
   } catch {
     // 使用默认值
   }
 }
 
+async function loadMemberLevels() {
+  try {
+    const res = await getMemberLevels()
+    const raw = res.data
+    if (raw && Array.isArray(raw.levels)) {
+      memberLevelsData.value = raw.levels
+    } else if (Array.isArray(raw)) {
+      memberLevelsData.value = raw
+    } else if (raw && typeof raw === 'object') {
+      memberLevelsData.value = Object.entries(raw).map(([k, v]) => ({
+        level: parseInt(k.replace('Lv', '')),
+        ...v
+      })).sort((a, b) => a.level - b.level)
+    } else {
+      memberLevelsData.value = []
+    }
+  } catch {
+    memberLevelsData.value = []
+  }
+}
+
 onMounted(() => {
   loadMemberInfo()
+  loadMemberLevels()
+  loadPaymentHistory()
 })
 
 </script>
 
 <style scoped>
-.page { max-width: 1000px; margin: 0 auto; }
+.page { max-width: 1000px; margin: 0 auto; padding: 20px; }
 .page h2 { margin-bottom: 20px; font-size: 22px; font-weight: 700; }
-.current-level-card { border-radius: 14px; padding: 24px 28px; display: flex; align-items: center; gap: 20px; color: #fff; }
-.level-1 { background: linear-gradient(135deg, #909399, #606266); }
-.level-2 { background: linear-gradient(135deg, #a8b8d8, #6f85b3); }
-.level-3 { background: linear-gradient(135deg, #f59f00, #e07b00); }
-.level-4 { background: linear-gradient(135deg, #5e72e4, #3d4fc9); }
-.level-5 { background: linear-gradient(135deg, #11cdef, #1171ef); }
+.current-level-card { 
+  border-radius: 14px; 
+  padding: 24px 28px; 
+  display: flex; 
+  align-items: center; 
+  gap: 20px; 
+  color: #fff; 
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+}
+.current-level-card::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -20%;
+  width: 60%;
+  height: 200%;
+  background: rgba(255,255,255,0.1);
+  transform: rotate(15deg);
+  pointer-events: none;
+}
+.level-1 { background: linear-gradient(135deg, #606266 0%, #909399 100%); }
+.level-2 { background: linear-gradient(135deg, #6f85b3 0%, #a8b8d8 100%); }
+.level-3 { background: linear-gradient(135deg, #e07b00 0%, #f59f00 100%); }
+.level-4 { background: linear-gradient(135deg, #3d4fc9 0%, #5e72e4 100%); }
+.level-5 { background: linear-gradient(135deg, #1171ef 0%, #11cdef 100%); }
 .level-badge { width: 56px; height: 56px; border-radius: 50%; background: rgba(255,255,255,0.25); display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 700; flex-shrink: 0; }
 .level-info { flex: 1; }
 .level-name { font-size: 20px; font-weight: 700; }

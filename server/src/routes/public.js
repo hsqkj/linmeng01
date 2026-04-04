@@ -24,4 +24,10 @@ router.get('/industries', PublicController.getIndustries)
 // 招商大使申请
 router.post('/ambassador/apply', PublicController.applyAmbassador)
 
+// 图片上传
+router.post('/upload/image', PublicController.uploadImage)
+
+// 发布页类型配置
+router.get('/publish-types', PublicController.getPublishTypes)
+
 module.exports = router

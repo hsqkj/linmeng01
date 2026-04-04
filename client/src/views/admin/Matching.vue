@@ -55,7 +55,7 @@
   </div>
 </template>
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getMatchingList, grantReward as grantRewardApi } from '@/api/admin'
 
@@ -73,7 +73,12 @@ const statusTag = { 0: 'warning', 1: 'success', 2: 'info', 3: 'primary' }
 async function loadMatchings() {
   loading.value = true
   try {
-    const res = await getMatchingList({ page: page.value, pageSize })
+    const params = { page: page.value, pageSize }
+    if (searchKey.value) params.keyword = searchKey.value
+    // 状态筛选：进行中(status!=3)，已完成(status=3)
+    const statusMap = { '进行中': '0,1,2', '已完成': '3' }
+    if (filterStatus.value) params.status_in = statusMap[filterStatus.value]
+    const res = await getMatchingList(params)
     matchings.value = res.data?.list || res.data || []
     total.value = res.data?.pagination?.total || res.data?.total || matchings.value.length
   } catch { matchings.value = [] }
@@ -81,6 +86,11 @@ async function loadMatchings() {
 }
 
 onMounted(() => { loadMatchings() })
+
+watch([searchKey, filterStatus, filterReward], () => {
+  page.value = 1
+  loadMatchings()
+})
 
 function viewDetail(row) { currentMatching.value = row; showDetail.value = true }
 

@@ -149,18 +149,27 @@ exports.getRecommendResources = async (req, res) => {
   }
 }
 
+// 资源类型字符串→整数映射
+const RESOURCE_TYPE_MAP = {
+  '便民服务': 0, '教育培训': 1, '健康医疗': 2, '体育健身': 3,
+  '文化娱乐': 4, '养老服务': 5, '社区商业': 6, '公益活动': 7,
+  '活动赞助': 8, '技能培训': 9
+}
+
 // 资源大厅
 exports.getResources = async (req, res) => {
   try {
     const { page = 1, pageSize = 10, type, level, sort, keyword, distance } = req.query
     const offset = (page - 1) * pageSize
-    
+
     let where = 'r.status = 1 AND m.status = 1'
     const params = []
-    
+
     if (type) {
+      // 支持字符串类型名或整数
+      const typeVal = RESOURCE_TYPE_MAP[type] !== undefined ? RESOURCE_TYPE_MAP[type] : parseInt(type)
       where += ' AND r.resource_type = ?'
-      params.push(type)
+      params.push(typeVal)
     }
     
     if (level) {
@@ -224,7 +233,7 @@ exports.getResourceDetail = async (req, res) => {
     
     const [rows] = await pool.query(
       `SELECT r.*, m.company_name, m.logo as merchant_logo, m.contact_name, m.phone as merchant_phone,
-       m.star_rating, m.member_level, m.description as merchant_description
+       m.star_rating, m.member_level, m.description as merchant_description, m.industry
        FROM resources r
        JOIN merchants m ON r.merchant_id = m.id
        WHERE r.id = ?`,
@@ -546,17 +555,76 @@ exports.getMyIntentions = async (req, res) => {
 
 // 接受对接
 exports.acceptIntention = async (req, res) => {
+  const conn = await pool.getConnection()
   try {
     const { id } = req.params
-    
-    await pool.query(
+
+    await conn.beginTransaction()
+
+    // 1. 获取意向详情
+    const [intentions] = await conn.query(
+      'SELECT i.*, d.title as demand_title, r.title as resource_title FROM intentions i LEFT JOIN demands d ON i.demand_id = d.id LEFT JOIN resources r ON i.resource_id = r.id WHERE i.id = ? AND i.community_id = ?',
+      [id, req.community.id]
+    )
+
+    if (intentions.length === 0) {
+      await conn.rollback()
+      return error(res, '意向不存在', 404)
+    }
+
+    const intention = intentions[0]
+
+    // 2. 检查是否已经处理过
+    if (intention.status !== 0) {
+      await conn.rollback()
+      return error(res, '该意向已处理', 400)
+    }
+
+    // 3. 更新意向状态为已接受
+    await conn.query(
       'UPDATE intentions SET status = 1, response = ? WHERE id = ? AND community_id = ?',
       ['已接受', id, req.community.id]
     )
-    
-    success(res, null, '已接受对接')
+
+    // 4. 检查该社区是否已有该撮合的奖励记录，避免重复
+    const [existingReward] = await conn.query(
+      'SELECT id FROM reward_records WHERE intention_id = ?',
+      [id]
+    )
+
+    if (existingReward.length === 0) {
+      // 5. 获取撮合奖励配置
+      const [configs] = await conn.query(
+        "SELECT config_value FROM sys_configs WHERE config_key = 'match_reward'"
+      )
+
+      let rewardValue = 200 // 默认200元
+      let rewardDesc = '撮合成功奖励物资（价值约200元）'
+
+      if (configs.length > 0) {
+        const cfg = JSON.parse(configs[0].config_value)
+        rewardValue = cfg.value || 200
+        rewardDesc = cfg.desc || rewardDesc
+      }
+
+      // 6. 生成撮合奖励记录
+      await conn.query(
+        `INSERT INTO reward_records (intention_id, community_id, reward_type, reward_value, reward_content, status)
+         VALUES (?, ?, 'match', ?, ?, 0)`,
+        [id, req.community.id, rewardValue, rewardDesc]
+      )
+
+      console.log(`撮合奖励记录已生成: intention_id=${id}, community_id=${req.community.id}, reward=${rewardValue}元`)
+    }
+
+    await conn.commit()
+    success(res, null, '已接受对接，撮合奖励将稍后发放')
   } catch (err) {
+    await conn.rollback()
+    console.error('acceptIntention error:', err)
     error(res, '操作失败')
+  } finally {
+    conn.release()
   }
 }
 
@@ -668,7 +736,11 @@ exports.replyComment = async (req, res) => {
 exports.getProfile = async (req, res) => {
   try {
     const [rows] = await pool.query(
-      'SELECT id, username, community, community_name, position, households, family_ratio, elderly_ratio, public_space_area, has_outdoor_plaza, has_commercial, has_school, has_park, merchant_count, logo, description, images, address, tags, status FROM communities WHERE id = ?',
+      `SELECT id, username, contact_name, community, community_name, position, households,
+       family_ratio, elderly_ratio, public_space_area, has_outdoor_plaza, has_commercial,
+       has_school, has_park, merchant_count, logo, description, images, address, tags, status,
+       ST_X(map_location) as longitude, ST_Y(map_location) as latitude
+       FROM communities WHERE id = ?`,
       [req.community.id]
     )
     
@@ -683,8 +755,10 @@ exports.getProfile = async (req, res) => {
     // 添加统计
     const [[demandCount]] = await pool.query('SELECT COUNT(*) as cnt FROM demands WHERE community_id = ?', [req.community.id])
     const [[intentionCount]] = await pool.query("SELECT COUNT(*) as cnt FROM intentions WHERE community_id = ? AND status = 3", [req.community.id])
+    const [[viewCount]] = await pool.query('SELECT COALESCE(SUM(view_count), 0) as total FROM demands WHERE community_id = ?', [req.community.id])
     result.demandCount = demandCount?.cnt || 0
     result.intentionCount = intentionCount?.cnt || 0
+    result.viewCount = viewCount?.total || 0
     
     success(res, result)
   } catch (err) {
@@ -695,24 +769,41 @@ exports.getProfile = async (req, res) => {
 exports.updateProfile = async (req, res) => {
   try {
     const data = req.body
-    
+
+    // 处理地图坐标（POINT: x=经度, y=纬度）
+    let mapLocationQuery = ''
+    let mapLocationParams = []
+    if (data.latitude != null && data.longitude != null &&
+        !isNaN(Number(data.latitude)) && !isNaN(Number(data.longitude))) {
+      // 使用 SRID=0 避免 MySQL SRID 4326 轴顺序歧义
+      mapLocationQuery = ', map_location = ST_GeomFromText(?, 0)'
+      mapLocationParams = [`POINT(${data.longitude} ${data.latitude})`]
+    }
+
     await pool.query(
       `UPDATE communities SET logo = ?, description = ?, images = ?, tags = ?,
        households = ?, family_ratio = ?, elderly_ratio = ?, public_space_area = ?,
        has_outdoor_plaza = ?, has_commercial = ?, has_school = ?, has_park = ?,
-       merchant_count = ?, position = ?, address = ? WHERE id = ?`,
+       merchant_count = ?, position = ?, address = ?, contact_name = ?, community_name = ?
+       ${mapLocationQuery}
+       WHERE id = ?`,
       [data.logo || null, data.description || '', data.images ? JSON.stringify(data.images) : null,
        data.tags ? JSON.stringify(Array.isArray(data.tags) ? data.tags : []) : null,
        data.households || null, data.family_ratio || null, data.elderly_ratio || null, data.public_space_area || null,
        data.has_outdoor_plaza || 0, data.has_commercial || 0, data.has_school || 0, data.has_park || 0,
-       data.merchant_count || null, data.position || '', data.address || '', req.community.id]
+       data.merchant_count || null, data.position || '', data.address || '',
+       data.contact_name || '', data.community_name || '',
+       ...mapLocationParams, req.community.id]
     )
     
     success(res, null, '更新成功')
   } catch (err) {
+    console.error('updateProfile error:', err)
     error(res, '更新失败')
   }
 }
+
+// 奖励明细
 
 // 奖励明细
 exports.getRewards = async (req, res) => {
@@ -801,5 +892,186 @@ exports.getMyComments = async (req, res) => {
   } catch (err) {
     console.error('Get my comments error:', err)
     error(res, '获取留言失败')
+  }
+}
+
+// 领取奖励
+exports.claimReward = async (req, res) => {
+  try {
+    const { id } = req.body
+    if (!id) return error(res, '缺少奖励记录ID', 400)
+
+    const [[record]] = await pool.query(
+      'SELECT * FROM reward_records WHERE id = ? AND community_id = ?',
+      [id, req.community.id]
+    )
+
+    if (!record) return error(res, '奖励记录不存在', 404)
+    if (record.status !== 1) return error(res, '该奖励状态无法领取', 400)
+
+    await pool.query(
+      'UPDATE reward_records SET status = 2, confirmed_at = NOW() WHERE id = ?',
+      [id]
+    )
+
+    success(res, null, '已确认领取')
+  } catch (err) {
+    error(res, '领取失败')
+  }
+}
+
+// 收藏资源
+exports.toggleFavorite = async (req, res) => {
+  try {
+    const { resource_id } = req.body
+    if (!resource_id) return error(res, '缺少resource_id', 400)
+    
+    const [existing] = await pool.query(
+      'SELECT id FROM resource_favorite WHERE community_id = ? AND resource_id = ?',
+      [req.community.id, resource_id]
+    )
+    
+    if (existing.length > 0) {
+      // 取消收藏
+      await pool.query('DELETE FROM resource_favorite WHERE community_id = ? AND resource_id = ?', [req.community.id, resource_id])
+      success(res, { favorited: false }, '已取消收藏')
+    } else {
+      // 添加收藏
+      await pool.query('INSERT INTO resource_favorite (community_id, resource_id) VALUES (?, ?)', [req.community.id, resource_id])
+      success(res, { favorited: true }, '已收藏')
+    }
+  } catch (err) {
+    error(res, '操作失败')
+  }
+}
+
+// 我的收藏（资源）
+exports.getMyFavorites = async (req, res) => {
+  try {
+    const { page = 1, pageSize = 10 } = req.query
+    const offset = (page - 1) * pageSize
+    
+    const [rows] = await pool.query(
+      `SELECT rf.id, rf.create_time, r.*, m.company_name, m.logo as merchant_logo, m.member_level, m.star_rating
+       FROM resource_favorite rf
+       JOIN resources r ON rf.resource_id = r.id
+       JOIN merchants m ON r.merchant_id = m.id
+       WHERE rf.community_id = ?
+       ORDER BY rf.create_time DESC
+       LIMIT ? OFFSET ?`,
+      [req.community.id, parseInt(pageSize), parseInt(offset)]
+    )
+    
+    const [[{ total }]] = await pool.query(
+      'SELECT COUNT(*) as total FROM resource_favorite WHERE community_id = ?',
+      [req.community.id]
+    )
+    
+    const result = rows.map(r => ({ ...r, matchScore: 3, matchHearts: 3 }))
+    pageSuccess(res, result, total, page, pageSize)
+  } catch (err) {
+    console.error('getMyFavorites error:', err)
+    error(res, '获取收藏列表失败')
+  }
+}
+
+// 批量导入需求（简化实现）
+exports.importDemands = async (req, res) => {
+  try {
+    // 这里应该有文件解析逻辑，简化处理
+    success(res, { imported: 0 }, '导入功能开发中')
+  } catch (err) {
+    error(res, '导入失败')
+  }
+}
+
+// 获取社区自己的系统通知
+exports.getMyNotifications = async (req, res) => {
+  try {
+    const { page = 1, pageSize = 20 } = req.query
+    const offset = (parseInt(page) - 1) * parseInt(pageSize)
+    const communityId = req.community.id
+
+    // 查询目标为 all 或 community 的已发布通知，且指定社区的
+    const [countRows] = await pool.query(`
+      SELECT COUNT(*) as total FROM system_notifications
+      WHERE status = 1
+        AND (target_type = 'all' OR target_type = 'community')
+        AND (target_ids IS NULL OR target_ids = '' OR JSON_CONTAINS(target_ids, ?))
+    `, [String(communityId)])
+
+    const [rows] = await pool.query(`
+      SELECT id, title, content, priority,
+        CASE priority
+          WHEN 2 THEN 'urgent'
+          WHEN 1 THEN 'important'
+          ELSE 'normal'
+        END as tagType,
+        CASE priority
+          WHEN 2 THEN '紧急'
+          WHEN 1 THEN '重要'
+          ELSE '系统公告'
+        END as tag,
+        published_at as time
+      FROM system_notifications
+      WHERE status = 1
+        AND (target_type = 'all' OR target_type = 'community')
+        AND (target_ids IS NULL OR target_ids = '' OR JSON_CONTAINS(target_ids, ?))
+      ORDER BY priority DESC, published_at DESC
+      LIMIT ? OFFSET ?
+    `, [String(communityId), parseInt(pageSize), offset])
+
+    pageSuccess(res, rows, countRows[0].total, parseInt(page), parseInt(pageSize))
+  } catch (err) {
+    console.error('getMyNotifications error:', err)
+    error(res, '获取通知列表失败')
+  }
+}
+
+// 下载模板
+exports.downloadTemplate = async (req, res) => {
+  try {
+    const type = req.query.type || 'activity'
+    
+    const templates = {
+      // 活动赞助需求模板
+      activity: [
+        { title: '社区名称', category: '活动赞助', target_audience: '社区居民', budget: '5000', start_time: '2026-05-01', end_time: '2026-05-03', location: '社区广场', description: '社区将举办五一劳动节活动，欢迎赞助商参与', contact_person: '张三', contact_phone: '13800138000', tags: '社区活动,节日庆典' },
+        { title: '示例：社区运动会赞助', category: '活动赞助', target_audience: '社区居民', budget: '10000', start_time: '2026-06-01', end_time: '2026-06-02', location: '社区运动场', description: '社区计划举办夏季运动会', contact_person: '李四', contact_phone: '13800138001', tags: '体育运动,健康' }
+      ],
+      // 专家服务需求模板
+      expert: [
+        { title: '社区名称', category: '专家服务', target_audience: '社区居民', budget: '3000', start_time: '2026-05-15', end_time: '2026-05-15', location: '社区会议室', description: '邀请专家进行健康讲座', contact_person: '王五', contact_phone: '13800138002', tags: '健康讲座,专家' },
+        { title: '示例：法律咨询进社区', category: '专家服务', target_audience: '社区居民', budget: '5000', start_time: '2026-06-10', end_time: '2026-06-10', location: '社区活动中心', description: '邀请律师进行法律知识普及', contact_person: '赵六', contact_phone: '13800138003', tags: '法律,公益' }
+      ],
+      // 空间运营需求模板
+      space: [
+        { title: '社区名称', category: '空间运营', target_audience: '社区居民', budget: '2000', start_time: '2026-05-01', end_time: '2026-12-31', location: '社区活动室', description: '寻求合作伙伴运营社区活动室', contact_person: '孙七', contact_phone: '13800138004', tags: '场地合作,社区服务' },
+        { title: '示例：社区图书室合作', category: '空间运营', target_audience: '社区居民', budget: '3000', start_time: '2026-06-01', end_time: '2026-12-31', location: '社区图书室', description: '寻求图书供应商合作运营', contact_person: '周八', contact_phone: '13800138005', tags: '图书,教育' }
+      ]
+    }
+    
+    const data = templates[type] || templates.activity
+    
+    // 生成CSV内容
+    const headers = ['title', 'category', 'target_audience', 'budget', 'start_time', 'end_time', 'location', 'description', 'contact_person', 'contact_phone', 'tags']
+    const headerLine = headers.join(',')
+    const csvRows = data.map(row => headers.map(h => {
+      const val = row[h] || ''
+      // 包含逗号或引号的需要加引号
+      if (String(val).includes(',') || String(val).includes('"')) {
+        return `"${String(val).replace(/"/g, '""')}"`
+      }
+      return val
+    }).join(','))
+    
+    const csvContent = '\ufeff' + [headerLine, ...csvRows].join('\n')
+    
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8')
+    res.setHeader('Content-Disposition', `attachment; filename=demand_template_${type}.csv`)
+    res.send(csvContent)
+  } catch (err) {
+    console.error('downloadTemplate error:', err)
+    error(res, '下载模板失败')
   }
 }

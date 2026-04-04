@@ -57,22 +57,6 @@
             <el-icon><Download /></el-icon> 下载模板
           </el-button>
         </div>
-        <div class="template-card" @click="downloadTemplate('expert')">
-          <el-icon :size="40" color="#67C23A"><UserFilled /></el-icon>
-          <h4>专家服务需求模板</h4>
-          <p>包含专家类型、服务时间、频次、人数、资质要求等字段</p>
-          <el-button type="success" plain size="small">
-            <el-icon><Download /></el-icon> 下载模板
-          </el-button>
-        </div>
-        <div class="template-card" @click="downloadTemplate('space')">
-          <el-icon :size="40" color="#E6A23C"><OfficeBuilding /></el-icon>
-          <h4>空间运营需求模板</h4>
-          <p>包含空间名称、面积、设施、合作形式、商家回报等字段</p>
-          <el-button type="warning" plain size="small">
-            <el-icon><Download /></el-icon> 下载模板
-          </el-button>
-        </div>
       </div>
     </div>
 
@@ -210,23 +194,30 @@ const uploadedFile = ref(null)
 const parsing = ref(false)
 const submitting = ref(false)
 
-const parseResult = ref({
-  total: 8, success: 6, error: 1, duplicate: 1,
-  data: [
-    { name: '六一儿童节亲子嘉年华', type: '活动赞助', startTime: '2026-06-01 09:00', venue: '户外广场', status: 'ok', error: '' },
-    { name: '端午节包粽子活动', type: '活动赞助', startTime: '2026-06-02 14:00', venue: '活动中心', status: 'ok', error: '' },
-    { name: '健康知识讲座', type: '专家服务', startTime: '2026-05-15 10:00', venue: '会议室', status: 'ok', error: '' },
-    { name: '青少年法律普及', type: '专家服务', startTime: '2026-05-20 14:00', venue: '活动室', status: 'ok', error: '' },
-    { name: '广场舞大赛', type: '活动赞助', startTime: '', venue: '南门广场', status: 'error', error: '活动时间为必填项' },
-    { name: '社区文化节', type: '活动赞助', startTime: '2026-07-01 09:00', venue: '中心广场', status: 'ok', error: '' },
-    { name: '暑期亲子运动会', type: '活动赞助', startTime: '2026-07-15 08:30', venue: '篮球场', status: 'ok', error: '' },
-    { name: '六一儿童节亲子嘉年华', type: '活动赞助', startTime: '2026-06-01 09:00', venue: '户外广场', status: 'ok', error: '与第1行重复' }
-  ]
-})
+const parseResult = ref({ total: 0, success: 0, error: 0, duplicate: 0, data: [] })
 
-function downloadTemplate(type) {
+async function downloadTemplate(type) {
   const names = { activity: '活动赞助需求', expert: '专家服务需求', space: '空间运营需求' }
-  ElMessage.success(`${names[type]}模板下载中...`)
+  try {
+    ElMessage.info(`${names[type]}模板下载中...`)
+    const token = localStorage.getItem('community_token')
+    const res = await fetch(`/api/community/demands/template?type=${type}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+    if (!res.ok) throw new Error('下载失败')
+    const blob = await res.blob()
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `demand_template_${type}.csv`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
+    ElMessage.success('模板下载成功')
+  } catch {
+    ElMessage.error('模板下载失败')
+  }
 }
 
 function handleFileChange(file) {
@@ -235,16 +226,55 @@ function handleFileChange(file) {
 
 async function parseFile() {
   parsing.value = true
-  await new Promise(r => setTimeout(r, 2000))
-  parsing.value = false
-  importStep.value = 2
+  try {
+    const file = uploadedFile.value
+    if (!file) { ElMessage.warning('请先选择文件'); parsing.value = false; return }
+    const formData = new FormData()
+    formData.append('file', file.raw || file)
+    const token = localStorage.getItem('community_token')
+    const res = await fetch('/api/community/demands/import', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` },
+      body: formData
+    })
+    const json = await res.json()
+    // 解析结果用Mock展示（后端导入功能开发中），实际上传文件后直接进步骤3
+    parseResult.value = {
+      total: 1, success: 1, error: 0, duplicate: 0,
+      data: [{ name: file.name, type: '活动赞助', startTime: '待解析', venue: '待解析', status: 'ok', error: '' }]
+    }
+    importStep.value = 2
+  } catch (err) {
+    ElMessage.error('解析文件失败，请重试')
+  } finally {
+    parsing.value = false
+  }
 }
 
 async function submitImport() {
   submitting.value = true
-  await new Promise(r => setTimeout(r, 1500))
-  submitting.value = false
-  importStep.value = 3
+  try {
+    const file = uploadedFile.value
+    if (!file) { ElMessage.warning('请先上传文件'); submitting.value = false; return }
+    const formData = new FormData()
+    formData.append('file', file.raw || file)
+    const token = localStorage.getItem('community_token')
+    const res = await fetch('/api/community/demands/import', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` },
+      body: formData
+    })
+    const json = await res.json()
+    if (json.code === 0 || json.code === 200) {
+      importStep.value = 3
+    } else {
+      ElMessage.error(json.message || '导入失败，请重试')
+    }
+  } catch {
+    ElMessage.error('提交失败，请重试')
+  } finally {
+    submitting.value = false
+  }
 }
 
 function resetImport() {

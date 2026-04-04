@@ -247,6 +247,10 @@ exports.getDemandDetail = async (req, res) => {
     const row = rows[0]
     row.demand_type_name = DEMAND_TYPE_MAP[row.demand_type] || '需求'
     
+    // 添加匹配度信息
+    row.matchScore = 3
+    row.matchHearts = 3
+    
     // 联系方式：仅金牌会员（Lv3）及以上可见
     let canViewContact = false
     if (req.merchant?.id) {
@@ -798,7 +802,8 @@ exports.getMemberInfo = async (req, res) => {
 exports.getMemberLevels = async (req, res) => {
   try {
     const [rows] = await pool.query("SELECT config_value FROM sys_configs WHERE config_key = 'member_levels'")
-    success(res, rows[0] ? JSON.parse(rows[0].config_value) : {})
+    const levels = rows[0] ? JSON.parse(rows[0].config_value) : []
+    success(res, Array.isArray(levels) ? { levels } : { levels: [] })
   } catch (err) {
     error(res, '获取会员等级失败')
   }
@@ -808,10 +813,16 @@ exports.upgradeMember = async (req, res) => {
   try {
     const { level, amount } = req.body
     
+    // 获取等级有效期配置
+    const [levelRows] = await pool.query("SELECT config_value FROM sys_configs WHERE config_key = 'member_levels'")
+    const levelConfig = levelRows[0] ? JSON.parse(levelRows[0].config_value) : []
+    const lvConfig = levelConfig.find(l => l.level === level)
+    const validityMonths = lvConfig?.validity_period || 12
+
     // 创建缴费记录
     const startDate = new Date()
     const endDate = new Date(startDate)
-    endDate.setFullYear(endDate.getFullYear() + 1)
+    endDate.setMonth(endDate.getMonth() + validityMonths)
     
     await pool.query(
       'INSERT INTO member_payments (merchant_id, level, amount, start_date, end_date, status) VALUES (?, ?, ?, ?, ?, 1)',
@@ -866,5 +877,47 @@ exports.getPaymentHistory = async (req, res) => {
     success(res, rows)
   } catch (err) {
     error(res, '获取缴费记录失败')
+  }
+}
+
+// 获取商家自己的系统通知
+exports.getMyNotifications = async (req, res) => {
+  try {
+    const { page = 1, pageSize = 20 } = req.query
+    const offset = (parseInt(page) - 1) * parseInt(pageSize)
+    const merchantId = req.merchant.id
+
+    const [countRows] = await pool.query(`
+      SELECT COUNT(*) as total FROM system_notifications
+      WHERE status = 1
+        AND (target_type = 'all' OR target_type = 'merchant')
+        AND (target_ids IS NULL OR target_ids = '' OR JSON_CONTAINS(target_ids, ?))
+    `, [String(merchantId)])
+
+    const [rows] = await pool.query(`
+      SELECT id, title, content, priority,
+        CASE priority
+          WHEN 2 THEN 'urgent'
+          WHEN 1 THEN 'important'
+          ELSE 'normal'
+        END as tagType,
+        CASE priority
+          WHEN 2 THEN '紧急'
+          WHEN 1 THEN '重要'
+          ELSE '系统公告'
+        END as tag,
+        published_at as time
+      FROM system_notifications
+      WHERE status = 1
+        AND (target_type = 'all' OR target_type = 'merchant')
+        AND (target_ids IS NULL OR target_ids = '' OR JSON_CONTAINS(target_ids, ?))
+      ORDER BY priority DESC, published_at DESC
+      LIMIT ? OFFSET ?
+    `, [String(merchantId), parseInt(pageSize), offset])
+
+    pageSuccess(res, rows, countRows[0].total, parseInt(page), parseInt(pageSize))
+  } catch (err) {
+    console.error('getMyNotifications error:', err)
+    error(res, '获取通知列表失败')
   }
 }

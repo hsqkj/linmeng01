@@ -35,7 +35,7 @@
         <el-dropdown>
           <div class="user-info">
             <el-avatar :size="32" src="https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png" />
-            <span class="pc-only">李经理</span>
+            <span class="pc-only">{{ userInfo?.contact_name || userInfo?.manager || '商家用户' }}</span>
             <el-icon><ArrowDown /></el-icon>
           </div>
           <template #dropdown>
@@ -73,17 +73,50 @@
         <span>我的</span>
       </router-link>
     </nav>
+
+    <!-- 悬浮客服 -->
+    <ServiceChat />
   </div>
 </template>
 
 <script setup>
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { ElMessageBox } from 'element-plus'
+import ServiceChat from '@/components/ServiceChat.vue'
 
 const router = useRouter()
+const userInfo = ref(null)
 
-const logout = () => {
-  router.push('/')
+function logout() {
+  localStorage.removeItem('merchant_token')
+  localStorage.removeItem('merchant_info')
+  router.push('/login/merchant')
 }
+
+// 检查资料完整性
+onMounted(() => {
+  const info = localStorage.getItem('merchant_info')
+  if (info) {
+    userInfo.value = JSON.parse(info)
+    // 检查资料是否完整（未填关键字段）
+    const profile = userInfo.value
+    const isIncomplete = !profile.company_name || !profile.contact_name || !profile.phone
+    if (isIncomplete) {
+      ElMessageBox.confirm(
+        '您的商家资料尚未完善！完善资料有助于精准匹配社区需求，获得更多合作机会。',
+        '📋 完善资料提示',
+        {
+          confirmButtonText: '立即完善',
+          cancelButtonText: '稍后再说',
+          type: 'warning'
+        }
+      ).then(() => {
+        router.push('/merchant/profile')
+      }).catch(() => {})
+    }
+  }
+})
 </script>
 
 <style scoped>

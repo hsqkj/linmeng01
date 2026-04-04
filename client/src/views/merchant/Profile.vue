@@ -94,6 +94,30 @@
                 </el-empty>
               </div>
             </el-tab-pane>
+            <el-tab-pane label="我的收藏" name="favorites">
+              <div class="favorites-list" v-loading="favLoading">
+                <el-empty v-if="!favLoading && favorites.length === 0" description="暂无收藏需求" :image-size="80" />
+                <el-card v-for="item in favorites" :key="item.id" shadow="hover" class="fav-card" @click="viewFavDemand(item)">
+                  <div class="fav-header">
+                    <div class="fav-info">
+                      <div class="fav-title">{{ item.demand_title || item.title }}</div>
+                      <div class="fav-meta">
+                        <el-tag size="small" type="warning">{{ item.demand_type_name || item.demand_type }}</el-tag>
+                        <span class="fav-community">{{ item.community_name }}</span>
+                      </div>
+                    </div>
+                    <div class="fav-right">
+                      <div class="fav-score">
+                        <span class="score-label">匹配度</span>
+                        <span v-for="n in 5" :key="n" :class="['heart', { filled: n <= (item.matchHearts || 0) }]">♥</span>
+                      </div>
+                      <el-icon class="fav-star active"><Star /></el-icon>
+                    </div>
+                  </div>
+                  <p class="fav-desc">{{ item.demand_content || item.content }}</p>
+                </el-card>
+              </div>
+            </el-tab-pane>
           </el-tabs>
         </el-card>
 
@@ -201,17 +225,21 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Shop, Edit } from '@element-plus/icons-vue'
-import { getProfile, updateProfile, getMyResources } from '@/api/merchant'
+import { Shop, Edit, Star } from '@element-plus/icons-vue'
+import { getProfile, updateProfile, getMyResources, toggleFavorite, getMyFavorites } from '@/api/merchant'
 
+const router = useRouter()
 const loading = ref(true)
 const saving = ref(false)
 const editing = ref(false)
 const infoTab = ref('basic')
 const profile = ref({})
 const stats = ref({ resourceCount: 0, matchings: 0 })
+const favorites = ref([])
+const favLoading = ref(false)
 
 const memberLevelName = { 0: '普通会员', 1: '普通会员', 2: '银牌会员', 3: '金牌会员', 4: '铂金会员', 5: '钻石会员' }
 
@@ -338,6 +366,32 @@ async function saveProfile() {
 onMounted(() => {
   loadProfile()
 })
+
+// 加载收藏列表
+async function loadFavorites() {
+  favLoading.value = true
+  try {
+    const res = await getMyFavorites()
+    favorites.value = res.data?.list || res.data || []
+  } catch {
+    favorites.value = []
+  } finally {
+    favLoading.value = false
+  }
+}
+
+// 查看收藏的需求详情
+function viewFavDemand(item) {
+  const id = item.demand_id || item.id
+  router.push(`/merchant/demands/${id}`)
+}
+
+// 监听切换到收藏tab时加载
+watch(infoTab, (newTab) => {
+  if (newTab === 'favorites') {
+    loadFavorites()
+  }
+})
 </script>
 
 <style scoped>
@@ -361,6 +415,22 @@ onMounted(() => {
 .benefit-item { background: #f5f7fa; border-radius: 8px; padding: 12px; display: flex; align-items: center; gap: 8px; }
 .benefit-icon { font-size: 20px; }
 .benefit-text { font-size: 13px; font-weight: 500; }
+.favorites-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+.fav-card { cursor: pointer; transition: transform 0.2s; }
+.fav-card:hover { transform: translateY(-2px); }
+.fav-header { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 8px; }
+.fav-info { flex: 1; min-width: 0; }
+.fav-title { font-weight: 600; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fav-meta { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
+.fav-community { font-size: 12px; color: #409EFF; }
+.fav-right { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.fav-score { display: flex; align-items: center; gap: 2px; }
+.score-label { font-size: 11px; color: #606266; font-weight: 500; margin-right: 2px; }
+.heart { color: #ddd; font-size: 12px; }
+.heart.filled { color: #f56c6c; }
+.fav-star { font-size: 18px; color: #f56c6c; }
+.fav-star.active { color: #f56c6c; }
+.fav-desc { font-size: 13px; color: #606266; margin: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 
 @media (max-width: 768px) {
   .page { padding-bottom: 70px; }

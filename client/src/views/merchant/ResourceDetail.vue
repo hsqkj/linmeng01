@@ -174,7 +174,7 @@ async function loadComments() {
       id: c.id,
       name: c.user_name || '社区用户',
       avatar: c.user_logo || `https://ui-avatars.com/api/?name=${encodeURIComponent(c.user_name || '社区')}&background=409EFF&color=fff`,
-      time: new Date(c.created_at).toLocaleString('zh-CN'),
+      time: new Date(c.created_at).toLocaleString('zh-CN', { year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' }),
       text: c.content
     }))
   } catch (e) {

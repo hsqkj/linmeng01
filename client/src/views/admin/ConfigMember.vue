@@ -3,34 +3,38 @@
     <h2>会员配置</h2>
     <div class="tip-box">💡 修改后立即生效，请谨慎操作</div>
 
-    <!-- 会员等级费用与核心权限 -->
+    <!-- 会员等级与费用 -->
     <div class="section-card">
-      <div class="section-title">会员等级与费用</div>
+      <div class="section-title-row">
+        <span class="section-title">会员等级与费用</span>
+        <el-button type="primary" size="small" @click="addLevel"><el-icon><Plus /></el-icon> 新增等级</el-button>
+      </div>
+      <p style="color:#909399;font-size:13px;margin:0 0 12px">设置各会员等级的名称、年费与有效期，详细权益在下方「权益类型配置」中统一管理</p>
       <el-table :data="levels" stripe border>
-        <el-table-column prop="level" label="等级" width="60" align="center" />
-        <el-table-column prop="name" label="名称" width="100" />
-        <el-table-column prop="fee" label="年费（元）" width="130">
-          <template #default="{ row }"><el-input-number v-model="row.fee" :min="0" size="small" style="width:110px" /></template>
-        </el-table-column>
-        <el-table-column prop="viewContact" label="查看联系方式" width="120" align="center">
-          <template #default="{ row }"><el-switch v-model="row.viewContact" /></template>
-        </el-table-column>
-        <el-table-column prop="intentLimit" label="月发起意向" width="130">
+        <el-table-column prop="level" label="等级" width="70" align="center">
           <template #default="{ row }">
-            <el-input-number v-model="row.intentLimit" :min="0" size="small" style="width:90px" />
-            <span style="font-size:11px;color:#909399;margin-left:2px">0=不限</span>
+            <el-tag size="small" type="primary">Lv{{ row.level }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="priority" label="优先展示" width="90" align="center">
-          <template #default="{ row }"><el-switch v-model="row.priority" /></template>
-        </el-table-column>
-        <el-table-column prop="homepage" label="首页推荐" width="90" align="center">
-          <template #default="{ row }"><el-switch v-model="row.homepage" /></template>
-        </el-table-column>
-        <el-table-column prop="activityCount" label="年参与活动" width="130">
+        <el-table-column prop="name" label="会员名称" width="160">
           <template #default="{ row }">
-            <el-input-number v-model="row.activityCount" :min="0" size="small" style="width:90px" />
-            <span style="font-size:11px;color:#909399;margin-left:2px">0=不限</span>
+            <el-input v-model="row.name" size="small" placeholder="请输入名称" maxlength="10" show-word-limit />
+          </template>
+        </el-table-column>
+        <el-table-column prop="fee" label="年费（元）" width="140">
+          <template #default="{ row }">
+            <el-input-number v-model="row.fee" :min="0" :precision="0" size="small" style="width:120px" />
+          </template>
+        </el-table-column>
+        <el-table-column prop="validityPeriod" label="有效期" width="120" align="center">
+          <template #default="{ row }">
+            <el-input-number v-model="row.validityPeriod" :min="1" :max="60" size="small" style="width:70px" />
+            <span style="font-size:11px;color:#909399;margin-left:2px">月</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="120" align="center">
+          <template #default="{ row }">
+            <el-button text type="danger" size="small" :disabled="levels.length <= 1" @click="deleteLevel(row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -42,8 +46,16 @@
         <span class="section-title">权益类型配置</span>
         <el-button type="primary" size="small" @click="openAddBenefit"><el-icon><Plus /></el-icon> 新增权益类型</el-button>
       </div>
-      <p style="color:#909399;font-size:13px;margin:0 0 12px">可自定义权益类型，并为每个会员等级单独配置权益值</p>
-      <el-table :data="benefits" stripe border>
+      <p style="color:#909399;font-size:13px;margin:0 0 12px">可自定义权益类型，并为每个会员等级单独配置权益值；拖拽左侧把手可调整显示顺序</p>
+      <el-table :data="benefits" stripe border row-key="id" ref="benefitTable">
+        <el-table-column width="50" align="center">
+          <template #default="{ row, $index }">
+            <el-icon class="drag-handle" style="cursor:move;color:#909399" draggable="true"
+              @dragstart="onDragStart($event, $index)"
+              @dragend="onDragEnd"
+              @dragover="onDragOver($event, $index)"><Rank /></el-icon>
+          </template>
+        </el-table-column>
         <el-table-column prop="name" label="权益名称" width="160" />
         <el-table-column prop="desc" label="权益说明" min-width="180">
           <template #default="{ row }">
@@ -74,27 +86,6 @@
           </template>
         </el-table-column>
       </el-table>
-    </div>
-
-    <!-- 防飞单配置 -->
-    <div class="section-card" style="margin-top:20px">
-      <div class="section-title">防飞单配置</div>
-      <el-form label-width="200px">
-        <el-form-item label="查看社区联系方式最低等级">
-          <el-select v-model="minLevel" style="width:220px">
-            <el-option v-for="l in levels" :key="l.level" :label="'Lv'+l.level+' '+l.name" :value="l.level" />
-          </el-select>
-          <el-tag type="warning" style="margin-left:12px" size="small">当前：Lv{{ minLevel }}（{{ levels[minLevel-1]?.name }}）及以上</el-tag>
-        </el-form-item>
-        <el-form-item label="留言内容自动过滤规则">
-          <el-checkbox-group v-model="filterRules">
-            <el-checkbox label="phone">过滤手机号码</el-checkbox>
-            <el-checkbox label="wechat">过滤微信号</el-checkbox>
-            <el-checkbox label="qq">过滤QQ号</el-checkbox>
-            <el-checkbox label="email">过滤邮箱地址</el-checkbox>
-          </el-checkbox-group>
-        </el-form-item>
-      </el-form>
     </div>
 
     <div style="margin-top:16px;text-align:right">
@@ -136,49 +127,106 @@
   </div>
 </template>
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus } from '@element-plus/icons-vue'
+import { Plus, Rank } from '@element-plus/icons-vue'
 import { getMemberConfig, saveMemberConfig } from '@/api/admin'
 
-const minLevel = ref(3)
-const filterRules = ref(['phone', 'wechat', 'qq'])
 const showAddBenefit = ref(false)
 const loading = ref(false)
+const benefitTable = ref(null)
 
 const levels = reactive([
-  { level: 1, name: '普通会员', fee: 0, viewContact: false, intentLimit: 5, priority: false, homepage: false, activityCount: 0 },
-  { level: 2, name: '银牌会员', fee: 999, viewContact: false, intentLimit: 10, priority: true, homepage: false, activityCount: 2 },
-  { level: 3, name: '金牌会员', fee: 2999, viewContact: true, intentLimit: 0, priority: true, homepage: false, activityCount: 5 },
-  { level: 4, name: '铂金会员', fee: 5999, viewContact: true, intentLimit: 0, priority: true, homepage: true, activityCount: 10 },
-  { level: 5, name: '钻石会员', fee: 12000, viewContact: true, intentLimit: 0, priority: true, homepage: true, activityCount: 999 }
+  { level: 1, name: '普通会员', fee: 99, validityPeriod: 3 },
+  { level: 2, name: '银牌会员', fee: 999, validityPeriod: 12 },
+  { level: 3, name: '金牌会员', fee: 2999, validityPeriod: 12 },
+  { level: 4, name: '铂金会员', fee: 5999, validityPeriod: 12 },
+  { level: 5, name: '钻石会员', fee: 12000, validityPeriod: 12 }
 ])
 
 const benefits = reactive([
-  { name: '查看需求联系方式', desc: '可查看社区工作者联系方式', type: '开关', values: [false, false, true, true, true], editing: false },
-  { name: '月发起意向上限', desc: '每月可对社区发起合作意向的次数（0=不限）', type: '数量', values: [5, 10, 0, 0, 0], editing: false },
-  { name: '首页优先展示', desc: '资源在商家推荐区优先展示', type: '开关', values: [false, true, true, true, true], editing: false },
-  { name: '年参与活动次数', desc: '每年可参与平台线下活动的次数', type: '数量', values: [0, 2, 5, 10, 0], editing: false },
-  { name: '专属客服', desc: '享有专属客服一对一服务', type: '开关', values: [false, false, false, true, true], editing: false },
-  { name: '资源置顶次数/月', desc: '每月可将自己发布的资源置顶展示的次数', type: '数量', values: [0, 1, 3, 10, 0], editing: false },
-  { name: '数据分析报告', desc: '可获取匹配效果、曝光数据等分析报告', type: '开关', values: [false, false, true, true, true], editing: false },
-  { name: '品牌故事展示', desc: '在平台首页轮播区展示品牌故事', type: '开关', values: [false, false, false, false, true], editing: false }
+  { id: 1, name: '查看联系方式', desc: '可查看社区工作者联系方式', type: '开关', values: [false, false, true, true, true], editing: false },
+  { id: 2, name: '月发起意向次数', desc: '每月可发起合作意向次数', type: '数量', values: [2, 10, 0, 0, 0], editing: false },
+  { id: 3, name: '优先展示', desc: '资源在商家推荐区优先展示', type: '开关', values: [false, true, true, true, true], editing: false },
+  { id: 4, name: '首页推荐', desc: '在平台首页获得推荐展示位', type: '开关', values: [false, false, false, true, true], editing: false },
+  { id: 5, name: '年参与活动次数', desc: '每年可参与平台线下活动的次数', type: '数量', values: [0, 2, 5, 10, 0], editing: false },
+  { id: 6, name: '专属客服', desc: '享有专属客服一对一服务', type: '开关', values: [false, false, false, true, true], editing: false },
+  { id: 7, name: '资源置顶次数/月', desc: '每月可将自己发布的资源置顶展示的次数', type: '数量', values: [0, 1, 3, 10, 0], editing: false },
+  { id: 8, name: '数据分析报告', desc: '可获取匹配效果、曝光数据等分析报告', type: '开关', values: [false, false, true, true, true], editing: false },
+  { id: 9, name: '品牌故事展示', desc: '在平台首页轮播区展示品牌故事', type: '开关', values: [false, false, false, false, true], editing: false }
 ])
 
-const newBenefit = ref({ name: '', desc: '', type: '开关', defaults: [false, false, false, false, false] })
+// 拖拽排序
+let draggedIndex = null
+
+function onDragStart(e, index) {
+  draggedIndex = index
+  e.dataTransfer.effectAllowed = 'move'
+  e.target.closest('tr').style.opacity = '0.5'
+}
+
+function onDragEnd(e) {
+  e.target.closest('tr').style.opacity = '1'
+  draggedIndex = null
+}
+
+function onDragOver(e, index) {
+  e.preventDefault()
+  if (draggedIndex === null || draggedIndex === index) return
+  const item = benefits.splice(draggedIndex, 1)[0]
+  benefits.splice(index, 0, item)
+  draggedIndex = index
+}
+
+const newBenefit = ref({ name: '', desc: '', type: '开关', defaults: levels.map(() => false) })
+
+function addLevel() {
+  const nextLevel = levels.length + 1
+  levels.push({
+    level: nextLevel,
+    name: 'Lv' + nextLevel + '会员',
+    fee: 0,
+    validityPeriod: 12,
+    editing: false
+  })
+  // 同步给 benefits 每个权益新增一列默认值
+  benefits.forEach(b => { b.values.push(false) })
+}
+
+function deleteLevel(row) {
+  if (levels.length <= 1) { ElMessage.warning('至少保留一个等级'); return }
+  ElMessageBox.confirm(`确认删除等级「${row.name}」？此操作不可逆！`, '删除确认', { type: 'warning' })
+    .then(() => {
+      const idx = levels.indexOf(row)
+      if (idx >= 0) {
+        const removedLevel = idx + 1
+        levels.splice(idx, 1)
+        // 重新编号
+        levels.forEach((l, i) => { l.level = i + 1 })
+        // 同步删除 benefits 里对应列
+        benefits.forEach(b => { b.values.splice(idx, 1) })
+      }
+    })
+    .catch(() => {})
+}
 
 function openAddBenefit() {
-  newBenefit.value = { name: '', desc: '', type: '开关', defaults: [false, false, false, false, false] }
+  newBenefit.value = { name: '', desc: '', type: '开关', defaults: levels.map(() => false) }
   showAddBenefit.value = true
 }
 
 function confirmAddBenefit() {
   if (!newBenefit.value.name.trim()) { ElMessage.warning('请填写权益名称'); return }
+  // 如果当前等级数与默认值数组长度不一致（新增等级后新增权益），补齐
+  const defaults = [...newBenefit.value.defaults]
+  while (defaults.length < levels.length) { defaults.push(false) }
+  const newId = benefits.length > 0 ? Math.max(...benefits.map(b => b.id)) + 1 : 1
   benefits.push({
+    id: newId,
     name: newBenefit.value.name,
     desc: newBenefit.value.desc,
     type: newBenefit.value.type,
-    values: [...newBenefit.value.defaults],
+    values: defaults,
     editing: false
   })
   showAddBenefit.value = false
@@ -198,16 +246,18 @@ async function loadConfig() {
     const data = res.data || {}
     if (data.member_levels && data.member_levels.length > 0) {
       levels.splice(0, levels.length, ...data.member_levels.map(l => ({
-        level: l.level, name: l.name || levels[l.level - 1]?.name || '',
-        fee: l.fee, viewContact: !!l.view_contact, intentLimit: l.intent_limit,
-        priority: !!l.priority, homepage: !!l.homepage, activityCount: l.activity_count,
+        level: l.level,
+        name: l.name || '',
+        fee: l.fee || 0,
+        validityPeriod: l.validity_period || 12,
         editing: false
       })))
     }
     if (data.member_benefits && data.member_benefits.length > 0) {
-      benefits.splice(0, benefits.length, ...data.member_benefits.map(b => ({
+      benefits.splice(0, benefits.length, ...data.member_benefits.map((b, i) => ({
+        id: b.id || i + 1,
         name: b.name, desc: b.desc || '', type: b.type || '开关',
-        values: b.values || [false, false, false, false, false], editing: false
+        values: b.values || levels.map(() => false), editing: false
       })))
     }
   } catch {}
@@ -217,7 +267,7 @@ async function loadConfig() {
 async function saveConfig() {
   try {
     loading.value = true
-    await saveMemberConfig({ member_levels: levels.map(l => ({ level: l.level, name: l.name, fee: l.fee, view_contact: l.viewContact, intent_limit: l.intentLimit, priority: l.priority, homepage: l.homepage, activity_count: l.activityCount })), member_benefits: benefits.map(b => ({ name: b.name, desc: b.desc, type: b.type, values: b.values })) })
+    await saveMemberConfig({ member_levels: levels.map(l => ({ level: l.level, name: l.name, fee: l.fee, validity_period: l.validityPeriod })), member_benefits: benefits.map(b => ({ name: b.name, desc: b.desc, type: b.type, values: b.values })) })
     ElMessage.success('会员配置已保存')
   } catch {
     ElMessage.error('保存失败，请重试')

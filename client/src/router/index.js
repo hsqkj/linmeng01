@@ -1,5 +1,22 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
+// 路由守卫：检查登录状态
+function checkAuth(path) {
+  if (path.startsWith('/community/')) {
+    return !!localStorage.getItem('community_token')
+  }
+  if (path.startsWith('/merchant/')) {
+    return !!localStorage.getItem('merchant_token')
+  }
+  if (path.startsWith('/ambassador/')) {
+    return !!localStorage.getItem('ambassador_token')
+  }
+  if (path.startsWith('/admin/')) {
+    return !!localStorage.getItem('admin_token')
+  }
+  return true
+}
+
 const routes = [
   // 角色选择页
   {
@@ -43,6 +60,7 @@ const routes = [
       { path: 'merchants/:id', name: 'MerchantDetail', component: () => import('@/views/community/MerchantDetail.vue') },
       { path: 'profile', name: 'CommunityProfile', component: () => import('@/views/community/Profile.vue') },
       { path: 'messages', name: 'CommunityMessages', component: () => import('@/views/community/Messages.vue') },
+      { path: 'favorites', name: 'MyFavorites', component: () => import('@/views/community/MyFavorites.vue') },
       { path: 'rewards', name: 'CommunityRewards', component: () => import('@/views/community/Rewards.vue') }
     ]
   },
@@ -114,11 +132,14 @@ const routes = [
       { path: 'finance', name: 'AdminFinance', component: () => import('@/views/admin/Finance.vue') },
       { path: 'config/basic', name: 'AdminConfigBasic', component: () => import('@/views/admin/ConfigBasic.vue') },
       { path: 'config/member', name: 'AdminConfigMember', component: () => import('@/views/admin/ConfigMember.vue') },
+      { path: 'config/reward', name: 'AdminConfigReward', component: () => import('@/views/admin/ConfigReward.vue') },
       { path: 'config/rating', name: 'AdminConfigRating', component: () => import('@/views/admin/ConfigRating.vue') },
       { path: 'config/tags', name: 'AdminConfigTags', component: () => import('@/views/admin/ConfigTags.vue') },
       { path: 'config/banner', name: 'AdminConfigBanner', component: () => import('@/views/admin/ConfigBanner.vue') },
       { path: 'config/algorithm', name: 'AdminConfigAlgorithm', component: () => import('@/views/admin/ConfigAlgorithm.vue') },
       { path: 'config/ambassador', name: 'AdminConfigAmbassador', component: () => import('@/views/admin/ConfigAmbassador.vue') },
+      { path: 'config/anti-flying', name: 'AdminConfigAntiFlying', component: () => import('@/views/admin/ConfigAntiFlying.vue') },
+      { path: 'config/audit', name: 'AdminConfigAudit', component: () => import('@/views/admin/ConfigAudit.vue') },
       { path: 'config/admin', name: 'AdminConfigAdmin', component: () => import('@/views/admin/ConfigAdmin.vue') }
     ]
   }
@@ -127,6 +148,36 @@ const routes = [
 const router = createRouter({
   history: createWebHistory(),
   routes
+})
+
+// 路由守卫
+router.beforeEach((to, from, next) => {
+  const path = to.path
+
+  // 公开路由（不需要登录）
+  const publicPaths = ['/', '/login/community', '/login/merchant', '/login/ambassador', '/register/community', '/register/merchant', '/legal/terms', '/legal/privacy']
+  if (publicPaths.includes(path) || path === '/admin/login') {
+    return next()
+  }
+
+  // 检查各端登录状态
+  if (!checkAuth(path)) {
+    // 未登录，重定向到对应登录页
+    if (path.startsWith('/community/')) {
+      return next('/login/community')
+    }
+    if (path.startsWith('/merchant/')) {
+      return next('/login/merchant')
+    }
+    if (path.startsWith('/ambassador/')) {
+      return next('/login/ambassador')
+    }
+    if (path.startsWith('/admin/')) {
+      return next('/admin/login')
+    }
+  }
+
+  next()
 })
 
 export default router

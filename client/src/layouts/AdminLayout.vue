@@ -71,11 +71,14 @@
           </template>
           <el-menu-item index="/admin/config/basic">基础数据配置</el-menu-item>
           <el-menu-item index="/admin/config/member">会员配置</el-menu-item>
+          <el-menu-item index="/admin/config/reward">撮合奖励配置</el-menu-item>
           <el-menu-item index="/admin/config/rating">商家评级配置</el-menu-item>
           <el-menu-item index="/admin/config/tags">标签管理</el-menu-item>
           <el-menu-item index="/admin/config/banner">轮播图配置</el-menu-item>
           <el-menu-item index="/admin/config/algorithm">匹配算法配置</el-menu-item>
           <el-menu-item index="/admin/config/ambassador">大使提成配置</el-menu-item>
+          <el-menu-item index="/admin/config/anti-flying">防飞单配置</el-menu-item>
+          <el-menu-item index="/admin/config/audit">内容审核设置</el-menu-item>
           <el-menu-item index="/admin/config/admin">管理员配置</el-menu-item>
         </el-sub-menu>
       </el-menu>
@@ -168,6 +171,7 @@
           </template>
           <el-menu-item index="/admin/config/basic">基础数据配置</el-menu-item>
           <el-menu-item index="/admin/config/member">会员配置</el-menu-item>
+          <el-menu-item index="/admin/config/reward">撮合奖励配置</el-menu-item>
           <el-menu-item index="/admin/config/rating">商家评级配置</el-menu-item>
           <el-menu-item index="/admin/config/tags">标签管理</el-menu-item>
           <el-menu-item index="/admin/config/banner">轮播图配置</el-menu-item>
@@ -197,7 +201,7 @@
         </div>
         <div class="topbar-right pc-only">
           <el-badge :value="pendingTotal" type="danger">
-            <el-button text size="small">待审核 {{ pendingTotal }}</el-button>
+            <el-button text size="small" @click="$router.push('/admin/audit/demands')">待审核 {{ pendingTotal }}</el-button>
           </el-badge>
           <el-avatar :size="32" src="https://ui-avatars.com/api/?name=超管&background=409EFF&color=fff" />
         </div>
@@ -210,19 +214,29 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import {
   DataAnalysis, User, Document, Share, ChatLineRound, Money, Setting,
   Fold, Expand, Bell, Menu, FullScreen, Close
 } from '@element-plus/icons-vue'
+import { getDashboard } from '@/api/admin'
 
 const route = useRoute()
 const sidebarCollapsed = ref(false)
 const mobileDrawerVisible = ref(false)
 const mobileFullscreen = ref(false)
-const pendingTotal = ref(20)
+const pendingTotal = ref(0)
 const activeMenu = computed(() => route.path)
+
+// 动态加载待审核数量
+async function loadPendingCount() {
+  try {
+    const res = await getDashboard()
+    pendingTotal.value = res.data?.pending?.total || 0
+  } catch {}
+}
+onMounted(() => { loadPendingCount() })
 const pageTitles = {
   '/admin': '数据大屏',
   '/admin/users/community': '社区工作者',
@@ -341,30 +355,62 @@ const pageTitle = computed(() => pageTitles[route.path] || '管理后台')
   display: flex; align-items: center; gap: 12px;
 }
 
-/* 响应式 */
+/* 响应式 - 手机端 */
 @media (max-width: 768px) {
-  .content-area { padding: 12px; }
-  /* 抽屉深色背景，让菜单项可见 */
-  :deep(.el-drawer__body) {
-    background: #001529 !important;
+  /* 强制隐藏 PC 端侧边栏和 PC 端元素 */
+  .sidebar,
+  .pc-only { 
+    display: none !important; 
+    width: 0 !important; 
+    min-width: 0 !important; 
+    max-width: 0 !important; 
+    flex: 0 0 0 !important;
   }
-  .content-area {
+
+  /* 手机端布局：垂直排列 */
+  .admin-layout {
+    display: flex !important;
+    flex-direction: column !important;
+    min-height: 100vh !important;
+  }
+
+  /* 主区域占满屏幕 */
+  .main-area {
+    flex: 1 !important;
+    width: 100% !important;
+    min-width: 100% !important;
+    margin-left: 0 !important;
     display: flex;
     flex-direction: column;
-    height: 100%;
+  }
+
+  .mobile-only { display: flex !important; }
+
+  /* 顶部栏 */
+  .mobile-header {
+    display: flex !important;
+    position: sticky;
+    top: 0;
+    z-index: 200;
+  }
+
+  /* 内容区域 */
+  .content-area {
+    flex: 1 !important;
+    width: 100% !important;
+    padding: 12px !important;
+    overflow-y: auto !important;
+  }
+
+  /* 抽屉深色背景 */
+  :deep(.el-drawer__body) {
+    background: #001529 !important;
     padding: 0 !important;
-    overflow: hidden;
   }
-  /* 手机端全屏模式：隐藏顶部栏，内容占满屏幕 */
-  .admin-layout.mobile-fullscreen .mobile-header {
-    display: none !important;
-  }
-  .admin-layout.mobile-fullscreen .main-area {
-    padding-top: 0 !important;
-  }
+
   .drawer-header {
     flex-shrink: 0;
-    padding: 20px 20px 16px;
+    padding: 16px !important;
   }
   .drawer-menu {
     flex: 1;
@@ -376,11 +422,16 @@ const pageTitle = computed(() => pageTitles[route.path] || '管理后台')
   .drawer-menu::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 2px; }
   .drawer-footer {
     flex-shrink: 0;
-    position: static;
     border-top: 1px solid rgba(255,255,255,0.1);
     background: #001529;
   }
   .drawer-footer .admin-name { color: rgba(255,255,255,0.65) !important; }
   .drawer-footer :deep(.el-button) { color: rgba(255,255,255,0.45) !important; }
+}
+
+/* 默认隐藏手机端元素，PC端显示 */
+@media (min-width: 769px) {
+  .mobile-only { display: none !important; }
+  .pc-only { display: flex !important; }
 }
 </style>

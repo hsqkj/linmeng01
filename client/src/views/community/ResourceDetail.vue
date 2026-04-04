@@ -33,7 +33,7 @@
               {{ memberLevelName[resource.member_level] }}
             </el-tag>
           </el-descriptions-item>
-          <el-descriptions-item label="发布时间">{{ resource.created_at }}</el-descriptions-item>
+          <el-descriptions-item label="发布时间">{{ formatDateTime(resource.created_at) }}</el-descriptions-item>
           <el-descriptions-item label="资源说明" :span="2">{{ resource.content }}</el-descriptions-item>
           <el-descriptions-item label="可提供内容" :span="2">{{ resource.provide_content || '详见资源说明' }}</el-descriptions-item>
           <el-descriptions-item label="期望回报" :span="2">{{ resource.expected_return || '面议' }}</el-descriptions-item>
@@ -149,6 +149,12 @@ const replyContent = ref('')
 
 const memberLevelType = { 0: 'info', 1: '', 2: 'warning', 3: 'danger', 4: 'danger' }
 const memberLevelName = { 0: '普通会员', 1: '普通会员', 2: '银牌会员', 3: '金牌会员', 4: '铂金会员', 5: '钻石会员' }
+
+function formatDateTime(time) {
+  if (!time) return '-'
+  const d = new Date(time)
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`
+}
 
 async function loadData() {
   const id = route.params.id

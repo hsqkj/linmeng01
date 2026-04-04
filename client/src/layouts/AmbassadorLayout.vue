@@ -14,9 +14,9 @@
       </div>
 
       <div class="ambassador-info" v-if="!sidebarCollapsed">
-        <img src="https://ui-avatars.com/api/?name=李大使&background=F59E0B&color=fff" class="amb-avatar" />
-        <div class="amb-name">李招商</div>
-        <div class="amb-code">我的渠道码：AMB2024001</div>
+        <img :src="`https://ui-avatars.com/api/?name=${encodeURIComponent(userInfo?.real_name || '大')}&background=F59E0B&color=fff`" class="amb-avatar" />
+        <div class="amb-name">{{ userInfo?.real_name || '招商大使' }}</div>
+        <div class="amb-code">我的渠道码：{{ userInfo?.id ? 'AMB' + String(userInfo.id).padStart(6, '0') : '—' }}</div>
       </div>
 
       <el-menu :default-active="activeMenu" class="side-menu" :collapse="sidebarCollapsed" router>
@@ -38,7 +38,7 @@
       </el-menu>
 
       <div class="sidebar-footer" v-if="!sidebarCollapsed">
-        <el-button text @click="$router.push('/')">退出登录</el-button>
+        <el-button text @click="handleLogout">退出登录</el-button>
       </div>
     </div>
 
@@ -56,10 +56,10 @@
     <!-- 手机端抽屉菜单 -->
     <el-drawer v-model="mobileDrawerVisible" direction="ltr" size="70%" :with-header="false">
       <div class="drawer-header">
-        <img src="https://ui-avatars.com/api/?name=李大使&background=F59E0B&color=fff" class="drawer-avatar" />
+        <img :src="`https://ui-avatars.com/api/?name=${encodeURIComponent(userInfo?.real_name || '大')}&background=F59E0B&color=fff`" class="drawer-avatar" />
         <div>
-          <div class="drawer-name">李招商</div>
-          <div class="drawer-sub">我的渠道码：AMB2024001</div>
+          <div class="drawer-name">{{ userInfo?.real_name || '招商大使' }}</div>
+          <div class="drawer-sub">我的渠道码：{{ userInfo?.id ? 'AMB' + String(userInfo.id).padStart(6, '0') : '—' }}</div>
         </div>
       </div>
       <el-menu :default-active="activeMenu" class="drawer-menu" router @select="mobileDrawerVisible = false">
@@ -80,7 +80,7 @@
         </el-menu-item>
       </el-menu>
       <div class="drawer-footer">
-        <el-button type="warning" plain style="width:100%" @click="$router.push('/'); mobileDrawerVisible = false">
+        <el-button type="warning" plain style="width:100%" @click="handleLogout(); mobileDrawerVisible = false">
           <el-icon><SwitchButton /></el-icon>
           退出登录
         </el-button>
@@ -131,9 +131,17 @@ const pageTitles = {
 }
 const pageTitle = computed(() => pageTitles[route.path] || '招商大使中心')
 
+const userInfo = ref(null)
 const handleLogout = () => {
-  router.push('/')
+  localStorage.removeItem('ambassador_token')
+  localStorage.removeItem('ambassador_info')
+  router.push('/login/ambassador')
 }
+// 加载大使信息
+try {
+  const info = localStorage.getItem('ambassador_info')
+  if (info) userInfo.value = JSON.parse(info)
+} catch {}
 </script>
 
 <style scoped>

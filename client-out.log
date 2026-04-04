@@ -1,0 +1,18 @@
+
+  [32m[1mVITE[22m v4.5.14[39m  [2mready in [0m[1m765[22m[2m[0m ms[22m
+
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m5173[22m/[39m
+  [32m➜[39m  [1mNetwork[22m: [36mhttp://192.168.1.11:[1m5173[22m/[39m
+[2m16:36:18[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/layouts/AdminLayout.vue?vue&type=style&index=0&scoped=e5e83559&lang.css[22m
+[2m16:39:55[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/layouts/AdminLayout.vue?vue&type=style&index=0&scoped=e5e83559&lang.css[22m
+[2m16:41:55[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/layouts/AdminLayout.vue?vue&type=style&index=0&scoped=e5e83559&lang.css[22m
+[2m17:06:25[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/views/admin/Dashboard.vue[22m
+[2m17:06:32[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/views/admin/Dashboard.vue[22m
+[2m17:06:49[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/views/admin/Dashboard.vue?vue&type=style&index=0&scoped=0de618a8&lang.css[22m
+[2m17:06:56[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/layouts/AdminLayout.vue, /src/views/admin/ConfigMember.vue, /src/views/admin/Login.vue, /src/views/admin/ConfigAntiFlying.vue, /src/views/admin/UsersMerchant.vue, /src/views/admin/ConfigBasic.vue, /src/views/admin/UsersCommunity.vue, /src/views/admin/UsersAmbassador.vue, /src/views/admin/AuditDemands.vue, /src/views/admin/AuditResources.vue, /src/views/admin/Matching.vue, /src/views/admin/Comments.vue, /src/views/admin/Notifications.vue, /src/views/admin/Finance.vue, /src/views/admin/ConfigRating.vue, /src/views/admin/ConfigTags.vue, /src/views/admin/ConfigBanner.vue, /src/views/admin/ConfigAlgorithm.vue, /src/views/admin/ConfigAmbassador.vue, /src/views/admin/ConfigAudit.vue, /src/views/admin/ConfigAdmin.vue, /src/views/admin/Dashboard.vue[22m
+[2m17:07:17[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/views/community/Home.vue[22m
+[2m17:07:21[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/views/community/Home.vue[22m
+[2m17:07:34[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/views/community/Home.vue?vue&type=style&index=0&scoped=27ec88fa&lang.css[22m
+[2m17:07:41[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/views/community/Home.vue?vue&type=style&index=0&scoped=27ec88fa&lang.css[22m
+[2m17:09:53[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/views/community/MerchantDetail.vue[22m
+[2m17:10:25[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/views/community/MerchantDetail.vue?vue&type=style&index=0&scoped=2dadd540&lang.css[22m

@@ -169,7 +169,9 @@ const pageSize = 10
 async function loadDemandComments() {
   loading.value = true
   try {
-    const res = await getComments({ type: 'demand', page: demandPage.value, pageSize, keyword: demandSearch.value })
+    const params = { type: 'demand', page: demandPage.value, pageSize, keyword: demandSearch.value }
+    if (demandStatusFilter.value !== '') params.status = demandStatusFilter.value
+    const res = await getComments(params)
     demandComments.value = res.data?.list || res.data || []
     demandTotal.value = res.data?.pagination?.total || demandComments.value.length
   } catch (e) {
@@ -182,7 +184,9 @@ async function loadDemandComments() {
 async function loadResourceComments() {
   loading.value = true
   try {
-    const res = await getComments({ type: 'resource', page: resourcePage.value, pageSize, keyword: resourceSearch.value })
+    const params = { type: 'resource', page: resourcePage.value, pageSize, keyword: resourceSearch.value }
+    if (resourceStatusFilter.value !== '') params.status = resourceStatusFilter.value
+    const res = await getComments(params)
     resourceComments.value = res.data?.list || res.data || []
     resourceTotal.value = res.data?.pagination?.total || resourceComments.value.length
   } catch (e) {
@@ -203,6 +207,7 @@ function handleTabChange() {
 function handleSearch() {
   demandPage.value = 1
   resourcePage.value = 1
+  // 触发当前tab的数据加载（携带新的筛选条件）
   if (activeTab.value === 'demand') {
     loadDemandComments()
   } else {

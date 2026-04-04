@@ -35,12 +35,14 @@
         <el-dropdown>
           <div class="user-info">
             <el-avatar :size="32" src="https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png" />
-            <span class="pc-only">张主任</span>
+            <span class="pc-only">{{ userInfo?.real_name || userInfo?.manager || '社区用户' }}</span>
             <el-icon><ArrowDown /></el-icon>
           </div>
           <template #dropdown>
             <el-dropdown-menu>
               <el-dropdown-item @click="$router.push('/community/profile')">个人资料</el-dropdown-item>
+              <el-dropdown-item @click="$router.push('/community/profile?tab=favorites')">我的收藏</el-dropdown-item>
+              <el-dropdown-item @click="$router.push('/community/profile?tab=rewards')">我的奖励</el-dropdown-item>
               <el-dropdown-item @click="$router.push('/community/messages')">我的消息</el-dropdown-item>
               <el-dropdown-item divided @click="logout">退出登录</el-dropdown-item>
             </el-dropdown-menu>
@@ -60,10 +62,6 @@
         <el-icon><HomeFilled /></el-icon>
         <span>首页</span>
       </router-link>
-      <router-link to="/community/demands" class="mobile-nav-item" :class="{ active: $route.path.includes('/demands') && !$route.path.includes('/resources') }">
-        <el-icon><Document /></el-icon>
-        <span>需求</span>
-      </router-link>
       <router-link to="/community/resources" class="mobile-nav-item" :class="{ active: $route.path.includes('/resources') }">
         <el-icon><Goods /></el-icon>
         <span>资源</span>
@@ -73,18 +71,51 @@
         <span>我的</span>
       </router-link>
     </nav>
+
+    <!-- 悬浮客服 -->
+    <ServiceChat />
   </div>
 </template>
 
 <script setup>
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { Document } from '@element-plus/icons-vue'
+import { ElMessageBox } from 'element-plus'
+import { Document, Star, Present } from '@element-plus/icons-vue'
+import ServiceChat from '@/components/ServiceChat.vue'
 
 const router = useRouter()
+const userInfo = ref(null)
 
-const logout = () => {
-  router.push('/')
+function logout() {
+  localStorage.removeItem('community_token')
+  localStorage.removeItem('community_info')
+  router.push('/login/community')
 }
+
+// 检查资料完整性
+onMounted(() => {
+  const info = localStorage.getItem('community_info')
+  if (info) {
+    userInfo.value = JSON.parse(info)
+    // 检查资料是否完整（未填关键字段）
+    const profile = userInfo.value
+    const isIncomplete = !profile.community_name || !profile.real_name || !profile.phone
+    if (isIncomplete) {
+      ElMessageBox.confirm(
+        '您的资料尚未完善！完善资料有助于精准匹配商家资源，获得更多合作机会。',
+        '📋 完善资料提示',
+        {
+          confirmButtonText: '立即完善',
+          cancelButtonText: '稍后再说',
+          type: 'warning'
+        }
+      ).then(() => {
+        router.push('/community/profile')
+      }).catch(() => {})
+    }
+  }
+})
 </script>
 
 <style scoped>

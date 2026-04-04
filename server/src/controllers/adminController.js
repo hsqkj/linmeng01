@@ -76,20 +76,34 @@ exports.login = async (req, res) => {
 // 仪表盘统计
 exports.dashboard = async (req, res) => {
   try {
+    const { period = 'all' } = req.query
+    let dateFilter = ''
+    if (period === 'day') {
+      dateFilter = " AND DATE(created_at) = CURDATE()"
+    } else if (period === 'month') {
+      dateFilter = " AND YEAR(created_at) = YEAR(CURDATE()) AND MONTH(created_at) = MONTH(CURDATE())"
+    } else if (period === 'year') {
+      dateFilter = " AND YEAR(created_at) = YEAR(CURDATE())"
+    }
+
     // 统计数据
     const [communities] = await pool.query('SELECT COUNT(*) as count FROM communities WHERE status = 1')
     const [merchants] = await pool.query('SELECT COUNT(*) as count FROM merchants WHERE status = 1')
     const [ambassadors] = await pool.query('SELECT COUNT(*) as count FROM ambassadors WHERE status = 1')
-    const [demands] = await pool.query('SELECT COUNT(*) as count FROM demands WHERE status = 1')
-    const [resources] = await pool.query('SELECT COUNT(*) as count FROM resources WHERE status = 1')
+    const [demands] = await pool.query('SELECT COUNT(*) as count FROM demands WHERE status = 1' + dateFilter)
+    const [resources] = await pool.query('SELECT COUNT(*) as count FROM resources WHERE status = 1' + dateFilter)
     const [intentions] = await pool.query('SELECT COUNT(*) as count FROM intentions WHERE status = 3')
-    
+
+    // 总浏览量（需求+资源的浏览量总和）
+    const [[demandViews]] = await pool.query('SELECT COALESCE(SUM(view_count), 0) as total FROM demands')
+    const [[resourceViews]] = await pool.query('SELECT COALESCE(SUM(view_count), 0) as total FROM resources')
+
     // 待审核数量
     const [pendingCommunities] = await pool.query('SELECT COUNT(*) as count FROM communities WHERE status = 0')
     const [pendingMerchants] = await pool.query('SELECT COUNT(*) as count FROM merchants WHERE status = 0')
     const [pendingDemands] = await pool.query('SELECT COUNT(*) as count FROM demands WHERE status = 0')
     const [pendingResources] = await pool.query('SELECT COUNT(*) as count FROM resources WHERE status = 0')
-    
+
     success(res, {
       total: {
         communities: communities[0].count,
@@ -97,7 +111,8 @@ exports.dashboard = async (req, res) => {
         ambassadors: ambassadors[0].count,
         demands: demands[0].count,
         resources: resources[0].count,
-        completedMatches: intentions[0].count
+        completedMatches: intentions[0].count,
+        totalViews: demandViews.total + resourceViews.total
       },
       pending: {
         communities: pendingCommunities[0].count,
@@ -116,7 +131,7 @@ exports.dashboard = async (req, res) => {
 // 获取社区用户列表
 exports.getCommunities = async (req, res) => {
   try {
-    const { page = 1, pageSize = 10, status, keyword } = req.query
+    const { page = 1, pageSize = 10, status, keyword, district } = req.query
     const offset = (page - 1) * pageSize
     
     let where = '1=1'
@@ -126,7 +141,12 @@ exports.getCommunities = async (req, res) => {
       where += ' AND status = ?'
       params.push(status)
     }
-    
+
+    if (district) {
+      where += ' AND district LIKE ?'
+      params.push(`%${district}%`)
+    }
+
     if (keyword) {
       where += ' AND (real_name LIKE ? OR phone LIKE ? OR community_name LIKE ?)'
       params.push(`%${keyword}%`, `%${keyword}%`, `%${keyword}%`)
@@ -214,7 +234,7 @@ exports.updateCommunityStatus = async (req, res) => {
 // 获取商家列表
 exports.getMerchants = async (req, res) => {
   try {
-    const { page = 1, pageSize = 10, status, level, keyword } = req.query
+    const { page = 1, pageSize = 10, status, level, keyword, industry } = req.query
     const offset = (page - 1) * pageSize
     
     let where = '1=1'
@@ -229,7 +249,12 @@ exports.getMerchants = async (req, res) => {
       where += ' AND member_level = ?'
       params.push(level)
     }
-    
+
+    if (industry) {
+      where += ' AND industry = ?'
+      params.push(industry)
+    }
+
     if (keyword) {
       where += ' AND (company_name LIKE ? OR contact_name LIKE ? OR phone LIKE ?)'
       params.push(`%${keyword}%`, `%${keyword}%`, `%${keyword}%`)
@@ -612,15 +637,25 @@ exports.rejectResource = async (req, res) => {
 
 exports.getMatchingList = async (req, res) => {
   try {
-    const { page = 1, pageSize = 10, status } = req.query
+    const { page = 1, pageSize = 10, status, status_in, keyword } = req.query
     const offset = (page - 1) * pageSize
-    
+
     let where = '1=1'
     const params = []
-    
+
     if (status) {
       where += ' AND i.status = ?'
       params.push(status)
+    }
+
+    if (status_in) {
+      const statuses = status_in.split(',').map(s => parseInt(s.trim()))
+      where += ` AND i.status IN (${statuses.join(',')})`
+    }
+
+    if (keyword) {
+      where += ' AND (i.demand_id IN (SELECT id FROM demands WHERE title LIKE ?) OR i.resource_id IN (SELECT id FROM resources WHERE title LIKE ?) OR m.company_name LIKE ? OR c.community_name LIKE ?)'
+      params.push(`%${keyword}%`, `%${keyword}%`, `%${keyword}%`, `%${keyword}%`)
     }
     
     const [rows] = await pool.query(
@@ -715,32 +750,39 @@ exports.getComments = async (req, res) => {
     const offset = (parseInt(page) - 1) * parseInt(pageSize)
     
     let where = '1=1'
+    let queryParams = []
+    
     if (type === 'demand') {
-      where += ' AND demand_id IS NOT NULL'
+      where += ' AND c.demand_id IS NOT NULL'
     } else if (type === 'resource') {
-      where += ' AND resource_id IS NOT NULL'
+      where += ' AND c.resource_id IS NOT NULL'
     }
     if (keyword) {
-      where += ` AND content LIKE ${pool.escape('%' + keyword + '%')}`
+      where += ` AND c.content LIKE ?`
+      queryParams.push('%' + keyword + '%')
     }
-    
+
     const [rows] = await pool.query(
-      `SELECT c.*, 
-       (SELECT company_name FROM merchants WHERE id = c.user_id AND c.user_type = 2) as merchant_name,
-       (SELECT community_name FROM communities WHERE id = c.user_id AND c.user_type = 1) as community_name
+      `SELECT c.*,
+       m.company_name as merchant_name,
+       com.community_name as community_name
        FROM comments c
+       LEFT JOIN merchants m ON c.user_type = 2 AND c.user_id = m.id
+       LEFT JOIN communities com ON c.user_type = 1 AND c.user_id = com.id
        WHERE ${where}
        ORDER BY c.created_at DESC
        LIMIT ? OFFSET ?`,
-      [parseInt(pageSize), offset]
+      [...queryParams, parseInt(pageSize), offset]
     )
-    
+
     const [[{ total }]] = await pool.query(
-      `SELECT COUNT(*) as total FROM comments c WHERE ${where}`
+      `SELECT COUNT(*) as total FROM comments c WHERE ${where}`,
+      queryParams
     )
     
     pageSuccess(res, rows, total, page, pageSize)
   } catch (err) {
+    console.error('获取留言列表失败:', err)
     error(res, '获取留言列表失败')
   }
 }
@@ -760,12 +802,28 @@ exports.deleteComment = async (req, res) => {
 exports.getBasicTypesConfig = async (req, res) => {
   try {
     const [rows] = await pool.query("SELECT config_value FROM sys_configs WHERE config_key = 'basic_types'")
+    const defaultIndustries = [
+      '教育培训', '医院诊所', '药店', '餐饮小吃', '生鲜水果',
+      '美业', '保健养生', '体育健身', '银行保险', '电信服务',
+      '商超零售', '快递物流', '家政服务', '废旧回收', '五金建材',
+      '家居装修', '家纺布艺', '电子电器', '房产中介', '汽车服务',
+      '旅游服务', '鲜花礼品', '电影演出', '娱乐休闲', '服装服饰',
+      '酒店宾馆', '茶艺咖啡', '宠物服务', '眼镜', '酒水饮料',
+      '办公用品', '设备租赁', '社工服务', '养老服务', '新闻媒体',
+      '自媒体', 'IT互联网', '软件开发', '图文广告', '电子电器维修',
+      '家居维修', '美发', '建筑工程', '其他'
+    ]
     if (rows.length === 0) {
       return success(res, {
-        activityTypes: [], enterpriseTypes: [], resourceTypes: [], expertTypes: []
+        activityTypes: [], enterpriseTypes: [], resourceTypes: [], expertTypes: [], industryTypes: defaultIndustries.map(name => ({ name, enabled: true }))
       })
     }
-    success(res, JSON.parse(rows[0].config_value))
+    const data = JSON.parse(rows[0].config_value)
+    // 兼容旧数据：补充 industryTypes
+    if (!data.industryTypes || data.industryTypes.length === 0) {
+      data.industryTypes = defaultIndustries.map(name => ({ name, enabled: true }))
+    }
+    success(res, data)
   } catch (err) {
     error(res, '获取配置失败')
   }
@@ -854,9 +912,26 @@ exports.getRewardConfig = async (req, res) => {
     const [rows] = await pool.query("SELECT config_key, config_value FROM sys_configs WHERE config_type = 'reward'")
     const config = {}
     rows.forEach(row => {
-      config[row.config_key] = row.config_value
+      try {
+        config[row.config_key] = JSON.parse(row.config_value)
+      } catch {
+        config[row.config_key] = row.config_value
+      }
     })
-    success(res, config)
+    // 返回前端需要的格式
+    const result = {
+      rewardValue: config.reward_base?.rewardValue || 200,
+      rewardDesc: config.reward_base?.rewardDesc || '撮合成功奖励物资（价值约200元）',
+      rewardType: config.reward_base?.rewardType || 'material',
+      enabled: config.reward_base?.enabled !== false,
+      deliveryMethod: config.reward_base?.deliveryMethod || 'auto',
+      monthlyLimit: config.reward_base?.monthlyLimit || 0,
+      firstOrderBonus: config.reward_base?.firstOrderBonus || 50,
+      streakBonus: config.reward_base?.streakBonus || 100,
+      highQualityBonus: config.reward_base?.highQualityBonus || 30,
+      levelBonus: config.level_bonus || []
+    }
+    success(res, result)
   } catch (err) {
     error(res, '获取配置失败')
   }
@@ -864,24 +939,26 @@ exports.getRewardConfig = async (req, res) => {
 
 exports.saveRewardConfig = async (req, res) => {
   try {
-    const { match_reward, anti_flying_level } = req.body
+    const { rewardValue, rewardDesc, rewardType, enabled, deliveryMethod, monthlyLimit, firstOrderBonus, streakBonus, highQualityBonus, levelBonus } = req.body
     
-    if (match_reward) {
-      await pool.query(
-        "INSERT INTO sys_configs (config_key, config_value, config_type) VALUES ('match_reward', ?, 'reward') ON DUPLICATE KEY UPDATE config_value = ?",
-        [JSON.stringify(match_reward), JSON.stringify(match_reward)]
-      )
-    }
+    // 保存基本配置
+    const baseConfig = { rewardValue, rewardDesc, rewardType, enabled, deliveryMethod, monthlyLimit, firstOrderBonus, streakBonus, highQualityBonus }
+    await pool.query(
+      "INSERT INTO sys_configs (config_key, config_value, config_type) VALUES ('reward_base', ?, 'reward') ON DUPLICATE KEY UPDATE config_value = ?",
+      [JSON.stringify(baseConfig), JSON.stringify(baseConfig)]
+    )
     
-    if (anti_flying_level) {
+    // 保存等级奖励倍数
+    if (levelBonus && Array.isArray(levelBonus)) {
       await pool.query(
-        "INSERT INTO sys_configs (config_key, config_value, config_type) VALUES ('anti_flying_level', ?, 'reward') ON DUPLICATE KEY UPDATE config_value = ?",
-        [anti_flying_level, anti_flying_level]
+        "INSERT INTO sys_configs (config_key, config_value, config_type) VALUES ('level_bonus', ?, 'reward') ON DUPLICATE KEY UPDATE config_value = ?",
+        [JSON.stringify(levelBonus), JSON.stringify(levelBonus)]
       )
     }
     
     success(res, null, '保存成功')
   } catch (err) {
+    console.error('保存奖励配置失败:', err)
     error(res, '保存失败')
   }
 }
@@ -1129,6 +1206,55 @@ exports.getFinance = async (req, res) => {
   }
 }
 
+// 获取奖励记录列表
+exports.getRewardRecords = async (req, res) => {
+  try {
+    const { page = 1, pageSize = 10 } = req.query
+    const offset = (page - 1) * pageSize
+
+    const [rows] = await pool.query(
+      `SELECT r.*,
+       c.community_name,
+       i.demand_id, i.resource_id,
+       (SELECT title FROM demands WHERE id = i.demand_id) as demand_title,
+       (SELECT title FROM resources WHERE id = i.resource_id) as resource_title
+       FROM reward_records r
+       JOIN intentions i ON r.intention_id = i.id
+       LEFT JOIN communities c ON r.community_id = c.id
+       ORDER BY r.created_at DESC
+       LIMIT ? OFFSET ?`,
+      [parseInt(pageSize), parseInt(offset)]
+    )
+
+    const [[{ total }]] = await pool.query('SELECT COUNT(*) as total FROM reward_records')
+
+    pageSuccess(res, rows, total, page, pageSize)
+  } catch (err) {
+    console.error('getRewardRecords error:', err)
+    error(res, '获取奖励记录失败')
+  }
+}
+
+// 获取大使提成记录
+exports.getCommissionRecords = async (req, res) => {
+  try {
+    const [rows] = await pool.query(
+      `SELECT cr.*,
+       a.real_name as ambassador_name, a.phone as ambassador_phone,
+       m.company_name as merchant_name
+       FROM commission_records cr
+       LEFT JOIN ambassadors a ON cr.ambassador_id = a.id
+       LEFT JOIN merchants m ON cr.merchant_id = m.id
+       ORDER BY cr.created_at DESC
+       LIMIT 100`
+    )
+    success(res, rows)
+  } catch (err) {
+    console.error('getCommissionRecords error:', err)
+    error(res, '获取提成记录失败')
+  }
+}
+
 // ============ 系统通知管理 ============
 
 exports.getNotifications = async (req, res) => {
@@ -1189,6 +1315,10 @@ exports.createNotification = async (req, res) => {
   try {
     const { title, content, target_type = 'all', target_ids, priority = 0, draft = false } = req.body
     const adminId = req.auth?.id || null
+    
+    // 转换target_type: all=0, community=1, merchant=2, ambassador=3
+    const targetTypeMap = { all: 0, community: 1, merchant: 2, ambassador: 3 }
+    const targetTypeValue = targetTypeMap[target_type] ?? 0
 
     const [result] = await pool.query(
       `INSERT INTO system_notifications (title, content, target_type, target_ids, priority, status, published_at, created_by)
@@ -1196,7 +1326,7 @@ exports.createNotification = async (req, res) => {
       [
         title,
         content,
-        target_type,
+        targetTypeValue,
         target_ids ? JSON.stringify(target_ids) : null,
         priority,
         draft ? 0 : 1,
@@ -1207,7 +1337,7 @@ exports.createNotification = async (req, res) => {
 
     // 非草稿：立即推送给目标用户
     if (!draft) {
-      await pushNotification(result.insertId, target_type, target_ids)
+      await pushNotification(result.insertId, targetTypeValue, target_ids)
     }
 
     success(res, { id: result.insertId }, draft ? '草稿已保存' : '通知已发布')
@@ -1266,45 +1396,37 @@ exports.publishNotification = async (req, res) => {
   }
 }
 
-// 推送通知给用户（写入各端消息表）
+// 推送通知给用户（写入消息表）
+// targetType: 0=all, 1=community, 2=merchant, 3=ambassador
 async function pushNotification(notificationId, targetType, targetIds) {
   try {
     const [[notif]] = await pool.query('SELECT * FROM system_notifications WHERE id = ?', [notificationId])
     if (!notif) return
 
     const { title, content } = notif
-    const prefix = `【系统通知】${title}：${content}`
+    const msgContent = JSON.stringify({ title, content, notificationId })
 
-    if (targetType === 'all') {
+    // targetType: 0=全部, 1=社区, 2=商家, 3=大使
+    if (targetType === 0 || targetType === 1) {
       await pool.query(
-        `INSERT IGNORE INTO comments (user_id, user_type, content, created_at) SELECT id, 1, ?, NOW() FROM communities WHERE status = 1`,
-        [prefix]
+        `INSERT INTO message (user_type, user_id, sender_type, sender_id, msg_type, content, create_time)
+         SELECT 1, id, 0, 0, 1, ?, NOW() FROM communities WHERE status = 1`,
+        [msgContent]
       )
+    }
+    if (targetType === 0 || targetType === 2) {
       await pool.query(
-        `INSERT IGNORE INTO comments (user_id, user_type, content, created_at) SELECT id, 2, ?, NOW() FROM merchants WHERE status = 1`,
-        [prefix]
+        `INSERT INTO message (user_type, user_id, sender_type, sender_id, msg_type, content, create_time)
+         SELECT 2, id, 0, 0, 1, ?, NOW() FROM merchants WHERE status = 1`,
+        [msgContent]
       )
+    }
+    if (targetType === 0 || targetType === 3) {
       await pool.query(
-        `INSERT IGNORE INTO comments (user_id, user_type, content, created_at) SELECT id, 3, ?, NOW() FROM ambassadors WHERE status = 1`,
-        [prefix]
+        `INSERT INTO message (user_type, user_id, sender_type, sender_id, msg_type, content, create_time)
+         SELECT 3, id, 0, 0, 1, ?, NOW() FROM ambassadors WHERE status = 1`,
+        [msgContent]
       )
-    } else {
-      const userTypeMap = { community: 1, merchant: 2, ambassador: 3 }
-      const userType = userTypeMap[targetType]
-      if (!userType) return
-
-      let userQuery = ''
-      if (targetType === 'community') userQuery = 'SELECT id FROM communities WHERE status = 1'
-      else if (targetType === 'merchant') userQuery = 'SELECT id FROM merchants WHERE status = 1'
-      else if (targetType === 'ambassador') userQuery = 'SELECT id FROM ambassadors WHERE status = 1'
-
-      const [users] = await pool.query(userQuery)
-      for (const user of users) {
-        await pool.query(
-          `INSERT IGNORE INTO comments (user_id, user_type, content, created_at) VALUES (?, ?, ?, NOW())`,
-          [user.id, userType, prefix]
-        )
-      }
     }
   } catch (err) {
     console.error('Push notification error:', err)
@@ -1355,6 +1477,79 @@ exports.saveAlgorithmConfig = async (req, res) => {
   } catch (err) {
     console.error('Save algorithm config error:', err)
     error(res, '保存算法配置失败')
+  }
+}
+
+// ====== 防飞单配置 ======
+exports.getAntiFlyingConfig = async (req, res) => {
+  try {
+    const [rows] = await pool.query("SELECT config_value FROM sys_configs WHERE config_key = 'anti_flying'")
+    if (rows.length > 0) {
+      success(res, JSON.parse(rows[0].config_value))
+    } else {
+      success(res, {
+        filterRules: { phone: true, wechat: true, qq: true, email: false, url: false },
+        autoWarn: true, autoBan: false
+      })
+    }
+  } catch (err) {
+    console.error('Get anti-flying config error:', err)
+    error(res, '获取防飞单配置失败')
+  }
+}
+
+exports.saveAntiFlyingConfig = async (req, res) => {
+  try {
+    const config = req.body
+    await pool.query(
+      "INSERT INTO sys_configs (config_key, config_value, config_type, description) VALUES ('anti_flying', ?, 'anti_flying', '防飞单配置') ON DUPLICATE KEY UPDATE config_value = ?",
+      [JSON.stringify(config), JSON.stringify(config)]
+    )
+    success(res, null, '防飞单配置已保存')
+  } catch (err) {
+    console.error('Save anti-flying config error:', err)
+    error(res, '保存防飞单配置失败')
+  }
+}
+
+// ====== 内容审核配置 ======
+exports.getAuditConfig = async (req, res) => {
+  try {
+    const [rows] = await pool.query("SELECT config_value FROM sys_configs WHERE config_key = 'audit'")
+    if (rows.length > 0) {
+      success(res, JSON.parse(rows[0].config_value))
+    } else {
+      success(res, {
+        enabled: false,
+        provider: 'simulated',
+        sensitiveDetection: true,
+        contactDetection: true,
+        bannedCategoryDetection: false,
+        qualityCheck: false,
+        scenes: [
+          { key: 'demand', enabled: true, autoPass: false, autoReject: false, threshold: 80 },
+          { key: 'resource', enabled: true, autoPass: false, autoReject: false, threshold: 80 },
+          { key: 'comment', enabled: false, autoPass: false, autoReject: false, threshold: 60 }
+        ]
+      })
+    }
+  } catch (err) {
+    console.error('Get audit config error:', err)
+    error(res, '获取内容审核配置失败')
+  }
+}
+
+exports.saveAuditConfig = async (req, res) => {
+  try {
+    const config = req.body
+    await pool.query(
+      "INSERT INTO sys_configs (config_key, config_value, config_type, description) VALUES ('audit', ?, 'audit', '内容审核配置') ON DUPLICATE KEY UPDATE config_value = ?",
+      [JSON.stringify(config), JSON.stringify(config)]
+    )
+    success(res, null, '内容审核配置已保存')
+  } catch (err) {
+    console.error('Save audit config error:', err)
+    error(res, '保存内容审核配置失败')
   }
 }
 
