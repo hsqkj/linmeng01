@@ -4,8 +4,11 @@
     <header class="header">
       <div class="header-left">
         <div class="logo">
-          <el-icon :size="32" color="#67C23A"><Shop /></el-icon>
-          <span class="logo-text">邻盟商家端</span>
+          <div class="logo-icon"><i class="logo-emoji">🏪</i></div>
+          <div class="logo-text-wrap">
+            <span class="logo-text">邻盟</span>
+            <span class="logo-sub">商家端</span>
+          </div>
         </div>
       </div>
       
@@ -29,7 +32,7 @@
       </nav>
 
       <div class="header-right">
-        <el-badge :value="5" class="message-badge" @click="$router.push('/merchant/messages')">
+        <el-badge :value="unreadCount" :hidden="unreadCount === 0" class="message-badge" @click="$router.push('/merchant/messages')">
           <el-icon :size="20"><Bell /></el-icon>
         </el-badge>
         <el-dropdown>
@@ -80,18 +83,35 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
 import ServiceChat from '@/components/ServiceChat.vue'
+import { getUnreadCount } from '@/api/merchant'
 
 const router = useRouter()
 const userInfo = ref(null)
+const unreadCount = ref(0)
+let refreshTimer = null
+
+async function loadUnreadCount() {
+  try {
+    const res = await getUnreadCount()
+    unreadCount.value = res?.data?.count || 0
+  } catch (e) {
+    // 忽略错误
+  }
+}
 
 function logout() {
   localStorage.removeItem('merchant_token')
   localStorage.removeItem('merchant_info')
   router.push('/login/merchant')
+}
+
+// 监听通知已读事件
+function onNotificationRead() {
+  unreadCount.value = Math.max(0, unreadCount.value - 1)
 }
 
 // 检查资料完整性
@@ -116,149 +136,90 @@ onMounted(() => {
       }).catch(() => {})
     }
   }
+  // 加载未读通知数
+  loadUnreadCount()
+  // 每30秒刷新一次
+  refreshTimer = setInterval(loadUnreadCount, 30000)
+  // 监听通知已读事件
+  window.addEventListener('notification-read', onNotificationRead)
+})
+
+onUnmounted(() => {
+  if (refreshTimer) clearInterval(refreshTimer)
+  window.removeEventListener('notification-read', onNotificationRead)
+})
+
+// 监听路由变化时刷新未读数
+router.afterEach((to) => {
+  loadUnreadCount()
 })
 </script>
 
 <style scoped>
-.merchant-layout {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
+.merchant-layout { min-height: 100vh; display: flex; flex-direction: column; }
 
 .header {
   background: white;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-  padding: 0 30px;
-  height: 64px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  position: sticky;
-  top: 0;
-  z-index: 100;
+  border-bottom: 1px solid #eee;
+  padding: 0 32px; height: 64px;
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 100;
 }
 
-.header-left {
-  display: flex;
-  align-items: center;
+/* Logo */
+.header-left { display: flex; align-items: center; }
+.logo { display: flex; align-items: center; gap: 10px; cursor: default; }
+.logo-icon {
+  width: 38px; height: 38px;
+  background: linear-gradient(135deg, #e66100, #b84d00);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
 }
+.logo-emoji { font-size: 20px; font-style: normal; }
+.logo-text-wrap { display: flex; flex-direction: column; line-height: 1.2; }
+.logo-text { font-size: 18px; font-weight: 700; color: #e66100; }
+.logo-sub  { font-size: 11px; color: #999; }
 
-.logo {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.logo-text {
-  font-size: 20px;
-  font-weight: bold;
-  color: #303133;
-}
-
-.header-nav {
-  display: flex;
-  gap: 10px;
-}
-
+/* 导航 */
+.header-nav { display: flex; gap: 4px; }
 .nav-item {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 10px 20px;
-  border-radius: 8px;
-  color: #606266;
-  text-decoration: none;
-  transition: all 0.3s;
+  display: flex; align-items: center; gap: 6px;
+  padding: 7px 16px; border-radius: 20px;
+  color: #666; text-decoration: none;
+  font-size: 14px; font-weight: 500; transition: all .2s;
 }
+.nav-item:hover { background: #f0f0f0; color: #333; }
+.nav-item.active { background: #e66100; color: #fff; }
 
-.nav-item:hover,
-.nav-item.active {
-  background: #f6ffed;
-  color: #67C23A;
-}
-
-.header-right {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-}
-
-.message-badge {
-  cursor: pointer;
-}
-
+/* 右侧 */
+.header-right { display: flex; align-items: center; gap: 16px; }
+.message-badge { cursor: pointer; }
 .user-info {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  padding: 5px 10px;
-  border-radius: 8px;
-  transition: background 0.3s;
+  display: flex; align-items: center; gap: 8px; cursor: pointer;
+  padding: 5px 10px; border-radius: 20px; transition: background .2s;
 }
+.user-info:hover { background: #f5f5f5; }
 
-.user-info:hover {
-  background: #f5f7fa;
-}
+/* 内容区 */
+.main-content { flex: 1; padding: 24px 32px; max-width: 1280px; width: 100%; margin: 0 auto; }
 
-.main-content {
-  flex: 1;
-  padding: 20px;
-  max-width: 1400px;
-  width: 100%;
-  margin: 0 auto;
-}
-
+/* 底部手机导航 */
 .mobile-nav {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: white;
-  box-shadow: 0 -2px 8px rgba(0,0,0,0.08);
-  display: flex;
-  justify-content: space-around;
-  padding: 8px 0;
-  z-index: 100;
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: white; border-top: 1px solid #eee;
+  display: flex; justify-content: space-around; padding: 8px 0; z-index: 100;
 }
-
 .mobile-nav-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  color: #909399;
-  text-decoration: none;
-  font-size: 12px;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  color: #999; text-decoration: none; font-size: 11px;
+  padding: 4px 16px; border-radius: 12px; transition: all .2s;
 }
-
-.mobile-nav-item.active {
-  color: #67C23A;
-}
+.mobile-nav-item.active { color: #e66100; }
 
 @media (max-width: 768px) {
-  .header {
-    padding: 0 12px;
-    height: 52px;
-  }
+  .header { padding: 0 16px; height: 54px; }
   .logo-text { font-size: 16px; }
-  .header-right { gap: 12px; }
-
-  .main-content {
-    padding: 12px;
-    padding-bottom: 70px;
-  }
-
-  .mobile-nav {
-    padding: 6px 0;
-  }
-  .mobile-nav-item {
-    font-size: 11px;
-    gap: 2px;
-  }
-  .mobile-nav-item :deep(.el-icon) {
-    font-size: 20px;
-  }
+  .header-right { gap: 10px; }
+  .main-content { padding: 16px; padding-bottom: 72px; }
 }
 </style>

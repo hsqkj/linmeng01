@@ -185,4 +185,46 @@ loadTags()
 .tag-actions { margin-bottom: 16px; }
 .tag-grid { display: flex; flex-wrap: wrap; gap: 10px; }
 .tag-item { display: flex; align-items: center; }
+
+@media (max-width: 768px) {
+  .page {
+    padding: 12px;
+    padding-bottom: 70px;
+  }
+  .page h2 {
+    font-size: 18px;
+    margin-bottom: 14px;
+  }
+  :deep(.el-tabs__nav) {
+    font-size: 13px;
+    flex-wrap: wrap;
+  }
+  .tag-actions {
+    margin-bottom: 12px;
+  }
+  .tag-actions .el-button {
+    width: 100%;
+    font-size: 13px;
+  }
+  .tag-grid {
+    gap: 8px;
+  }
+  :deep(.el-table) {
+    font-size: 11px;
+  }
+  :deep(.el-table__header th) {
+    font-size: 10px;
+    padding: 6px 3px;
+  }
+  :deep(.el-table__body td) {
+    padding: 6px 3px;
+  }
+  :deep(.el-dialog) {
+    width: 95% !important;
+    max-width: 350px;
+  }
+  :deep(.el-dialog__body) {
+    padding: 12px;
+  }
+}
 </style>

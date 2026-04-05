@@ -276,4 +276,67 @@ onMounted(() => {
 .sv { font-size: 24px; font-weight: 700; }
 .sl { font-size: 13px; color: #909399; margin-top: 4px; }
 .pagination { margin-top: 16px; display: flex; justify-content: flex-end; }
+
+@media (max-width: 768px) {
+  .page {
+    padding: 12px;
+    padding-bottom: 70px;
+  }
+  .page h2 {
+    font-size: 18px;
+    margin-bottom: 12px;
+  }
+  .stats-row {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .sc {
+    padding: 12px;
+    border-radius: 8px;
+  }
+  .sv {
+    font-size: 18px;
+  }
+  .sl {
+    font-size: 11px;
+  }
+  :deep(.el-tabs__nav) {
+    font-size: 13px;
+  }
+  :deep(.el-card) {
+    border-radius: 8px;
+  }
+  :deep(.el-card__header) {
+    padding: 12px 14px;
+    font-size: 14px;
+  }
+  :deep(.el-descriptions) {
+    font-size: 12px;
+  }
+  :deep(.el-descriptions__label) {
+    font-size: 11px;
+    width: 90px;
+  }
+  :deep(.el-table) {
+    font-size: 11px;
+  }
+  :deep(.el-table__header th) {
+    font-size: 10px;
+    padding: 6px 3px;
+  }
+  :deep(.el-table__body td) {
+    padding: 6px 3px;
+  }
+  :deep(.el-dialog) {
+    width: 95% !important;
+    max-width: 500px;
+  }
+  :deep(.el-dialog__body) {
+    padding: 12px;
+  }
+  .pagination {
+    justify-content: center;
+  }
+}
 </style>

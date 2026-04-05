@@ -227,323 +227,150 @@ const viewActivityDetail = (activity) => {
 </script>
 
 <style scoped>
-.community-home {
-  padding-bottom: 20px;
-}
+.community-home { padding-bottom: 20px; }
 
+/* ===== 欢迎 Banner ===== */
 .welcome-banner {
-  background: linear-gradient(135deg, #409EFF 0%, #36cfc9 100%);
-  border-radius: 12px;
-  padding: 30px;
+  background: linear-gradient(135deg, #26a269, #1a7a4c);
+  border-radius: 16px;
+  padding: 32px 36px;
   color: white;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
+  position: relative;
+  overflow: hidden;
+}
+.welcome-banner::before {
+  content: '';
+  position: absolute;
+  top: -50px; right: -30px;
+  width: 240px; height: 240px;
+  background: rgba(255,255,255,.07);
+  border-radius: 50%;
+}
+.welcome-content { position: relative; z-index: 1; }
+.welcome-content h1 { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+.welcome-content p { opacity: 0.9; font-size: 14px; }
+.welcome-banner :deep(.el-button) {
+  background: rgba(255,255,255,.15) !important;
+  border-color: rgba(255,255,255,.4) !important;
+  color: #fff !important;
+  border-radius: 20px !important;
+  font-weight: 600;
+  backdrop-filter: blur(4px);
+  position: relative; z-index: 1;
+}
+.welcome-banner :deep(.el-button:hover) {
+  background: rgba(255,255,255,.28) !important;
 }
 
-.welcome-content h1 {
-  font-size: 24px;
-  margin-bottom: 8px;
-}
-
-.welcome-content p {
-  opacity: 0.9;
-}
-
-.banner-section {
-  margin-bottom: 24px;
-}
-
+/* ===== 广告轮播 ===== */
+.banner-section { margin-bottom: 20px; }
+.banner-section :deep(.el-carousel) { border-radius: 16px; overflow: hidden; }
 .banner-item {
   height: 100%;
-  border-radius: 12px;
+  border-radius: 16px;
   display: flex;
   align-items: center;
   padding: 0 40px;
   color: white;
-  cursor: default;
-  text-shadow: 0 1px 3px rgba(0,0,0,0.4);
+  text-shadow: 0 1px 4px rgba(0,0,0,.35);
 }
+.banner-content h3 { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+.banner-content p  { margin-bottom: 14px; opacity: 0.9; font-size: 14px; }
 
-.banner-content h3 {
-  font-size: 24px;
-  margin-bottom: 8px;
-}
-
-.banner-content p {
-  margin-bottom: 16px;
-  opacity: 0.9;
-}
-
+/* ===== 统计卡片 ===== */
 .stats-row {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: 16px;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
-
-.stat-card :deep(.el-card__body) {
+.stat-card {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 14px;
+  padding: 20px 20px;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(0,0,0,.06);
+  transition: all .2s;
 }
-
+.stat-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,.1); }
+.stat-card :deep(.el-card__body) { display: flex; align-items: center; gap: 14px; }
 .stat-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  width: 52px; height: 52px;
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
 }
+.stat-value { font-size: 28px; font-weight: 700; color: #1a1a1a; }
+.stat-label  { color: #888; font-size: 13px; margin-top: 3px; }
 
-.stat-value {
-  font-size: 24px;
-  font-weight: bold;
-  color: #303133;
-}
-
-.stat-label {
-  color: #909399;
-  font-size: 14px;
-}
-
-.section {
-  margin-bottom: 32px;
-}
-
+/* ===== 章节 ===== */
+.section { margin-bottom: 28px; }
 .section-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 16px;
 }
-
 .section-header h2 {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 18px;
-  color: #303133;
+  display: flex; align-items: center; gap: 8px;
+  font-size: 18px; font-weight: 700; color: #1a1a1a;
 }
 
+/* ===== 资源卡片 ===== */
 .resource-list {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 16px;
 }
-
 .resource-card {
   position: relative;
+  border-radius: 16px !important;
+  overflow: hidden;
+  transition: all .2s !important;
 }
+.resource-card:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(0,0,0,.12) !important; }
 
-.match-score {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  text-align: right;
-}
-
-.hearts {
-  display: flex;
-  gap: 2px;
-  justify-content: flex-end;
-  align-items: center;
-}
-
-.heart {
-  color: #dcdfe6;
-  font-size: 12px;
-}
-
-.heart.filled {
-  color: #f56c6c;
-}
-
-.score-label {
-  font-size: 11px;
-  color: #606266;
-  font-weight: 500;
-  margin-right: 4px;
-}
+.match-score { position: absolute; top: 12px; right: 12px; text-align: right; }
+.hearts { display: flex; gap: 2px; justify-content: flex-end; align-items: center; }
+.heart { color: #e0e0e0; font-size: 13px; }
+.heart.filled { color: #ff4d4f; }
+.score-label { font-size: 11px; color: #888; font-weight: 500; margin-right: 3px; }
 
 .resource-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 12px;
-  padding-right: 80px;
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 12px; padding-right: 88px;
 }
-
-.merchant-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.merchant-info h4 {
-  margin: 0 0 6px;
-  font-size: 16px;
-}
-
-.merchant-meta-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.star-rating-text {
-  color: #f5a623;
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.view-count {
-  display: flex;
-  align-items: center;
-  gap: 3px;
-  color: #909399;
-  font-size: 12px;
-}
+.merchant-info { flex: 1; min-width: 0; }
+.merchant-info h4 { margin: 0 0 5px; font-size: 15px; font-weight: 700; }
+.merchant-meta-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.star-rating-text { color: #f5a623; font-size: 12px; font-weight: 600; }
+.view-count { display: flex; align-items: center; gap: 3px; color: #999; font-size: 12px; }
 
 .resource-desc {
-  color: #606266;
-  font-size: 14px;
-  margin-bottom: 12px;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  color: #666; font-size: 13px; margin-bottom: 12px;
+  display: -webkit-box; -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical; overflow: hidden;
+  line-height: 1.6;
 }
+.resource-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+.resource-actions { display: flex; gap: 8px; }
+.merchant-name-link { color: #26a269; cursor: pointer; transition: color .2s; }
+.merchant-name-link:hover { color: #1a7a4c; text-decoration: underline; }
 
-.resource-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 16px;
-}
-
-.resource-actions {
-  display: flex;
-  gap: 8px;
-}
-
-.merchant-name-link {
-  color: #409EFF;
-  cursor: pointer;
-  transition: color 0.2s;
-}
-
-.merchant-name-link:hover {
-  color: #66b1ff;
-  text-decoration: underline;
-}
-
+/* ===== 响应式 ===== */
 @media (max-width: 768px) {
-  .welcome-banner {
-    flex-direction: column;
-    text-align: center;
-    gap: 14px;
-    padding: 20px 16px;
-    border-radius: 8px;
-  }
-
-  .welcome-content h1 {
-    font-size: 18px;
-  }
-
-  .welcome-content p {
-    font-size: 13px;
-  }
-
-  .banner-item {
-    padding: 0 20px;
-  }
-
-  .banner-content h3 {
-    font-size: 16px;
-  }
-
-  .banner-content p {
-    font-size: 13px;
-  }
-
-  .stats-row {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
-    margin-bottom: 16px;
-  }
-
-  .stat-card :deep(.el-card__body) {
-    gap: 10px;
-    padding: 12px;
-  }
-
-  .stat-icon {
-    width: 38px;
-    height: 38px;
-    border-radius: 8px;
-    flex-shrink: 0;
-  }
-
-  .stat-value {
-    font-size: 18px;
-  }
-
-  .stat-label {
-    font-size: 12px;
-  }
-
-  .section {
-    margin-bottom: 20px;
-  }
-
-  .section-header {
-    margin-bottom: 12px;
-  }
-
-  .section-header h2 {
-    font-size: 15px;
-  }
-
-  .resource-list {
-    grid-template-columns: 1fr;
-    gap: 12px;
-  }
-
-  .resource-header {
-    gap: 8px;
-    padding-right: 60px;
-  }
-
-  .merchant-info h4 {
-    font-size: 14px;
-  }
-
-  .merchant-meta-row {
-    gap: 4px;
-  }
-
-  .star-rating-text {
-    font-size: 12px;
-  }
-
-  .view-count {
-    font-size: 11px;
-  }
-
-  .resource-desc {
-    font-size: 13px;
-    -webkit-line-clamp: 2;
-  }
-
-  .resource-actions {
-    flex-direction: column;
-  }
-
-  .resource-actions .el-button {
-    width: 100%;
-  }
+  .welcome-banner { flex-direction: column; text-align: center; gap: 14px; padding: 20px 16px; }
+  .welcome-content h1 { font-size: 18px; }
+  .stats-row { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .stat-icon { width: 40px; height: 40px; border-radius: 10px; }
+  .stat-value { font-size: 22px; }
+  .banner-item { padding: 0 20px; }
+  .banner-content h3 { font-size: 16px; }
 }
 </style>

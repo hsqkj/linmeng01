@@ -10,17 +10,17 @@
         <p class="subtitle">发展优质商家会员，坐享丰厚佣金收益</p>
         <div class="benefits">
           <div class="benefit-item">
-            <span class="benefit-icon">🎯</span>
+            <span class="benefit-icon">🏘️</span>
             <div>
-              <div class="benefit-title">首次成交佣金 20%</div>
-              <div class="benefit-desc">商家首次缴纳会费，立得20%提成</div>
+              <div class="benefit-title">社区招商更容易</div>
+              <div class="benefit-desc">一键生成专属渠道码，快速触达目标社区</div>
             </div>
           </div>
           <div class="benefit-item">
-            <span class="benefit-icon">🔄</span>
+            <span class="benefit-icon">📈</span>
             <div>
-              <div class="benefit-title">续费佣金 10%</div>
-              <div class="benefit-desc">每年续费持续获得提成</div>
+              <div class="benefit-title">管道收益更丰厚</div>
+              <div class="benefit-desc">首次20%+续费10%提成，永久绑定持续收益</div>
             </div>
           </div>
           <div class="benefit-item">
@@ -90,7 +90,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { ambassadorLogin } from '@/api/ambassador'
-import { applyAmbassador } from '@/api/public'
+import { applyAmbassador, sendSms } from '@/api/public'
 
 const router = useRouter()
 const loginForm = ref({ phone: '13900001111', code: '' })
@@ -100,13 +100,23 @@ const showApply = ref(false)
 const loading = ref(false)
 const applyForm = ref({ real_name: '', phone: '', reason: '' })
 
-function sendCode() {
+async function sendCode() {
   if (!loginForm.value.phone) { ElMessage.warning('请先输入手机号'); return }
-  loginForm.value.code = '888888'
-  showAutoFill.value = true
-  countdown.value = 60
-  ElMessage.success('验证码已发送（测试版：888888）')
-  const t = setInterval(() => { countdown.value--; if (countdown.value <= 0) clearInterval(t) }, 1000)
+  try {
+    const res = await sendSms({ phone: loginForm.value.phone, type: 'login' })
+    loginForm.value.code = res.data?.code || '123456'
+    showAutoFill.value = true
+    countdown.value = 60
+    ElMessage.success('验证码已发送（测试版）')
+    const t = setInterval(() => { countdown.value--; if (countdown.value <= 0) clearInterval(t) }, 1000)
+  } catch {
+    // 降级：使用默认验证码
+    loginForm.value.code = '123456'
+    showAutoFill.value = true
+    countdown.value = 60
+    ElMessage.success('验证码已发送（测试版）')
+    const t = setInterval(() => { countdown.value--; if (countdown.value <= 0) clearInterval(t) }, 1000)
+  }
 }
 
 async function doLogin() {
@@ -145,31 +155,57 @@ async function submitApply() {
 </script>
 
 <style scoped>
-.ambassador-login { min-height: 100vh; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); display: flex; align-items: center; justify-content: center; padding: 40px 20px; }
-.login-container { display: grid; grid-template-columns: 1fr 420px; gap: 60px; max-width: 1000px; width: 100%; align-items: center; }
+.ambassador-login {
+  min-height: 100vh;
+  background: linear-gradient(160deg, #0d1b2a 0%, #1a2940 50%, #2d1b4e 100%);
+  display: flex; align-items: center; justify-content: center; padding: 40px 20px;
+  position: relative; overflow: hidden;
+}
+.ambassador-login::before {
+  content: '';
+  position: absolute; top: -120px; right: -80px;
+  width: 500px; height: 500px;
+  background: radial-gradient(circle, rgba(129,61,156,.2) 0%, transparent 70%);
+  border-radius: 50%;
+}
+.login-container { display: grid; grid-template-columns: 1fr 420px; gap: 60px; max-width: 1000px; width: 100%; align-items: center; position: relative; z-index: 1; }
 .login-left { color: #fff; }
 .brand { display: flex; align-items: center; gap: 12px; margin-bottom: 32px; }
-.logo { width: 50px; height: 50px; background: linear-gradient(135deg, #F59E0B, #D97706); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 900; color: #fff; }
-.brand-name { font-size: 22px; font-weight: 700; color: #F59E0B; }
-.login-left h1 { font-size: 36px; font-weight: 800; margin-bottom: 12px; background: linear-gradient(135deg, #F59E0B, #FCD34D); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-.subtitle { color: rgba(255,255,255,0.7); font-size: 16px; margin-bottom: 36px; }
+.logo { width: 50px; height: 50px; background: linear-gradient(135deg, #813d9c, #5e2b74); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 900; color: #fff; }
+.brand-name { font-size: 22px; font-weight: 700; color: #c77dff; }
+.login-left h1 { font-size: 34px; font-weight: 800; margin-bottom: 12px; background: linear-gradient(135deg, #c77dff, #e0aaff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.subtitle { color: rgba(255,255,255,.65); font-size: 15px; margin-bottom: 36px; }
 .benefits { display: flex; flex-direction: column; gap: 20px; }
 .benefit-item { display: flex; align-items: flex-start; gap: 16px; }
 .benefit-icon { font-size: 28px; }
-.benefit-title { font-size: 16px; font-weight: 600; color: #FCD34D; }
-.benefit-desc { color: rgba(255,255,255,0.7); font-size: 13px; margin-top: 4px; }
+.benefit-title { font-size: 15px; font-weight: 600; color: #e0aaff; }
+.benefit-desc { color: rgba(255,255,255,.6); font-size: 13px; margin-top: 4px; }
 .login-right { display: flex; justify-content: flex-end; }
-.login-card { background: #fff; border-radius: 20px; padding: 40px; width: 100%; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
-.login-card h2 { font-size: 24px; font-weight: 700; margin-bottom: 24px; color: #1a1a2e; }
+.login-card { background: #fff; border-radius: 20px; padding: 40px; width: 100%; box-shadow: 0 24px 60px rgba(0,0,0,.3); }
+.login-card h2 { font-size: 24px; font-weight: 700; margin-bottom: 24px; color: #1a1a1a; }
 .code-row { display: flex; gap: 12px; }
 .auto-fill-tip { margin-top: 6px; font-size: 12px; color: #909399; background: #f5f7fa; padding: 6px 10px; border-radius: 6px; }
 .login-links { text-align: center; margin-top: 16px; font-size: 14px; color: #909399; }
 .other-logins { margin-top: 8px; }
 .login-role-btns { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
 
+:deep(.el-button--warning) { background: linear-gradient(135deg, #813d9c, #5e2b74) !important; border-color: transparent !important; }
+
 @media (max-width: 768px) {
-  .login-container { grid-template-columns: 1fr; gap: 30px; }
-  .login-left { text-align: center; }
-  .benefits { align-items: flex-start; }
+  .ambassador-login { padding: 20px 12px; }
+  .login-container { grid-template-columns: 1fr; gap: 16px; max-width: 420px; }
+  .login-left { text-align: center; padding: 16px 0; }
+  .login-left h1 { font-size: 22px; }
+  .subtitle { font-size: 13px; margin-bottom: 20px; }
+  .benefits { flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 12px; }
+  .benefit-item { flex-direction: column; align-items: center; gap: 6px; max-width: 100px; }
+  .benefit-icon { font-size: 22px; }
+  .benefit-title { font-size: 12px; }
+  .benefit-desc { display: none; }
+  .login-right { justify-content: center; width: 100%; }
+  .login-card { padding: 20px 16px; border-radius: 16px; }
+  .login-card h2 { font-size: 20px; margin-bottom: 18px; text-align: center; }
+  .login-links { font-size: 13px; }
+  .other-logins { margin-top: 6px; }
 }
 </style>

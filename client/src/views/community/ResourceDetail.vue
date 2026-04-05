@@ -267,4 +267,41 @@ onMounted(() => {
 .reply-text { font-size: 13px; color: #606266; margin: 0; padding-left: 30px; }
 .reply-input { margin-top: 10px; }
 .comment-input h5 { margin: 0 0 8px; }
+
+@media (max-width: 768px) {
+  .page {
+    padding: 12px;
+    padding-bottom: 80px;
+  }
+  .detail-header {
+    flex-direction: column;
+    gap: 12px;
+  }
+  .detail-header h2 {
+    font-size: 18px;
+    margin-bottom: 6px;
+  }
+  .match-display {
+    text-align: left;
+    align-self: flex-start;
+  }
+  :deep(.el-descriptions) {
+    font-size: 13px;
+  }
+  :deep(.el-descriptions__label) {
+    width: 90px;
+    font-size: 12px;
+  }
+  .merchant-section,
+  .comment-section {
+    margin: 16px 0;
+  }
+  .merchant-section h4,
+  .comment-section h4 {
+    font-size: 15px;
+  }
+  .comment-input textarea {
+    font-size: 14px;
+  }
+}
 </style>

@@ -97,4 +97,47 @@ function fmtTime(t) {
 .comm-text { color: #E6A23C; font-weight: 600; }
 .gray-text { color: #C0C4CC; }
 .pagination { margin-top: 16px; display: flex; justify-content: flex-end; }
+
+@media (max-width: 768px) {
+  .records-page {
+    padding: 12px;
+    padding-bottom: 70px;
+  }
+  .records-page h2 {
+    font-size: 18px;
+    margin-bottom: 14px;
+  }
+  .filter-bar {
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .filter-bar .el-select {
+    width: calc(50% - 4px) !important;
+    font-size: 13px;
+  }
+  .filter-bar .el-date-editor {
+    width: 100% !important;
+    font-size: 13px;
+  }
+  .filter-bar .el-input {
+    width: 100% !important;
+    font-size: 13px;
+  }
+  :deep(.el-table) {
+    font-size: 12px;
+  }
+  :deep(.el-table__header th) {
+    font-size: 11px;
+    padding: 8px 4px;
+  }
+  :deep(.el-table__body td) {
+    padding: 8px 4px;
+  }
+  .pagination {
+    justify-content: center;
+  }
+  :deep(.el-pagination) {
+    font-size: 12px;
+  }
+}
 </style>

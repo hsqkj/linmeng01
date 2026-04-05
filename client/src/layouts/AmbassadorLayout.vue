@@ -16,7 +16,7 @@
       <div class="ambassador-info" v-if="!sidebarCollapsed">
         <img :src="`https://ui-avatars.com/api/?name=${encodeURIComponent(userInfo?.real_name || '大')}&background=F59E0B&color=fff`" class="amb-avatar" />
         <div class="amb-name">{{ userInfo?.real_name || '招商大使' }}</div>
-        <div class="amb-code">我的渠道码：{{ userInfo?.id ? 'AMB' + String(userInfo.id).padStart(6, '0') : '—' }}</div>
+        <div class="amb-code">渠道码：{{ userInfo?.qr_code || '—' }}</div>
       </div>
 
       <el-menu :default-active="activeMenu" class="side-menu" :collapse="sidebarCollapsed" router>
@@ -35,6 +35,11 @@
         <el-menu-item index="/ambassador/withdraw">
           <el-icon><Wallet /></el-icon><template #title>提现管理</template>
         </el-menu-item>
+        <el-menu-item index="/ambassador/notifications">
+          <el-badge :value="unreadCount" :hidden="unreadCount === 0" :max="99">
+            <span style="display:flex;align-items:center"><el-icon><Message /></el-icon>我的消息</span>
+          </el-badge>
+        </el-menu-item>
       </el-menu>
 
       <div class="sidebar-footer" v-if="!sidebarCollapsed">
@@ -48,8 +53,10 @@
         <el-icon :size="22"><Menu /></el-icon>
       </el-button>
       <div class="mobile-title">招商大使中心</div>
-      <el-badge :value="3" type="warning" size="small">
-        <el-icon :size="20"><Bell /></el-icon>
+      <el-badge :value="unreadCount" :hidden="unreadCount === 0" type="warning" size="small" :max="99">
+        <el-button text @click="goToNotifications">
+          <el-icon :size="20"><Bell /></el-icon>
+        </el-button>
       </el-badge>
     </div>
 
@@ -59,7 +66,7 @@
         <img :src="`https://ui-avatars.com/api/?name=${encodeURIComponent(userInfo?.real_name || '大')}&background=F59E0B&color=fff`" class="drawer-avatar" />
         <div>
           <div class="drawer-name">{{ userInfo?.real_name || '招商大使' }}</div>
-          <div class="drawer-sub">我的渠道码：{{ userInfo?.id ? 'AMB' + String(userInfo.id).padStart(6, '0') : '—' }}</div>
+          <div class="drawer-sub">渠道码：{{ userInfo?.qr_code || '—' }}</div>
         </div>
       </div>
       <el-menu :default-active="activeMenu" class="drawer-menu" router @select="mobileDrawerVisible = false">
@@ -78,6 +85,11 @@
         <el-menu-item index="/ambassador/withdraw">
           <el-icon><Wallet /></el-icon><span>提现管理</span>
         </el-menu-item>
+        <el-menu-item index="/ambassador/notifications">
+          <el-badge :value="unreadCount" :hidden="unreadCount === 0" :max="99">
+            <span style="display:flex;align-items:center;gap:8px"><el-icon><Message /></el-icon>我的消息</span>
+          </el-badge>
+        </el-menu-item>
       </el-menu>
       <div class="drawer-footer">
         <el-button type="warning" plain style="width:100%" @click="handleLogout(); mobileDrawerVisible = false">
@@ -94,11 +106,11 @@
           <span class="page-title">{{ pageTitle }}</span>
         </div>
         <div class="topbar-right">
-          <el-badge :value="3" class="badge-item">
-            <el-button text><el-icon><Bell /></el-icon></el-button>
+          <el-badge :value="unreadCount" :hidden="unreadCount === 0" class="badge-item">
+            <el-button text @click="goToNotifications"><el-icon><Bell /></el-icon></el-button>
           </el-badge>
-          <el-avatar size="small" src="https://ui-avatars.com/api/?name=李大使&background=F59E0B&color=fff" />
-          <span style="font-size:14px">李招商</span>
+          <el-avatar size="small" :src="`https://ui-avatars.com/api/?name=${encodeURIComponent(userInfo?.real_name || '大')}&background=F59E0B&color=fff`" />
+          <span style="font-size:14px">{{ userInfo?.real_name || '招商大使' }}</span>
           <el-button type="warning" plain size="small" @click="handleLogout">
             <el-icon><SwitchButton /></el-icon>
             退出登录
@@ -115,7 +127,8 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { House, Grid, List, Money, Wallet, Bell, Fold, Expand, SwitchButton, Menu } from '@element-plus/icons-vue'
+import { House, Grid, List, Money, Wallet, Bell, Fold, Expand, SwitchButton, Menu, Message } from '@element-plus/icons-vue'
+import { getAmbassadorNotifications, markNotificationRead } from '@/api/ambassador'
 
 const route = useRoute()
 const router = useRouter()
@@ -127,11 +140,29 @@ const pageTitles = {
   '/ambassador/qrcode': '我的渠道码',
   '/ambassador/records': '发展记录',
   '/ambassador/commission': '提成明细',
-  '/ambassador/withdraw': '提现管理'
+  '/ambassador/withdraw': '提现管理',
+  '/ambassador/notifications': '我的消息'
 }
 const pageTitle = computed(() => pageTitles[route.path] || '招商大使中心')
 
 const userInfo = ref(null)
+const showNotifications = ref(false)
+const notifications = ref([])
+const unreadCount = ref(0)
+
+// 加载真实通知数据
+const loadNotifications = async () => {
+  try {
+    const res = await getAmbassadorNotifications({ page: 1, pageSize: 10 })
+    notifications.value = res.data?.list || []
+    unreadCount.value = res.data?.extra?.unreadCount || 0
+  } catch (e) {
+    console.error('加载通知失败', e)
+    notifications.value = []
+  }
+}
+loadNotifications()
+
 const handleLogout = () => {
   localStorage.removeItem('ambassador_token')
   localStorage.removeItem('ambassador_info')
@@ -142,6 +173,11 @@ try {
   const info = localStorage.getItem('ambassador_info')
   if (info) userInfo.value = JSON.parse(info)
 } catch {}
+
+// 跳转到消息页面
+const goToNotifications = () => {
+  router.push('/ambassador/notifications')
+}
 </script>
 
 <style scoped>
@@ -221,7 +257,36 @@ try {
 
 /* 响应式 */
 @media (max-width: 768px) {
-  .content-area { padding: 12px; }
+  /* 强制隐藏 PC 端侧边栏和 PC 端元素 */
+  .sidebar,
+  .pc-only {
+    display: none !important;
+    width: 0 !important;
+    min-width: 0 !important;
+    max-width: 0 !important;
+    flex: 0 0 0 !important;
+  }
+
+  /* 手机端布局：垂直排列 */
+  .ambassador-layout {
+    display: flex !important;
+    flex-direction: column !important;
+    min-height: 100vh !important;
+  }
+
+  /* 主区域占满屏幕 */
+  .main-area {
+    flex: 1 !important;
+    width: 100% !important;
+    min-width: 100% !important;
+    margin-left: 0 !important;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .mobile-only { display: flex !important; }
+  .content-area { padding: 12px; padding-bottom: 70px; flex: 1; width: 100%; }
+
   /* 抽屉深色背景 */
   :deep(.el-drawer__body) {
     background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%) !important;
@@ -238,4 +303,24 @@ try {
     position: static;
   }
 }
+
+/* 默认隐藏手机端元素，PC端显示 */
+@media (min-width: 769px) {
+  .mobile-only { display: none !important; }
+  .pc-only { display: flex !important; }
+}
+
+/* 通知列表样式 */
+.notification-list { max-height: 400px; overflow-y: auto; }
+.empty-notification { text-align: center; color: #909399; padding: 40px 0; }
+.notification-item {
+  padding: 12px;
+  border-bottom: 1px solid #eee;
+  cursor: pointer;
+}
+.notification-item:hover { background: #f8f9fa; }
+.notification-item:last-child { border-bottom: none; }
+.notification-title { font-weight: 600; font-size: 14px; margin-bottom: 4px; color: #303133; }
+.notification-content { font-size: 13px; color: #606266; margin-bottom: 4px; line-height: 1.4; }
+.notification-time { font-size: 12px; color: #909399; }
 </style>

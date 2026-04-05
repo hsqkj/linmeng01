@@ -125,4 +125,55 @@ function fmtTime(t) {
 .rate-text { color: #E6A23C; font-weight: 600; }
 .amount-text { color: #67C23A; font-weight: 600; font-size: 15px; }
 .pagination { margin-top: 16px; display: flex; justify-content: flex-end; }
+
+@media (max-width: 768px) {
+  .commission-page {
+    padding: 12px;
+    padding-bottom: 70px;
+  }
+  .commission-page h2 {
+    font-size: 18px;
+    margin-bottom: 14px;
+  }
+  .summary-row {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .sum-card {
+    padding: 14px;
+    border-radius: 8px;
+  }
+  .sum-val {
+    font-size: 20px;
+  }
+  .sum-label {
+    font-size: 12px;
+  }
+  .filter-bar {
+    gap: 8px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+  .filter-bar .el-select {
+    width: calc(50% - 4px) !important;
+    font-size: 13px;
+  }
+  :deep(.el-table) {
+    font-size: 12px;
+  }
+  :deep(.el-table__header th) {
+    font-size: 11px;
+    padding: 8px 4px;
+  }
+  :deep(.el-table__body td) {
+    padding: 8px 4px;
+  }
+  .pagination {
+    justify-content: center;
+  }
+  :deep(.el-pagination) {
+    font-size: 12px;
+  }
+}
 </style>

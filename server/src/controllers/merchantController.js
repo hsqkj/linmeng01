@@ -890,34 +890,122 @@ exports.getMyNotifications = async (req, res) => {
     const [countRows] = await pool.query(`
       SELECT COUNT(*) as total FROM system_notifications
       WHERE status = 1
-        AND (target_type = 'all' OR target_type = 'merchant')
+        AND (target_type IN ('all', 'merchant', 0, 2))
         AND (target_ids IS NULL OR target_ids = '' OR JSON_CONTAINS(target_ids, ?))
     `, [String(merchantId)])
 
     const [rows] = await pool.query(`
-      SELECT id, title, content, priority,
-        CASE priority
+      SELECT n.id, n.title, n.content, n.priority,
+        CASE n.priority
           WHEN 2 THEN 'urgent'
           WHEN 1 THEN 'important'
           ELSE 'normal'
         END as tagType,
-        CASE priority
+        CASE n.priority
           WHEN 2 THEN '紧急'
           WHEN 1 THEN '重要'
           ELSE '系统公告'
         END as tag,
-        published_at as time
-      FROM system_notifications
-      WHERE status = 1
-        AND (target_type = 'all' OR target_type = 'merchant')
-        AND (target_ids IS NULL OR target_ids = '' OR JSON_CONTAINS(target_ids, ?))
-      ORDER BY priority DESC, published_at DESC
+        n.published_at as time,
+        CASE WHEN EXISTS (
+          SELECT 1 FROM notification_reads r
+          WHERE r.notification_id = n.id AND r.user_type = 'merchant' AND r.user_id = ?
+        ) THEN 1 ELSE 0 END as is_read
+      FROM system_notifications n
+      WHERE n.status = 1
+        AND (n.target_type IN ('all', 'merchant', 0, 2))
+        AND (n.target_ids IS NULL OR n.target_ids = '' OR JSON_CONTAINS(n.target_ids, ?))
+      ORDER BY n.priority DESC, n.published_at DESC
       LIMIT ? OFFSET ?
-    `, [String(merchantId), parseInt(pageSize), offset])
+    `, [merchantId, String(merchantId), parseInt(pageSize), offset])
 
     pageSuccess(res, rows, countRows[0].total, parseInt(page), parseInt(pageSize))
   } catch (err) {
     console.error('getMyNotifications error:', err)
     error(res, '获取通知列表失败')
+  }
+}
+
+// 获取未读通知数量
+exports.getUnreadCount = async (req, res) => {
+  try {
+    const merchantId = req.merchant?.id
+    if (!merchantId) {
+      return error(res, '未登录')
+    }
+    // 查询未读通知数量（排除已读的）- 同时兼容数字和字符串格式
+    const [[{ count }]] = await pool.query(
+      `SELECT COUNT(*) as count FROM system_notifications n
+       WHERE n.status = 1
+       AND (n.target_type IN ('all', 'merchant', 0, 2))
+       AND (n.target_ids IS NULL OR n.target_ids = '' OR JSON_CONTAINS(n.target_ids, ?))
+       AND NOT EXISTS (
+         SELECT 1 FROM notification_reads r
+         WHERE r.notification_id = n.id AND r.user_type = 'merchant' AND r.user_id = ?
+       )`,
+      [String(merchantId), merchantId]
+    )
+    success(res, { count })
+  } catch (err) {
+    console.error('getUnreadCount error:', err)
+    error(res, '获取未读数量失败')
+  }
+}
+
+// 标记通知已读
+exports.markNotificationsRead = async (req, res) => {
+  try {
+    const merchantId = req.merchant?.id
+    if (!merchantId) {
+      return error(res, '未登录')
+    }
+    // 获取所有未读通知ID
+    const [notifications] = await pool.query(
+      `SELECT n.id FROM system_notifications n
+       WHERE n.status = 1
+       AND (n.target_type IN ('all', 'merchant', 0, 2))
+       AND (n.target_ids IS NULL OR n.target_ids = '' OR JSON_CONTAINS(n.target_ids, ?))
+       AND NOT EXISTS (
+         SELECT 1 FROM notification_reads r
+         WHERE r.notification_id = n.id AND r.user_type = 'merchant' AND r.user_id = ?
+       )`,
+      [String(merchantId), merchantId]
+    )
+    
+    // 批量插入已读记录
+    if (notifications.length > 0) {
+      const values = notifications.map(n => [n.id, 'merchant', merchantId])
+      await pool.query(
+        'INSERT IGNORE INTO notification_reads (notification_id, user_type, user_id) VALUES ?',
+        [values]
+      )
+    }
+    success(res, { marked: notifications.length })
+  } catch (err) {
+    console.error('markNotificationsRead error:', err)
+    error(res, '标记已读失败')
+  }
+}
+
+// 标记单条通知已读
+exports.markOneNotificationRead = async (req, res) => {
+  try {
+    const merchantId = req.merchant?.id
+    if (!merchantId) {
+      return error(res, '未登录')
+    }
+    const notificationId = parseInt(req.params.id)
+    if (!notificationId) {
+      return error(res, '无效的通知ID')
+    }
+    // 插入已读记录
+    await pool.query(
+      'INSERT IGNORE INTO notification_reads (notification_id, user_type, user_id) VALUES (?, ?, ?)',
+      [notificationId, 'merchant', merchantId]
+    )
+    success(res, { success: true })
+  } catch (err) {
+    console.error('markOneNotificationRead error:', err)
+    error(res, '标记已读失败')
   }
 }

@@ -71,5 +71,8 @@ router.get('/member/payments', MerchantController.getPaymentHistory)
 
 // 系统通知
 router.get('/notifications', MerchantController.getMyNotifications)
+router.get('/notifications/unread-count', MerchantController.getUnreadCount)
+router.post('/notifications/mark-read', MerchantController.markNotificationsRead)
+router.put('/notifications/:id/read', MerchantController.markOneNotificationRead)
 
 module.exports = router

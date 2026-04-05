@@ -263,37 +263,37 @@ const pageTitle = computed(() => pageTitles[route.path] || '管理后台')
 .admin-layout { display: flex; min-height: 100vh; background: #f0f2f5; }
 
 /* PC端侧边栏 */
-.sidebar { width: 220px; background: #001529; transition: width 0.3s; flex-shrink: 0; display: flex; flex-direction: column; }
+.sidebar { width: 240px; background: #0d1b2a; transition: width 0.3s; flex-shrink: 0; display: flex; flex-direction: column; }
 .sidebar.collapsed { width: 64px; }
-.sidebar-header { display: flex; align-items: center; padding: 16px 12px; gap: 10px; border-bottom: 1px solid rgba(255,255,255,0.08); min-height: 60px; }
-.logo-mark { width: 36px; height: 36px; background: linear-gradient(135deg, #1890ff, #096dd9); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 900; color: #fff; flex-shrink: 0; }
+.sidebar-header { display: flex; align-items: center; padding: 18px 14px; gap: 10px; border-bottom: 1px solid rgba(255,255,255,0.08); min-height: 64px; }
+.logo-mark { width: 38px; height: 38px; background: linear-gradient(135deg, #1a5fb4, #14407a); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 900; color: #fff; flex-shrink: 0; }
 .brand-name { font-weight: 700; color: #fff; font-size: 15px; }
-.brand-sub { font-size: 11px; color: rgba(255,255,255,0.45); }
-.collapse-btn { margin-left: auto; color: rgba(255,255,255,0.5) !important; }
+.brand-sub { font-size: 11px; color: rgba(255,255,255,0.4); }
+.collapse-btn { margin-left: auto; color: rgba(255,255,255,0.4) !important; }
 .side-menu { background: transparent !important; border: none !important; }
-:deep(.el-menu-item), :deep(.el-sub-menu__title) { color: rgba(255,255,255,0.65) !important; }
-:deep(.el-menu-item.is-active) { background: #1890ff !important; color: #fff !important; }
-:deep(.el-menu-item:hover), :deep(.el-sub-menu__title:hover) { background: rgba(255,255,255,0.08) !important; color: #fff !important; }
-:deep(.el-sub-menu .el-menu) { background: rgba(0,0,0,0.3) !important; }
+:deep(.el-menu-item), :deep(.el-sub-menu__title) { color: rgba(255,255,255,.6) !important; }
+:deep(.el-menu-item.is-active) { background: #1a5fb4 !important; color: #fff !important; border-radius: 8px; }
+:deep(.el-menu-item:hover), :deep(.el-sub-menu__title:hover) { background: rgba(255,255,255,.07) !important; color: #fff !important; }
+:deep(.el-sub-menu .el-menu) { background: rgba(0,0,0,.25) !important; }
 :deep(.el-sub-menu .el-menu-item) { padding-left: 48px !important; font-size: 13px; }
-.sidebar-footer { padding: 12px; margin-top: auto; border-top: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: space-between; }
+.sidebar-footer { padding: 12px; margin-top: auto; border-top: 1px solid rgba(255,255,255,.07); display: flex; align-items: center; justify-content: space-between; }
 .admin-info { display: flex; align-items: center; gap: 8px; }
-.admin-name { font-size: 13px; color: rgba(255,255,255,0.65); }
-.sidebar-footer :deep(.el-button) { color: rgba(255,255,255,0.4) !important; }
+.admin-name { font-size: 13px; color: rgba(255,255,255,.55); }
+.sidebar-footer :deep(.el-button) { color: rgba(255,255,255,.35) !important; }
 
 /* 主区域 */
 .main-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-.topbar { height: 56px; background: #fff; border-bottom: 1px solid #eee; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+.topbar { height: 56px; background: #fff; border-bottom: 1px solid #eee; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; }
 .topbar-right { display: flex; align-items: center; gap: 12px; }
-.content-area { flex: 1; overflow-y: auto; padding: 20px; }
+.content-area { flex: 1; overflow-y: auto; padding: 24px; background: #f5f6f8; }
 
 /* 手机端顶部栏 */
 .mobile-header {
   position: sticky; top: 0; z-index: 200;
-  background: #001529; color: #fff;
+  background: #0d1b2a; color: #fff;
   display: flex; align-items: center; gap: 12px;
   padding: 0 16px; height: 56px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  box-shadow: 0 2px 8px rgba(0,0,0,.2);
 }
 .mobile-header :deep(.el-icon) { color: #fff; }
 .mobile-title { flex: 1; font-weight: 600; font-size: 15px; color: #fff; }
@@ -301,11 +301,11 @@ const pageTitle = computed(() => pageTitles[route.path] || '管理后台')
 /* 手机端抽屉 */
 .drawer-header {
   display: flex; align-items: center; gap: 12px;
-  padding: 20px 16px; background: #001529; margin-bottom: 8px;
+  padding: 20px 16px; background: #0d1b2a; margin-bottom: 8px;
 }
 .drawer-brand { display: flex; flex-direction: column; }
 .drawer-admin-info { flex: 1; }
-.drawer-admin-info .admin-name { font-size: 13px; color: rgba(255,255,255,0.65); }
+.drawer-admin-info .admin-name { font-size: 13px; color: rgba(255,255,255,.6); }
 .drawer-menu {
   border: none !important;
   background: transparent !important;
@@ -316,30 +316,30 @@ const pageTitle = computed(() => pageTitles[route.path] || '管理后台')
   height: 48px !important;
   line-height: 48px !important;
   font-size: 15px !important;
-  color: rgba(255,255,255,0.65) !important;
+  color: rgba(255,255,255,.65) !important;
   background: transparent !important;
 }
 .drawer-menu :deep(.el-menu-item:hover) {
-  background: rgba(255,255,255,0.08) !important;
+  background: rgba(255,255,255,.08) !important;
   color: #fff !important;
 }
 .drawer-menu :deep(.el-menu-item.is-active) {
-  background: #1890ff !important;
+  background: #1a5fb4 !important;
   color: #fff !important;
 }
 .drawer-menu :deep(.el-sub-menu__title) {
   height: 48px !important;
   line-height: 48px !important;
   font-size: 15px !important;
-  color: rgba(255,255,255,0.65) !important;
+  color: rgba(255,255,255,.65) !important;
   background: transparent !important;
 }
 .drawer-menu :deep(.el-sub-menu__title:hover) {
-  background: rgba(255,255,255,0.08) !important;
+  background: rgba(255,255,255,.08) !important;
   color: #fff !important;
 }
 .drawer-menu :deep(.el-sub-menu .el-menu) {
-  background: rgba(0,0,0,0.3) !important;
+  background: rgba(0,0,0,.3) !important;
 }
 .drawer-menu :deep(.el-sub-menu .el-menu-item) {
   padding-left: 48px !important;

@@ -187,3 +187,32 @@ onMounted(() => {
   loadConfig()
 })
 </script>
+
+<style scoped>
+.page { max-width: 900px; margin: 0 auto; padding: 20px; }
+.page h2 { margin-bottom: 16px; font-size: 20px; font-weight: 700; }
+.tip-box { background: #e8f4ff; border: 1px solid #b3d8fd; border-radius: 8px; padding: 12px 16px; font-size: 13px; color: #1e40af; margin-bottom: 20px; }
+.section-card { background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+.section-title { font-size: 15px; font-weight: 700; margin-bottom: 14px; }
+.section-title-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+:deep(.el-table) { font-size: 13px; }
+:deep(.el-descriptions) { font-size: 12px; }
+
+@media (max-width: 768px) {
+  .page { padding: 12px; }
+  .page h2 { font-size: 18px; margin-bottom: 12px; }
+  .tip-box { font-size: 12px; padding: 10px 12px; }
+  .section-card { padding: 14px 12px; margin-top: 14px !important; }
+  .section-title-row { flex-direction: column; align-items: flex-start; gap: 8px; }
+  :deep(.el-table) { font-size: 11px; }
+  :deep(.el-table th) { padding: 6px 4px; font-size: 11px; }
+  :deep(.el-table td) { padding: 6px 4px; }
+  :deep(.el-descriptions) { font-size: 11px; }
+  :deep(.el-form) { max-width: 100% !important; }
+  :deep(.el-form-item) { margin-bottom: 12px; }
+  :deep(.el-form-item__label) { font-size: 12px; }
+  :deep(.el-dialog) { width: 95% !important; max-width: 95%; }
+  div[style="margin-top:24px;text-align:right"] { text-align: center !important; margin-top: 16px; }
+  div[style="margin-top:24px;text-align:right"] .el-button { width: 100%; }
+}
+</style>

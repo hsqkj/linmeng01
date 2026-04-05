@@ -267,4 +267,60 @@ onMounted(() => {
 .tip-banner { background: #fff8e1; border: 1px solid #ffe58f; border-radius: 8px; padding: 10px 16px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; color: #E6A23C; font-size: 13px; }
 .filter-bar { display: flex; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
 .pagination { margin-top: 16px; display: flex; justify-content: flex-end; }
+
+@media (max-width: 768px) {
+  .page {
+    padding: 12px;
+    padding-bottom: 70px;
+  }
+  .page h2 {
+    font-size: 18px;
+    margin-bottom: 12px;
+  }
+  .tip-banner {
+    padding: 8px 12px;
+    font-size: 12px;
+    margin-bottom: 12px;
+  }
+  .filter-bar {
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .filter-bar .el-input {
+    width: 100% !important;
+    font-size: 13px;
+  }
+  .filter-bar .el-select {
+    width: calc(50% - 4px) !important;
+    font-size: 13px;
+  }
+  .filter-bar .el-button {
+    width: calc(50% - 4px);
+    font-size: 12px;
+    padding: 8px;
+  }
+  :deep(.el-tabs__nav) {
+    font-size: 13px;
+  }
+  :deep(.el-table) {
+    font-size: 11px;
+  }
+  :deep(.el-table__header th) {
+    font-size: 10px;
+    padding: 6px 3px;
+  }
+  :deep(.el-table__body td) {
+    padding: 6px 3px;
+  }
+  :deep(.el-dialog) {
+    width: 95% !important;
+    max-width: 600px;
+  }
+  :deep(.el-dialog__body) {
+    padding: 12px;
+  }
+  .pagination {
+    justify-content: center;
+  }
+}
 </style>

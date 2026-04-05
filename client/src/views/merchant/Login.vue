@@ -1,99 +1,60 @@
 <template>
-  <div class="login-page merchant">
-    <!-- 功能介绍区域 -->
-    <div class="feature-intro">
-      <h1>邻盟 · 商家资源精准触达平台</h1>
-      <p class="tagline">发布资源，精准匹配，高效合作</p>
-      <div class="features">
-        <div class="feature-item">
-          <el-icon><Goods /></el-icon>
-          <span>资源曝光</span>
-          <small>面向武汉300+社区展示</small>
-        </div>
-        <div class="feature-item">
-          <el-icon><Connection /></el-icon>
-          <span>精准匹配</span>
-          <small>AI推荐最适合的社区需求</small>
-        </div>
-        <div class="feature-item">
-          <el-icon><Medal /></el-icon>
-          <span>会员权益</span>
-          <small>多等级权益，差异化服务</small>
-        </div>
-        <div class="feature-item">
-          <el-icon><Trophy /></el-icon>
-          <span>品牌合作</span>
-          <small>提升在社区的影响力</small>
-        </div>
-      </div>
+  <div class="login-wrap merch-bg">
+    <div class="login-brand">
+      <div class="login-brand-logo">🏪 邻盟</div>
+      <div class="login-brand-sub">商家资源精准触达平台</div>
+    </div>
+    <div class="login-back">
+      <a href="#" @click.prevent="goBack">← 返回选择</a>
     </div>
 
-    <div class="login-container">
+    <div class="login-card">
       <div class="login-header">
-        <el-icon :size="40" color="#67C23A"><Shop /></el-icon>
+        <div class="icon">🏪</div>
         <h2>商家登录</h2>
-        <p>邻盟 - 社区资源智能匹配助手</p>
+        <p>邻盟 · 社区资源智能匹配</p>
       </div>
 
-      <el-form :model="form" class="login-form">
-        <el-form-item>
-          <el-input
-            v-model="form.phone"
-            placeholder="请输入手机号"
-            size="large"
-            :prefix-icon="Phone"
-          />
-        </el-form-item>
-
-        <el-form-item>
-          <div class="code-input">
-            <el-input
-              v-model="form.code"
-              placeholder="请输入验证码"
-              size="large"
-              :prefix-icon="Key"
-            />
-            <el-button 
-              type="success" 
-              size="large"
-              :disabled="counting"
-              @click="sendCode"
-            >
-              {{ counting ? `${countdown}s` : '获取验证码' }}
-            </el-button>
-          </div>
-        </el-form-item>
-
-        <el-form-item>
-          <el-checkbox v-model="form.remember">记住我</el-checkbox>
-          <el-link type="success" class="forgot-link">忘记密码？</el-link>
-        </el-form-item>
-
-        <el-form-item>
-          <el-button 
-            type="success" 
-            size="large" 
-            class="login-btn"
-            :loading="loading"
-            @click="login"
-          >
-            登录
-          </el-button>
-        </el-form-item>
-
-        <div class="test-notice">
-          <el-alert
-            title="测试版提示：验证码已自动填入"
-            type="info"
-            :closable="false"
-            show-icon
-          />
+      <div class="form-group">
+        <label>手机号</label>
+        <div class="input-addon">
+          <span class="addon">+86</span>
+          <input class="form-control" v-model="form.phone" placeholder="请输入手机号" type="tel" />
         </div>
-      </el-form>
+      </div>
+
+      <div class="form-group">
+        <label>验证码</label>
+        <div style="display:flex;gap:10px">
+          <input class="form-control" v-model="form.code" placeholder="请输入验证码" style="flex:1" />
+          <button class="code-btn" @click="sendCode" :disabled="counting">
+            {{ counting ? `${countdown}s` : '获取验证码' }}
+          </button>
+        </div>
+      </div>
+
+      <button class="btn-login merch" @click="login" :disabled="loading">
+        {{ loading ? '登录中...' : '登录' }}
+      </button>
+
+      <div class="login-test">测试版提示：验证码已自动填入 123456</div>
+
+      <div class="login-divider">
+        <div class="login-tips">
+          <div class="login-tip">
+            <i>📦</i><span>资源曝光</span>
+          </div>
+          <div class="login-tip">
+            <i>🔗</i><span>精准匹配</span>
+          </div>
+          <div class="login-tip">
+            <i>👑</i><span>会员权益</span>
+          </div>
+        </div>
+      </div>
 
       <div class="login-footer">
-        <el-link @click="goBack">← 返回角色选择</el-link>
-        <span>还没有账号？<el-link type="success" @click="$router.push('/register/merchant')">立即注册</el-link></span>
+        还没有账号？<a class="reg-link" @click="$router.push('/register/merchant')">立即注册</a>
       </div>
     </div>
   </div>
@@ -103,7 +64,6 @@
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Phone, Key, Shop, Goods, Connection, Medal, Trophy } from '@element-plus/icons-vue'
 import { merchantLogin } from '@/api/merchant'
 
 const router = useRouter()
@@ -145,12 +105,6 @@ const login = async () => {
     localStorage.setItem('merchant_token', res.data.token)
     localStorage.setItem('merchant_info', JSON.stringify(res.data.merchant))
     ElMessage.success('登录成功！')
-    // 如果商家信息不完整，提示补充
-    if (!res.data.merchant.company_name || !res.data.merchant.description) {
-      setTimeout(() => {
-        ElMessage.warning({ message: '请前往个人中心完善商家信息，提升匹配机会！', duration: 5000 })
-      }, 1000)
-    }
     router.push('/merchant')
   } catch (e) {
     // 错误已在request拦截器中处理
@@ -163,219 +117,118 @@ const goBack = () => { router.push('/') }
 </script>
 
 <style scoped>
-.login-page.merchant {
-  min-height: 100vh;
-  background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
+.login-wrap {
+  min-height: 100vh; display: flex; align-items: center;
+  justify-content: center; padding: 20px; position: relative;
 }
-
-.login-container {
-  background: white;
-  border-radius: 16px;
-  padding: 40px;
-  width: 100%;
-  max-width: 420px;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+.merch-bg { background: linear-gradient(135deg, #e66100, #b84d00); }
+.login-brand { position: absolute; top: 24px; left: 32px; z-index: 2; }
+.login-brand-logo { font-size: 22px; font-weight: 700; color: #fff; letter-spacing: 1px; }
+.login-brand-sub { font-size: 12px; color: rgba(255,255,255,.75); margin-top: 2px; }
+.login-back { position: absolute; top: 28px; right: 32px; z-index: 2; }
+.login-back a { color: rgba(255,255,255,.85); text-decoration: none; font-size: 14px; }
+.login-card {
+  background: #fff; border-radius: 20px; padding: 48px 40px;
+  width: 100%; max-width: 440px;
+  box-shadow: 0 24px 60px rgba(0,0,0,.15); position: relative; z-index: 1;
 }
-
-.login-header {
-  text-align: center;
-  margin-bottom: 30px;
+.login-header { text-align: center; margin-bottom: 32px; }
+.login-header .icon { font-size: 44px; margin-bottom: 12px; display: block; }
+.login-header h2 { font-size: 24px; font-weight: 700; color: #1a1a1a; margin-bottom: 6px; }
+.login-header p { color: #666; font-size: 14px; }
+.form-group { margin-bottom: 18px; }
+.form-group label { display: block; font-size: 14px; font-weight: 500; color: #333; margin-bottom: 7px; }
+.form-control {
+  width: 100%; padding: 12px 14px; border: 2px solid #e0e0e0;
+  border-radius: 10px; font-size: 15px; outline: none;
+  transition: border-color .2s; background: #fff; font-family: inherit;
 }
-
-.login-header h2 {
-  margin: 15px 0 5px;
-  color: #303133;
+.form-control:focus { border-color: #e66100; }
+.input-addon { display: flex; }
+.input-addon .addon {
+  padding: 12px 14px; background: #f5f5f5;
+  border: 2px solid #e0e0e0; border-right: none;
+  border-radius: 10px 0 0 10px; font-size: 15px; color: #555;
 }
-
-.login-header p {
-  color: #909399;
-  font-size: 14px;
+.input-addon .form-control { border-radius: 0 10px 10px 0; }
+.code-btn {
+  padding: 10px 16px; background: #fff0e0; color: #e66100;
+  border: 2px solid #e66100; border-radius: 10px;
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  white-space: nowrap; transition: all .2s; font-family: inherit;
 }
-
-.login-form {
-  margin-bottom: 20px;
+.code-btn:hover { background: #e66100; color: #fff; }
+.code-btn:disabled { opacity: .6; cursor: not-allowed; }
+.btn-login {
+  width: 100%; padding: 14px; border: none; border-radius: 10px;
+  font-size: 16px; font-weight: 600; cursor: pointer; color: #fff;
+  transition: all .2s; margin-top: 6px; font-family: inherit;
 }
-
-.code-input {
-  display: flex;
-  gap: 10px;
+.btn-login.merch { background: linear-gradient(135deg, #e66100, #b84d00); }
+.btn-login:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0,0,0,.2); }
+.btn-login:disabled { opacity: .7; cursor: not-allowed; transform: none; }
+.login-test {
+  padding: 10px 14px; background: #f0f7ff; border-radius: 8px;
+  font-size: 12px; text-align: center; border: 1px dashed #409EFF;
+  color: #409EFF; margin-top: 14px;
 }
-
-.code-input .el-input {
-  flex: 1;
-}
-
-.login-btn {
-  width: 100%;
-}
-
-.forgot-link {
-  float: right;
-}
-
-.test-notice {
-  margin-top: 15px;
-}
-
-.login-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-top: 20px;
-  border-top: 1px solid #ebeef5;
-}
-
+.login-divider { border-top: 1px solid #eee; margin-top: 24px; padding-top: 20px; }
+.login-tips { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; text-align: center; }
+.login-tip { padding: 10px 6px; background: #f9f9f9; border-radius: 10px; }
+.login-tip i { font-size: 22px; margin-bottom: 4px; display: block; font-style: normal; }
+.login-tip span { display: block; font-size: 12px; font-weight: 600; color: #333; }
+.login-footer { text-align: center; margin-top: 18px; font-size: 13px; color: #666; }
+.reg-link { color: #e66100; font-weight: 600; cursor: pointer; text-decoration: none; margin-left: 4px; }
 @media (max-width: 768px) {
-  .login-container {
-    padding: 24px 16px;
-    border-radius: 12px;
+  .login-card {
+    padding: 28px 20px;
+    max-width: 100%;
+    border-radius: 16px;
   }
   .login-header {
-    margin-bottom: 20px;
+    margin-bottom: 24px;
   }
   .login-header h2 {
     font-size: 20px;
-    margin: 10px 0 5px;
   }
   .login-header p {
     font-size: 12px;
   }
-  .code-input :deep(.el-input) {
-    width: 55%;
+  .login-brand {
+    top: 16px;
+    left: 16px;
   }
-  .code-input .el-button {
-    flex: 1;
-    min-width: 0;
+  .login-brand-logo {
+    font-size: 18px;
   }
-  .forgot-link {
-    float: none;
-    margin-left: 8px;
+  .login-back {
+    top: 20px;
+    right: 16px;
   }
-  .login-footer {
-    flex-direction: column;
-    gap: 10px;
-    text-align: center;
+  .login-tips {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
   }
-  .test-notice {
-    margin-top: 10px;
+  .login-tip {
+    padding: 8px 4px;
   }
-  .test-notice :deep(.el-alert) {
-    font-size: 12px;
-    padding: 8px 12px;
+  .login-tip i {
+    font-size: 18px;
   }
-}
-
-@media (max-width: 480px) {
-  .login-container {
-    padding: 20px 14px;
-    margin: 10px 0;
-  }
-  .login-page.merchant {
-    padding: 10px;
-    align-items: flex-start;
-    padding-top: 20px;
-  }
-}
-
-/* 功能介绍样式 */
-.feature-intro {
-  position: fixed;
-  left: 5%;
-  top: 50%;
-  transform: translateY(-50%);
-  color: white;
-  max-width: 400px;
-  padding-right: 60px;
-}
-
-.feature-intro h1 {
-  font-size: 32px;
-  margin-bottom: 12px;
-  text-shadow: 0 2px 8px rgba(0,0,0,0.2);
-}
-
-.feature-intro .tagline {
-  font-size: 18px;
-  opacity: 0.95;
-  margin-bottom: 32px;
-}
-
-.feature-intro .features {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-}
-
-.feature-item {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.feature-item .el-icon {
-  font-size: 28px;
-  margin-bottom: 4px;
-}
-
-.feature-item span {
-  font-weight: 600;
-  font-size: 16px;
-}
-
-.feature-item small {
-  font-size: 13px;
-  opacity: 0.85;
-}
-
-@media (max-width: 1100px) {
-  .feature-intro {
-    position: static;
-    transform: none;
-    max-width: 100%;
-    padding: 20px 16px;
-    margin-bottom: 0;
-    text-align: center;
-  }
-  .feature-intro h1 {
-    font-size: 24px;
-  }
-  .feature-intro .tagline {
-    font-size: 14px;
-    margin-bottom: 20px;
-  }
-  .feature-intro .features {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-    max-width: 400px;
-    margin: 0 auto;
-  }
-  .feature-item {
-    align-items: center;
-  }
-  .feature-item .el-icon {
-    font-size: 24px;
-  }
-  .feature-item span {
-    font-size: 14px;
-  }
-  .feature-item small {
+  .login-tip span {
     font-size: 11px;
   }
-  .login-page.merchant {
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
-    padding-top: 20px;
+  .login-test {
+    font-size: 11px;
+    padding: 8px 10px;
   }
-  .login-container {
-    max-width: 480px;
-    width: 100%;
-    border-radius: 16px;
-    margin: 0 16px;
+  .login-footer {
+    font-size: 12px;
   }
+}
+@media (max-width: 480px) {
+  .login-card { padding: 24px 16px; }
+  .login-brand { top: 16px; left: 16px; }
+  .login-back { top: 20px; right: 16px; }
 }
 </style>

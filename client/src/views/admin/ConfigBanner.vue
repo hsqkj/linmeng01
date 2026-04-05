@@ -143,4 +143,42 @@ onMounted(() => { loadBanners() })
 .page h2 { margin-bottom: 16px; font-size: 22px; font-weight: 700; }
 .tip-box { background: #f0f7ff; border-radius: 8px; padding: 10px 16px; margin-bottom: 16px; color: #409EFF; font-size: 14px; }
 .banner-preview { width: 120px; height: 36px; border-radius: 4px; display: flex; align-items: center; justify-content: center; padding: 0 8px; overflow: hidden; }
+
+@media (max-width: 768px) {
+  .page {
+    padding: 12px;
+    padding-bottom: 70px;
+  }
+  .page h2 {
+    font-size: 18px;
+    margin-bottom: 12px;
+  }
+  .tip-box {
+    padding: 8px 12px;
+    font-size: 12px;
+    margin-bottom: 12px;
+  }
+  .el-button {
+    font-size: 13px;
+    width: 100%;
+    margin-bottom: 12px;
+  }
+  :deep(.el-table) {
+    font-size: 11px;
+  }
+  :deep(.el-table__header th) {
+    font-size: 10px;
+    padding: 6px 3px;
+  }
+  :deep(.el-table__body td) {
+    padding: 6px 3px;
+  }
+  :deep(.el-dialog) {
+    width: 95% !important;
+    max-width: 560px;
+  }
+  :deep(.el-dialog__body) {
+    padding: 12px;
+  }
+}
 </style>

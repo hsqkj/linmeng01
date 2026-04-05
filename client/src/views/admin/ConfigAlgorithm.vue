@@ -129,4 +129,46 @@ onMounted(() => { loadConfig() })
 .total-weight { padding: 8px 16px; border-radius: 6px; font-size: 14px; font-weight: 600; margin-bottom: 16px; }
 .total-weight.ok { background: #f0fff4; color: #67C23A; }
 .total-weight.error { background: #fff5f5; color: #F56C6C; }
+
+@media (max-width: 768px) {
+  .page {
+    padding: 12px;
+    padding-bottom: 70px;
+  }
+  .page h2 {
+    font-size: 18px;
+    margin-bottom: 12px;
+  }
+  .page h3 {
+    font-size: 15px;
+  }
+  .tip-box {
+    padding: 8px 12px;
+    font-size: 12px;
+    margin-bottom: 10px;
+  }
+  .total-weight {
+    font-size: 12px;
+    padding: 6px 12px;
+    margin-bottom: 12px;
+  }
+  :deep(.el-table) {
+    font-size: 11px;
+  }
+  :deep(.el-table__header th) {
+    font-size: 10px;
+    padding: 6px 3px;
+  }
+  :deep(.el-table__body td) {
+    padding: 6px 3px;
+  }
+  :deep(.el-form-item) {
+    margin-bottom: 10px;
+  }
+  :deep(.el-radio-group) {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+}
 </style>

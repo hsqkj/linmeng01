@@ -292,6 +292,32 @@ onMounted(() => {
 .benefit-name { font-size: 13px; color: #606266; margin: 8px 0 4px; }
 .benefit-val { font-size: 14px; font-weight: 600; color: #303133; }
 .benefit-val.unavailable { color: #c0c4cc; }
+
+@media (max-width: 768px) {
+  .page { padding: 12px; padding-bottom: 70px; }
+  .page h2 { font-size: 18px; margin-bottom: 14px; }
+  .current-level-card { flex-direction: column; text-align: center; padding: 16px; gap: 12px; }
+  .level-info { text-align: center; }
+  .level-fee { text-align: center; }
+  .section-card { padding: 14px 12px; }
+  .benefit-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .benefit-item { padding: 12px 8px; }
+  .benefit-name { font-size: 12px; }
+  .benefit-val { font-size: 13px; }
+  .level-compare { gap: 8px; }
+  .level-col { min-width: 130px; padding: 10px; }
+  .lv-name { font-size: 13px; }
+  .lv-b-item { font-size: 11px; }
+  :deep(.el-table) { font-size: 11px; }
+  :deep(.el-table th) { padding: 6px 4px; font-size: 11px; }
+  :deep(.el-table td) { padding: 6px 4px; }
+  :deep(.el-dialog) { width: 90% !important; max-width: 500px; }
+  .upgrade-form { padding: 0 4px; }
+  .upgrade-option { padding: 10px; }
+  .uo-name { font-size: 14px; }
+  .uo-fee { font-size: 14px; }
+}
+
 .level-compare { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 8px; }
 .level-col { flex: 1; min-width: 150px; border: 2px solid #f0f0f0; border-radius: 10px; padding: 14px; }
 .level-col.current { border-color: #E6A23C; background: #fff8e1; }

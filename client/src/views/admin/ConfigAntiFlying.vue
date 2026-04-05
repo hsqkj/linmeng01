@@ -116,3 +116,25 @@ onMounted(() => {
   loadConfig()
 })
 </script>
+
+<style scoped>
+.page { max-width: 900px; margin: 0 auto; padding: 20px; }
+.page h2 { margin-bottom: 16px; font-size: 20px; font-weight: 700; }
+.tip-box { background: #e8f4ff; border: 1px solid #b3d8fd; border-radius: 8px; padding: 12px 16px; font-size: 13px; color: #1e40af; margin-bottom: 20px; }
+.section-card { background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+.section-title { font-size: 15px; font-weight: 700; margin-bottom: 14px; }
+:deep(.el-form-item__label) { font-size: 13px; }
+
+@media (max-width: 768px) {
+  .page { padding: 12px; }
+  .page h2 { font-size: 18px; margin-bottom: 12px; }
+  .tip-box { font-size: 12px; padding: 10px 12px; }
+  .section-card { padding: 14px 12px; }
+  :deep(.el-form-item) { margin-bottom: 14px; }
+  :deep(.el-form-item__label) { width: 100px !important; font-size: 12px; }
+  :deep(.el-form-item__content) { margin-left: 100px !important; padding-left: 8px; }
+  :deep(.el-form-item span[style]) { margin-left: 6px !important; font-size: 12px; }
+  div[style="margin-top:24px;text-align:right"] { text-align: center !important; margin-top: 16px; }
+  div[style="margin-top:24px;text-align:right"] .el-button { width: 100%; }
+}
+</style>

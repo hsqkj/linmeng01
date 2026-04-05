@@ -54,7 +54,17 @@
           <el-descriptions :column="2" border>
             <el-descriptions-item label="姓名">{{ currentAmbassador.real_name }}</el-descriptions-item>
             <el-descriptions-item label="手机号">{{ currentAmbassador.phone }}</el-descriptions-item>
-            <el-descriptions-item label="渠道码">{{ 'AMB' + String(currentAmbassador.id).padStart(6, '0') }}</el-descriptions-item>
+            <el-descriptions-item label="渠道码">
+              <span style="font-weight:600;color:#409EFF;font-family:monospace">{{ currentAmbassador.qr_code || '未生成' }}</span>
+            </el-descriptions-item>
+            <el-descriptions-item label="专属链接" :span="2">
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                <code style="background:#f5f7fa;padding:4px 8px;border-radius:4px;font-size:12px;max-width:400px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+                  {{ getRegisterUrl(currentAmbassador.qr_code) }}
+                </code>
+                <el-button type="primary" size="small" @click="copyLink(currentAmbassador.qr_code)">复制链接</el-button>
+              </div>
+            </el-descriptions-item>
             <el-descriptions-item label="注册时间">{{ formatTime(currentAmbassador.created_at) }}</el-descriptions-item>
             <el-descriptions-item label="账号状态">
               <el-tag :type="statusTagType[currentAmbassador.status]" size="small">{{ statusName[currentAmbassador.status] }}</el-tag>
@@ -156,6 +166,30 @@ function formatTime(time) {
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`
 }
 
+// 获取专属注册链接
+function getRegisterUrl(qrCode) {
+  const baseUrl = import.meta.env.VITE_API_BASE || window.location.origin
+  return `${baseUrl}/#/register?code=${qrCode || ''}`
+}
+
+// 复制链接
+async function copyLink(qrCode) {
+  const url = getRegisterUrl(qrCode)
+  try {
+    await navigator.clipboard.writeText(url)
+    ElMessage.success('链接已复制到剪贴板')
+  } catch {
+    // 降级方案
+    const textarea = document.createElement('textarea')
+    textarea.value = url
+    document.body.appendChild(textarea)
+    textarea.select()
+    document.execCommand('copy')
+    document.body.removeChild(textarea)
+    ElMessage.success('链接已复制到剪贴板')
+  }
+}
+
 async function loadAmbassadors() {
   loading.value = true
   try {
@@ -183,6 +217,15 @@ async function viewAmbassador(row) {
   showDetail.value = true
   ambassadorMerchants.value = []
   commissionRecords.value = []
+  // 加载完整详情（包含真实qr_code）
+  try {
+    const res = await getAmbassadorDetail(row.id)
+    if (res.data) {
+      currentAmbassador.value = { ...row, ...res.data }
+    }
+  } catch (e) {
+    console.error('加载大使详情失败', e)
+  }
 }
 
 async function viewCommission(row) {
@@ -252,4 +295,67 @@ onMounted(() => {
 .cs-item { flex: 1; text-align: center; }
 .cs-val { font-size: 26px; font-weight: 700; }
 .cs-label { font-size: 13px; color: #909399; margin-top: 4px; }
+
+@media (max-width: 768px) {
+  .users-page {
+    padding: 12px;
+    padding-bottom: 70px;
+  }
+  .users-page h2 {
+    font-size: 18px;
+    margin-bottom: 12px;
+  }
+  .filter-bar {
+    gap: 8px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+  .filter-bar .el-input {
+    width: 100% !important;
+    font-size: 13px;
+  }
+  .filter-bar .el-select {
+    width: calc(50% - 4px) !important;
+    font-size: 13px;
+  }
+  :deep(.el-table) {
+    font-size: 11px;
+  }
+  :deep(.el-table__header th) {
+    font-size: 10px;
+    padding: 6px 3px;
+  }
+  :deep(.el-table__body td) {
+    padding: 6px 3px;
+  }
+  :deep(.el-dialog) {
+    width: 95% !important;
+    max-width: 700px;
+  }
+  :deep(.el-dialog__body) {
+    padding: 12px;
+  }
+  .commission-summary {
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px;
+  }
+  .cs-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .cs-val {
+    font-size: 20px;
+  }
+  .cs-label {
+    margin-top: 0;
+  }
+  :deep(.el-tabs__content) {
+    overflow: auto;
+  }
+  .pagination {
+    justify-content: center;
+  }
+}
 </style>

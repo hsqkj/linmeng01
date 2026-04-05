@@ -54,7 +54,7 @@
 
     <el-row :gutter="20">
       <!-- 近期收益 -->
-      <el-col :span="16">
+      <el-col :xs="24" :md="16">
         <div class="section-card">
           <div class="section-header">
             <h3>📈 近6个月收益趋势</h3>
@@ -100,7 +100,7 @@
       </el-col>
 
       <!-- 右侧 -->
-      <el-col :span="8">
+      <el-col :xs="24" :md="8">
         <!-- 收益概况 -->
         <div class="section-card">
           <h3>💰 收益概况</h3>
@@ -149,6 +149,30 @@
             </div>
           </div>
         </div>
+
+        <!-- 提成政策说明 -->
+        <div class="section-card" style="margin-top:16px">
+          <h3>📋 提成政策</h3>
+          <div class="policy-info">
+            <div class="policy-row">
+              <span class="policy-label">首次入会提成</span>
+              <span class="policy-value">{{ commissionConfig.firstRate || 20 }}%</span>
+            </div>
+            <div class="policy-row">
+              <span class="policy-label">续费提成</span>
+              <span class="policy-value">{{ commissionConfig.renewRate || 10 }}%</span>
+            </div>
+            <div class="policy-row">
+              <span class="policy-label">最低提现金额</span>
+              <span class="policy-value">{{ commissionConfig.minWithdraw || 100 }}元</span>
+            </div>
+            <div class="policy-row">
+              <span class="policy-label">结算周期</span>
+              <span class="policy-value">{{ settlePeriodLabel }}</span>
+            </div>
+          </div>
+          <div v-if="commissionConfig.remark" class="policy-remark">{{ commissionConfig.remark }}</div>
+        </div>
       </el-col>
     </el-row>
   </div>
@@ -159,18 +183,25 @@ import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Grid, List, Money, Wallet } from '@element-plus/icons-vue'
-import { getHomeData } from '@/api/ambassador'
+import { getHomeData, getCommissionConfig } from '@/api/ambassador'
 
 const router = useRouter()
 const loading = ref(false)
 const ambData = ref({})
 const recentMerchants = ref([])
 const monthCommission = ref(0)
+const commissionConfig = ref({})
 
 const levelLabel = (lvl) => ({ 1:'普通会员', 2:'银牌会员', 3:'金牌会员', 4:'铂金会员', 5:'钻石会员' })[lvl] || '普通会员'
 const levelColors = { '普通会员': 'info', '银牌会员': 'info', '金牌会员': 'warning', '铂金会员': 'warning', '钻石会员': 'danger' }
 const statusLabel = { 0:'待审核', 1:'已缴费', 2:'禁用' }
 const statusTag = { 0:'warning', 1:'success', 2:'info' }
+
+const settlePeriodLabel = computed(() => ({
+  monthly: '每月1日结算',
+  quarterly: '每季度结算',
+  manual: '手动结算'
+})[commissionConfig.value.settlePeriod] || '每月1日结算')
 
 // 近6个月柱状图数据（本地计算）
 const monthlyData = ref([
@@ -188,9 +219,6 @@ async function loadHome() {
     ambData.value = d
     recentMerchants.value = d.recentMerchants || []
     monthCommission.value = d.monthCommission || 0
-    // 动态更新本月数据
-    const now = new Date()
-    monthlyData.value[now.getMonth() - 3]?.commission // 3月
   } catch {
     ElMessage.error('加载首页数据失败')
   } finally {
@@ -198,7 +226,16 @@ async function loadHome() {
   }
 }
 
-onMounted(() => { loadHome() })
+async function loadConfig() {
+  try {
+    const res = await getCommissionConfig()
+    if (res.data) {
+      commissionConfig.value = res.data
+    }
+  } catch { /* 静默失败，使用默认值 */ }
+}
+
+onMounted(() => { loadHome(); loadConfig() })
 
 function fmtMoney(v) {
   if (!v) return '0'
@@ -263,8 +300,54 @@ function fmtTime(t) {
 .rank-name { flex: 1; font-size: 14px; font-weight: 500; }
 .rank-val { font-size: 13px; color: #67C23A; font-weight: 600; }
 
+/* 提成政策卡片 */
+.policy-info { margin-top: 10px; }
+.policy-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px dashed #eee;
+}
+.policy-row:last-of-type { border-bottom: none; }
+.policy-label { font-size: 13px; color: #606266; }
+.policy-value { font-size: 14px; color: #F59E0B; font-weight: 600; }
+.policy-remark {
+  margin-top: 12px;
+  padding: 10px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #606266;
+  line-height: 1.6;
+}
+
 @media (max-width: 768px) {
-  .stats-row { grid-template-columns: 1fr 1fr; }
-  .welcome-banner { flex-direction: column; gap: 16px; }
+  .ambassador-home {
+    padding-bottom: 70px;
+    width: 100%;
+    max-width: 100%;
+  }
+  .welcome-banner { flex-direction: column; gap: 14px; padding: 16px; }
+  .banner-left { flex-direction: column; text-align: center; }
+  .banner-info { text-align: center; }
+  .amb-name { font-size: 16px; margin-bottom: 6px; }
+  .amb-meta { flex-direction: column; gap: 6px; align-items: center; }
+  .stats-row { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .stat-card { padding: 12px; }
+  .stat-icon { font-size: 22px; }
+  .stat-val { font-size: 18px; }
+  .stat-label { font-size: 11px; }
+  .section-card { padding: 14px 12px; }
+  .section-header h3, .section-card h3 { font-size: 14px; margin-bottom: 12px; }
+  :deep(.el-table) { font-size: 11px; }
+  :deep(.el-table th) { padding: 6px 4px; font-size: 11px; }
+  :deep(.el-table td) { padding: 6px 4px; }
+  .income-item { padding: 6px 0; }
+  .income-label { font-size: 13px; }
+  .income-val { font-size: 16px; }
+  .income-item.total .income-val { font-size: 20px; }
+  .quick-actions { gap: 10px; }
+  .qa-item { padding: 12px; font-size: 12px; }
 }
 </style>

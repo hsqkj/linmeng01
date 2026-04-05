@@ -383,4 +383,74 @@ onMounted(() => { loadConfig() })
 .criteria-name { flex: 1; }
 .criteria-score { color: #909399; font-size: 13px; }
 .action-bar { margin-top: 24px; display: flex; gap: 12px; justify-content: center; }
+
+@media (max-width: 768px) {
+  .page {
+    padding: 12px;
+    padding-bottom: 70px;
+  }
+  .page h2 {
+    font-size: 18px;
+    margin-bottom: 12px;
+  }
+  .tip-box {
+    padding: 8px 12px;
+    font-size: 12px;
+    margin-bottom: 12px;
+  }
+  .section-card {
+    padding: 14px;
+    border-radius: 8px;
+  }
+  .section-title {
+    font-size: 14px;
+  }
+  .section-title-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .section-title-row .el-button {
+    width: 100%;
+    font-size: 13px;
+  }
+  .desc-text {
+    font-size: 12px;
+  }
+  .weight-summary {
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-start;
+    font-size: 13px;
+  }
+  :deep(.el-table) {
+    font-size: 10px;
+  }
+  :deep(.el-table__header th) {
+    font-size: 9px;
+    padding: 4px 2px;
+  }
+  :deep(.el-table__body td) {
+    padding: 4px 2px;
+  }
+  :deep(.el-collapse) {
+    font-size: 12px;
+  }
+  .criteria-item {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .action-bar {
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 16px;
+  }
+  .action-bar .el-button {
+    width: 100%;
+  }
+  :deep(.el-dialog) {
+    width: 95% !important;
+    max-width: 480px;
+  }
+}
 </style>

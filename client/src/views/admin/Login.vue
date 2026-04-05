@@ -1,49 +1,38 @@
 <template>
-  <div class="login-page admin">
-    <div class="login-container">
+  <div class="login-wrap admin-bg">
+    <div class="login-brand">
+      <div class="login-brand-logo">⚙️ 邻盟</div>
+      <div class="login-brand-sub">平台管理后台</div>
+    </div>
+    <div class="login-back">
+      <a href="#" @click.prevent="goBack">← 返回选择</a>
+    </div>
+
+    <div class="login-card">
       <div class="login-header">
-        <el-icon :size="40" color="#909399"><Setting /></el-icon>
-        <h2>管理后台</h2>
-        <p>邻盟 - 社区资源智能匹配助手</p>
+        <div class="icon">🛡️</div>
+        <h2>管理员登录</h2>
+        <p>邻盟 · 平台管理后台</p>
       </div>
 
-      <el-form :model="form" class="login-form" @submit.prevent="login">
-        <el-form-item>
-          <el-input
-            v-model="form.username"
-            placeholder="请输入用户名"
-            size="large"
-            :prefix-icon="User"
-            clearable
-          />
-        </el-form-item>
-        <el-form-item>
-          <el-input
-            v-model="form.password"
-            placeholder="请输入密码"
-            size="large"
-            :prefix-icon="Key"
-            type="password"
-            show-password
-            @keyup.enter="login"
-          />
-        </el-form-item>
-        <el-form-item>
-          <el-button
-            type="primary"
-            size="large"
-            class="login-btn"
-            :loading="loading"
-            @click="login"
-          >登录</el-button>
-        </el-form-item>
-        <div class="test-notice">
-          <el-alert title="测试账号：admin / admin123" type="info" :closable="false" show-icon />
-        </div>
-      </el-form>
+      <div class="form-group">
+        <label>用户名</label>
+        <input class="form-control" v-model="form.username" placeholder="请输入用户名" @keyup.enter="login" />
+      </div>
+
+      <div class="form-group">
+        <label>密码</label>
+        <input class="form-control" v-model="form.password" placeholder="请输入密码" type="password" @keyup.enter="login" />
+      </div>
+
+      <button class="btn-login admin" @click="login" :disabled="loading">
+        {{ loading ? '登录中...' : '登录' }}
+      </button>
+
+      <div class="login-test">测试账号：admin / admin123</div>
 
       <div class="login-footer">
-        <el-link @click="goBack">← 返回角色选择</el-link>
+        <a class="back-link" @click="goBack">← 返回角色选择</a>
       </div>
     </div>
   </div>
@@ -53,7 +42,6 @@
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { User, Key } from '@element-plus/icons-vue'
 import { adminLogin } from '@/api/admin'
 
 const router = useRouter()
@@ -82,29 +70,86 @@ const goBack = () => { router.push('/') }
 </script>
 
 <style scoped>
-.login-page.admin {
-  min-height: 100vh;
-  background: linear-gradient(135deg, #2c3e50 0%, #3d5a80 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
+.login-wrap {
+  min-height: 100vh; display: flex; align-items: center;
+  justify-content: center; padding: 20px; position: relative;
 }
-
-.login-container {
-  background: white;
-  border-radius: 16px;
-  padding: 40px;
-  width: 100%;
-  max-width: 420px;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+.admin-bg { background: linear-gradient(135deg, #1a5fb4, #14407a); }
+.login-brand { position: absolute; top: 24px; left: 32px; z-index: 2; }
+.login-brand-logo { font-size: 22px; font-weight: 700; color: #fff; letter-spacing: 1px; }
+.login-brand-sub { font-size: 12px; color: rgba(255,255,255,.75); margin-top: 2px; }
+.login-back { position: absolute; top: 28px; right: 32px; z-index: 2; }
+.login-back a { color: rgba(255,255,255,.85); text-decoration: none; font-size: 14px; }
+.login-card {
+  background: #fff; border-radius: 20px; padding: 48px 40px;
+  width: 100%; max-width: 420px;
+  box-shadow: 0 24px 60px rgba(0,0,0,.2); z-index: 1;
 }
-
-.login-header { text-align: center; margin-bottom: 30px; }
-.login-header h2 { margin: 15px 0 5px; }
-.login-header p { color: #909399; font-size: 14px; }
-
-.code-input { display: flex; gap: 10px; }
-.code-input .el-input { flex: 1; }
-.login-footer { padding-top: 20px; border-top: 1px solid #ebeef5; }
+.login-header { text-align: center; margin-bottom: 32px; }
+.login-header .icon { font-size: 44px; margin-bottom: 12px; display: block; }
+.login-header h2 { font-size: 24px; font-weight: 700; color: #1a1a1a; margin-bottom: 6px; }
+.login-header p { color: #666; font-size: 14px; }
+.form-group { margin-bottom: 18px; }
+.form-group label { display: block; font-size: 14px; font-weight: 500; color: #333; margin-bottom: 7px; }
+.form-control {
+  width: 100%; padding: 12px 14px; border: 2px solid #e0e0e0;
+  border-radius: 10px; font-size: 15px; outline: none;
+  transition: border-color .2s; background: #fff; font-family: inherit;
+}
+.form-control:focus { border-color: #1a5fb4; }
+.btn-login {
+  width: 100%; padding: 14px; border: none; border-radius: 10px;
+  font-size: 16px; font-weight: 600; cursor: pointer; color: #fff;
+  transition: all .2s; margin-top: 6px; font-family: inherit;
+}
+.btn-login.admin { background: linear-gradient(135deg, #1a5fb4, #14407a); }
+.btn-login:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0,0,0,.2); }
+.btn-login:disabled { opacity: .7; cursor: not-allowed; transform: none; }
+.login-test {
+  padding: 10px 14px; background: #f0f7ff; border-radius: 8px;
+  font-size: 12px; text-align: center; border: 1px dashed #1a5fb4;
+  color: #1a5fb4; margin-top: 14px;
+}
+.login-footer { text-align: center; margin-top: 20px; padding-top: 16px; border-top: 1px solid #eee; }
+.back-link { color: #888; font-size: 13px; cursor: pointer; }
+.back-link:hover { color: #1a5fb4; }
+@media (max-width: 768px) {
+  .login-card {
+    padding: 28px 20px;
+    max-width: 100%;
+    border-radius: 16px;
+  }
+  .login-header {
+    margin-bottom: 24px;
+  }
+  .login-header h2 {
+    font-size: 20px;
+  }
+  .login-header p {
+    font-size: 12px;
+  }
+  .login-brand {
+    top: 16px;
+    left: 16px;
+  }
+  .login-brand-logo {
+    font-size: 18px;
+  }
+  .login-back {
+    top: 20px;
+    right: 16px;
+  }
+  .login-test {
+    font-size: 11px;
+    padding: 8px 10px;
+  }
+  .login-footer {
+    font-size: 12px;
+  }
+}
+@media (max-width: 480px) {
+  .login-card { padding: 24px 16px; }
+  .login-brand { top: 16px; left: 16px; }
+  .login-back { top: 20px; right: 16px; }
+}
 </style>

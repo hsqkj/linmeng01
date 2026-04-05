@@ -321,4 +321,60 @@ function fmtTime(t) { return t ? String(t).slice(0, 16).replace('T', ' ') : '' }
 .star { color: #dcdfe6; font-size: 14px; }
 .star.filled { color: #f56c6c; }
 .rating-selector { padding: 4px 0; }
+
+@media (max-width: 768px) {
+  .users-page {
+    padding: 12px;
+    padding-bottom: 70px;
+  }
+  .users-page h2 {
+    font-size: 18px;
+    margin-bottom: 12px;
+  }
+  .filter-bar {
+    gap: 8px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+  .filter-bar .el-input {
+    width: 100% !important;
+    font-size: 13px;
+  }
+  .filter-bar .el-select {
+    width: calc(50% - 4px) !important;
+    font-size: 13px;
+  }
+  :deep(.el-table) {
+    font-size: 11px;
+  }
+  :deep(.el-table__header th) {
+    font-size: 10px;
+    padding: 6px 3px;
+  }
+  :deep(.el-table__body td) {
+    padding: 6px 3px;
+  }
+  :deep(.el-dialog) {
+    width: 95% !important;
+    max-width: 820px;
+  }
+  :deep(.el-dialog__body) {
+    padding: 12px;
+  }
+  :deep(.el-tabs__content) {
+    overflow: auto;
+  }
+  .pagination {
+    justify-content: center;
+  }
+  .tag-list {
+    gap: 4px;
+  }
+  .star-display {
+    gap: 1px;
+  }
+  .star {
+    font-size: 12px;
+  }
+}
 </style>

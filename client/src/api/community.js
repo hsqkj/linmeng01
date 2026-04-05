@@ -62,6 +62,9 @@ export const getMyFavorites = (params) => request.get('/community/favorites', { 
 
 // ====== 系统通知 ======
 export const getMyNotifications = (params) => request.get('/community/notifications', { params })
+export const getUnreadCount = () => request.get('/community/notifications/unread-count')
+export const markNotificationsRead = () => request.post('/community/notifications/mark-read')
+export const markOneNotificationRead = (id) => request.put(`/community/notifications/${id}/read`)
 
 // ====== 公共配置 ======
 export const getPublishTypes = () => request.get('/public/publish-types')

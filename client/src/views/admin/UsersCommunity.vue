@@ -156,4 +156,47 @@ function fmtTime(t) { return t ? String(t).slice(0, 16).replace('T', ' ') : '' }
 .pagination { margin-top: 16px; display: flex; justify-content: flex-end; }
 .tags-section { padding: 8px 0; }
 .tag-list { display: flex; flex-wrap: wrap; gap: 6px; }
+
+@media (max-width: 768px) {
+  .users-page {
+    padding: 12px;
+    padding-bottom: 70px;
+  }
+  .users-page h2 {
+    font-size: 18px;
+    margin-bottom: 12px;
+  }
+  .filter-bar {
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .filter-bar .el-input,
+  .filter-bar .el-select {
+    width: calc(50% - 4px) !important;
+    font-size: 13px;
+  }
+  :deep(.el-table) {
+    font-size: 12px;
+  }
+  :deep(.el-table__header th) {
+    font-size: 11px;
+    padding: 8px 4px;
+  }
+  :deep(.el-table__body td) {
+    padding: 8px 4px;
+  }
+  :deep(.el-dialog) {
+    width: 95% !important;
+    max-width: 800px;
+  }
+  :deep(.el-dialog__body) {
+    padding: 16px;
+  }
+  :deep(.el-tabs__content) {
+    overflow: auto;
+  }
+  .pagination {
+    justify-content: center;
+  }
+}
 </style>

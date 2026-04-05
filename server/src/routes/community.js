@@ -75,5 +75,8 @@ router.get('/favorites', CommunityController.getMyFavorites)
 
 // 系统通知
 router.get('/notifications', CommunityController.getMyNotifications)
+router.get('/notifications/unread-count', CommunityController.getUnreadCount)
+router.post('/notifications/mark-read', CommunityController.markNotificationsRead)
+router.put('/notifications/:id/read', CommunityController.markOneNotificationRead)
 
 module.exports = router

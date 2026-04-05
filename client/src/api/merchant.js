@@ -63,3 +63,6 @@ export const getPublishTypes = () => request.get('/public/publish-types')
 
 // ====== 系统通知 ======
 export const getMyNotifications = (params) => request.get('/merchant/notifications', { params })
+export const getUnreadCount = () => request.get('/merchant/notifications/unread-count')
+export const markNotificationsRead = () => request.post('/merchant/notifications/mark-read')
+export const markOneNotificationRead = (id) => request.put(`/merchant/notifications/${id}/read`)

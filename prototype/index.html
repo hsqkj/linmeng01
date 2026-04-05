@@ -781,6 +781,54 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3C
   </div>
 </div>
 
+<!-- ==================== 招商大使·我的收益 ==================== -->
+<div id="p-ambassador-earnings" class="page">
+  <div class="top-nav"><div class="brand amb"><i class="fas fa-medal"></i> 邻盟 · 招商大使</div><nav><a href="#" onclick="showPage('ambassador-home');return false">首页</a><a href="#" onclick="showPage('ambassador-invite');return false">邀请商家</a><a href="#" class="active amb">我的收益</a></nav><div class="right"><div class="avatar" style="background:var(--amb)">李</div></div></div>
+  <div class="content">
+    <h1 class="page-title"><i class="fas fa-coins" style="color:var(--amb);margin-right:8px"></i>我的收益</h1><p class="page-sub">累计收益明细，可申请提现到绑定账户</p>
+    <div class="stats-row" style="grid-template-columns:repeat(4,1fr);margin-bottom:24px">
+      <div class="stat-card"><div style="color:var(--amb);font-size:14px;margin-bottom:12px"><i class="fas fa-coins"></i> 累计收益</div><div class="num" style="color:var(--amb)">¥8,580</div><div class="trend" style="color:#52c41a"><i class="fas fa-arrow-up"></i> 本月 +¥800</div></div>
+      <div class="stat-card"><div style="color:var(--comm);font-size:14px;margin-bottom:12px"><i class="fas fa-wallet"></i> 可提现</div><div class="num" style="color:var(--comm)">¥7,380</div><div class="trend"><button class="btn btn-sm btn-primary amb" style="margin-top:4px"><i class="fas fa-money-bill-wave"></i> 申请提现</button></div></div>
+      <div class="stat-card"><div style="color:var(--admin);font-size:14px;margin-bottom:12px"><i class="fas fa-clock"></i> 待结算</div><div class="num" style="color:var(--admin)">¥1,200</div><div class="trend">合作确认后结算</div></div>
+      <div class="stat-card"><div style="color:var(--muted);font-size:14px;margin-bottom:12px"><i class="fas fa-users"></i> 邀请商家</div><div class="num">12</div><div class="trend">本月新增 3 家</div></div>
+    </div>
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <h3 style="margin:0"><i class="fas fa-list-alt" style="color:var(--amb);margin-right:6px"></i>收益明细</h3>
+        <div style="display:flex;gap:8px"><select class="form-control" style="width:auto;padding:6px 12px;font-size:13px"><option>全部状态</option><option>已结算</option><option>待结算</option></select></div>
+      </div>
+      <table class="data-table">
+        <thead><tr><th>商家名称</th><th>合作类型</th><th>合作金额</th><th>提成比例</th><th>收益金额</th><th>状态</th><th>时间</th></tr></thead>
+        <tbody>
+          <tr><td style="font-weight:500">武汉飞腾体育</td><td><span class="badge badge-orange">首次合作</span></td><td>¥2,999</td><td>20%</td><td style="color:#52c41a;font-weight:600">¥600</td><td><span class="badge badge-green">已结算</span></td><td style="color:var(--muted)">2026-04-02</td></tr>
+          <tr><td style="font-weight:500">邻里私房菜</td><td><span class="badge badge-blue">续费合作</span></td><td>¥1,999</td><td>10%</td><td style="color:#52c41a;font-weight:600">¥200</td><td><span class="badge badge-green">已结算</span></td><td style="color:var(--muted)">2026-03-28</td></tr>
+          <tr><td style="font-weight:500">智慧学堂</td><td><span class="badge badge-orange">首次合作</span></td><td>¥2,999</td><td>20%</td><td style="color:#52c41a;font-weight:600">¥600</td><td><span class="badge badge-orange">待结算</span></td><td style="color:var(--muted)">2026-03-20</td></tr>
+          <tr><td style="font-weight:500">康美药业</td><td><span class="badge badge-orange">首次合作</span></td><td>¥2,999</td><td>20%</td><td style="color:#52c41a;font-weight:600">¥600</td><td><span class="badge badge-green">已结算</span></td><td style="color:var(--muted)">2026-03-15</td></tr>
+          <tr><td style="font-weight:500">绿城房产</td><td><span class="badge badge-blue">续费合作</span></td><td>¥5,999</td><td>10%</td><td style="color:#52c41a;font-weight:600">¥600</td><td><span class="badge badge-green">已结算</span></td><td style="color:var(--muted)">2026-03-08</td></tr>
+          <tr><td style="font-weight:500">美团优选</td><td><span class="badge badge-orange">首次合作</span></td><td>¥999</td><td>20%</td><td style="color:#52c41a;font-weight:600">¥200</td><td><span class="badge badge-green">已结算</span></td><td style="color:var(--muted)">2026-02-20</td></tr>
+        </tbody>
+      </table>
+      <div style="display:flex;justify-content:center;gap:8px;margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">
+        <button class="btn btn-outline amb btn-sm">上一页</button>
+        <span style="padding:6px 12px;background:var(--amb);color:#fff;border-radius:6px;font-size:13px">1</span>
+        <button class="btn btn-outline amb btn-sm">2</button>
+        <button class="btn btn-outline amb btn-sm">3</button>
+        <button class="btn btn-outline amb btn-sm">下一页</button>
+      </div>
+    </div>
+    <div class="card" style="margin-top:20px">
+      <h3 style="margin:0 0 16px 0"><i class="fas fa-money-bill-wave" style="color:var(--amb);margin-right:6px"></i>提现记录</h3>
+      <table class="data-table">
+        <thead><tr><th>提现金额</th><th>提现方式</th><th>账号</th><th>状态</th><th>申请时间</th></tr></thead>
+        <tbody>
+          <tr><td style="font-weight:600;color:var(--amb)">¥1,200</td><td>微信钱包</td><td>138****0001</td><td><span class="badge badge-green">已到账</span></td><td style="color:var(--muted)">2026-03-30</td></tr>
+          <tr><td style="font-weight:600;color:var(--amb)">¥600</td><td>银行卡</td><td>**** 5678</td><td><span class="badge badge-green">已到账</span></td><td style="color:var(--muted)">2026-03-01</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
 <!-- ==================== 商家个人中心 ==================== -->
 <div id="p-merchant-profile" class="page">
   <div class="top-nav"><div class="brand merch"><i class="fas fa-store"></i> 邻盟 · 商家端</div><div class="right"><a href="#" class="back-link" onclick="showPage('merchant-home');return false"><i class="fas fa-arrow-left"></i> 返回首页</a></div></div>

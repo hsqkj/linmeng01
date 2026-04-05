@@ -24,3 +24,11 @@ export const getWithdrawAccount = () => request.get('/ambassador/withdraw')
 export const setWithdrawAccount = (data) => request.post('/ambassador/withdraw/account', data)
 export const applyWithdraw = (data) => request.post('/ambassador/withdraw/apply', data)
 export const getWithdrawHistory = () => request.get('/ambassador/withdraw/history')
+
+// ====== 提成政策配置 ======
+export const getCommissionConfig = () => request.get('/ambassador/commission/config')
+
+// ====== 通知管理 ======
+export const getAmbassadorNotifications = (params) => request.get('/ambassador/notifications', { params })
+export const markNotificationRead = (id) => request.put(`/ambassador/notifications/${id}/read`)
+export const getUnreadCount = () => request.get('/ambassador/notifications/unread-count')

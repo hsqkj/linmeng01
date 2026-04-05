@@ -106,7 +106,8 @@ const routes = [
       { path: 'qrcode', name: 'AmbassadorQRCode', component: () => import('@/views/ambassador/QRCode.vue') },
       { path: 'records', name: 'AmbassadorRecords', component: () => import('@/views/ambassador/Records.vue') },
       { path: 'commission', name: 'AmbassadorCommission', component: () => import('@/views/ambassador/Commission.vue') },
-      { path: 'withdraw', name: 'AmbassadorWithdraw', component: () => import('@/views/ambassador/Withdraw.vue') }
+      { path: 'withdraw', name: 'AmbassadorWithdraw', component: () => import('@/views/ambassador/Withdraw.vue') },
+      { path: 'notifications', name: 'AmbassadorNotifications', component: () => import('@/views/ambassador/Notifications.vue') }
     ]
   },
   // 管理后台

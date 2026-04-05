@@ -1,36 +1,33 @@
 <template>
   <div class="withdraw-page" v-loading="loading">
     <h2>提现管理</h2>
-    <el-row :gutter="20">
-      <el-col :span="12">
-        <div class="balance-card">
-          <div class="balance-label">账户余额</div>
-          <div class="balance-val">¥ {{ Number(balance).toLocaleString('zh-CN', { minimumFractionDigits: 2 }) }}</div>
-          <div class="balance-tip">待结算金额 ¥{{ Number(summary.pending_commission || 0).toLocaleString() }}（下次结算日：每月1日）</div>
-          <el-button type="warning" size="large" style="margin-top:16px" @click="showWithdraw = true" :disabled="balance < 100">申请提现</el-button>
-          <div v-if="balance < 100" style="color:#F56C6C;font-size:12px;margin-top:4px">余额不足100元，暂不可提现</div>
-        </div>
-      </el-col>
-      <el-col :span="12">
-        <div class="account-card">
-          <h3>绑定收款账户</h3>
-          <div class="account-list">
-            <div class="account-item" :class="{ active: accountInfo.account_number }">
-              <el-icon><CreditCard /></el-icon>
-              <div>
-                <div class="acc-name">{{ accountInfo.account_type === 'bank' ? (accountInfo.account_name || '银行卡') : accountInfo.account_type === 'alipay' ? '支付宝' : '微信钱包' }} {{ accountInfo.account_name ? `(${accountInfo.account_name})` : '' }}</div>
-                <div class="acc-num">{{ accountInfo.account_number ? `尾号 ${accountInfo.account_number.slice(-4)}` : '未设置' }}</div>
-              </div>
-              <el-tag v-if="accountInfo.account_number" type="success" size="small">已绑定</el-tag>
+    <!-- 余额和账户信息 -->
+    <div class="info-row">
+      <div class="balance-card">
+        <div class="balance-label">账户余额</div>
+        <div class="balance-val">¥ {{ Number(balance).toLocaleString('zh-CN', { minimumFractionDigits: 2 }) }}</div>
+        <div class="balance-tip">待结算 ¥{{ Number(summary.pending_commission || 0).toLocaleString() }}（每月1日结算）</div>
+        <el-button type="warning" size="default" @click="showWithdraw = true" :disabled="balance < 100" style="margin-top:12px">申请提现</el-button>
+        <div v-if="balance < 100" style="color:#F56C6C;font-size:12px;margin-top:4px">余额不足100元</div>
+      </div>
+      <div class="account-card">
+        <h3>收款账户</h3>
+        <div class="account-list">
+          <div class="account-item" :class="{ active: accountInfo.account_number }">
+            <el-icon><CreditCard /></el-icon>
+            <div>
+              <div class="acc-name">{{ accountInfo.account_type === 'bank' ? (accountInfo.account_name || '银行卡') : accountInfo.account_type === 'alipay' ? '支付宝' : '微信' }}</div>
+              <div class="acc-num">{{ accountInfo.account_number ? `尾号 ${accountInfo.account_number.slice(-4)}` : '未设置' }}</div>
             </div>
-            <div class="account-item" @click="openAddAccount">
-              <el-icon><Plus /></el-icon>
-              <span>{{ accountInfo.account_number ? '更换收款账户' : '添加收款账户' }}</span>
-            </div>
+            <el-tag v-if="accountInfo.account_number" type="success" size="small">已绑定</el-tag>
+          </div>
+          <div class="account-item" @click="openAddAccount">
+            <el-icon><Plus /></el-icon>
+            <span>{{ accountInfo.account_number ? '更换账户' : '添加账户' }}</span>
           </div>
         </div>
-      </el-col>
-    </el-row>
+      </div>
+    </div>
     
     <div class="section-card" style="margin-top:20px">
       <h3>提现记录</h3>
@@ -227,18 +224,70 @@ function fmtTime(t) {
 }
 </script>
 <style scoped>
-.withdraw-page { max-width: 900px; margin: 0 auto; }
-.withdraw-page h2 { margin-bottom: 20px; font-size: 22px; font-weight: 700; }
-.balance-card, .account-card, .section-card { background: #fff; border-radius: 12px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
-.balance-label { font-size: 14px; color: #909399; }
-.balance-val { font-size: 40px; font-weight: 700; color: #F59E0B; margin: 8px 0; }
-.balance-tip { font-size: 13px; color: #909399; }
-.account-card h3, .section-card h3 { margin: 0 0 16px; font-size: 16px; font-weight: 700; }
-.account-list { display: flex; flex-direction: column; gap: 10px; }
-.account-item { display: flex; align-items: center; gap: 12px; padding: 12px; border: 1px solid #eee; border-radius: 8px; cursor: pointer; }
+.withdraw-page { max-width: 900px; margin: 0 auto; padding: 0 16px; }
+.withdraw-page h2 { margin-bottom: 16px; font-size: 20px; font-weight: 700; }
+
+/* 余额和账户信息行 - 紧凑布局 */
+.info-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+.balance-card, .account-card, .section-card { background: #fff; border-radius: 12px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+.balance-label { font-size: 13px; color: #909399; }
+.balance-val { font-size: 28px; font-weight: 700; color: #F59E0B; margin: 6px 0 4px; }
+.balance-tip { font-size: 12px; color: #909399; }
+.account-card h3, .section-card h3 { margin: 0 0 12px; font-size: 14px; font-weight: 700; }
+.account-list { display: flex; flex-direction: column; gap: 8px; }
+.account-item { display: flex; align-items: center; gap: 10px; padding: 10px; border: 1px solid #eee; border-radius: 8px; cursor: pointer; font-size: 13px; }
 .account-item.active { border-color: #F59E0B; background: #fff8e1; }
-.acc-name { font-weight: 500; font-size: 14px; }
-.acc-num { font-size: 12px; color: #909399; }
+.acc-name { font-weight: 500; font-size: 13px; }
+.acc-num { font-size: 11px; color: #909399; }
 .amount-text { color: #67C23A; font-weight: 600; }
-.withdraw-balance { font-size: 15px; color: #606266; }
+.withdraw-balance { font-size: 14px; color: #606266; }
+
+.section-card { padding: 16px; }
+.section-card h3 { margin: 0 0 12px; font-size: 14px; font-weight: 700; }
+:deep(.el-table) { font-size: 12px; }
+:deep(.el-table td) { padding: 8px 0; }
+:deep(.el-table th) { padding: 8px 0; }
+
+@media (max-width: 768px) {
+  .withdraw-page {
+    padding: 12px;
+    padding-bottom: 70px;
+  }
+  .withdraw-page h2 {
+    font-size: 18px;
+    margin-bottom: 12px;
+  }
+  .info-row {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .balance-card, .account-card, .section-card {
+    padding: 14px;
+    border-radius: 8px;
+  }
+  .balance-val {
+    font-size: 26px;
+  }
+  .balance-tip { font-size: 11px; }
+  .account-list { gap: 6px; }
+  .account-item { padding: 8px; font-size: 12px; }
+  :deep(.el-table) {
+    font-size: 11px;
+  }
+  :deep(.el-table td) {
+    padding: 6px 0;
+  }
+  :deep(.el-table th) {
+    padding: 6px 0;
+  }
+  :deep(.el-dialog) {
+    width: 90% !important;
+    max-width: 480px;
+  }
+  :deep(.el-dialog__body) {
+    padding: 16px;
+  }
+  .withdraw-form { padding: 0; }
+  .withdraw-balance { font-size: 14px; }
+}
 </style>

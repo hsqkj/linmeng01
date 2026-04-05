@@ -286,4 +286,53 @@ onMounted(() => { loadNotifications() })
 .action-bar { margin-bottom: 16px; }
 .filter-bar { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
 .pagination { margin-top: 16px; display: flex; justify-content: flex-end; }
+
+@media (max-width: 768px) {
+  .page {
+    padding: 12px;
+    padding-bottom: 70px;
+  }
+  .page h2 {
+    font-size: 18px;
+    margin-bottom: 12px;
+  }
+  .action-bar {
+    margin-bottom: 12px;
+  }
+  .action-bar .el-button {
+    width: 100%;
+    font-size: 13px;
+  }
+  .filter-bar {
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .filter-bar .el-select {
+    width: calc(50% - 4px) !important;
+    font-size: 13px;
+  }
+  :deep(.el-table) {
+    font-size: 11px;
+  }
+  :deep(.el-table__header th) {
+    font-size: 10px;
+    padding: 6px 3px;
+  }
+  :deep(.el-table__body td) {
+    padding: 6px 3px;
+  }
+  :deep(.el-tabs__nav) {
+    font-size: 13px;
+  }
+  :deep(.el-dialog) {
+    width: 95% !important;
+    max-width: 620px;
+  }
+  :deep(.el-dialog__body) {
+    padding: 12px;
+  }
+  .pagination {
+    justify-content: center;
+  }
+}
 </style>

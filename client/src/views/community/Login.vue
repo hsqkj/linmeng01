@@ -1,93 +1,65 @@
 <template>
-  <div class="login-page">
-    <!-- 功能介绍区域 -->
-    <div class="feature-intro">
-      <h1>邻盟 · 社区资源智能匹配助手</h1>
-      <p class="tagline">连接社区与商家，共创美好生活</p>
-      <div class="features">
-        <div class="feature-item">
-          <el-icon><Connection /></el-icon>
-          <span>智能匹配</span>
-          <small>AI算法精准推送匹配资源</small>
-        </div>
-        <div class="feature-item">
-          <el-icon><CircleCheck /></el-icon>
-          <span>高效对接</span>
-          <small>一键联系，实时沟通</small>
-        </div>
-        <div class="feature-item">
-          <el-icon><Trophy /></el-icon>
-          <span>撮合奖励</span>
-          <small>成功合作可获得奖励</small>
-        </div>
-      </div>
+  <div class="login-wrap comm-bg">
+    <!-- 品牌 -->
+    <div class="login-brand">
+      <div class="login-brand-logo">🏘 邻盟</div>
+      <div class="login-brand-sub">社区资源智能匹配助手</div>
+    </div>
+    <div class="login-back">
+      <a href="#" @click.prevent="goBack">← 返回选择</a>
     </div>
 
-    <div class="login-container">
+    <!-- 登录卡片 -->
+    <div class="login-card">
       <div class="login-header">
+        <div class="icon">🏘</div>
         <h2>社区工作者登录</h2>
-        <p>邻盟 - 社区资源智能匹配助手</p>
+        <p>邻盟 · 社区资源智能匹配</p>
       </div>
 
-      <el-form :model="form" class="login-form">
-        <el-form-item>
-          <el-input
-            v-model="form.phone"
-            placeholder="请输入手机号"
-            size="large"
-            :prefix-icon="Phone"
-          />
-        </el-form-item>
-
-        <el-form-item>
-          <div class="code-input">
-            <el-input
-              v-model="form.code"
-              placeholder="请输入验证码"
-              size="large"
-              :prefix-icon="Key"
-            />
-            <el-button 
-              type="primary" 
-              size="large"
-              :disabled="counting"
-              @click="sendCode"
-            >
-              {{ counting ? `${countdown}s` : '获取验证码' }}
-            </el-button>
-          </div>
-        </el-form-item>
-
-        <el-form-item>
-          <el-checkbox v-model="form.remember">记住我</el-checkbox>
-          <el-link type="primary" class="forgot-link">忘记密码？</el-link>
-        </el-form-item>
-
-        <el-form-item>
-          <el-button 
-            type="primary" 
-            size="large" 
-            class="login-btn"
-            :loading="loading"
-            @click="login"
-          >
-            登录
-          </el-button>
-        </el-form-item>
-
-        <div class="test-notice">
-          <el-alert
-            title="测试版提示：验证码已自动填入"
-            type="info"
-            :closable="false"
-            show-icon
-          />
+      <div class="form-group">
+        <label>手机号</label>
+        <div class="input-addon">
+          <span class="addon">+86</span>
+          <input class="form-control" v-model="form.phone" placeholder="请输入手机号" type="tel" />
         </div>
-      </el-form>
+      </div>
+
+      <div class="form-group">
+        <label>验证码</label>
+        <div style="display:flex;gap:10px">
+          <input class="form-control" v-model="form.code" placeholder="请输入验证码" style="flex:1" />
+          <button class="code-btn" @click="sendCode" :disabled="counting">
+            {{ counting ? `${countdown}s` : '获取验证码' }}
+          </button>
+        </div>
+      </div>
+
+      <button class="btn-login comm" @click="login" :disabled="loading">
+        {{ loading ? '登录中...' : '登录' }}
+      </button>
+
+      <div class="login-test">测试版提示：验证码已自动填入 123456</div>
+
+      <div class="login-divider">
+        <div class="login-tips">
+          <div class="login-tip">
+            <i>🔗</i>
+            <span>智能匹配</span>
+          </div>
+          <div class="login-tip">
+            <i>✅</i>
+            <span>高效对接</span>
+          </div>
+          <div class="login-tip">
+            <i>🎁</i>
+            <span>撮合奖励</span>
+          </div>
+        </div>
+      </div>
 
       <div class="login-footer">
-        <el-link @click="goBack">← 返回角色选择</el-link>
-        <span>还没有账号？<el-link type="primary" @click="$router.push('/register/community')">立即注册</el-link></span>
+        还没有账号？<a class="reg-link" @click="$router.push('/register/community')">立即注册</a>
       </div>
     </div>
   </div>
@@ -151,13 +123,91 @@ const goBack = () => { router.push('/') }
 </script>
 
 <style scoped>
-.login-page {
+.login-wrap {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 20px;
+  position: relative;
+}
+.comm-bg { background: linear-gradient(135deg, #26a269, #1a7a4c); }
+
+.login-brand { position: absolute; top: 24px; left: 32px; z-index: 2; }
+.login-brand-logo { font-size: 22px; font-weight: 700; color: #fff; letter-spacing: 1px; }
+.login-brand-sub { font-size: 12px; color: rgba(255,255,255,.75); margin-top: 2px; }
+.login-back { position: absolute; top: 28px; right: 32px; z-index: 2; }
+.login-back a { color: rgba(255,255,255,.85); text-decoration: none; font-size: 14px; }
+.login-back a:hover { color: #fff; }
+
+.login-card {
+  background: #fff;
+  border-radius: 20px;
+  padding: 48px 40px;
+  width: 100%;
+  max-width: 440px;
+  box-shadow: 0 24px 60px rgba(0,0,0,.15);
+  position: relative;
+  z-index: 1;
+}
+
+.login-header { text-align: center; margin-bottom: 32px; }
+.login-header .icon { font-size: 44px; margin-bottom: 12px; display: block; }
+.login-header h2 { font-size: 24px; font-weight: 700; color: #1a1a1a; margin-bottom: 6px; }
+.login-header p { color: #666; font-size: 14px; }
+
+.form-group { margin-bottom: 18px; }
+.form-group label { display: block; font-size: 14px; font-weight: 500; color: #333; margin-bottom: 7px; }
+.form-control {
+  width: 100%; padding: 12px 14px;
+  border: 2px solid #e0e0e0; border-radius: 10px;
+  font-size: 15px; outline: none; transition: border-color .2s;
+  background: #fff; font-family: inherit;
+}
+.form-control:focus { border-color: #26a269; }
+.input-addon { display: flex; }
+.input-addon .addon {
+  padding: 12px 14px; background: #f5f5f5;
+  border: 2px solid #e0e0e0; border-right: none;
+  border-radius: 10px 0 0 10px; font-size: 15px; color: #555; white-space: nowrap;
+}
+.input-addon .form-control { border-radius: 0 10px 10px 0; }
+.code-btn {
+  padding: 10px 16px; background: #e8f7ed; color: #26a269;
+  border: 2px solid #26a269; border-radius: 10px;
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  white-space: nowrap; transition: all .2s; font-family: inherit;
+}
+.code-btn:hover { background: #26a269; color: #fff; }
+.code-btn:disabled { opacity: .6; cursor: not-allowed; }
+
+.btn-login {
+  width: 100%; padding: 14px; border: none; border-radius: 10px;
+  font-size: 16px; font-weight: 600; cursor: pointer; color: #fff;
+  transition: all .2s; margin-top: 6px; font-family: inherit;
+}
+.btn-login.comm { background: linear-gradient(135deg, #26a269, #1a7a4c); }
+.btn-login:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0,0,0,.2); }
+.btn-login:disabled { opacity: .7; cursor: not-allowed; transform: none; }
+
+.login-test {
+  padding: 10px 14px; background: #f0f7ff; border-radius: 8px;
+  font-size: 12px; text-align: center; border: 1px dashed #409EFF;
+  color: #409EFF; margin-top: 14px;
+}
+.login-divider { border-top: 1px solid #eee; margin-top: 24px; padding-top: 20px; }
+.login-tips { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; text-align: center; }
+.login-tip { padding: 10px 6px; background: #f9f9f9; border-radius: 10px; }
+.login-tip i { font-size: 22px; margin-bottom: 4px; display: block; font-style: normal; }
+.login-tip span { display: block; font-size: 12px; font-weight: 600; color: #333; }
+.login-footer { text-align: center; margin-top: 18px; font-size: 13px; color: #666; }
+.reg-link { color: #26a269; font-weight: 600; cursor: pointer; text-decoration: none; margin-left: 4px; }
+.reg-link:hover { text-decoration: underline; }
+
+@media (max-width: 480px) {
+  .login-card { padding: 32px 20px; border-radius: 16px; }
+  .login-brand { top: 16px; left: 16px; }
+  .login-back { top: 20px; right: 16px; }
 }
 
 .login-container {

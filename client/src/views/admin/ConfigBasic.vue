@@ -479,4 +479,56 @@ onMounted(() => { loadBasicTypes(); loadDistrictTree() })
 .tree-level { font-size: 11px; color: #c0c4cc; margin-left: 2px; }
 .tree-actions { display: none; gap: 4px; margin-left: 12px; }
 .el-tree-node__content:hover .tree-actions { display: flex; }
+
+@media (max-width: 768px) {
+  .config-basic {
+    padding: 12px;
+    padding-bottom: 70px;
+  }
+  .config-basic h2 {
+    font-size: 18px;
+    margin-bottom: 14px;
+  }
+  :deep(.el-tabs__nav) {
+    font-size: 13px;
+    flex-wrap: wrap;
+  }
+  .config-section {
+    padding: 12px;
+    border-radius: 8px;
+  }
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .section-header .el-button {
+    width: 100%;
+    font-size: 13px;
+  }
+  .section-desc {
+    font-size: 12px;
+  }
+  :deep(.el-table) {
+    font-size: 11px;
+  }
+  :deep(.el-table__header th) {
+    font-size: 10px;
+    padding: 6px 3px;
+  }
+  :deep(.el-table__body td) {
+    padding: 6px 3px;
+  }
+  :deep(.el-tree) {
+    font-size: 12px;
+  }
+  :deep(.el-dialog) {
+    width: 95% !important;
+    max-width: 440px;
+  }
+  :deep(.el-dialog__body) {
+    padding: 12px;
+  }
+}
 </style>

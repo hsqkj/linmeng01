@@ -80,10 +80,11 @@
       <el-tab-pane label="系统通知" name="system">
         <div class="message-list" v-loading="systemLoading">
           <el-empty v-if="!systemLoading && systemMessages.length === 0" description="暂无系统通知" :image-size="80" />
-          <el-card v-for="msg in systemMessages" :key="msg.id" class="message-card" shadow="hover">
+          <el-card v-for="msg in systemMessages" :key="msg.id" class="message-card" :class="{ unread: !msg.is_read }" shadow="hover" @click="clickNotification(msg)">
             <div class="message-header">
               <el-tag :type="msg.tagType" size="small">{{ msg.tag }}</el-tag>
               <span class="message-time">{{ msg.time }}</span>
+              <span v-if="!msg.is_read" class="unread-dot"></span>
             </div>
             <h4 class="message-title">{{ msg.title }}</h4>
             <p class="message-content">{{ msg.content }}</p>
@@ -212,11 +213,24 @@ async function loadSystemNotifications() {
   try {
     const { getMyNotifications } = await import('@/api/merchant')
     const res = await getMyNotifications({ page: 1, pageSize: 50 })
-    systemMessages.value = res.data?.list || res.data || []
+    systemMessages.value = res?.data?.list || res?.data || []
   } catch {
     systemMessages.value = []
   } finally {
     systemLoading.value = false
+  }
+}
+
+// 点击通知标记已读
+async function clickNotification(msg) {
+  if (msg.is_read) return
+  try {
+    const { markOneNotificationRead } = await import('@/api/merchant')
+    await markOneNotificationRead(msg.id)
+    msg.is_read = true
+    window.dispatchEvent(new CustomEvent('notification-read'))
+  } catch (e) {
+    // 忽略错误
   }
 }
 
@@ -268,5 +282,18 @@ onMounted(() => {
 @media (max-width: 768px) {
   .message-header { flex-wrap: wrap; }
   .message-time { width: 100%; margin-left: 44px; margin-top: 4px; }
+}
+
+/* 未读状态 */
+.message-card.unread {
+  border-left: 3px solid #409EFF;
+}
+
+.unread-dot {
+  width: 8px;
+  height: 8px;
+  background: #F56C6C;
+  border-radius: 50%;
+  margin-left: auto;
 }
 </style>
