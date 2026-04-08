@@ -1,0 +1,49 @@
+==========================================
+   邻盟项目 - 腾讯云服务器部署
+==========================================
+
+【第一步】打开PowerShell，连接服务器
+命令：ssh root@150.158.12.243
+密码：@hanghang0824
+
+【第二步】登录成功后，复制下面所有命令，粘贴执行
+（一次性复制全部，粘贴一次即可）
+
+==========================================
+复制以下内容开始（不含这行）：
+==========================================
+
+apt update && apt upgrade -y
+
+curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && apt install -y nodejs npm
+
+apt install -y mysql-server && systemctl start mysql && systemctl enable mysql
+
+apt install -y nginx && systemctl start nginx && systemctl enable nginx
+
+npm install -g pm2
+
+mysql -e "CREATE DATABASE IF NOT EXISTS linmeng CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+mysql -e "CREATE USER IF NOT EXISTS 'linmeng'@'localhost' IDENTIFIED BY 'LinMeng@2026';"
+mysql -e "GRANT ALL PRIVILEGES ON linmeng.* TO 'linmeng'@'localhost';"
+mysql -e "FLUSH PRIVILEGES;"
+
+mkdir -p /var/www/linmeng
+
+echo "=========================================="
+echo "环境安装完成！"
+echo "下一步：上传项目代码到 /var/www/linmeng/"
+echo "=========================================="
+
+==========================================
+复制以上内容结束（不含这行）
+==========================================
+
+【第三步】告诉"已完成"，我帮你继续上传代码和配置
+
+==========================================
+技术支持
+==========================================
+服务器IP: 150.158.12.243
+数据库密码: LinMeng@2026
+项目目录: /var/www/linmeng

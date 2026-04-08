@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="400" viewBox="0 0 1200 400">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#409EFF;stop-opacity:1"/>
+      <stop offset="100%" style="stop-color:#409EFFcc;stop-opacity:0.9"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="400" fill="url(#bg)"/>
+  <!-- 装饰圆 -->
+  <circle cx="1050" cy="200" r="180" fill="white" opacity="0.08"/>
+  <circle cx="1150" cy="80" r="100" fill="white" opacity="0.06"/>
+  <circle cx="900" cy="320" r="80" fill="white" opacity="0.06"/>
+  <!-- Logo区域 -->
+  <rect x="60" y="140" width="60" height="60" rx="12" fill="white" opacity="0.2"/>
+  <text x="90" y="180" text-anchor="middle" fill="white" font-size="22" font-family="'Microsoft YaHei', sans-serif" font-weight="bold">邻</text>
+  <text x="90" y="195" text-anchor="middle" fill="white" font-size="22" font-family="'Microsoft YaHei', sans-serif" font-weight="bold">盟</text>
+  <!-- 主标题 -->
+  <text x="160" y="185" fill="white" font-size="42" font-family="'Microsoft YaHei', Arial, sans-serif" font-weight="bold">邻盟平台上线啦！</text>
+  <!-- 副标题 -->
+  <text x="160" y="235" fill="white" font-size="20" font-family="'Microsoft YaHei', Arial, sans-serif" opacity="0.85">邻盟 · 社区资源智能匹配助手</text>
+  <!-- 装饰线 -->
+  <line x1="160" y1="205" x2="500" y2="205" stroke="white" stroke-width="2" opacity="0.4"/>
+</svg>

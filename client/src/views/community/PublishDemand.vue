@@ -81,11 +81,10 @@
                 type="datetime"
                 placeholder="选择开始时间"
                 style="width:100%"
-                :time-arrow-control="true"
                 format="YYYY-MM-DD HH:mm"
                 value-format="YYYY-MM-DD HH:mm"
-                :disabled-seconds="() => true"
-                :minutes="[0,10,20,30,40,50]"
+                :disabled-hours="disabledHours"
+                :disabled-minutes="disabledMinutes"
               />
             </el-form-item>
           </el-col>
@@ -98,7 +97,8 @@
                 style="width:100%"
                 format="YYYY-MM-DD HH:mm"
                 value-format="YYYY-MM-DD HH:mm"
-                :minutes="[0,10,20,30,40,50]"
+                :disabled-hours="disabledHours"
+                :disabled-minutes="disabledMinutes"
               />
             </el-form-item>
           </el-col>
@@ -305,12 +305,12 @@
         <el-row :gutter="16">
           <el-col :span="12">
             <el-form-item label="服务开始时间" required>
-              <el-date-picker v-model="form.startTime" type="datetime" placeholder="选择开始时间" style="width:100%" format="YYYY-MM-DD HH:mm" value-format="YYYY-MM-DD HH:mm" :minutes="[0,10,20,30,40,50]" />
+              <el-date-picker v-model="form.startTime" type="datetime" placeholder="选择开始时间" style="width:100%" format="YYYY-MM-DD HH:mm" value-format="YYYY-MM-DD HH:mm" :disabled-hours="disabledHours" :disabled-minutes="disabledMinutes" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="服务结束时间" required>
-              <el-date-picker v-model="form.endTime" type="datetime" placeholder="选择结束时间" style="width:100%" format="YYYY-MM-DD HH:mm" value-format="YYYY-MM-DD HH:mm" :minutes="[0,10,20,30,40,50]" />
+              <el-date-picker v-model="form.endTime" type="datetime" placeholder="选择结束时间" style="width:100%" format="YYYY-MM-DD HH:mm" value-format="YYYY-MM-DD HH:mm" :disabled-hours="disabledHours" :disabled-minutes="disabledMinutes" />
             </el-form-item>
           </el-col>
         </el-row>
@@ -678,6 +678,18 @@ const form = ref({
 })
 
 const venueTypeLabel = computed(() => form.value.venueType === 'indoor' ? '室内' : '室外')
+
+// 禁用非10分钟档的分钟数（只允许0,10,20,30,40,50）
+const disabledMinutes = (hour) => {
+  // 只在特定小时允许特定分钟，其他小时禁用所有分钟
+  const allowedMinutes = [0, 10, 20, 30, 40, 50]
+  // 返回需要禁用的分钟数组
+  const allMinutes = Array.from({ length: 60 }, (_, i) => i)
+  return allMinutes.filter(m => !allowedMinutes.includes(m))
+}
+
+// 禁用秒数选择
+const disabledSeconds = () => Array.from({ length: 60 }, (_, i) => i)
 
 function toggleTag(arr, val) {
   const i = arr.indexOf(val)

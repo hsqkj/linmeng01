@@ -1,0 +1,1 @@
+import{B as o}from"./index-2b75a02c.js";function a(n="community"){const t={community:"/login/community",merchant:"/login/merchant",ambassador:"/login/ambassador"};return o.confirm("此操作需要登录后才能进行。是否前往登录？","提示",{confirmButtonText:"去登录",cancelButtonText:"取消",type:"warning",title:"请先登录"}).then(()=>{window.location.href=t[n]||"/login/community"}).catch(()=>{})}export{a as r};

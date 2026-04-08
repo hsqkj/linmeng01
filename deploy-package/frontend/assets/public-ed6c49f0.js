@@ -1,0 +1,1 @@
+import{r as a}from"./request-8c4eb6b2.js";const o=s=>a.post("/public/sms/send",s),p=s=>a.get("/public/regions",{params:s}),n=()=>a.get("/public/industries"),r=s=>a.post("/public/ambassador/apply",s),i=s=>{const t=new FormData;return t.append("image",s),a.post("/public/upload/image",t,{headers:{"Content-Type":"multipart/form-data"}})};export{n as a,r as b,p as g,o as s,i as u};
