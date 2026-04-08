@@ -13,12 +13,12 @@ exports.sendSms = async (req, res) => {
   try {
     const { phone, type } = req.body
     
+    if (!phone) return error(res, '请输入手机号', 400)
+    
     // 实际项目中应该调用短信服务API
-    // 这里模拟发送成功，返回123456作为测试验证码
+    // 测试版：固定验证码 123456
     const code = '123456'
     
-    // 将验证码存入Redis或数据库，设置过期时间
-    // 这里简单记录到日志
     console.log(`[SMS] 向 ${phone} 发送验证码: ${code} (类型: ${type})`)
     
     success(res, { code }, '验证码已发送')
@@ -32,13 +32,29 @@ exports.checkPhone = async (req, res) => {
   try {
     const { phone, role } = req.body
     
+    // 商家和专家都存储在 merchants 表中，需要检查 phone 字段
+    if (role === 'merchant' || role === 'expert') {
+      const [rows] = await pool.query(
+        `SELECT id, company_type FROM merchants WHERE phone = ? LIMIT 1`,
+        [phone]
+      )
+      const exists = rows.length > 0
+      const existingType = exists ? rows[0].company_type : null
+      // 如果已存在，返回存在的类型信息
+      success(res, { 
+        exists, 
+        existingType: existingType || 'merchant', // 默认为商家
+        message: exists ? (existingType === 'expert' ? '该手机号已注册为专家' : '该手机号已注册为商家') : ''
+      })
+      return
+    }
+    
     let table = 'communities'
-    if (role === 'merchant') table = 'merchants'
-    else if (role === 'ambassador') table = 'ambassadors'
+    if (role === 'ambassador') table = 'ambassadors'
     
     const [rows] = await pool.query(
-      `SELECT id FROM ${table} WHERE username = ? LIMIT 1`,
-      [phone]
+      `SELECT id FROM ${table} WHERE phone = ? OR username = ? LIMIT 1`,
+      [phone, phone]
     )
     
     success(res, { exists: rows.length > 0 })
@@ -203,5 +219,24 @@ exports.getPublishTypes = async (req, res) => {
     success(res, result)
   } catch (err) {
     error(res, '获取类型配置失败')
+  }
+}
+
+// 获取专家类型列表（公开接口）
+exports.getExpertTypes = async (req, res) => {
+  try {
+    // 优先从 sys_configs 读取
+    const [rows] = await pool.query("SELECT config_value FROM sys_configs WHERE config_key = 'expert_types'")
+    if (rows.length > 0) {
+      try {
+        const types = JSON.parse(rows[0].config_value)
+        return success(res, types.map(t => typeof t === 'string' ? { name: t, status: 1 } : t))
+      } catch {}
+    }
+    // 降级返回默认值
+    const defaultTypes = ['法律咨询', '医疗健康', '心理辅导', '教育培训', '技能培训', '金融理财', '社会工作', '文艺指导', '体育健身', '营养指导', '其他']
+    success(res, defaultTypes.map(t => ({ name: t, status: 1 })))
+  } catch (err) {
+    error(res, '获取专家类型失败')
   }
 }

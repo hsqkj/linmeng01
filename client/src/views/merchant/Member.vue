@@ -7,7 +7,7 @@
       <div class="level-badge">Lv{{ currentLevel.level }}</div>
       <div class="level-info">
         <div class="level-name">{{ currentLevel.name }}</div>
-        <div class="level-expire">有效期至：{{ currentLevel.expire || '长期有效' }}</div>
+        <div class="level-expire">有效期至：{{ currentLevel.expire || (currentLevel.validityPeriod ? `${currentLevel.validityPeriod}个月` : '长期有效') }}</div>
       </div>
       <div class="level-fee">
         <div style="font-size:13px;opacity:0.8">年费</div>
@@ -115,7 +115,7 @@ const currentBenefits = computed(() => {
     '资源置顶次数/月': 'Star', '数据分析报告': 'TrendCharts', '品牌故事展示': 'TrendCharts' }
 
   return memberBenefitsData.value.map(b => {
-    const val = b.values[lv - 1]
+    const val = b.values[lv]
     let displayVal = ''
     let available = false
     if (b.type === '开关') {
@@ -137,7 +137,7 @@ const currentBenefits = computed(() => {
 const memberLevels = computed(() => memberLevelsData.value.map(lv => {
   // 从 member_benefits 拼接各等级权益描述
   const benefits = memberBenefitsData.value.map(b => {
-    const val = b.values[lv.level - 1]
+    const val = b.values[lv.level]
     if (b.type === '开关') return val ? b.name : null
     if (b.type === '数量') return `${b.name} ${val}次`
     return val ? `${b.name}: ${val}` : null
@@ -151,6 +151,7 @@ const memberLevels = computed(() => memberLevelsData.value.map(lv => {
 const upgradeOptions = computed(() => memberLevels.value.filter(l => l.level > currentLevel.level))
 
 const LEVEL_GRADIENTS = [
+  'linear-gradient(135deg, #909399 0%, #c0c4cc 100%)',  // Lv0 免费试用
   'linear-gradient(135deg, #606266 0%, #909399 100%)',  // Lv1 普通
   'linear-gradient(135deg, #6f85b3 0%, #a8b8d8 100%)',  // Lv2 银牌
   'linear-gradient(135deg, #e07b00 0%, #f59f00 100%)',  // Lv3 金牌
@@ -158,7 +159,7 @@ const LEVEL_GRADIENTS = [
   'linear-gradient(135deg, #1171ef 0%, #11cdef 100%)',  // Lv5 钻石
 ]
 const levelCardStyle = computed(() => ({
-  background: LEVEL_GRADIENTS[(currentLevel.level - 1)] || LEVEL_GRADIENTS[0],
+  background: LEVEL_GRADIENTS[currentLevel.level] || LEVEL_GRADIENTS[0],
   color: '#fff'
 }))
 
@@ -191,8 +192,8 @@ async function loadMemberInfo() {
   try {
     const res = await getMemberInfo()
     const data = res.data || {}
-    // member_level 0 或 null 均视为 Lv1 普通会员
-    const lvNum = (typeof data.member_level === 'number' && data.member_level >= 1) ? data.member_level : 1
+    // member_level 0 或 null 视为免费试用（Lv0），1-5 为付费等级
+    const lvNum = (typeof data.member_level === 'number' && data.member_level >= 0) ? data.member_level : 0
     currentLevel.level = lvNum
 
     // 从 levels 数组或对象中查找当前等级信息
@@ -210,8 +211,8 @@ async function loadMemberInfo() {
     } else if (data.levels && typeof data.levels === 'object') {
       levelDetail = data.levels[`Lv${lvNum}`]
     }
-    const defaultNames = ['普通会员','银牌会员','金牌会员','铂金会员','钻石会员']
-    currentLevel.name = levelDetail?.name || defaultNames[lvNum - 1] || '普通会员'
+    const defaultNames = ['免费试用','普通会员','银牌会员','金牌会员','铂金会员','钻石会员']
+    currentLevel.name = levelDetail?.name || defaultNames[lvNum] || '普通会员'
     currentLevel.fee = levelDetail?.fee ?? 0
     currentLevel.expire = data.expire_date || data.member_expire_at || ''
     currentLevel.validityPeriod = levelDetail?.validity_period || 12

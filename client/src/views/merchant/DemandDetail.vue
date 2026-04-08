@@ -110,8 +110,8 @@
               <span v-if="!demand.tags" style="color:#909399;font-size:13px">暂无标签</span>
             </div>
 
-            <!-- 留言区 -->
-            <div class="section">
+            <!-- 留言区（Lv0 不可查看） -->
+            <div class="section" v-if="memberLevel > 0">
               <h3>💬 留言与咨询（{{ commentList.length }}条）</h3>
               <div class="comment-input" id="comment-area">
                 <el-input v-model="commentText" placeholder="有意向合作？可以在这里留言咨询..." type="textarea" :rows="3" />
@@ -136,6 +136,14 @@
               </div>
               <el-empty v-else description="暂无留言" :image-size="60" />
             </div>
+            <!-- 留言区权限提示 -->
+            <div class="section" v-else>
+              <div class="lock-notice">
+                <el-icon :size="28"><Lock /></el-icon>
+                <p>留言与咨询功能需升级会员后使用</p>
+                <el-button type="primary" size="small" @click="$router.push('/merchant/member')">升级会员</el-button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -150,7 +158,7 @@
             <el-button type="primary" size="large" block @click="showIntentDialog = true" style="width:100%;margin-bottom:12px">
               🤝 我要提供赞助
             </el-button>
-            <el-button size="large" block style="width:100%;margin-bottom:8px" @click="scrollToComment">
+            <el-button v-if="memberLevel > 0" size="large" block style="width:100%;margin-bottom:8px" @click="scrollToComment">
               💬 留言咨询
             </el-button>
             <el-button size="large" block style="width:100%" :type="isFavorited ? 'warning' : 'default'" :loading="favoriteLoading" @click="toggleFav">
@@ -176,7 +184,7 @@
               <el-tag v-if="communityDetail.has_commercial" size="small" type="info" effect="light" style="margin:3px">有商业体</el-tag>
               <el-tag v-if="communityDetail.has_park" size="small" type="info" effect="light" style="margin:3px">有公园</el-tag>
             </div>
-            <div class="contact-info">
+            <div class="contact-info" v-if="memberLevel > 0">
               <div><el-icon><User /></el-icon> 联系人：{{ demand.contact_name || '暂无' }}</div>
               <div><el-icon><Message /></el-icon> 合作请联系通过平台发起意向</div>
             </div>
@@ -284,6 +292,11 @@ const intentSubmitting = ref(false)
 const communityDetail = ref(null)
 const isFavorited = ref(false)
 const favoriteLoading = ref(false)
+const memberLevel = ref(0)
+
+// 从 localStorage 获取会员等级
+const storedMerchant = JSON.parse(localStorage.getItem('merchant_info') || '{}')
+memberLevel.value = storedMerchant.member_level || 0
 
 const demandTypeMap = {
   0: '活动赞助', 1: '专家服务', 2: '空间运营',
@@ -331,6 +344,10 @@ async function loadDemand() {
     const id = route.params.id
     const res = await getDemandDetail(id)
     demand.value = res.data
+    // 同步更新会员等级
+    if (res.data?.memberLevel) {
+      memberLevel.value = res.data.memberLevel
+    }
   } catch (err) {
     if (err?.response?.status === 404) {
       ElMessage.error('需求不存在或已下架')
@@ -497,6 +514,8 @@ onMounted(async () => {
 .comment-text { font-size: 14px; color: #303133; }
 .comment-replies { margin-top: 8px; background: #f5f7fa; border-radius: 6px; padding: 8px 12px; }
 .reply-item { font-size: 13px; color: #606266; }
+.lock-notice { text-align: center; padding: 24px; color: #909399; border: 1px dashed #dcdfe6; border-radius: 8px; }
+.lock-notice p { margin: 8px 0; font-size: 14px; }
 .action-card, .community-card, .similar-card, .contact-card { background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
 .match-score { text-align: center; margin-bottom: 16px; }
 .hearts { font-size: 24px; }

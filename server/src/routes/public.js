@@ -30,4 +30,7 @@ router.post('/upload/image', PublicController.uploadImage)
 // 发布页类型配置
 router.get('/publish-types', PublicController.getPublishTypes)
 
+// 专家类型列表（公开接口）
+router.get('/expert-types', PublicController.getExpertTypes)
+
 module.exports = router

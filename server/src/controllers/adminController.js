@@ -261,7 +261,7 @@ exports.getMerchants = async (req, res) => {
     }
     
     const [rows] = await pool.query(
-      `SELECT id, username, company_name, contact_name, phone, industry, member_level, star_rating, status, created_at 
+      `SELECT id, username, company_name, contact_name, phone, industry, member_level, star_rating, status, company_type, created_at
        FROM merchants WHERE ${where} ORDER BY created_at DESC LIMIT ? OFFSET ?`,
       [...params, parseInt(pageSize), offset]
     )
@@ -1562,6 +1562,49 @@ exports.saveAuditConfig = async (req, res) => {
   } catch (err) {
     console.error('Save audit config error:', err)
     error(res, '保存内容审核配置失败')
+  }
+}
+
+// ====== 专家类型配置 ======
+exports.getExpertTypesConfig = async (req, res) => {
+  try {
+    const [rows] = await pool.query("SELECT config_value FROM sys_configs WHERE config_key = 'expert_types'")
+    if (rows.length > 0) {
+      try {
+        return success(res, JSON.parse(rows[0].config_value))
+      } catch {}
+    }
+    // 默认专家类型
+    success(res, [
+      { name: '法律咨询', status: 1, sort_order: 1 },
+      { name: '医疗健康', status: 1, sort_order: 2 },
+      { name: '心理辅导', status: 1, sort_order: 3 },
+      { name: '教育培训', status: 1, sort_order: 4 },
+      { name: '技能培训', status: 1, sort_order: 5 },
+      { name: '金融理财', status: 1, sort_order: 6 },
+      { name: '社会工作', status: 1, sort_order: 7 },
+      { name: '文艺指导', status: 1, sort_order: 8 },
+      { name: '体育健身', status: 1, sort_order: 9 },
+      { name: '营养指导', status: 1, sort_order: 10 },
+      { name: '其他', status: 1, sort_order: 99 }
+    ])
+  } catch (err) {
+    console.error('Get expert types config error:', err)
+    error(res, '获取专家类型配置失败')
+  }
+}
+
+exports.saveExpertTypesConfig = async (req, res) => {
+  try {
+    const types = req.body
+    await pool.query(
+      "INSERT INTO sys_configs (config_key, config_value, config_type, description) VALUES ('expert_types', ?, 'expert', '专家类型配置') ON DUPLICATE KEY UPDATE config_value = ?",
+      [JSON.stringify(types), JSON.stringify(types)]
+    )
+    success(res, null, '专家类型配置已保存')
+  } catch (err) {
+    console.error('Save expert types config error:', err)
+    error(res, '保存专家类型配置失败')
   }
 }
 

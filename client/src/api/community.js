@@ -33,6 +33,12 @@ export const deleteDemand = (id) => request.delete(`/community/demands/${id}`)
 export const importDemands = (data) => request.post('/community/demands/import', data)
 export const downloadTemplate = () => request.get('/community/demands/template', { responseType: 'blob' })
 
+// ====== 需求草稿 ======
+export const getMyDrafts = () => request.get('/community/drafts')
+export const getDraft = (id) => request.get(`/community/drafts/${id}`)
+export const saveDraft = (data) => request.post('/community/drafts', data)
+export const deleteDraft = (id) => request.delete(`/community/drafts/${id}`)
+
 // ====== 对接管理 ======
 export const getMyIntentions = (params) => request.get('/community/my/intentions', { params })
 export const acceptIntention = (id) => request.put(`/community/intentions/${id}/accept`)

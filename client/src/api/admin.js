@@ -127,3 +127,7 @@ export const publishNotification = (id) => request.post(`/admin/notifications/${
 // ====== 匹配算法配置 ======
 export const getAlgorithmConfig = () => request.get('/admin/config/algorithm')
 export const saveAlgorithmConfig = (data) => request.put('/admin/config/algorithm', data)
+
+// ====== 专家类型管理 ======
+export const getExpertTypes = () => request.get('/admin/config/expert-types')
+export const saveExpertTypes = (data) => request.put('/admin/config/expert-types', data)

@@ -6,6 +6,7 @@ import request from '@/utils/request'
 // ====== 认证 ======
 export const merchantLogin = (data) => request.post('/merchant/login', data)
 export const merchantRegister = (data) => request.post('/merchant/register', data)
+export const expertRegister = (data) => request.post('/merchant/expert/register', data)
 
 // ====== 公共信息 ======
 export const getBanners = (params) => request.get('/merchant/banners', { params })
@@ -60,6 +61,9 @@ export const getPaymentHistory = () => request.get('/merchant/member/payments')
 
 // ====== 发布页类型配置 ======
 export const getPublishTypes = () => request.get('/public/publish-types')
+
+// ====== 专家类型（公开接口）======
+export const getExpertTypes = () => request.get('/public/expert-types')
 
 // ====== 系统通知 ======
 export const getMyNotifications = (params) => request.get('/merchant/notifications', { params })

@@ -69,13 +69,13 @@
         <el-table-column v-for="lv in levels" :key="lv.level" :label="'Lv'+lv.level+' '+lv.name" width="100" align="center">
           <template #default="{ row }">
             <template v-if="row.type==='开关'">
-              <el-switch v-model="row.values[lv.level-1]" size="small" />
+              <el-switch v-model="row.values[lv.level]" size="small" />
             </template>
             <template v-else-if="row.type==='数量'">
-              <el-input-number v-model="row.values[lv.level-1]" :min="0" size="small" style="width:80px" controls-position="right" />
+              <el-input-number v-model="row.values[lv.level]" :min="0" size="small" style="width:80px" controls-position="right" />
             </template>
             <template v-else>
-              <el-input v-model="row.values[lv.level-1]" size="small" style="width:90px" />
+              <el-input v-model="row.values[lv.level]" size="small" style="width:90px" />
             </template>
           </template>
         </el-table-column>
@@ -112,9 +112,9 @@
           <div style="display:flex;gap:8px;flex-wrap:wrap">
             <div v-for="lv in levels" :key="lv.level" style="text-align:center">
               <div style="font-size:11px;color:#909399;margin-bottom:4px">Lv{{ lv.level }}</div>
-              <el-switch v-if="newBenefit.type==='开关'" v-model="newBenefit.defaults[lv.level-1]" size="small" />
-              <el-input-number v-else-if="newBenefit.type==='数量'" v-model="newBenefit.defaults[lv.level-1]" :min="0" size="small" style="width:70px" controls-position="right" />
-              <el-input v-else v-model="newBenefit.defaults[lv.level-1]" size="small" style="width:80px" />
+              <el-switch v-if="newBenefit.type==='开关'" v-model="newBenefit.defaults[lv.level]" size="small" />
+              <el-input-number v-else-if="newBenefit.type==='数量'" v-model="newBenefit.defaults[lv.level]" :min="0" size="small" style="width:70px" controls-position="right" />
+              <el-input v-else v-model="newBenefit.defaults[lv.level]" size="small" style="width:80px" />
             </div>
           </div>
         </el-form-item>
@@ -137,6 +137,7 @@ const loading = ref(false)
 const benefitTable = ref(null)
 
 const levels = reactive([
+  { level: 0, name: '免费试用', fee: 0, validityPeriod: 0 },
   { level: 1, name: '普通会员', fee: 99, validityPeriod: 3 },
   { level: 2, name: '银牌会员', fee: 999, validityPeriod: 12 },
   { level: 3, name: '金牌会员', fee: 2999, validityPeriod: 12 },
@@ -145,15 +146,15 @@ const levels = reactive([
 ])
 
 const benefits = reactive([
-  { id: 1, name: '查看联系方式', desc: '可查看社区工作者联系方式', type: '开关', values: [false, false, true, true, true], editing: false },
-  { id: 2, name: '月发起意向次数', desc: '每月可发起合作意向次数', type: '数量', values: [2, 10, 0, 0, 0], editing: false },
-  { id: 3, name: '优先展示', desc: '资源在商家推荐区优先展示', type: '开关', values: [false, true, true, true, true], editing: false },
-  { id: 4, name: '首页推荐', desc: '在平台首页获得推荐展示位', type: '开关', values: [false, false, false, true, true], editing: false },
-  { id: 5, name: '年参与活动次数', desc: '每年可参与平台线下活动的次数', type: '数量', values: [0, 2, 5, 10, 0], editing: false },
-  { id: 6, name: '专属客服', desc: '享有专属客服一对一服务', type: '开关', values: [false, false, false, true, true], editing: false },
-  { id: 7, name: '资源置顶次数/月', desc: '每月可将自己发布的资源置顶展示的次数', type: '数量', values: [0, 1, 3, 10, 0], editing: false },
-  { id: 8, name: '数据分析报告', desc: '可获取匹配效果、曝光数据等分析报告', type: '开关', values: [false, false, true, true, true], editing: false },
-  { id: 9, name: '品牌故事展示', desc: '在平台首页轮播区展示品牌故事', type: '开关', values: [false, false, false, false, true], editing: false }
+  { id: 1, name: '查看联系方式', desc: '可查看社区工作者联系方式', type: '开关', values: [false, false, false, true, true, true], editing: false },
+  { id: 2, name: '月发起意向次数', desc: '每月可发起合作意向次数', type: '数量', values: [0, 2, 10, 0, 0, 0], editing: false },
+  { id: 3, name: '优先展示', desc: '资源在商家推荐区优先展示', type: '开关', values: [false, false, true, true, true, true], editing: false },
+  { id: 4, name: '首页推荐', desc: '在平台首页获得推荐展示位', type: '开关', values: [false, false, false, false, true, true], editing: false },
+  { id: 5, name: '年参与活动次数', desc: '每年可参与平台线下活动的次数', type: '数量', values: [0, 0, 2, 5, 10, 0], editing: false },
+  { id: 6, name: '专属客服', desc: '享有专属客服一对一服务', type: '开关', values: [false, false, false, false, true, true], editing: false },
+  { id: 7, name: '资源置顶次数/月', desc: '每月可将自己发布的资源置顶展示的次数', type: '数量', values: [0, 0, 1, 3, 10, 0], editing: false },
+  { id: 8, name: '数据分析报告', desc: '可获取匹配效果、曝光数据等分析报告', type: '开关', values: [false, false, false, true, true, true], editing: false },
+  { id: 9, name: '品牌故事展示', desc: '在平台首页轮播区展示品牌故事', type: '开关', values: [false, false, false, false, false, true], editing: false }
 ])
 
 // 拖拽排序

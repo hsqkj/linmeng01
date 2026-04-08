@@ -10,6 +10,7 @@ const { authMerchant } = require('../middleware/auth')
 // 登录注册
 router.post('/login', MerchantController.login)
 router.post('/register', MerchantController.register)
+router.post('/expert/register', MerchantController.expertRegister)
 
 // 公共信息
 router.get('/banners', MerchantController.getBanners)

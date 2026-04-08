@@ -1,9 +1,9 @@
 <template>
   <div class="page">
-    <h2>商家中心</h2>
+    <h2>{{ isExpert ? '专家中心' : '商家中心' }}</h2>
 
     <el-row :gutter="20" v-loading="loading" element-loading-text="加载中...">
-      <!-- 左侧商家信息卡 -->
+      <!-- 左侧信息卡 -->
       <el-col :xs="24" :sm="24" :md="8">
         <div class="profile-card">
           <div class="avatar-area">
@@ -11,7 +11,10 @@
               <el-icon :size="40"><Shop /></el-icon>
             </el-avatar>
             <div class="merchant-name">{{ profile.company_name }}</div>
-            <div class="merchant-type">{{ profile.industry || '未填写' }}</div>
+            <div class="merchant-type">
+              <el-tag v-if="isExpert" size="small" style="margin-right:4px">专家</el-tag>
+              {{ profile.industry || '未填写' }}
+            </div>
             <el-tag type="warning" style="margin-top:8px">{{ memberLevelName[profile.member_level] || '普通会员' }}</el-tag>
           </div>
           <div class="stats-row">
@@ -19,7 +22,7 @@
             <div class="stat-item"><div class="stat-val">{{ stats.matchings }}</div><div class="stat-label">撮合成功</div></div>
             <div class="stat-item"><div class="stat-val">{{ profile.view_count || 0 }}</div><div class="stat-label">总浏览</div></div>
           </div>
-          <el-button type="primary" style="width:100%;margin-top:12px" @click="startEdit">编辑商家资料</el-button>
+          <el-button type="primary" style="width:100%;margin-top:12px" @click="startEdit">编辑{{ isExpert ? '专家' : '商家' }}资料</el-button>
         </div>
       </el-col>
 
@@ -28,32 +31,58 @@
         <el-card v-if="!editing">
           <template #header>
             <div style="display:flex;justify-content:space-between;align-items:center">
-              <span style="font-weight:700">商家详细资料</span>
+              <span style="font-weight:700">{{ isExpert ? '专家详细资料' : '商家详细资料' }}</span>
               <el-button text type="primary" @click="startEdit"><el-icon><Edit /></el-icon> 编辑</el-button>
             </div>
           </template>
           <el-tabs v-model="infoTab">
-            <el-tab-pane label="基本信息" name="basic">
+            <!-- 基本信息Tab -->
+            <el-tab-pane :label="isExpert ? '基本信息' : '基本信息'" name="basic">
               <el-descriptions :column="2" border>
-                <el-descriptions-item label="企业名称">{{ profile.company_name }}</el-descriptions-item>
+                <el-descriptions-item :label="isExpert ? '姓名' : '企业名称'">{{ profile.company_name }}</el-descriptions-item>
                 <el-descriptions-item label="行业分类">{{ profile.industry || '未填写' }}</el-descriptions-item>
-                <el-descriptions-item label="企业规模">{{ profile.scale || '未填写' }}</el-descriptions-item>
-                <el-descriptions-item label="联系人">{{ profile.contact_name || '未填写' }}</el-descriptions-item>
+                <!-- 商家独有 -->
+                <el-descriptions-item v-if="!isExpert" label="企业规模">{{ profile.scale || '未填写' }}</el-descriptions-item>
+                <el-descriptions-item :label="isExpert ? '手机号' : '联系人'">{{ isExpert ? (profile.contact_name || profile.phone) : (profile.contact_name || '未填写') }}</el-descriptions-item>
                 <el-descriptions-item label="联系电话">{{ profile.phone }}</el-descriptions-item>
-                <el-descriptions-item label="企业地址" :span="2">{{ profile.address || '未填写' }}</el-descriptions-item>
-                <el-descriptions-item label="Logo">
+                <el-descriptions-item v-if="!isExpert" label="企业地址" :span="2">{{ profile.address || '未填写' }}</el-descriptions-item>
+                <!-- 专家独有 -->
+                <el-descriptions-item v-if="isExpert" label="社会身份">{{ profile.social_identity || '未填写' }}</el-descriptions-item>
+                <el-descriptions-item v-if="isExpert" label="荣誉资质">{{ profile.honors || '未填写' }}</el-descriptions-item>
+                <!-- 通用 -->
+                <el-descriptions-item label="Logo/头像">
                   <el-avatar :size="40" :src="profile.logo" />
                 </el-descriptions-item>
                 <el-descriptions-item label="审核状态">
-                  <el-tag :type="profile.status === 1 ? 'success' : 'warning'" size="small">
-                    {{ profile.status === 1 ? '已通过' : '待审核' }}
+                  <el-tag :type="Number(profile.status) === 1 ? 'success' : 'warning'" size="small">
+                    {{ Number(profile.status) === 1 ? '已通过' : Number(profile.status) === 2 ? '已禁用' : '待审核' }}
                   </el-tag>
                 </el-descriptions-item>
-                <el-descriptions-item label="企业简介" :span="2">{{ profile.description || '暂无简介' }}</el-descriptions-item>
+                <el-descriptions-item :label="isExpert ? '个人简介' : '企业简介'" :span="2">{{ profile.description || '暂无简介' }}</el-descriptions-item>
               </el-descriptions>
             </el-tab-pane>
 
-            <el-tab-pane label="图文介绍" name="gallery">
+            <!-- 专家照片Tab（仅专家） -->
+            <el-tab-pane v-if="isExpert" label="照片资料" name="photos">
+              <div style="display:flex;gap:24px;flex-wrap:wrap;margin-top:12px">
+                <div style="text-align:center">
+                  <div class="img-label">个人照片</div>
+                  <el-image v-if="profile.logo" :src="profile.logo" style="width:140px;height:180px;border-radius:8px" fit="cover" :preview-src-list="[profile.logo]" />
+                  <el-empty v-else description="暂未上传" :image-size="50" />
+                </div>
+                <div style="text-align:center">
+                  <div class="img-label">身份证照片</div>
+                  <template v-if="idCardImages.length">
+                    <el-image v-for="(img, i) in idCardImages" :key="i" :src="img" style="width:140px;height:90px;border-radius:8px;margin-bottom:8px" fit="cover" :preview-src-list="idCardImages" />
+                  </template>
+                  <el-empty v-else description="暂未上传" :image-size="50" />
+                </div>
+              </div>
+              <el-button type="primary" text style="margin-top:12px" @click="startEdit">编辑照片</el-button>
+            </el-tab-pane>
+
+            <!-- 图文介绍Tab（仅商家） -->
+            <el-tab-pane v-if="!isExpert" label="图文介绍" name="gallery">
               <p style="color:#909399;font-size:13px;margin-bottom:12px">可上传商品图文介绍、成功案例等，让社区更了解您的品牌</p>
               <el-empty v-if="!galleryList.length" description="暂无图文介绍" :image-size="60" />
               <div v-else class="gallery-grid">
@@ -66,10 +95,10 @@
             </el-tab-pane>
 
             <el-tab-pane label="我的标签" name="tags">
-              <p style="color:#909399;font-size:13px;margin-bottom:12px">选择与您的业务相关的标签，帮助社区更精准匹配</p>
+              <p style="color:#909399;font-size:13px;margin-bottom:12px">选择与您{{ isExpert ? '的专长' : '的业务' }}相关的标签，帮助社区更精准匹配</p>
               <div style="display:flex;flex-wrap:wrap;gap:8px">
-                <el-tag v-for="tag in (profile.tags ? profile.tags.split(',') : [])" :key="tag" type="primary" effect="light" style="margin:4px">{{ tag }}</el-tag>
-                <span v-if="!profile.tags" style="color:#909399;font-size:13px">暂无标签</span>
+                <el-tag v-for="tag in parsedTags" :key="tag" type="primary" effect="light" style="margin:4px">{{ tag }}</el-tag>
+                <span v-if="!parsedTags.length" style="color:#909399;font-size:13px">暂无标签</span>
               </div>
               <el-button type="primary" text style="margin-top:12px" @click="startEdit">编辑标签</el-button>
             </el-tab-pane>
@@ -89,7 +118,7 @@
                 <el-button type="primary" style="margin-top:16px" @click="$router.push('/merchant/member')">升级会员</el-button>
               </div>
               <div v-else>
-                <el-empty description="您当前是普通会员，升级后可享受更多权益" :image-size="60">
+                <el-empty :description="`您当前是${memberLevelName[profile.member_level] || '普通会员'}，升级后可享受更多权益`" :image-size="60">
                   <el-button type="primary" @click="$router.push('/merchant/member')">立即升级</el-button>
                 </el-empty>
               </div>
@@ -125,46 +154,76 @@
         <el-card v-else>
           <template #header>
             <div style="display:flex;justify-content:space-between;align-items:center">
-              <span style="font-weight:700">编辑商家资料</span>
+              <span style="font-weight:700">编辑{{ isExpert ? '专家' : '商家' }}资料</span>
               <el-button text @click="editing=false">取消</el-button>
             </div>
           </template>
           <el-form :model="editForm" label-width="130px">
-            <el-divider content-position="left">基本信息</el-divider>
+            <el-divider content-position="left">{{ isExpert ? '基本信息' : '基本信息' }}</el-divider>
             <el-row :gutter="16">
               <el-col :xs="24" :sm="12">
-                <el-form-item label="企业名称" required>
-                  <el-input v-model="editForm.company_name" />
+                <el-form-item :label="isExpert ? '姓名' : '企业名称'" required>
+                  <el-input v-model="editForm.company_name" :disabled="isExpert" :placeholder="isExpert ? '姓名不可修改' : ''" />
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :sm="12">
-                <el-form-item label="行业分类">
-                  <el-select v-model="editForm.industry" placeholder="请选择行业分类" style="width:100%" clearable>
-                    <el-option v-for="t in industryTypes" :key="t" :label="t" :value="t" />
+                <el-form-item :label="isExpert ? '专家类型' : '行业分类'">
+                  <el-select v-model="editForm.industry" :placeholder="isExpert ? '请选择专家类型' : '请选择行业分类'" style="width:100%" clearable>
+                    <el-option v-for="t in (isExpert ? expertTypes : industryTypes)" :key="t" :label="t" :value="t" />
                   </el-select>
+                  <div v-if="isExpert && expertTypes.length === 0" style="color: #909399; font-size: 12px; margin-top: 4px;">正在加载专家类型...</div>
                 </el-form-item>
               </el-col>
-              <el-col :xs="24" :sm="12">
+              <!-- 商家独有字段 -->
+              <el-col v-if="!isExpert" :xs="24" :sm="12">
                 <el-form-item label="企业规模">
                   <el-input v-model="editForm.scale" placeholder="如：50~200人" />
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :sm="12">
+                <el-form-item :label="isExpert ? '手机号' : '联系人'" required>
+                  <el-input v-model="editForm.phone" :disabled="isExpert" :placeholder="isExpert ? '手机号不可修改' : ''" />
+                </el-form-item>
+              </el-col>
+              <el-col v-if="!isExpert" :xs="24" :sm="12">
                 <el-form-item label="联系人">
                   <el-input v-model="editForm.contact_name" />
                 </el-form-item>
               </el-col>
-              <el-col :xs="24" :sm="12">
-                <el-form-item label="联系电话" required>
-                  <el-input v-model="editForm.phone" />
-                </el-form-item>
-              </el-col>
-              <el-col :span="24">
+              <!-- 商家独有 -->
+              <el-col v-if="!isExpert" :span="24">
                 <el-form-item label="企业地址">
                   <el-input v-model="editForm.address" placeholder="详细地址" />
                 </el-form-item>
               </el-col>
-              <el-col :span="24">
+              <!-- 照片上传（专家有头像+身份证，商家只有Logo） -->
+              <el-col v-if="isExpert" :span="24">
+                <el-form-item label="个人照片">
+                  <el-upload class="avatar-uploader" action="/api/public/upload" :show-file-list="false" :on-success="(r) => { editForm.logo = r.data?.url || r.url; }" accept="image/*">
+                    <el-avatar :size="80" :src="editForm.logo" v-if="editForm.logo" />
+                    <div v-else class="upload-placeholder">
+                      <el-icon :size="24"><Plus /></el-icon>
+                      <span>上传照片</span>
+                    </div>
+                  </el-upload>
+                </el-form-item>
+              </el-col>
+              <el-col v-if="isExpert" :span="24">
+                <el-form-item label="身份证照片">
+                  <el-upload action="/api/public/upload" :show-file-list="false" :on-success="(r) => { editForm.idCardPhoto = r.data?.url || r.url; }" accept="image/*">
+                    <div class="upload-placeholder" style="width:180px;height:110px">
+                      <template v-if="editForm.idCardPhoto">
+                        <el-image :src="editForm.idCardPhoto" style="width:100%;height:100%;border-radius:6px" fit="cover" />
+                      </template>
+                      <template v-else>
+                        <el-icon :size="24"><Plus /></el-icon>
+                        <span>上传身份证</span>
+                      </template>
+                    </div>
+                  </el-upload>
+                </el-form-item>
+              </el-col>
+              <el-col v-if="!isExpert" :span="24">
                 <el-form-item label="企业Logo">
                   <el-input v-model="editForm.logo" placeholder="输入Logo图片URL" />
                   <div v-if="editForm.logo" style="margin-top:8px">
@@ -172,7 +231,7 @@
                   </div>
                 </el-form-item>
               </el-col>
-              <el-col :span="24">
+              <el-col v-if="!isExpert" :span="24">
                 <el-form-item label="图文介绍">
                   <el-input v-model="editForm.imagesStr" type="textarea" :rows="2" placeholder="输入图片URL，多个用英文逗号分隔" />
                   <div v-if="editForm.imagesList && editForm.imagesList.length" style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
@@ -181,23 +240,24 @@
                 </el-form-item>
               </el-col>
               <el-col :span="24">
-                <el-form-item label="企业简介">
-                  <el-input v-model="editForm.description" type="textarea" :rows="3" placeholder="简要介绍企业主营业务、优势等..." />
+                <el-form-item :label="isExpert ? '个人简介' : '企业简介'">
+                  <el-input v-model="editForm.description" type="textarea" :rows="3" :placeholder="isExpert ? '介绍您的专业背景、擅长领域等...' : '简要介绍企业主营业务、优势等...'" />
                 </el-form-item>
               </el-col>
-              <el-col :span="24">
+              <!-- 专家独有字段 -->
+              <el-col v-if="isExpert" :span="24">
                 <el-form-item label="社会身份">
                   <el-input v-model="editForm.social_identity" type="textarea" :rows="2" placeholder="如：XX协会会员、XX机构合作方等" />
                 </el-form-item>
               </el-col>
-              <el-col :span="24">
+              <el-col v-if="isExpert" :span="24">
                 <el-form-item label="荣誉资质">
-                  <el-input v-model="editForm.honors" type="textarea" :rows="2" placeholder="如：2024年度最具社会责任感企业、XX行业标杆等" />
+                  <el-input v-model="editForm.honors" type="textarea" :rows="2" placeholder="如：2024年度最具社会责任感专家、XX行业标杆等" />
                 </el-form-item>
               </el-col>
-              <el-col :span="24">
+              <el-col v-if="isExpert" :span="24">
                 <el-form-item label="专家介绍">
-                  <el-input v-model="editForm.expert_intro" type="textarea" :rows="2" placeholder="介绍专家团队的专业背景、擅长领域、代表案例等" />
+                  <el-input v-model="editForm.expert_intro" type="textarea" :rows="2" placeholder="介绍您的专业背景、擅长领域、代表案例等" />
                 </el-form-item>
               </el-col>
             </el-row>
@@ -228,20 +288,22 @@
 import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Shop, Edit, Star } from '@element-plus/icons-vue'
-import { getProfile, updateProfile, getMyResources, toggleFavorite, getMyFavorites } from '@/api/merchant'
+import { Shop, Edit, Star, Plus } from '@element-plus/icons-vue'
+import { getProfile, updateProfile, getMyResources, toggleFavorite, getMyFavorites, getExpertTypes } from '@/api/merchant'
 
 const router = useRouter()
 const loading = ref(true)
 const saving = ref(false)
 const editing = ref(false)
 const infoTab = ref('basic')
-const profile = ref({})
+const profile = ref({ company_type: '' })
 const stats = ref({ resourceCount: 0, matchings: 0 })
 const favorites = ref([])
 const favLoading = ref(false)
 
-const memberLevelName = { 0: '普通会员', 1: '普通会员', 2: '银牌会员', 3: '金牌会员', 4: '铂金会员', 5: '钻石会员' }
+const isExpert = computed(() => profile.value.company_type === 'expert')
+
+const memberLevelName = { 0: '免费试用', 1: '普通会员', 2: '银牌会员', 3: '金牌会员', 4: '铂金会员', 5: '钻石会员' }
 
 const industryTypes = [
   '教育培训', '医院诊所', '药店', '餐饮小吃', '生鲜水果', '美业', '保健养生', '体育健身', '银行保险', '电信服务',
@@ -250,6 +312,8 @@ const industryTypes = [
   '办公用品', '设备租赁', '社工服务', '养老服务', '新闻媒体', '自媒体', 'IT互联网', '软件开发', '图文广告',
   '电子电器维修', '家居维修', '美发', '建筑工程', '其他'
 ]
+
+const expertTypes = ref([])
 
 const allTags = ['亲子活动', '老年服务', '文化活动', '体育赛事', '教育培训', '健康医疗', '科技科普', '节庆活动', '环保公益', '商业推广', '社区建设', '志愿服务']
 
@@ -260,9 +324,51 @@ const memberBenefits = [
   { icon: '🎁', title: '撮合奖励' }
 ]
 
+// 解析标签（兼容数组和逗号分隔字符串）
+const parsedTags = computed(() => {
+  const tags = profile.value.tags
+  if (!tags) return []
+  // 如果已经是数组，直接返回
+  if (Array.isArray(tags)) return tags
+  // 如果是字符串，尝试解析
+  if (typeof tags === 'string') {
+    try {
+      const parsed = JSON.parse(tags)
+      return Array.isArray(parsed) ? parsed : []
+    } catch {
+      return tags.split(',').filter(Boolean)
+    }
+  }
+  return []
+})
+
+// 解析身份证图片
+const idCardImages = computed(() => {
+  const images = profile.value.images
+  if (!images) return []
+  // 如果已经是数组，直接返回
+  if (Array.isArray(images)) return images.filter(Boolean)
+  // 如果是字符串，尝试解析
+  if (typeof images === 'string') {
+    try {
+      const parsed = JSON.parse(images)
+      return Array.isArray(parsed) ? parsed.filter(Boolean) : []
+    } catch {
+      return images.split(',').filter(Boolean)
+    }
+  }
+  return []
+})
+
 const galleryList = computed(() => {
   if (!profile.value.images) return []
-  return profile.value.images.split(',').filter(Boolean)
+  if (isExpert.value) return [] // 专家照片走 idCardImages
+  const images = profile.value.images
+  // 如果已经是数组，直接返回
+  if (Array.isArray(images)) return images.filter(Boolean)
+  // 如果是字符串，按逗号分割
+  if (typeof images === 'string') return images.split(',').filter(Boolean)
+  return []
 })
 
 const editForm = ref({
@@ -273,6 +379,7 @@ const editForm = ref({
   phone: '',
   address: '',
   logo: '',
+  idCardPhoto: '',
   imagesStr: '',
   imagesList: [],
   description: '',
@@ -286,14 +393,16 @@ async function loadProfile() {
   loading.value = true
   try {
     const res = await getProfile()
-    profile.value = res.data || {}
+    console.log('Profile API response:', res.data)
+    profile.value = res.data || { company_type: '' }
+    console.log('Profile loaded, company_type:', profile.value.company_type, 'isExpert:', isExpert.value)
     // 同时加载资源数量
     try {
       const r = await getMyResources({ page: 1, pageSize: 1 })
       stats.value.resourceCount = r.data?.total || 0
     } catch {}
   } catch {
-    ElMessage.error('加载商家资料失败')
+    ElMessage.error('加载资料失败')
   } finally {
     loading.value = false
   }
@@ -301,9 +410,10 @@ async function loadProfile() {
 
 function startEdit() {
   const tags = profile.value.tags
-  const tagsArray = Array.isArray(tags) ? tags : (tags ? tags.split(',') : [])
+  const tagsArray = Array.isArray(tags) ? tags : (typeof tags === 'string' && tags ? (tags.startsWith('[') ? JSON.parse(tags) : tags.split(',')) : [])
   const images = profile.value.images
-  const imagesArray = Array.isArray(images) ? images : (images ? images.split(',').filter(Boolean) : [])
+  const imagesArray = Array.isArray(images) ? images : (typeof images === 'string' && images ? (images.startsWith('[') ? JSON.parse(images).filter(Boolean) : images.split(',').filter(Boolean)) : [])
+
   editForm.value = {
     company_name: profile.value.company_name || '',
     industry: profile.value.industry || '',
@@ -312,6 +422,7 @@ function startEdit() {
     phone: profile.value.phone || '',
     address: profile.value.address || '',
     logo: profile.value.logo || '',
+    idCardPhoto: isExpert.value ? (imagesArray[0] || '') : '',
     imagesStr: imagesArray.join(','),
     imagesList: imagesArray,
     description: profile.value.description || '',
@@ -340,22 +451,29 @@ async function saveProfile() {
     const data = {
       company_name: editForm.value.company_name,
       industry: editForm.value.industry,
-      company_type: editForm.value.scale,
       contact_name: editForm.value.contact_name,
       phone: editForm.value.phone,
-      address: editForm.value.address,
       logo: editForm.value.logo,
-      images: editForm.value.imagesStr.split(',').map(s => s.trim()).filter(Boolean).join(','),
       description: editForm.value.description,
       social_identity: editForm.value.social_identity,
       honors: editForm.value.honors,
       expert_intro: editForm.value.expert_intro,
-      tags: editForm.value.tagsList.join(',')
+      tags: JSON.stringify(editForm.value.tagsList)
+    }
+    // 商家特有字段
+    if (!isExpert.value) {
+      data.scale = editForm.value.scale
+      data.address = editForm.value.address
+      data.images = editForm.value.imagesStr.split(',').map(s => s.trim()).filter(Boolean).join(',')
+    }
+    // 专家身份证照片
+    if (isExpert.value && editForm.value.idCardPhoto) {
+      data.images = JSON.stringify([editForm.value.idCardPhoto])
     }
     await updateProfile(data)
     profile.value = { ...profile.value, ...data }
     editing.value = false
-    ElMessage.success('商家资料已保存')
+    ElMessage.success('资料已保存')
   } catch {
     ElMessage.error('保存失败')
   } finally {
@@ -365,7 +483,26 @@ async function saveProfile() {
 
 onMounted(() => {
   loadProfile()
+  loadExpertTypes()
 })
+
+// 加载专家类型列表
+async function loadExpertTypes() {
+  try {
+    const res = await getExpertTypes()
+    console.log('Expert types API response:', res.data)
+    if (res.data && Array.isArray(res.data)) {
+      // 只取启用的类型，并按排序号排序
+      expertTypes.value = res.data
+        .filter(t => t.status === 1 || t.status === '1' || t.status === undefined)
+        .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
+        .map(t => t.name)
+      console.log('Loaded expert types:', expertTypes.value)
+    }
+  } catch (err) {
+    console.error('加载专家类型失败:', err)
+  }
+}
 
 // 加载收藏列表
 async function loadFavorites() {
@@ -405,6 +542,7 @@ watch(infoTab, (newTab) => {
 .stat-item { text-align: center; }
 .stat-val { font-size: 22px; font-weight: 700; color: #67C23A; }
 .stat-label { font-size: 12px; color: #909399; margin-top: 2px; }
+.img-label { font-size: 12px; color: #909399; margin-bottom: 4px; }
 .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
 .gallery-item { text-align: center; }
 .gallery-label { font-size: 13px; color: #606266; margin-top: 6px; }
@@ -431,6 +569,8 @@ watch(infoTab, (newTab) => {
 .fav-star { font-size: 18px; color: #f56c6c; }
 .fav-star.active { color: #f56c6c; }
 .fav-desc { font-size: 13px; color: #606266; margin: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.upload-placeholder { width: 80px; height: 80px; border: 1px dashed #dcdfe6; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #909399; cursor: pointer; font-size: 12px; gap: 4px; transition: border-color 0.2s; }
+.upload-placeholder:hover { border-color: #409EFF; color: #409EFF; }
 
 @media (max-width: 768px) {
   .page { padding-bottom: 70px; }

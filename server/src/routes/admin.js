@@ -109,4 +109,8 @@ router.put('/config/anti-flying', authAdmin, AdminController.saveAntiFlyingConfi
 router.get('/config/audit', authAdmin, AdminController.getAuditConfig)
 router.put('/config/audit', authAdmin, AdminController.saveAuditConfig)
 
+// 专家类型配置
+router.get('/config/expert-types', authAdmin, AdminController.getExpertTypesConfig)
+router.put('/config/expert-types', authAdmin, AdminController.saveExpertTypesConfig)
+
 module.exports = router

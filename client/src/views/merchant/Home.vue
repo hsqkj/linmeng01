@@ -1,5 +1,20 @@
 <template>
   <div class="merchant-home" v-loading="loading">
+    <!-- 资料不完善提醒 -->
+    <el-alert
+      v-if="profile.profile_incomplete"
+      title="资料待完善"
+      type="warning"
+      :closable="false"
+      show-icon
+      style="margin-bottom: 16px;"
+    >
+      <template #default>
+        您的{{ isExpert ? '专家' : '企业' }}资料尚未完善，建议尽快补充完整，以便获得更多曝光和合作机会。
+        <el-link type="primary" @click="$router.push('/merchant/profile')">去完善资料 →</el-link>
+      </template>
+    </el-alert>
+
     <!-- 会员等级卡片 -->
     <div class="membership-card">
       <div class="membership-info">
@@ -9,7 +24,7 @@
         </div>
         <div class="membership-details">
           <h3>{{ profile.company_name || '商家用户' }}</h3>
-          <p>会员有效期至：{{ profile.member_expire_at || '—' }}</p>
+          <p>会员有效期至：{{ profile.member_expire_at || (profile.validityPeriod ? `${profile.validityPeriod}个月` : '—') }}</p>
         </div>
       </div>
       <div class="membership-actions">
@@ -174,7 +189,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { requireAuth } from '@/utils/useAuth'
@@ -188,7 +203,10 @@ const matchedDemands = ref([])
 const profile = ref({})
 const stats = ref({ resources: 0, intentions: 0, completed: 0 })
 const loading = ref(false)
-const memberLevelName = { 0: '普通会员', 1: '普通会员', 2: '银牌会员', 3: '金牌会员', 4: '铂金会员', 5: '钻石会员' }
+const memberLevelName = { 0: '免费试用', 1: '普通会员', 2: '银牌会员', 3: '金牌会员', 4: '铂金会员', 5: '钻石会员' }
+
+// 判断是否为专家
+const isExpert = computed(() => profile.value.company_type === 'expert')
 
 // 社区详情弹窗
 const showCommunityDialog = ref(false)
@@ -257,6 +275,13 @@ onMounted(async () => {
       if (mdata.expire_date || mdata.member_expire_at) {
         profile.value.member_expire_at = mdata.expire_date || mdata.member_expire_at
       }
+      // 从等级配置中获取有效期
+      if (mdata.levels && Array.isArray(mdata.levels)) {
+        const currentLevel = mdata.levels.find(l => l.level === profile.value.member_level)
+        if (currentLevel) {
+          profile.value.validityPeriod = currentLevel.validity_period || 0
+        }
+      }
     }
 
     if (resourcesRes.status === 'fulfilled') {
@@ -287,7 +312,7 @@ const contactCommunity = (demand) => {
 }
 
 // 会员等级名称映射（用于详情弹窗）
-const memberLevelNameMap = { 0: '普通会员', 1: '普通会员', 2: '银牌会员', 3: '金牌会员', 4: '铂金会员', 5: '钻石会员' }
+const memberLevelNameMap = { 0: '免费试用', 1: '普通会员', 2: '银牌会员', 3: '金牌会员', 4: '铂金会员', 5: '钻石会员' }
 const memberLevelTagType = { 0: 'info', 1: 'info', 2: '', 3: 'warning', 4: 'danger', 5: 'danger' }
 </script>
 

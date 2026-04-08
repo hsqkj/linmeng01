@@ -76,6 +76,21 @@
               <p class="description">{{ demand.expected_return }}</p>
             </div>
 
+            <!-- 志愿服务积分 -->
+            <div class="section" v-if="demand.volunteer_points > 0">
+              <h3>🏅 志愿服务积分</h3>
+              <div class="volunteer-info">
+                <div class="volunteer-card">
+                  <div class="volunteer-score">{{ demand.volunteer_points }}<small> 积分</small></div>
+                  <div class="volunteer-detail">
+                    <span v-if="demand.volunteer_max_points">每人上限 {{ demand.volunteer_max_points }} 分</span>
+                    <span v-if="demand.volunteer_count">· 招募 {{ demand.volunteer_count }} 名志愿者</span>
+                  </div>
+                </div>
+                <p class="volunteer-desc" v-if="demand.volunteer_desc">{{ demand.volunteer_desc }}</p>
+              </div>
+            </div>
+
             <!-- 合作意向列表 -->
             <div class="section">
               <h3>📬 合作意向（{{ intentions.length }}条）</h3>
@@ -126,7 +141,10 @@
             <h4>⚡ 快速操作</h4>
             <div style="display:flex;flex-direction:column;gap:8px">
               <el-button type="primary" style="width:100%" @click="$router.push('/community/demands')">返回列表</el-button>
-              <el-button type="warning" style="width:100%" @click="$router.push(`/community/demands/${demand.id}/edit`)" v-if="demand.status !== 1">编辑需求</el-button>
+              <el-button type="success" style="width:100%" @click="shareDemand">
+                <el-icon><Share /></el-icon> 分享转发
+              </el-button>
+              <el-button type="warning" style="width:100%" @click="$router.push(`/community/demands/${demand.id}/edit`)" v-if="isOwner">编辑需求</el-button>
               <el-button type="danger" style="width:100%" @click="deleteDemand">删除需求</el-button>
             </div>
           </el-card>
@@ -143,7 +161,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { ArrowLeft } from '@element-plus/icons-vue'
+import { ArrowLeft, Share } from '@element-plus/icons-vue'
 import { getDemandDetail, deleteDemand as apiDelete, getMyIntentions, acceptIntention as apiAccept, rejectIntention as apiReject } from '@/api/community'
 
 const route = useRoute()
@@ -162,6 +180,9 @@ const statusName = { 0: '待审核', 1: '已发布', 2: '已下架' }
 const statusType = { 0: 'warning', 1: 'success', 2: 'info' }
 const intentionStatusName = { 0: '待处理', 1: '已接受', 2: '已拒绝', 3: '已完成' }
 const intentionStatusType = { 0: 'warning', 1: 'success', 2: 'info', 3: 'primary' }
+
+// 判断是否是当前用户的需求（根据是否有 community_token）
+const isOwner = computed(() => !!localStorage.getItem('community_token'))
 
 const isDeadlineNear = computed(() => {
   if (!demand.value?.deadline) return false
@@ -239,6 +260,24 @@ async function deleteDemand() {
   } catch {}
 }
 
+async function shareDemand() {
+  if (!demand.value) return
+  const url = `${window.location.origin}/community/demands/${demand.value.id}`
+  const text = `邻盟社区需求：${demand.value.title}`
+  if (navigator.share) {
+    try {
+      await navigator.share({ title: text, text, url })
+    } catch { /* 用户取消 */ }
+  } else {
+    try {
+      await navigator.clipboard.writeText(`${text}\n${url}`)
+      ElMessage.success('链接已复制到剪贴板')
+    } catch {
+      ElMessage.error('复制失败，请手动复制')
+    }
+  }
+}
+
 onMounted(() => {
   loadDemand()
 })
@@ -272,6 +311,12 @@ onMounted(() => {
 .intention-card { margin-bottom: 8px; }
 .intention-header { display: flex; justify-content: space-between; align-items: center; }
 .intention-actions { display: flex; gap: 8px; margin-top: 10px; }
+.volunteer-info { background: #f0f9ff; border-radius: 10px; padding: 16px; border: 1px solid #dbeafe; }
+.volunteer-card { display: flex; align-items: center; gap: 16px; }
+.volunteer-score { font-size: 32px; font-weight: 800; color: #3B82F6; line-height: 1; }
+.volunteer-score small { font-size: 14px; font-weight: 500; }
+.volunteer-detail { font-size: 14px; color: #6B7280; }
+.volunteer-desc { margin: 12px 0 0; font-size: 13px; color: #9CA3AF; }
 .stat-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f0f0f0; }
 .stat-row:last-child { border-bottom: none; }
 .stat-label { color: #909399; font-size: 13px; }

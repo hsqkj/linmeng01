@@ -39,8 +39,6 @@
         {{ loading ? '登录中...' : '登录' }}
       </button>
 
-      <div class="login-test">测试版提示：验证码已自动填入 123456</div>
-
       <div class="login-divider">
         <div class="login-tips">
           <div class="login-tip">
@@ -190,11 +188,7 @@ const goBack = () => { router.push('/') }
 .btn-login:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0,0,0,.2); }
 .btn-login:disabled { opacity: .7; cursor: not-allowed; transform: none; }
 
-.login-test {
-  padding: 10px 14px; background: #f0f7ff; border-radius: 8px;
-  font-size: 12px; text-align: center; border: 1px dashed #409EFF;
-  color: #409EFF; margin-top: 14px;
-}
+
 .login-divider { border-top: 1px solid #eee; margin-top: 24px; padding-top: 20px; }
 .login-tips { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; text-align: center; }
 .login-tip { padding: 10px 6px; background: #f9f9f9; border-radius: 10px; }

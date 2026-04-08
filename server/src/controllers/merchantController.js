@@ -91,6 +91,43 @@ exports.register = async (req, res) => {
   }
 }
 
+// 专家注册（分步提交）
+exports.expertRegister = async (req, res) => {
+  try {
+    const data = req.body
+    const hashedPassword = await bcrypt.hash(data.phone.slice(-6), 10)
+    
+    // 检查手机号是否已注册
+    const [existing] = await pool.query('SELECT id FROM merchants WHERE phone = ?', [data.phone])
+    if (existing.length > 0) {
+      return error(res, '手机号已注册', 400)
+    }
+    
+    // company_type = 'expert' 标识专家
+    // contact_name 存真实姓名，company_name 存 "专家-{姓名}"
+    const companyName = `专家-${data.realName}`
+    
+    await pool.query(
+      `INSERT INTO merchants (username, password, company_name, contact_name, phone,
+       company_type, industry, logo, description,
+       social_identity, honors, expert_intro, tags, images,
+       status)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)`,
+      [
+        data.phone, hashedPassword, companyName, data.realName, data.phone,
+        'expert', data.expertType || '', data.personalPhoto || null, data.intro || null,
+        data.socialIdentity || null, data.honors || null, null,
+        JSON.stringify(data.tags || []), data.idCardPhoto ? JSON.stringify([data.idCardPhoto]) : null
+      ]
+    )
+    
+    success(res, null, '专家注册成功，请等待审核')
+  } catch (err) {
+    console.error('Expert register error:', err)
+    error(res, '专家注册失败')
+  }
+}
+
 // 获取轮播图
 exports.getBanners = async (req, res) => {
   try {
@@ -575,6 +612,12 @@ exports.createDemandComment = async (req, res) => {
     const { id } = req.params
     const { content } = req.body
     
+    // Lv0 免费试用用户不可留言
+    const [[merchant]] = await pool.query('SELECT member_level FROM merchants WHERE id = ?', [req.merchant.id])
+    if (!merchant || merchant.member_level === 0) {
+      return error(res, '免费试用用户不可留言，请升级会员', 403)
+    }
+    
     await pool.query(
       'INSERT INTO comments (demand_id, user_type, user_id, content) VALUES (?, 2, ?, ?)',
       [id, req.merchant.id, content]
@@ -609,6 +652,12 @@ exports.createResourceComment = async (req, res) => {
     const { id } = req.params
     const { content } = req.body
     
+    // Lv0 免费试用用户不可留言
+    const [[merchant]] = await pool.query('SELECT member_level FROM merchants WHERE id = ?', [req.merchant.id])
+    if (!merchant || merchant.member_level === 0) {
+      return error(res, '免费试用用户不可留言，请升级会员', 403)
+    }
+    
     await pool.query(
       'INSERT INTO comments (resource_id, user_type, user_id, content) VALUES (?, 2, ?, ?)',
       [id, req.merchant.id, content]
@@ -624,6 +673,12 @@ exports.replyComment = async (req, res) => {
   try {
     const { id } = req.params
     const { content } = req.body
+    
+    // Lv0 免费试用用户不可回复留言
+    const [[merchant]] = await pool.query('SELECT member_level FROM merchants WHERE id = ?', [req.merchant.id])
+    if (!merchant || merchant.member_level === 0) {
+      return error(res, '免费试用用户不可回复留言，请升级会员', 403)
+    }
     
     const [[comment]] = await pool.query('SELECT demand_id, resource_id FROM comments WHERE id = ?', [id])
     
@@ -677,6 +732,9 @@ exports.getProfile = async (req, res) => {
     }
     
     const result = { ...rows[0] }
+    // 确保数字类型
+    result.status = Number(result.status)
+    result.member_level = Number(result.member_level)
     // 解析 JSON 字段
     if (result.resource_types && typeof result.resource_types === 'string') {
       try { result.resource_types = JSON.parse(result.resource_types) } catch {}

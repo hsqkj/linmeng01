@@ -413,8 +413,9 @@ exports.createDemand = async (req, res) => {
       `INSERT INTO demands (community_id, demand_type, title, activity_type, target_audience,
        start_time, end_time, location_type, location_name, expected_count, content,
        required_types, budget_min, budget_max, material_details, human_details,
-       tech_details, media_details, return_ways, return_value, images, tags, deadline)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       tech_details, media_details, return_ways, return_value, images, tags, deadline,
+       volunteer_points, volunteer_max_points, volunteer_count, volunteer_desc)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [data.community_id, data.demand_type, data.title, data.activity_type,
        JSON.stringify(data.target_audience || []), data.start_time, data.end_time,
        data.location_type, data.location_name, data.expected_count, data.content,
@@ -422,8 +423,14 @@ exports.createDemand = async (req, res) => {
        JSON.stringify(data.material_details || {}), JSON.stringify(data.human_details || {}),
        JSON.stringify(data.tech_details || {}), JSON.stringify(data.media_details || {}),
        JSON.stringify(data.return_ways || []), data.return_value, JSON.stringify(data.images || []),
-       JSON.stringify(data.tags || []), data.deadline]
+       JSON.stringify(data.tags || []), data.deadline,
+       data.volunteer_points || 0, data.volunteer_max_points || 0, data.volunteer_count || 0, data.volunteer_desc || null]
     )
+    
+    // 如果从草稿提交，删除对应草稿
+    if (data.draft_id) {
+      await pool.query('DELETE FROM demand_drafts WHERE id = ? AND community_id = ?', [data.draft_id, req.community.id])
+    }
     
     success(res, { id: result.insertId }, '需求发布成功，请等待审核')
   } catch (err) {
@@ -447,29 +454,134 @@ exports.updateDemand = async (req, res) => {
       return error(res, '需求不存在', 404)
     }
     
-    if (demand.status === 1) {
-      return error(res, '已审核通过的无法修改', 400)
-    }
-    
     const data = req.body
+    const isRepublish = demand.status === 1 // 已发布的需求重新编辑
     
     await pool.query(
       `UPDATE demands SET title = ?, activity_type = ?, target_audience = ?,
        start_time = ?, end_time = ?, location_type = ?, location_name = ?,
        expected_count = ?, content = ?, required_types = ?, budget_min = ?,
        budget_max = ?, return_ways = ?, return_value = ?, images = ?,
-       tags = ?, deadline = ?, status = 0 WHERE id = ?`,
+       tags = ?, deadline = ?, status = 0,
+       volunteer_points = ?, volunteer_max_points = ?, volunteer_count = ?, volunteer_desc = ?
+       WHERE id = ?`,
       [data.title, data.activity_type, JSON.stringify(data.target_audience || []),
        data.start_time, data.end_time, data.location_type, data.location_name,
        data.expected_count, data.content, JSON.stringify(data.required_types || []),
        data.budget_min, data.budget_max, JSON.stringify(data.return_ways || []),
        data.return_value, JSON.stringify(data.images || []), JSON.stringify(data.tags || []),
-       data.deadline, id]
+       data.deadline, 0, // 重新设为待审核
+       data.volunteer_points || 0, data.volunteer_max_points || 0, data.volunteer_count || 0, data.volunteer_desc || null,
+       id]
     )
     
-    success(res, null, '更新成功')
+    // 删除关联的草稿
+    if (data.draft_id) {
+      await pool.query('DELETE FROM demand_drafts WHERE id = ? AND community_id = ?', [data.draft_id, req.community.id])
+    }
+    
+    success(res, null, isRepublish ? '需求已重新提交审核' : '更新成功')
   } catch (err) {
+    console.error('Update demand error:', err)
     error(res, '更新失败')
+  }
+}
+
+// ====== 需求草稿 ======
+
+// 保存草稿
+exports.saveDraft = async (req, res) => {
+  try {
+    const { form_data, current_step, draft_id, demand_id } = req.body
+    const community_id = req.community.id
+    
+    if (draft_id) {
+      // 更新已有草稿
+      await pool.query(
+        'UPDATE demand_drafts SET form_data = ?, current_step = ?, demand_id = ?, updated_at = NOW() WHERE id = ? AND community_id = ?',
+        [JSON.stringify(form_data), current_step || 0, demand_id || null, draft_id, community_id]
+      )
+      success(res, { id: draft_id }, '草稿已保存')
+    } else {
+      // 创建新草稿，同时清理该用户/需求关联的旧草稿（最多保留3个）
+      const where = demand_id
+        ? 'community_id = ? AND demand_id = ?'
+        : 'community_id = ? AND demand_id IS NULL'
+      const params = demand_id ? [community_id, demand_id] : [community_id]
+      const [count] = await pool.query(`SELECT COUNT(*) as cnt FROM demand_drafts WHERE ${where}`, params)
+      if (count[0].cnt >= 3) {
+        // 删除最旧的
+        await pool.query(
+          `DELETE FROM demand_drafts WHERE id IN (SELECT id FROM (SELECT id FROM demand_drafts WHERE ${where} ORDER BY updated_at ASC LIMIT 1) t)`,
+          params
+        )
+      }
+      
+      const [result] = await pool.query(
+        'INSERT INTO demand_drafts (community_id, demand_id, form_data, current_step) VALUES (?, ?, ?, ?)',
+        [community_id, demand_id || null, JSON.stringify(form_data), current_step || 0]
+      )
+      success(res, { id: result.insertId }, '草稿已保存')
+    }
+  } catch (err) {
+    console.error('Save draft error:', err)
+    error(res, '保存草稿失败')
+  }
+}
+
+// 加载草稿
+exports.getDraft = async (req, res) => {
+  try {
+    const { id } = req.params
+    const [[draft]] = await pool.query(
+      'SELECT * FROM demand_drafts WHERE id = ? AND community_id = ?',
+      [id, req.community.id]
+    )
+    if (!draft) {
+      return error(res, '草稿不存在', 404)
+    }
+    let formData = draft.form_data
+    if (typeof formData === 'string') {
+      try { formData = JSON.parse(formData) } catch { formData = {} }
+    }
+    success(res, { id: draft.id, demand_id: draft.demand_id, form_data: formData, current_step: draft.current_step, updated_at: draft.updated_at })
+  } catch (err) {
+    error(res, '获取草稿失败')
+  }
+}
+
+// 我的草稿列表
+exports.getMyDrafts = async (req, res) => {
+  try {
+    const [rows] = await pool.query(
+      'SELECT d.*, (SELECT title FROM demands WHERE id = d.demand_id) as demand_title FROM demand_drafts d WHERE d.community_id = ? ORDER BY d.updated_at DESC',
+      [req.community.id]
+    )
+    const result = rows.map(r => {
+      let formData = r.form_data
+      if (typeof formData === 'string') {
+        try { formData = JSON.parse(formData) } catch { formData = {} }
+      }
+      return {
+        ...r,
+        form_data: formData,
+        title: formData.activityName || formData.spaceName || formData.expertType || '未命名草稿'
+      }
+    })
+    success(res, result)
+  } catch (err) {
+    error(res, '获取草稿列表失败')
+  }
+}
+
+// 删除草稿
+exports.deleteDraft = async (req, res) => {
+  try {
+    const { id } = req.params
+    await pool.query('DELETE FROM demand_drafts WHERE id = ? AND community_id = ?', [id, req.community.id])
+    success(res, null, '草稿已删除')
+  } catch (err) {
+    error(res, '删除草稿失败')
   }
 }
 

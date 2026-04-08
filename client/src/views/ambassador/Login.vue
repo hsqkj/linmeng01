@@ -47,9 +47,7 @@
                   {{ countdown > 0 ? `${countdown}s后重发` : '获取验证码' }}
                 </el-button>
               </div>
-              <div class="auto-fill-tip" v-if="showAutoFill">
-                测试版验证码已自动填入：<strong>{{ loginForm.code }}</strong>
-              </div>
+
             </el-form-item>
           </el-form>
           <el-button type="warning" size="large" style="width:100%;margin-top:8px;font-size:16px" :loading="loading" @click="doLogin">
@@ -184,7 +182,7 @@ async function submitApply() {
 .login-card { background: #fff; border-radius: 20px; padding: 40px; width: 100%; box-shadow: 0 24px 60px rgba(0,0,0,.3); }
 .login-card h2 { font-size: 24px; font-weight: 700; margin-bottom: 24px; color: #1a1a1a; }
 .code-row { display: flex; gap: 12px; }
-.auto-fill-tip { margin-top: 6px; font-size: 12px; color: #909399; background: #f5f7fa; padding: 6px 10px; border-radius: 6px; }
+
 .login-links { text-align: center; margin-top: 16px; font-size: 14px; color: #909399; }
 .other-logins { margin-top: 8px; }
 .login-role-btns { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }

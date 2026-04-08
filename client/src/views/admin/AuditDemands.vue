@@ -35,6 +35,12 @@
       <el-table-column prop="status" label="状态" width="90">
         <template #default="{ row }"><el-tag :type="statusColors[row.status]" size="small">{{ statusLabels[row.status] || row.status }}</el-tag></template>
       </el-table-column>
+      <el-table-column prop="volunteer_points" label="志愿积分" width="90" align="center">
+        <template #default="{ row }">
+          <span v-if="row.volunteer_points > 0" style="color:#3B82F6;font-weight:600">{{ row.volunteer_points }}</span>
+          <span v-else style="color:#ccc">—</span>
+        </template>
+      </el-table-column>
       <el-table-column label="操作" width="180" align="center">
         <template #default="{ row }">
           <el-button text type="primary" size="small" @click="viewDetail(row)">查看</el-button>
@@ -65,6 +71,14 @@
           <el-descriptions-item label="活动地点">{{ currentRow.location_name || '—' }}</el-descriptions-item>
           <el-descriptions-item label="预计参与">{{ currentRow.expected_count ? currentRow.expected_count + '人' : '—' }}</el-descriptions-item>
           <el-descriptions-item label="需求详情" :span="2">{{ currentRow.content || '—' }}</el-descriptions-item>
+          <el-descriptions-item label="志愿服务积分" v-if="currentRow.volunteer_points > 0">
+            <el-tag type="primary" effect="plain">{{ currentRow.volunteer_points }} 分</el-tag>
+            <span style="margin-left:8px;color:#909399;font-size:12px">
+              <span v-if="currentRow.volunteer_max_points">每人上限{{ currentRow.volunteer_max_points }}分</span>
+              <span v-if="currentRow.volunteer_count"> · 招募{{ currentRow.volunteer_count }}人</span>
+            </span>
+          </el-descriptions-item>
+          <el-descriptions-item label="积分说明" :span="2" v-if="currentRow.volunteer_desc">{{ currentRow.volunteer_desc }}</el-descriptions-item>
         </el-descriptions>
         <div class="audit-actions" v-if="currentRow.status === 0">
           <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:12px">

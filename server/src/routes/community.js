@@ -46,6 +46,12 @@ router.post('/demands', CommunityController.createDemand)
 router.put('/demands/:id', CommunityController.updateDemand)
 router.delete('/demands/:id', CommunityController.deleteDemand)
 
+// 需求草稿
+router.get('/drafts', CommunityController.getMyDrafts)
+router.get('/drafts/:id', CommunityController.getDraft)
+router.post('/drafts', CommunityController.saveDraft)
+router.delete('/drafts/:id', CommunityController.deleteDraft)
+
 
 
 // 对接管理
