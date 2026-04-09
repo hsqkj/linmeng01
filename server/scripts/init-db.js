@@ -112,6 +112,9 @@ async function initDatabase() {
         star_rating DECIMAL(2,1) DEFAULT 0 COMMENT '平台五星评级',
         rating_updated_at DATETIME COMMENT '评级更新时间',
         ambassador_id INT COMMENT '招商大使ID',
+        social_identity VARCHAR(100) COMMENT '社会身份',
+        honors TEXT COMMENT '荣誉资质',
+        expert_intro TEXT COMMENT '专家简介',
         status TINYINT DEFAULT 0 COMMENT '0待审核 1通过 2拒绝',
         reject_reason VARCHAR(500),
         last_login_at DATETIME,
@@ -387,6 +390,20 @@ async function initDatabase() {
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='系统通知表'
     `)
     console.log('表 system_notifications 创建成功')
+    
+    // 17. 通知已读记录表
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS notification_reads (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        notification_id INT NOT NULL COMMENT '通知ID',
+        user_type VARCHAR(20) NOT NULL COMMENT '用户类型：community/merchant/ambassador',
+        user_id INT NOT NULL COMMENT '用户ID',
+        read_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '阅读时间',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY unique_read (notification_id, user_type, user_id)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='通知已读记录表'
+    `)
+    console.log('表 notification_reads 创建成功')
     
     // ============ 插入初始数据 ============
     

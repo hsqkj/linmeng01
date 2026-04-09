@@ -1,42 +1,59 @@
-# 依赖
+# Dependencies
 node_modules/
-.pnp
-.pnp.js
-
-# 测试
-coverage/
-
-# 生产构建
-dist/
-dist-ssr/
-
-# IDE
-.vscode/*
-!.vscode/extensions.json
-!.vscode/settings.json
-.idea/
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
-
-# 操作系统
-.DS_Store
-Thumbs.db
-
-# 日志
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-pnpm-debug.log*
+package-lock.json
+yarn.lock
 
-# 本地环境变量
+# Environment variables
+.env
 .env.local
 .env.*.local
 
-# 备份目录
-backups/
+# Build outputs
+dist/
+build/
+*.zip
 
-# 工作区配置
-.workbuddy/
+# Logs
+logs/
+*.log
+verbose.*
+*.log.*
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Database
+*.sql
+!seed-test-data-wuhan-all.sql
+
+# Keys and certificates
+*.pem
+*.key
+*.crt
+
+# Backup files
+backups/*.zip
+
+# Test results
+test-results*.md
+test-final-results.md
