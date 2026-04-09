@@ -1,15 +1,45 @@
 <template>
   <div class="community-home" v-loading="loading">
     <!-- 欢迎横幅 -->
-    <div class="welcome-banner">
+    <div class="welcome-banner" :class="{ 'not-logged-in': !isLoggedIn }">
       <div class="welcome-content">
-        <h1>欢迎回来，{{ profile.real_name || profile.community_name || '社区用户' }}！</h1>
-        <p>{{ profile.community_name || '阳光花园社区' }} 今日有 <strong>{{ matchedResources.length }}</strong> 个新商家资源与您匹配</p>
+        <template v-if="isLoggedIn">
+          <h1>欢迎回来，{{ profile.real_name || profile.community_name || '社区用户' }}！</h1>
+          <p>{{ profile.community_name || '阳光花园社区' }} 今日有 <strong>{{ matchedResources.length }}</strong> 个新商家资源与您匹配</p>
+        </template>
+        <template v-else>
+          <h1>欢迎来到邻盟平台！</h1>
+          <p>连接社区与商家，精准匹配资源，共创美好生活</p>
+        </template>
       </div>
-      <el-button type="primary" size="large" @click="$router.push('/community/demands/publish')">
+      <el-button v-if="isLoggedIn" type="primary" size="large" @click="$router.push('/community/demands/publish')">
         <el-icon><Plus /></el-icon>
         发布新需求
       </el-button>
+      <template v-else>
+        <el-button type="primary" size="large" @click="$router.push('/login/community')">
+          <el-icon><User /></el-icon>
+          登录
+        </el-button>
+        <el-button size="large" @click="$router.push('/register/community')" style="margin-left: 10px;">
+          <el-icon><Edit /></el-icon>
+          注册
+        </el-button>
+      </template>
+    </div>
+
+    <!-- 未登录提示 -->
+    <div v-if="!isLoggedIn" class="login-tip-banner">
+      <el-alert
+        title="登录后即可发布需求、联系商家、查看详细信息"
+        type="info"
+        :closable="false"
+        show-icon
+      >
+        <template #default>
+          <span>登录后您可以：发布和管理需求 | 查看商家联系方式 | 参与需求撮合 | 获取奖励</span>
+        </template>
+      </el-alert>
     </div>
 
     <!-- 广告轮播 -->
@@ -135,11 +165,14 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { requireAuth } from '@/utils/useAuth'
-import { Shop, StarFilled, Document, Connection, CircleCheck, Present, Plus, View } from '@element-plus/icons-vue'
+import { requireAuth, isLoggedIn as checkLogin } from '@/utils/useAuth'
+import { Shop, StarFilled, Document, Connection, CircleCheck, Present, Plus, View, User, Edit } from '@element-plus/icons-vue'
 import { getBanners, getRecommendResources, getProfile, getMyDemands, getMyIntentions } from '@/api/community'
 
 const router = useRouter()
+
+// 判断是否登录
+const isLoggedIn = checkLogin('community')
 
 const banners = ref([])
 const matchedResources = ref([])
@@ -158,16 +191,21 @@ const bannerColors = [
 onMounted(async () => {
   loading.value = true
   try {
-    const [bannerRes, resourceRes, profileRes, demandsRes, intentionsRes] = await Promise.allSettled([
+    const promises = [
       getBanners(),
-      getRecommendResources(),
-      getProfile(),
-      getMyDemands({ pageSize: 1 }),
-      getMyIntentions({ pageSize: 50 })
-    ])
+      getRecommendResources()
+    ]
 
-    if (bannerRes.status === 'fulfilled') {
-      banners.value = (bannerRes.value.data || []).map((b, i) => ({
+    // 只有登录后才获取个人信息
+    if (isLoggedIn) {
+      promises.push(getProfile(), getMyDemands({ pageSize: 1 }), getMyIntentions({ pageSize: 50 }))
+    }
+
+    const results = await Promise.allSettled(promises)
+
+    // Banner
+    if (results[0].status === 'fulfilled') {
+      banners.value = (results[0].value.data || []).map((b, i) => ({
         title: b.title || '邻盟平台',
         desc: b.description || '连接社区与商家，共创美好生活',
         btn: '了解更多',
@@ -182,22 +220,24 @@ onMounted(async () => {
       }
     }
 
-    if (resourceRes.status === 'fulfilled') {
-      matchedResources.value = (resourceRes.value.data || []).slice(0, 4)
+    // 推荐资源
+    if (results[1].status === 'fulfilled') {
+      matchedResources.value = (results[1].value.data || []).slice(0, 4)
     }
 
-    if (profileRes.status === 'fulfilled') {
-      profile.value = profileRes.value.data || {}
-    }
-
-    if (demandsRes.status === 'fulfilled') {
-      stats.value.demands = demandsRes.value.data?.pagination?.total || demandsRes.value.data?.total || 0
-    }
-
-    if (intentionsRes.status === 'fulfilled') {
-      const list = intentionsRes.value.data?.list || intentionsRes.value.data || []
-      stats.value.intentions = list.filter(i => i.status === 0).length
-      stats.value.completed = list.filter(i => i.status === 1).length
+    // 只有登录后才处理个人信息
+    if (isLoggedIn && results.length > 2) {
+      if (results[2].status === 'fulfilled') {
+        profile.value = results[2].value.data || {}
+      }
+      if (results[3].status === 'fulfilled') {
+        stats.value.demands = results[3].value.data?.pagination?.total || results[3].value.data?.total || 0
+      }
+      if (results[4].status === 'fulfilled') {
+        const list = results[4].value.data?.list || results[4].value.data || []
+        stats.value.intentions = list.filter(i => i.status === 0).length
+        stats.value.completed = list.filter(i => i.status === 1).length
+      }
     }
   } catch {
     // ignore errors, show empty state
@@ -253,7 +293,7 @@ const viewActivityDetail = (activity) => {
 .welcome-content { position: relative; z-index: 1; }
 .welcome-content h1 { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
 .welcome-content p { opacity: 0.9; font-size: 14px; }
-.welcome-banner :deep(.el-button) {
+.welcome-banner :deep(.el-button:not(.el-button--primary)) {
   background: rgba(255,255,255,.15) !important;
   border-color: rgba(255,255,255,.4) !important;
   color: #fff !important;
@@ -262,8 +302,21 @@ const viewActivityDetail = (activity) => {
   backdrop-filter: blur(4px);
   position: relative; z-index: 1;
 }
-.welcome-banner :deep(.el-button:hover) {
+.welcome-banner :deep(.el-button:hover:not(.el-button--primary)) {
   background: rgba(255,255,255,.28) !important;
+}
+
+/* ===== 未登录提示 ===== */
+.login-tip-banner {
+  margin-bottom: 16px;
+}
+.login-tip-banner :deep(.el-alert) {
+  border-radius: 10px;
+}
+
+/* ===== 未登录状态欢迎横幅 ===== */
+.welcome-banner.not-logged-in {
+  background: linear-gradient(135deg, #26a269, #1a7a4c);
 }
 
 /* ===== 广告轮播 ===== */

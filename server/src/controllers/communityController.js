@@ -22,7 +22,7 @@ exports.login = async (req, res) => {
     )
     
     if (rows.length === 0) {
-      return error(res, '账号不存在，请先注册', 401)
+      return error(res, '该手机号尚未注册，请先注册', 401)
     }
     
     const community = rows[0]

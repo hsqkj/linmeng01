@@ -3,10 +3,12 @@
  * 社区资源智能匹配助手
  */
 
-require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') })
+// 加载环境变量配置（.env.local 覆盖 .env）
+const path = require('path')
+require('dotenv').config({ path: path.join(__dirname, '..', '.env') })
+require('dotenv').config({ path: path.join(__dirname, '..', '.env.local') })
 const express = require('express')
 const cors = require('cors')
-const path = require('path')
 
 const app = express()
 const PORT = process.env.PORT || 3000

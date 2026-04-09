@@ -94,15 +94,72 @@ exports.dashboard = async (req, res) => {
     const [resources] = await pool.query('SELECT COUNT(*) as count FROM resources WHERE status = 1' + dateFilter)
     const [intentions] = await pool.query('SELECT COUNT(*) as count FROM intentions WHERE status = 3')
 
-    // 总浏览量（需求+资源的浏览量总和）
-    const [[demandViews]] = await pool.query('SELECT COALESCE(SUM(view_count), 0) as total FROM demands')
-    const [[resourceViews]] = await pool.query('SELECT COALESCE(SUM(view_count), 0) as total FROM resources')
+    // 总浏览量（需求+资源的浏览量总和，status=1的记录）
+    const [[demandViews]] = await pool.query('SELECT COALESCE(SUM(view_count), 0) as total FROM demands WHERE status = 1')
+    const [[resourceViews]] = await pool.query('SELECT COALESCE(SUM(view_count), 0) as total FROM resources WHERE status = 1')
+
+    // 留言数统计（使用demands表的评论数代替）
+    let commentsCount = 0
+    try {
+      const [[commentsResult]] = await pool.query('SELECT COUNT(*) as count FROM demands WHERE status = 1' + dateFilter)
+      commentsCount = commentsResult ? commentsResult.count : 0
+    } catch (e) {
+      console.log('Comments query failed, using 0')
+    }
 
     // 待审核数量
     const [pendingCommunities] = await pool.query('SELECT COUNT(*) as count FROM communities WHERE status = 0')
     const [pendingMerchants] = await pool.query('SELECT COUNT(*) as count FROM merchants WHERE status = 0')
     const [pendingDemands] = await pool.query('SELECT COUNT(*) as count FROM demands WHERE status = 0')
     const [pendingResources] = await pool.query('SELECT COUNT(*) as count FROM resources WHERE status = 0')
+
+    // 活跃度排名 - 社区（按发布需求数排序）
+    let communityRanking = []
+    try {
+      const [cr] = await pool.query(`
+        SELECT c.id, c.community_name as name, COUNT(d.id) as count
+        FROM communities c
+        LEFT JOIN demands d ON d.community_id = c.id AND d.status = 1
+        GROUP BY c.id, c.community_name
+        ORDER BY count DESC
+        LIMIT 10
+      `)
+      communityRanking = cr || []
+    } catch (e) {
+      console.log('Community ranking query failed')
+    }
+
+    // 活跃度排名 - 商家（按发布资源数排序）
+    let merchantRanking = []
+    try {
+      const [mr] = await pool.query(`
+        SELECT m.id, m.company_name as name, COUNT(r.id) as count
+        FROM merchants m
+        LEFT JOIN resources r ON r.merchant_id = m.id AND r.status = 1
+        GROUP BY m.id, m.company_name
+        ORDER BY count DESC
+        LIMIT 10
+      `)
+      merchantRanking = mr || []
+    } catch (e) {
+      console.log('Merchant ranking query failed')
+    }
+
+    // 活跃度排名 - 大使（按撮合意向数排序）
+    let ambassadorRanking = []
+    try {
+      const [ar] = await pool.query(`
+        SELECT a.id, a.real_name as name, COUNT(i.id) as count
+        FROM ambassadors a
+        LEFT JOIN intentions i ON i.ambassador_id = a.id
+        GROUP BY a.id, a.real_name
+        ORDER BY count DESC
+        LIMIT 10
+      `)
+      ambassadorRanking = ar || []
+    } catch (e) {
+      console.log('Ambassador ranking query failed')
+    }
 
     success(res, {
       total: {
@@ -112,7 +169,8 @@ exports.dashboard = async (req, res) => {
         demands: demands[0].count,
         resources: resources[0].count,
         completedMatches: intentions[0].count,
-        totalViews: demandViews.total + resourceViews.total
+        totalViews: demandViews.total + resourceViews.total,
+        comments: commentsCount
       },
       pending: {
         communities: pendingCommunities[0].count,
@@ -120,6 +178,11 @@ exports.dashboard = async (req, res) => {
         demands: pendingDemands[0].count,
         resources: pendingResources[0].count,
         total: pendingCommunities[0].count + pendingMerchants[0].count + pendingDemands[0].count + pendingResources[0].count
+      },
+      ranking: {
+        communities: communityRanking,
+        merchants: merchantRanking,
+        ambassadors: ambassadorRanking
       }
     })
   } catch (err) {
@@ -1605,6 +1668,110 @@ exports.saveExpertTypesConfig = async (req, res) => {
   } catch (err) {
     console.error('Save expert types config error:', err)
     error(res, '保存专家类型配置失败')
+  }
+}
+
+// ============ 内容列表管理 ============
+
+// 获取需求列表（所有状态）
+exports.getDemandList = async (req, res) => {
+  try {
+    const { page = 1, pageSize = 10, status, keyword, period = 'all' } = req.query
+    const offset = (page - 1) * pageSize
+
+    let where = '1=1'
+    let params = []
+
+    if (status !== undefined && status !== '' && status !== null) {
+      where += ' AND d.status = ?'
+      params.push(parseInt(status))
+    }
+
+    if (keyword) {
+      where += ' AND (d.title LIKE ? OR c.community_name LIKE ?)'
+      params.push(`%${keyword}%`, `%${keyword}%`)
+    }
+
+    // 时间筛选
+    let dateFilter = ''
+    if (period === 'day') {
+      dateFilter = " AND DATE(d.created_at) = CURDATE()"
+    } else if (period === 'month') {
+      dateFilter = " AND YEAR(d.created_at) = YEAR(CURDATE()) AND MONTH(d.created_at) = MONTH(CURDATE())"
+    } else if (period === 'year') {
+      dateFilter = " AND YEAR(d.created_at) = YEAR(CURDATE())"
+    }
+
+    const [rows] = await pool.query(
+      `SELECT d.*, c.community_name, c.real_name as community_real_name
+       FROM demands d
+       LEFT JOIN communities c ON d.community_id = c.id
+       WHERE ${where} ${dateFilter}
+       ORDER BY d.created_at DESC
+       LIMIT ? OFFSET ?`,
+      [...params, parseInt(pageSize), offset]
+    )
+
+    const [[{ total }]] = await pool.query(
+      `SELECT COUNT(*) as total FROM demands d LEFT JOIN communities c ON d.community_id = c.id WHERE ${where} ${dateFilter}`,
+      params
+    )
+
+    pageSuccess(res, rows, total, page, pageSize)
+  } catch (err) {
+    console.error('Get demand list error:', err)
+    error(res, '获取需求列表失败')
+  }
+}
+
+// 获取资源列表（所有状态）
+exports.getResourceList = async (req, res) => {
+  try {
+    const { page = 1, pageSize = 10, status, keyword, period = 'all' } = req.query
+    const offset = (page - 1) * pageSize
+
+    let where = '1=1'
+    let params = []
+
+    if (status !== undefined && status !== '' && status !== null) {
+      where += ' AND r.status = ?'
+      params.push(parseInt(status))
+    }
+
+    if (keyword) {
+      where += ' AND (r.title LIKE ? OR m.company_name LIKE ?)'
+      params.push(`%${keyword}%`, `%${keyword}%`)
+    }
+
+    // 时间筛选
+    let dateFilter = ''
+    if (period === 'day') {
+      dateFilter = " AND DATE(r.created_at) = CURDATE()"
+    } else if (period === 'month') {
+      dateFilter = " AND YEAR(r.created_at) = YEAR(CURDATE()) AND MONTH(r.created_at) = MONTH(CURDATE())"
+    } else if (period === 'year') {
+      dateFilter = " AND YEAR(r.created_at) = YEAR(CURDATE())"
+    }
+
+    const [rows] = await pool.query(
+      `SELECT r.*, m.company_name, m.contact_name, m.phone as merchant_phone
+       FROM resources r
+       LEFT JOIN merchants m ON r.merchant_id = m.id
+       WHERE ${where} ${dateFilter}
+       ORDER BY r.created_at DESC
+       LIMIT ? OFFSET ?`,
+      [...params, parseInt(pageSize), offset]
+    )
+
+    const [[{ total }]] = await pool.query(
+      `SELECT COUNT(*) as total FROM resources r LEFT JOIN merchants m ON r.merchant_id = m.id WHERE ${where} ${dateFilter}`,
+      params
+    )
+
+    pageSuccess(res, rows, total, page, pageSize)
+  } catch (err) {
+    console.error('Get resource list error:', err)
+    error(res, '获取资源列表失败')
   }
 }
 

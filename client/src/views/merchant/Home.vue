@@ -1,8 +1,40 @@
 <template>
   <div class="merchant-home" v-loading="loading">
+    <!-- 未登录欢迎横幅 -->
+    <div v-if="!isLoggedIn" class="welcome-banner merchant-welcome">
+      <div class="welcome-content">
+        <h1>欢迎来到邻盟商家端！</h1>
+        <p>连接社区，精准匹配资源，让您的服务触达更多家庭</p>
+      </div>
+      <div class="welcome-actions">
+        <el-button type="primary" size="large" @click="$router.push('/login/merchant')">
+          <el-icon><User /></el-icon>
+          登录
+        </el-button>
+        <el-button size="large" @click="$router.push('/register/merchant')" style="margin-left: 10px;">
+          <el-icon><Edit /></el-icon>
+          注册
+        </el-button>
+      </div>
+    </div>
+
+    <!-- 登录提示 -->
+    <div v-if="!isLoggedIn" class="login-tip-banner">
+      <el-alert
+        title="登录后即可发布资源、联系社区、查看详细信息"
+        type="info"
+        :closable="false"
+        show-icon
+      >
+        <template #default>
+          <span>登录后您可以：发布和管理资源 | 查看社区联系方式 | 参与需求对接 | 提升品牌曝光</span>
+        </template>
+      </el-alert>
+    </div>
+
     <!-- 资料不完善提醒 -->
     <el-alert
-      v-if="profile.profile_incomplete"
+      v-if="isLoggedIn && profile.profile_incomplete"
       title="资料待完善"
       type="warning"
       :closable="false"
@@ -16,7 +48,7 @@
     </el-alert>
 
     <!-- 会员等级卡片 -->
-    <div class="membership-card">
+    <div v-if="isLoggedIn" class="membership-card">
       <div class="membership-info">
         <div class="level-badge">
           <el-icon :size="32" color="#FFD700"><Medal /></el-icon>
@@ -192,11 +224,14 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { requireAuth } from '@/utils/useAuth'
+import { requireAuth, isLoggedIn as checkLogin } from '@/utils/useAuth'
 import { getBanners, getRecommendDemands, getProfile, getMyResources, getMyIntentions, getMemberInfo, getCommunityDetail } from '@/api/merchant'
-import { Medal, StarFilled, Goods, View, Connection, CircleCheck, User, Calendar, Loading } from '@element-plus/icons-vue'
+import { Medal, StarFilled, Goods, View, Connection, CircleCheck, User, Calendar, Loading, Edit } from '@element-plus/icons-vue'
 
 const router = useRouter()
+
+// 判断是否登录
+const isLoggedIn = checkLogin('merchant')
 
 const banners = ref([])
 const matchedDemands = ref([])
@@ -233,17 +268,21 @@ const bannerColors = [
 onMounted(async () => {
   loading.value = true
   try {
-    const [bannerRes, demandsRes, profileRes, memberRes, resourcesRes, intentionsRes] = await Promise.allSettled([
+    const promises = [
       getBanners(),
-      getRecommendDemands(),
-      getProfile(),
-      getMemberInfo(),
-      getMyResources({ pageSize: 1 }),
-      getMyIntentions({ pageSize: 50 })
-    ])
+      getRecommendDemands()
+    ]
 
-    if (bannerRes.status === 'fulfilled') {
-      banners.value = (bannerRes.value.data || []).map((b, i) => ({
+    // 只有登录后才获取个人信息
+    if (isLoggedIn) {
+      promises.push(getProfile(), getMemberInfo(), getMyResources({ pageSize: 1 }), getMyIntentions({ pageSize: 50 }))
+    }
+
+    const results = await Promise.allSettled(promises)
+
+    // Banner
+    if (results[0].status === 'fulfilled') {
+      banners.value = (results[0].value.data || []).map((b, i) => ({
         title: b.title || '邻盟商家端',
         desc: b.description || '连接社区，精准匹配',
         btn: '了解更多',
@@ -258,40 +297,43 @@ onMounted(async () => {
       }
     }
 
-    if (demandsRes.status === 'fulfilled') {
-      matchedDemands.value = (demandsRes.value.data || []).slice(0, 4)
+    // 推荐需求
+    if (results[1].status === 'fulfilled') {
+      matchedDemands.value = (results[1].value.data || []).slice(0, 4)
     }
 
-    if (profileRes.status === 'fulfilled') {
-      profile.value = profileRes.value.data || {}
-    }
+    // 只有登录后才处理个人信息
+    if (isLoggedIn && results.length > 2) {
+      if (results[2].status === 'fulfilled') {
+        profile.value = results[2].value.data || {}
+      }
 
-    // 优先用 getMemberInfo 的数据（更准确）
-    if (memberRes.status === 'fulfilled') {
-      const mdata = memberRes.value.data || {}
-      if (mdata.member_level !== undefined && mdata.member_level !== null) {
-        profile.value.member_level = mdata.member_level
-      }
-      if (mdata.expire_date || mdata.member_expire_at) {
-        profile.value.member_expire_at = mdata.expire_date || mdata.member_expire_at
-      }
-      // 从等级配置中获取有效期
-      if (mdata.levels && Array.isArray(mdata.levels)) {
-        const currentLevel = mdata.levels.find(l => l.level === profile.value.member_level)
-        if (currentLevel) {
-          profile.value.validityPeriod = currentLevel.validity_period || 0
+      // 优先用 getMemberInfo 的数据（更准确）
+      if (results[3].status === 'fulfilled') {
+        const mdata = results[3].value.data || {}
+        if (mdata.member_level !== undefined && mdata.member_level !== null) {
+          profile.value.member_level = mdata.member_level
+        }
+        if (mdata.expire_date || mdata.member_expire_at) {
+          profile.value.member_expire_at = mdata.expire_date || mdata.member_expire_at
+        }
+        if (mdata.levels && Array.isArray(mdata.levels)) {
+          const currentLevel = mdata.levels.find(l => l.level === profile.value.member_level)
+          if (currentLevel) {
+            profile.value.validityPeriod = currentLevel.validity_period || 0
+          }
         }
       }
-    }
 
-    if (resourcesRes.status === 'fulfilled') {
-      stats.value.resources = resourcesRes.value.data?.pagination?.total || resourcesRes.value.data?.total || 0
-    }
+      if (results[4].status === 'fulfilled') {
+        stats.value.resources = results[4].value.data?.pagination?.total || results[4].value.data?.total || 0
+      }
 
-    if (intentionsRes.status === 'fulfilled') {
-      const list = intentionsRes.value.data?.list || intentionsRes.value.data || []
-      stats.value.intentions = list.filter(i => i.status === 0).length
-      stats.value.completed = list.filter(i => i.status === 1).length
+      if (results[5].status === 'fulfilled') {
+        const list = results[5].value.data?.list || results[5].value.data || []
+        stats.value.intentions = list.filter(i => i.status === 0).length
+        stats.value.completed = list.filter(i => i.status === 1).length
+      }
     }
   } catch {
     // ignore
@@ -319,6 +361,50 @@ const memberLevelTagType = { 0: 'info', 1: 'info', 2: '', 3: 'warning', 4: 'dang
 <style scoped>
 .merchant-home {
   padding-bottom: 20px;
+}
+
+/* ===== 未登录欢迎横幅 ===== */
+.merchant-welcome {
+  background: linear-gradient(135deg, #e66100, #b84d00);
+  border-radius: 16px;
+  padding: 32px 36px;
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  position: relative;
+  overflow: hidden;
+}
+.merchant-welcome::before {
+  content: '';
+  position: absolute;
+  top: -50px; right: -30px;
+  width: 240px; height: 240px;
+  background: rgba(255,255,255,.07);
+  border-radius: 50%;
+}
+.merchant-welcome .welcome-content { position: relative; z-index: 1; }
+.merchant-welcome .welcome-content h1 { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+.merchant-welcome .welcome-content p { opacity: 0.9; font-size: 14px; }
+.merchant-welcome .welcome-actions { position: relative; z-index: 1; }
+.merchant-welcome :deep(.el-button:not(.el-button--primary)) {
+  background: rgba(255,255,255,.15) !important;
+  border-color: rgba(255,255,255,.4) !important;
+  color: #fff !important;
+  border-radius: 20px !important;
+  font-weight: 600;
+}
+.merchant-welcome :deep(.el-button:hover:not(.el-button--primary)) {
+  background: rgba(255,255,255,.28) !important;
+}
+
+/* ===== 未登录提示 ===== */
+.login-tip-banner {
+  margin-bottom: 16px;
+}
+.login-tip-banner :deep(.el-alert) {
+  border-radius: 10px;
 }
 
 .membership-card {

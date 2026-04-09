@@ -129,6 +129,8 @@ const routes = [
       { path: 'config/expert', name: 'AdminConfigExpert', component: () => import('@/views/admin/ConfigExpert.vue') },
       { path: 'audit/demands', name: 'AdminAuditDemands', component: () => import('@/views/admin/AuditDemands.vue') },
       { path: 'audit/resources', name: 'AdminAuditResources', component: () => import('@/views/admin/AuditResources.vue') },
+      { path: 'demands', name: 'AdminDemands', component: () => import('@/views/admin/Demands.vue') },
+      { path: 'resources', name: 'AdminResources', component: () => import('@/views/admin/Resources.vue') },
       { path: 'matching', name: 'AdminMatching', component: () => import('@/views/admin/Matching.vue') },
       { path: 'notifications', name: 'AdminNotifications', component: () => import('@/views/admin/Notifications.vue') },
       { path: 'comments', name: 'AdminComments', component: () => import('@/views/admin/Comments.vue') },
@@ -161,6 +163,11 @@ router.beforeEach((to, from, next) => {
   const publicPaths = ['/', '/login/community', '/login/merchant', '/login/ambassador', '/register/community', '/register/merchant', '/legal/terms', '/legal/privacy']
   if (publicPaths.includes(path) || path === '/admin/login') {
     return next()
+  }
+
+  // 社区端首页和列表页允许未登录访问（但详情页需要登录）
+  if (path === '/community' || path === '/merchant') {
+    return next() // 首页允许未登录访问
   }
 
   // 检查各端登录状态

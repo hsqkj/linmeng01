@@ -36,6 +36,10 @@ export const getResourceAuditList = (params) => request.get('/admin/audit/resour
 export const passResource = (id) => request.put(`/admin/audit/resources/${id}/pass`)
 export const rejectResource = (id, data) => request.put(`/admin/audit/resources/${id}/reject`, data)
 
+// ====== 内容列表管理 ======
+export const getDemandList = (params) => request.get('/admin/demands', { params })
+export const getResourceList = (params) => request.get('/admin/resources', { params })
+
 // ====== 撮合管理 ======
 export const getMatchingList = (params) => request.get('/admin/matching', { params })
 export const getMatchingDetail = (id) => request.get(`/admin/matching/${id}`)

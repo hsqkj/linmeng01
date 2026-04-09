@@ -1,0 +1,19 @@
+=== 本地各表数据量 === 
+regions	20
+tags	61
+communities	3
+ambassadors	2
+merchants	7
+demands	3
+resources	10
+banners	9
+ 
+=== 服务器各表数据量 === 
+regions	38
+tags	63
+communities	18
+ambassadors	15
+merchants	45
+demands	37
+resources	31
+banners	5

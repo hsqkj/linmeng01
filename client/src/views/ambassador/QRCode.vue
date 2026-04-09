@@ -1,7 +1,22 @@
 <template>
   <div class="qrcode-page" v-loading="loading">
     <h2>我的渠道码</h2>
-    <div class="qrcode-layout">
+
+    <!-- 审核中提示 -->
+    <div v-if="homeData.status !== 1" class="pending-tip">
+      <el-result
+        icon="warning"
+        title="资料审核中"
+        sub-title="您的资料正在审核中，审核通过后将显示渠道码和专属链接"
+      >
+        <template #extra>
+          <el-button type="primary" @click="$router.push('/ambassador')">返回首页</el-button>
+        </template>
+      </el-result>
+    </div>
+
+    <!-- 审核通过后显示渠道码 -->
+    <div v-else class="qrcode-layout">
       <div class="qrcode-card">
         <div class="qr-header">
           <div class="logo-sm">邻</div>

@@ -1,0 +1,29 @@
+=== 服务器数据库配置 === 
+The host key is not cached for this server:
+  150.158.12.243 (port 22)
+You have no guarantee that the server is the computer you
+think it is.
+The server's ssh-ed25519 key fingerprint is:
+  ssh-ed25519 255 SHA256:do15GgQ4hwUKUv1iXhoPUWwwzn2iBiN4vDtf8Hk5f8s
+Connection abandoned.
+FATAL ERROR: Cannot confirm a host key in batch mode
+ 
+=== 服务器各表数据量 === 
+The host key is not cached for this server:
+  150.158.12.243 (port 22)
+You have no guarantee that the server is the computer you
+think it is.
+The server's ssh-ed25519 key fingerprint is:
+  ssh-ed25519 255 SHA256:do15GgQ4hwUKUv1iXhoPUWwwzn2iBiN4vDtf8Hk5f8s
+Connection abandoned.
+FATAL ERROR: Cannot confirm a host key in batch mode
+ 
+=== 服务器member_levels === 
+The host key is not cached for this server:
+  150.158.12.243 (port 22)
+You have no guarantee that the server is the computer you
+think it is.
+The server's ssh-ed25519 key fingerprint is:
+  ssh-ed25519 255 SHA256:do15GgQ4hwUKUv1iXhoPUWwwzn2iBiN4vDtf8Hk5f8s
+Connection abandoned.
+FATAL ERROR: Cannot confirm a host key in batch mode

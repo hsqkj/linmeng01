@@ -43,6 +43,10 @@ router.get('/audit/resources', authAdmin, AdminController.getResourceAuditList)
 router.put('/audit/resources/:id/pass', authAdmin, AdminController.passResource)
 router.put('/audit/resources/:id/reject', authAdmin, AdminController.rejectResource)
 
+// 内容列表管理
+router.get('/demands', authAdmin, AdminController.getDemandList)
+router.get('/resources', authAdmin, AdminController.getResourceList)
+
 // 撮合管理
 router.get('/matching', authAdmin, AdminController.getMatchingList)
 router.get('/matching/:id', authAdmin, AdminController.getMatchingDetail)

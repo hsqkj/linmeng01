@@ -8,15 +8,19 @@
           <div class="amb-name">欢迎回来，{{ ambData.real_name || '招商大使' }}！</div>
           <div class="amb-meta">
             <el-tag type="warning" size="small">招商大使</el-tag>
-            <span class="amb-code">渠道码：{{ ambData.qr_code || '—' }}</span>
+            <span v-if="ambData.status === 1" class="amb-code">渠道码：{{ ambData.qr_code || '—' }}</span>
+            <el-tag v-else type="info" size="small">审核中</el-tag>
             <span class="join-time">入职时间：{{ (ambData.created_at || '').slice(0, 10) }}</span>
           </div>
         </div>
       </div>
-      <div class="banner-actions">
+      <div class="banner-actions" v-if="ambData.status === 1">
         <el-button type="warning" @click="$router.push('/ambassador/qrcode')">
           <el-icon><Grid /></el-icon> 查看我的二维码
         </el-button>
+      </div>
+      <div class="banner-actions" v-else>
+        <el-tag type="warning">资料审核中，请耐心等待...</el-tag>
       </div>
     </div>
 
@@ -122,13 +126,13 @@
               <div class="income-val">¥ {{ fmtMoney(ambData.total_commission - ambData.withdraw_amount) }}</div>
             </div>
           </div>
-          <el-button type="warning" style="width:100%;margin-top:16px" @click="$router.push('/ambassador/withdraw')">
+          <el-button v-if="ambData.status === 1" type="warning" style="width:100%;margin-top:16px" @click="$router.push('/ambassador/withdraw')">
             申请提现
           </el-button>
         </div>
 
         <!-- 快速操作 -->
-        <div class="section-card" style="margin-top:16px">
+        <div class="section-card" style="margin-top:16px" v-if="ambData.status === 1">
           <h3>⚡ 快速操作</h3>
           <div class="quick-actions">
             <div class="qa-item" @click="$router.push('/ambassador/qrcode')">

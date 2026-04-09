@@ -1,0 +1,24 @@
+config_key	len
+ambassador_commission	799
+anti_flying	110
+anti_flying_level	3
+basic_types	3872
+expert_types	1512
+level_bonus	117
+match_algorithm	106
+match_reward	68
+member_benefits	1248
+member_levels	390
+rating_config	298
+reward_base	217
+regions	COUNT(*)
+regions	20
+tags	61
+communities	3
+ambassadors	2
+merchants	7
+demands	3
+resources	10
+banners	9
+config_value
+[{"level":0,"name":"免费试用","fee":0,"validity_period":3},{"level":1,"name":"普通会员","fee":99,"validity_period":3},{"level":2,"name":"银牌会员","fee":999,"validity_period":12},{"level":3,"name":"金牌会员","fee":2999,"validity_period":12},{"level":4,"name":"铂金会员","fee":5999,"validity_period":12},{"level":5,"name":"钻石会员","fee":12000,"validity_period":12}]

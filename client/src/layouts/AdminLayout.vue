@@ -36,11 +36,18 @@
           </template>
           <el-menu-item index="/admin/audit/demands">
             需求审核
-            <el-badge :value="12" type="danger" style="margin-left:auto" />
+            <el-badge :value="pendingDemands" type="danger" style="margin-left:auto" />
           </el-menu-item>
           <el-menu-item index="/admin/audit/resources">
             资源审核
-            <el-badge :value="8" type="danger" style="margin-left:auto" />
+            <el-badge :value="pendingResources" type="danger" style="margin-left:auto" />
+          </el-menu-item>
+          <el-divider style="margin: 4px 12px" />
+          <el-menu-item index="/admin/demands">
+            需求列表
+          </el-menu-item>
+          <el-menu-item index="/admin/resources">
+            资源列表
           </el-menu-item>
         </el-sub-menu>
 
@@ -80,7 +87,6 @@
           <el-menu-item index="/admin/config/anti-flying">防飞单配置</el-menu-item>
           <el-menu-item index="/admin/config/audit">内容审核设置</el-menu-item>
           <el-menu-item index="/admin/config/admin">管理员配置</el-menu-item>
-          <el-menu-item index="/admin/config/expert">专家类型管理</el-menu-item>
         </el-sub-menu>
       </el-menu>
 
@@ -143,6 +149,9 @@
           </template>
           <el-menu-item index="/admin/audit/demands">需求审核</el-menu-item>
           <el-menu-item index="/admin/audit/resources">资源审核</el-menu-item>
+          <el-divider style="margin: 4px 12px" />
+          <el-menu-item index="/admin/demands">需求列表</el-menu-item>
+          <el-menu-item index="/admin/resources">资源列表</el-menu-item>
         </el-sub-menu>
 
         <el-menu-item index="/admin/matching">
@@ -179,7 +188,6 @@
           <el-menu-item index="/admin/config/algorithm">匹配算法配置</el-menu-item>
           <el-menu-item index="/admin/config/ambassador">大使提成配置</el-menu-item>
           <el-menu-item index="/admin/config/admin">管理员配置</el-menu-item>
-          <el-menu-item index="/admin/config/expert">专家类型管理</el-menu-item>
         </el-sub-menu>
       </el-menu>
 
@@ -229,13 +237,18 @@ const sidebarCollapsed = ref(false)
 const mobileDrawerVisible = ref(false)
 const mobileFullscreen = ref(false)
 const pendingTotal = ref(0)
+const pendingDemands = ref(0)
+const pendingResources = ref(0)
 const activeMenu = computed(() => route.path)
 
 // 动态加载待审核数量
 async function loadPendingCount() {
   try {
     const res = await getDashboard()
-    pendingTotal.value = res.data?.pending?.total || 0
+    const pending = res.data?.pending || {}
+    pendingTotal.value = pending.total || 0
+    pendingDemands.value = pending.demands || 0
+    pendingResources.value = pending.resources || 0
   } catch {}
 }
 onMounted(() => { loadPendingCount() })
@@ -256,8 +269,7 @@ const pageTitles = {
   '/admin/config/banner': '轮播图配置',
   '/admin/config/algorithm': '匹配算法配置',
   '/admin/config/ambassador': '大使提成配置',
-  '/admin/config/admin': '管理员配置',
-  '/admin/config/expert': '专家类型管理'
+  '/admin/config/admin': '管理员配置'
 }
 const pageTitle = computed(() => pageTitles[route.path] || '管理后台')
 </script>
