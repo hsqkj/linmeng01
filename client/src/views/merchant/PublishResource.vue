@@ -42,7 +42,7 @@
         </el-form-item>
 
         <!-- 资金赞助 -->
-        <template v-if="form.resource_type === 'fund'">
+        <template v-if="form.resource_type === '资金赞助'">
           <el-row :gutter="16">
             <el-col :span="12">
               <el-form-item label="可赞助最低金额（元）">
@@ -67,8 +67,8 @@
           </el-form-item>
         </template>
 
-        <!-- 物资提供 -->
-        <template v-if="form.resource_type === 'goods'">
+        <!-- 物资捐赠 -->
+        <template v-if="form.resource_type === '物资捐赠'">
           <el-form-item label="物资清单" required>
             <el-input v-model="form.goodsDetail" type="textarea" :rows="5"
               placeholder="请详细列出可提供的物资，如：
@@ -176,8 +176,8 @@
           </el-row>
         </template>
 
-        <!-- 媒体报道 -->
-        <template v-if="form.resource_type === 'media'">
+        <!-- 媒体宣传 -->
+        <template v-if="form.resource_type === '媒体宣传'">
           <el-form-item label="可提供媒体类型（可多选）" required>
             <el-checkbox-group v-model="form.mediaChannels">
               <el-checkbox label="news">新闻网站/APP</el-checkbox>
@@ -294,12 +294,18 @@ const submitting = ref(false)
 
 // 发布类型配置 - 从后端API加载
 const resourceTypes = ref([
-  { value: 'fund', icon: '💵', label: '资金赞助', desc: '提供活动资金支持，金额可面议' },
-  { value: 'goods', icon: '📦', label: '物资提供', desc: '提供实物物资，如饮品、礼品、物料等' },
-  { value: 'manpower', icon: '👥', label: '人力支持', desc: '提供人员服务，如主持人、志愿者、专业团队' },
-  { value: 'tech', icon: '💻', label: '技术支持', desc: '提供设备器材或技术服务，如音响、灯光、直播' },
-  { value: 'professional', icon: '🎓', label: '专业服务', desc: '提供专业人士服务，如法律、医疗、教育等' },
-  { value: 'media', icon: '📰', label: '媒体报道', desc: '提供媒体宣传资源，如公众号、抖音、新闻等' }
+  { value: '专业服务', icon: '🎓', label: '专业服务', desc: '咨询、法律、设计等专业服务' },
+  { value: '教育培训', icon: '📚', label: '教育培训', desc: '课程、培训、讲座等服务' },
+  { value: '场地资源', icon: '🏠', label: '场地资源', desc: '活动室、运动场地等场所支持' },
+  { value: '物资捐赠', icon: '📦', label: '物资捐赠', desc: '图书、设备、食品等物资' },
+  { value: '志愿服务', icon: '👥', label: '志愿服务', desc: '人力支持、活动协助等' },
+  { value: '资金赞助', icon: '💵', label: '资金赞助', desc: '活动经费、奖金等资金支持' },
+  { value: '技术支持', icon: '💻', label: '技术支持', desc: 'IT、网络、设备维护等技术支持' },
+  { value: '健康医疗', icon: '🏥', label: '健康医疗', desc: '义诊、健康讲座等服务' },
+  { value: '活动赞助', icon: '🎉', label: '活动赞助', desc: '活动策划、物料等赞助' },
+  { value: '媒体宣传', icon: '📰', label: '媒体宣传', desc: '公众号、媒体推广等服务' },
+  { value: '技能培训', icon: '🛠️', label: '技能培训', desc: '技能传授、指导等服务' },
+  { value: '养老服务', icon: '👴', label: '养老服务', desc: '助老服务、健康管理等' }
 ])
 
 const professionalTypes = ref(['法律咨询', '医疗健康', '心理辅导', '教育培训', '金融理财', '技能培训', '营养指导', '体育健身', '文艺指导', '社会工作', '其他'])
@@ -333,18 +339,23 @@ const form = ref({
 })
 
 const resourceTypeLabel = computed(() => {
-  const t = resourceTypes.find(t => t.value === form.value.resource_type)
-  return t ? t.label : ''
+  return form.value.resource_type || ''
 })
 
 const titlePlaceholder = computed(() => {
   const map = {
-    fund: '如：星巴克咖啡支持活动资金5万元',
-    goods: '如：礼品套装300份，免费赞助社区活动',
-    manpower: '如：提供5人专业活动执行团队',
-    tech: '如：专业音响灯光设备免费支持',
-    professional: '如：法律专家免费为居民提供咨询',
-    media: '如：公众号15万粉丝免费宣传推广'
+    '资金赞助': '如：星巴克咖啡支持活动资金5万元',
+    '物资捐赠': '如：礼品套装300份，免费赞助社区活动',
+    '志愿服务': '如：提供5人专业活动执行团队',
+    '技术支持': '如：专业音响灯光设备免费支持',
+    '专业服务': '如：法律专家免费为居民提供咨询',
+    '媒体宣传': '如：公众号15万粉丝免费宣传推广',
+    '教育培训': '如：专业讲师团队提供免费培训课程',
+    '场地资源': '如：社区活动中心免费借用',
+    '健康医疗': '如：专业医生团队提供义诊服务',
+    '活动赞助': '如：活动策划及物料赞助支持',
+    '技能培训': '如：专业技能培训课程免费教授',
+    '养老服务': '如：助老服务、健康管理等支持'
   }
   return map[form.value.resource_type] || '请填写资源标题'
 })

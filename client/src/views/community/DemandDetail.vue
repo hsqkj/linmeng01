@@ -36,7 +36,7 @@
                 </div>
                 <div class="info-item">
                   <span class="info-label">活动时间</span>
-                  <span class="info-value">{{ demand.start_time || demand.end_time ? (demand.start_time + ' ~ ' + demand.end_time) : '待定' }}</span>
+                  <span class="info-value">{{ formatDateTime(demand.start_time) || formatDateTime(demand.end_time) ? (formatDateTime(demand.start_time) + ' ~ ' + formatDateTime(demand.end_time)) : '待定' }}</span>
                 </div>
                 <div class="info-item">
                   <span class="info-label">活动地点</span>
@@ -44,7 +44,7 @@
                 </div>
                 <div class="info-item">
                   <span class="info-label">截止日期</span>
-                  <span class="info-value" :class="{ deadline: isDeadlineNear }">{{ demand.deadline || '长期有效' }}</span>
+                  <span class="info-value" :class="{ deadline: isDeadlineNear }">{{ formatDateTime(demand.deadline) || '长期有效' }}</span>
                 </div>
                 <div class="info-item">
                   <span class="info-label">预算范围</span>
@@ -208,7 +208,15 @@ const sponsorBlocks = computed(() => {
 function formatTime(time) {
   if (!time) return ''
   const d = new Date(time)
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`
+}
+
+// 格式化日期时间（去掉小时前导零，如 "2026-05-15 9:00"）
+function formatDateTime(time) {
+  if (!time) return ''
+  const d = new Date(time)
+  if (isNaN(d.getTime())) return time
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`
 }
 
 async function loadDemand() {

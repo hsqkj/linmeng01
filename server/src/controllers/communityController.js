@@ -848,7 +848,7 @@ exports.replyComment = async (req, res) => {
 exports.getProfile = async (req, res) => {
   try {
     const [rows] = await pool.query(
-      `SELECT id, username, contact_name, community, community_name, position, households,
+      `SELECT id, username, real_name, community, community_name, position, households,
        family_ratio, elderly_ratio, public_space_area, has_outdoor_plaza, has_commercial,
        has_school, has_park, merchant_count, logo, description, images, address, tags, status,
        ST_X(map_location) as longitude, ST_Y(map_location) as latitude

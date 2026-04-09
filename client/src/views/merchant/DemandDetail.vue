@@ -38,12 +38,12 @@
                 <div class="info-item">
                   <span class="info-label">目标对象</span>
                   <span class="info-value">
-                    <el-tag v-for="g in (demand.target_audience ? (Array.isArray(demand.target_audience) ? demand.target_audience : demand.target_audience.split(',')) : [])" :key="g" size="small" type="warning" style="margin:2px">{{ g }}</el-tag>
+                    <el-tag v-for="g in parseTargetAudience(demand.target_audience)" :key="g" size="small" type="warning" style="margin:2px">{{ g }}</el-tag>
                   </span>
                 </div>
                 <div class="info-item">
                   <span class="info-label">活动时间</span>
-                  <span class="info-value">{{ demand.start_time || demand.end_time ? (demand.start_time + ' ~ ' + demand.end_time) : '待定' }}</span>
+                  <span class="info-value">{{ formatDateTime(demand.start_time) || formatDateTime(demand.end_time) ? (formatDateTime(demand.start_time) + ' 至 ' + formatDateTime(demand.end_time)) : '待定' }}</span>
                 </div>
                 <div class="info-item">
                   <span class="info-label">活动地点</span>
@@ -55,7 +55,7 @@
                 </div>
                 <div class="info-item">
                   <span class="info-label">截止日期</span>
-                  <span class="info-value deadline">{{ demand.deadline || '长期有效' }}</span>
+                  <span class="info-value deadline">{{ formatDateTime(demand.deadline) || '长期有效' }}</span>
                 </div>
               </div>
             </div>
@@ -106,8 +106,8 @@
             <!-- 标签 -->
             <div class="section">
               <h3>🏷️ 需求标签</h3>
-              <el-tag v-for="tag in (demand.tags ? (Array.isArray(demand.tags) ? demand.tags : demand.tags.split(',')) : [])" :key="tag" type="primary" effect="light" style="margin:4px">{{ tag }}</el-tag>
-              <span v-if="!demand.tags" style="color:#909399;font-size:13px">暂无标签</span>
+              <el-tag v-for="tag in parseTags(demand.tags)" :key="tag" type="primary" effect="light" style="margin:4px">{{ tag }}</el-tag>
+              <span v-if="!demand.tags || parseTags(demand.tags).length === 0" style="color:#909399;font-size:13px">暂无标签</span>
             </div>
 
             <!-- 留言区（Lv0 不可查看） -->
@@ -166,7 +166,7 @@
             </el-button>
             <div class="deadline-tip">
               <el-icon color="#F56C6C"><Warning /></el-icon>
-              截止 {{ demand.deadline || '长期有效' }}，还有 <strong style="color:#F56C6C">{{ getDaysLeft(demand.deadline) }}天</strong>
+              截止 {{ formatDateTime(demand.deadline) || '长期有效' }}，还有 <strong style="color:#F56C6C">{{ getDaysLeft(demand.deadline) }}天</strong>
             </div>
           </div>
 
@@ -329,6 +329,41 @@ function formatTime(time) {
   if (!time) return ''
   const d = new Date(time)
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`
+}
+
+// 格式化日期时间（去掉秒，如 "2026-05-15 9:00"）
+function formatDateTime(time) {
+  if (!time) return ''
+  const d = new Date(time)
+  if (isNaN(d.getTime())) return time
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`
+}
+
+// 目标对象映射
+const targetAudienceMap = { 1: '社区居民', 2: '企业员工', 3: '学生群体', 4: '老年群体', 5: '亲子家庭' }
+function parseTargetAudience(val) {
+  if (!val) return []
+  let arr = val
+  if (typeof val === 'string') {
+    try { arr = JSON.parse(val) } catch { arr = val.split(',') }
+  }
+  return arr.map(g => targetAudienceMap[g] || g)
+}
+
+// 标签映射
+const tagMap = {
+  1: '老旧小区', 2: '新建社区', 3: '青年社区', 4: '老龄化社区', 5: '亲子社区',
+  6: '学区社区', 7: '商圈社区', 8: '产业园区', 9: '交通枢纽', 10: '景区周边',
+  11: '文化社区', 12: '体育社区', 13: '绿色社区', 14: '智慧社区', 15: '志愿社区',
+  16: '商业密集', 17: '公共空间丰富', 18: '学校密集', 19: '公园环绕'
+}
+function parseTags(val) {
+  if (!val) return []
+  let arr = val
+  if (typeof val === 'string') {
+    try { arr = JSON.parse(val) } catch { arr = val.split(',') }
+  }
+  return arr.map(t => tagMap[t] || t)
 }
 
 function getDaysLeft(deadline) {

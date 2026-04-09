@@ -15,14 +15,25 @@
     </div>
 
     <el-card v-loading="loading" element-loading-text="加载中...">
-      <el-table :data="demands" stripe style="width: 100%">
+      <!-- 空状态提示 -->
+      <el-empty v-if="!loading && demands.length === 0" description="暂无需求">
+        <el-button type="primary" @click="$router.push('/community/demands/publish')">
+          <el-icon><Plus /></el-icon>
+          发布新需求
+        </el-button>
+      </el-empty>
+      <el-table v-else :data="demands" stripe style="width: 100%">
         <el-table-column prop="title" label="需求标题" min-width="200" show-overflow-tooltip />
         <el-table-column prop="demand_type" label="类型" width="120">
           <template #default="{ row }">
             {{ demandTypeName[row.demand_type] || row.demand_type }}
           </template>
         </el-table-column>
-        <el-table-column prop="deadline" label="截止日期" width="120" />
+        <el-table-column label="截止日期" width="120">
+          <template #default="{ row }">
+            {{ fmtDeadline(row.deadline) }}
+          </template>
+        </el-table-column>
         <el-table-column prop="view_count" label="浏览" width="80" />
         <el-table-column prop="status" label="状态" width="100">
           <template #default="{ row }">
@@ -98,6 +109,15 @@ const loadingDrafts = ref(false)
 
 const statusName = { 0: '待审核', 1: '已发布', 2: '已下架' }
 const statusType = { 0: 'warning', 1: 'success', 2: 'info' }
+
+// 格式化截止日期（2026-05-15 9:00）
+function fmtDeadline(t) {
+  if (!t) return '长期有效'
+  const d = new Date(t)
+  if (isNaN(d.getTime())) return t
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`
+}
+
 const demandTypeName = {
   '活动赞助': '活动赞助', '专家服务': '专家服务', '空间运营': '空间运营',
   '物资赞助': '物资赞助', '健康服务': '健康服务', '教育培训': '教育培训'

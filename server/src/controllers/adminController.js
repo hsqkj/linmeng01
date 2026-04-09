@@ -98,10 +98,10 @@ exports.dashboard = async (req, res) => {
     const [[demandViews]] = await pool.query('SELECT COALESCE(SUM(view_count), 0) as total FROM demands WHERE status = 1')
     const [[resourceViews]] = await pool.query('SELECT COALESCE(SUM(view_count), 0) as total FROM resources WHERE status = 1')
 
-    // 留言数统计（使用demands表的评论数代替）
+    // 留言数统计（使用comments表的评论数）
     let commentsCount = 0
     try {
-      const [[commentsResult]] = await pool.query('SELECT COUNT(*) as count FROM demands WHERE status = 1' + dateFilter)
+      const [[commentsResult]] = await pool.query('SELECT COUNT(*) as count FROM comments')
       commentsCount = commentsResult ? commentsResult.count : 0
     } catch (e) {
       console.log('Comments query failed, using 0')

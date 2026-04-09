@@ -9,7 +9,7 @@ export const merchantRegister = (data) => request.post('/merchant/register', dat
 export const expertRegister = (data) => request.post('/merchant/expert/register', data)
 
 // ====== 公共信息 ======
-export const getBanners = (params) => request.get('/merchant/banners', { params })
+export const getBanners = (params) => request.get('/public/banners', { params })
 export const getConfig = () => request.get('/merchant/config')
 
 // ====== 首页 ======

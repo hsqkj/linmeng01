@@ -32,21 +32,17 @@
 
       <el-form :model="form" :rules="rules" ref="formRef" class="register-form">
         <el-form-item prop="district">
-          <el-select v-model="form.district" placeholder="请选择所在区/开发区" size="large" style="width:100%" @change="onDistrictChange">
-            <el-option v-for="d in districts" :key="d" :label="d" :value="d" />
-          </el-select>
-        </el-form-item>
-
-        <el-form-item prop="street">
-          <el-select v-model="form.street" placeholder="请选择街道/镇" size="large" style="width:100%" :disabled="!form.district" @change="onStreetChange">
-            <el-option v-for="s in filteredStreets" :key="s.value" :label="s.label" :value="s.value" />
-          </el-select>
-        </el-form-item>
-
-        <el-form-item prop="community">
-          <el-select v-model="form.community" placeholder="请选择社区" size="large" style="width:100%" :disabled="!form.street">
-            <el-option v-for="c in filteredCommunities" :key="c.value" :label="c.label" :value="c.value" />
-          </el-select>
+          <div class="region-select-group">
+            <el-select v-model="form.district" placeholder="区/开发区" size="large" @change="onDistrictChange">
+              <el-option v-for="d in districts" :key="d" :label="d" :value="d" />
+            </el-select>
+            <el-select v-model="form.street" placeholder="街道/镇" size="large" :disabled="!form.district" @change="onStreetChange">
+              <el-option v-for="s in filteredStreets" :key="s.value" :label="s.label" :value="s.value" />
+            </el-select>
+            <el-select v-model="form.community" placeholder="社区" size="large" :disabled="!form.street">
+              <el-option v-for="c in filteredCommunities" :key="c.value" :label="c.label" :value="c.value" />
+            </el-select>
+          </div>
         </el-form-item>
 
         <el-form-item prop="manager">
@@ -158,12 +154,19 @@ async function loadRegions() {
   }
 }
 
-// 行政区列表（parent_id = 0 或 null 表示顶级）
+// 行政区列表（parent_id = 0 或 null 表示顶级，跳过顶级直接显示区）
 const districts = computed(() => {
-  return allRegions.value
-    .filter(r => !r.parent_id || r.parent_id === 0 || r.parent_id === '0')
-    .map(r => r.name || r.region_name)
-    .filter(Boolean)
+  // 找出顶级地区
+  const topLevel = allRegions.value.filter(r => !r.parent_id || r.parent_id === 0 || r.parent_id === '0')
+  // 如果顶级只有一个且是"武汉市"，直接显示它的子级（区）
+  if (topLevel.length === 1 && (topLevel[0].name === '武汉市' || topLevel[0].region_name === '武汉市')) {
+    return allRegions.value
+      .filter(r => r.parent_id === topLevel[0].id)
+      .map(r => r.name || r.region_name)
+      .filter(Boolean)
+  }
+  // 否则显示顶级地区
+  return topLevel.map(r => r.name || r.region_name).filter(Boolean)
 })
 
 // 根据选择的区获取街道列表
@@ -281,6 +284,17 @@ onMounted(async () => {
 
 .register-form {
   margin-bottom: 20px;
+}
+
+/* 区街社区选择框一行显示 */
+.region-select-group {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+
+.region-select-group .el-select {
+  flex: 1;
 }
 
 .code-input {

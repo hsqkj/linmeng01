@@ -75,14 +75,19 @@
           <el-tag v-for="tag in (Array.isArray(resource.tags) ? resource.tags : resource.tags.split(',')).slice(0, 5)" :key="tag" size="small" effect="plain" style="margin:2px">{{ tag }}</el-tag>
         </div>
 
-        <!-- 第五行：浏览量(右下) + 收藏(中) + 分享(右) -->
+        <!-- 第五行：收藏 + 关注 + 分享 均分三等分 -->
         <div class="card-footer">
-          <div class="footer-center">
-            <el-icon class="favorite-icon" :class="{active: favoritedIds.has(resource.id)}" @click.stop="handleFavorite(resource)"><Star /></el-icon>
+          <div class="footer-item" @click.stop="handleFavorite(resource)">
+            <el-icon class="footer-icon" :class="{active: favoritedIds.has(resource.id)}"><Star /></el-icon>
+            <span class="footer-label">{{ favoritedIds.has(resource.id) ? '已收藏' : '收藏' }}</span>
           </div>
-          <div class="footer-right">
-            <span class="view-count"><el-icon :size="12"><View /></el-icon> {{ resource.view_count || 0 }}</span>
-            <el-icon class="share-icon" @click.stop="handleShare(resource)"><Share /></el-icon>
+          <div class="footer-item">
+            <el-icon class="footer-icon"><View /></el-icon>
+            <span class="footer-label">{{ resource.view_count || 0 }}</span>
+          </div>
+          <div class="footer-item" @click.stop="handleShare(resource)">
+            <el-icon class="footer-icon"><Share /></el-icon>
+            <span class="footer-label">分享</span>
           </div>
         </div>
       </el-card>
@@ -139,8 +144,21 @@ const loading = ref(false)
 const favoritedIds = ref(new Set())
 
 const filters = reactive({ keyword: '', type: '', rating: '', distance: '', matchOrder: 'match' })
-const resourceTypeMap = { 0: '便民服务', 1: '教育培训', 2: '健康医疗', 3: '体育健身', 4: '文化娱乐', 5: '养老服务', 6: '社区商业', 7: '公益活动', 8: '活动赞助', 9: '技能培训' }
-const resourceTypes = Object.values(resourceTypeMap)
+const resourceTypeMap = {
+  '专业服务': '专业服务',
+  '教育培训': '教育培训',
+  '场地资源': '场地资源',
+  '物资捐赠': '物资捐赠',
+  '志愿服务': '志愿服务',
+  '资金赞助': '资金赞助',
+  '技术支持': '技术支持',
+  '健康医疗': '健康医疗',
+  '活动赞助': '活动赞助',
+  '媒体宣传': '媒体宣传',
+  '技能培训': '技能培训',
+  '养老服务': '养老服务'
+}
+const resourceTypes = Object.keys(resourceTypeMap)
 const memberLevelName = { 0: '普通会员', 1: '普通会员', 2: '银牌会员', 3: '金牌会员', 4: '铂金会员', 5: '钻石会员' }
 const memberLevelType = { 0: 'info', 1: 'info', 2: '', 3: 'warning', 4: 'danger', 5: 'danger' }
 const getResourceTypeName = (type) => resourceTypeMap[type] ?? '便民服务'
@@ -275,16 +293,14 @@ onMounted(() => {
 /* 标签 */
 .resource-tags { margin-bottom: 8px; }
 
-/* 底部三列 */
-.card-footer { display: flex; align-items: center; justify-content: space-between; }
-.footer-center { display: flex; align-items: center; }
-.footer-right { display: flex; align-items: center; gap: 12px; }
-.favorite-icon { font-size: 20px; color: #dcdfe6; cursor: pointer; transition: color 0.2s; }
-.favorite-icon.active { color: #f56c6c; }
-.favorite-icon:hover { color: #f56c6c; }
-.view-count { display: flex; align-items: center; gap: 3px; font-size: 12px; color: #909399; }
-.share-icon { font-size: 16px; color: #909399; cursor: pointer; transition: color 0.2s; }
-.share-icon:hover { color: #409EFF; }
+/* 底部三列 - 均分布局 */
+.card-footer { display: flex; align-items: center; justify-content: space-around; }
+.footer-item { display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer; padding: 4px 0; }
+.footer-icon { font-size: 18px; color: #909399; transition: color 0.2s; }
+.footer-icon.active { color: #f56c6c; }
+.footer-icon:hover { color: #f56c6c; }
+.footer-label { font-size: 11px; color: #909399; }
+.footer-item:hover .footer-label { color: #606266; }
 
 .pagination { margin-top: 20px; display: flex; justify-content: flex-end; }
 

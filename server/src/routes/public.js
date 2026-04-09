@@ -33,4 +33,7 @@ router.get('/publish-types', PublicController.getPublishTypes)
 // 专家类型列表（公开接口）
 router.get('/expert-types', PublicController.getExpertTypes)
 
+// 轮播图（公开接口）
+router.get('/banners', PublicController.getBanners)
+
 module.exports = router

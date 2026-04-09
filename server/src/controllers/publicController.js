@@ -240,3 +240,19 @@ exports.getExpertTypes = async (req, res) => {
     error(res, '获取专家类型失败')
   }
 }
+
+// 获取轮播图（公开接口）
+exports.getBanners = async (req, res) => {
+  try {
+    const { position } = req.query
+    let where = "status = 1 AND (position = 'all' OR position = 'both')"
+    if (position) {
+      where += ` OR position = '${position}'`
+    }
+    const [rows] = await pool.query(`SELECT * FROM banners WHERE ${where} ORDER BY sort_order`)
+    success(res, rows)
+  } catch (err) {
+    console.error('Get banners error:', err)
+    success(res, []) // 出错返回空数组，避免前端报错
+  }
+}

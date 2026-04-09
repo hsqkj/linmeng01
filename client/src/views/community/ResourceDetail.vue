@@ -82,7 +82,7 @@
                 </el-avatar>
                 <div class="comment-meta">
                   <span class="comment-name">{{ comment.user_name || '某社区' }}</span>
-                  <span class="comment-time">{{ comment.created_at }}</span>
+                  <span class="comment-time">{{ formatDateTime(comment.created_at) }}</span>
                 </div>
               </div>
               <p class="comment-content">{{ comment.content }}</p>

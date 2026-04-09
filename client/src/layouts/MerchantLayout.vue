@@ -106,7 +106,7 @@ async function loadUnreadCount() {
 function logout() {
   localStorage.removeItem('merchant_token')
   localStorage.removeItem('merchant_info')
-  router.push('/login/merchant')
+  router.push('/merchant')
 }
 
 // 监听通知已读事件
@@ -135,11 +135,11 @@ onMounted(() => {
         router.push('/merchant/profile')
       }).catch(() => {})
     }
+    // 登录后才加载未读通知数
+    loadUnreadCount()
+    // 每30秒刷新一次
+    refreshTimer = setInterval(loadUnreadCount, 30000)
   }
-  // 加载未读通知数
-  loadUnreadCount()
-  // 每30秒刷新一次
-  refreshTimer = setInterval(loadUnreadCount, 30000)
   // 监听通知已读事件
   window.addEventListener('notification-read', onNotificationRead)
 })

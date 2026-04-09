@@ -107,7 +107,7 @@
               <div class="member-info" v-if="profile.member_level > 0">
                 <div class="member-header">
                   <el-tag type="warning" size="large">{{ memberLevelName[profile.member_level] || '普通会员' }}</el-tag>
-                  <span style="color:#909399;font-size:13px;margin-left:8px">有效期至：{{ profile.member_expire_at || '长期' }}</span>
+                  <span style="color:#909399;font-size:13px;margin-left:8px">有效期：{{ profile.member_expire_at ? '至' + profile.member_expire_at : memberLevelValidity[profile.member_level] + '个月' }}</span>
                 </div>
                 <div class="benefit-grid">
                   <div class="benefit-item" v-for="b in memberBenefits" :key="b.title">
@@ -304,6 +304,9 @@ const favLoading = ref(false)
 const isExpert = computed(() => profile.value.company_type === 'expert')
 
 const memberLevelName = { 0: '免费试用', 1: '普通会员', 2: '银牌会员', 3: '金牌会员', 4: '铂金会员', 5: '钻石会员' }
+
+// 会员等级对应的有效期（月数）
+const memberLevelValidity = { 0: 3, 1: 3, 2: 12, 3: 12, 4: 12, 5: 12 }
 
 const industryTypes = [
   '教育培训', '医院诊所', '药店', '餐饮小吃', '生鲜水果', '美业', '保健养生', '体育健身', '银行保险', '电信服务',

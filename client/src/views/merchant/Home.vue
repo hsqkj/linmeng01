@@ -168,7 +168,7 @@
 
           <div class="demand-meta">
             <span><el-icon><User /></el-icon> {{ demand.households || 0 }}户</span>
-            <span><el-icon><Calendar /></el-icon> {{ demand.deadline || '长期' }}截止</span>
+            <span><el-icon><Calendar /></el-icon> {{ fmtDeadline(demand.deadline) }}截止</span>
           </div>
 
           <div class="demand-actions">
@@ -257,6 +257,14 @@ async function viewCommunityDetail(demand) {
   } catch {
     ElMessage.error('加载社区资料失败')
   }
+}
+
+// 格式化日期时间（2026-04-15 9:00）
+function fmtDeadline(t) {
+  if (!t) return '长期'
+  const d = new Date(t)
+  if (isNaN(d.getTime())) return t
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`
 }
 
 const bannerColors = [

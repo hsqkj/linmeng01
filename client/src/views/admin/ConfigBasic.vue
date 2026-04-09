@@ -167,8 +167,8 @@
       <el-tab-pane label="行政区划" name="district">
         <div class="config-section">
           <div class="section-header">
-            <p class="section-desc">配置平台服务的区/街道/社区三级行政区划数据</p>
-            <el-button type="primary" @click="addDistrict(null, 0)"><el-icon><Plus /></el-icon> 新增区</el-button>
+            <p class="section-desc">配置平台服务的城市/区/街道/社区四级行政区划数据</p>
+            <el-button type="primary" @click="addDistrict(null, 0)"><el-icon><Plus /></el-icon> 新增城市</el-button>
           </div>
           <el-tree
             v-loading="districtLoading"
@@ -182,11 +182,11 @@
                 <el-icon style="margin-right:4px;color:#909399"><Location /></el-icon>
                 <span v-if="!data.editing">{{ node.label }}</span>
                 <el-input v-else v-model="data.name" size="small" style="width:150px" @blur="saveDistrictEdit(data)" @keyup.enter="saveDistrictEdit(data)" />
-                <span class="tree-level">[{{ levelName[node.level] || '区' }}]</span>
+                <span v-if="levelName(data, data.parent_id)" class="tree-level">[{{ levelName(data, data.parent_id) }}]</span>
                 <span class="tree-actions">
                   <el-button text type="primary" size="small" @click.stop="data.editing=true">编辑</el-button>
-                  <el-button v-if="(node.level || 1) < 3" text type="success" size="small" @click.stop="addDistrict(data, node.level || 1)">
-                    {{ (node.level || 1) === 1 ? '加街道' : '加社区' }}
+                  <el-button v-if="data.level < 4" text type="success" size="small" @click.stop="addDistrict(data, data.level)">
+                    {{ data.level === 1 ? '加区' : data.level === 2 ? '加街道' : data.level === 3 ? '加社区' : '加节点' }}
                   </el-button>
                   <el-button text type="danger" size="small" @click.stop="deleteDistrict(data, node)">删除</el-button>
                 </span>
@@ -240,7 +240,11 @@ const showAddDialog = ref(false), addDialogTitle = ref(''), newItemName = ref(''
 const showDistrictDialog = ref(false), districtDialogTitle = ref(''), districtLabel = ref(''), newDistrictName = ref('')
 const districtParent = ref(null), districtLevel = ref(0)
 const districtLoading = ref(false)
-const levelName = { 1: '区', 2: '街道', 3: '社区' }
+// 区(1)、街道(2)、社区(3)，城市级(parent_id=0)直接显示名称不加后缀
+const levelName = (data, parentId) => {
+  if (!parentId || parentId === 0) return ''  // 顶级城市不显示层级
+  return { 2: '区', 3: '街道', 4: '社区' }[data.level] || ''
+}
 
 const activityTypes = ref([])
 const enterpriseTypes = ref([])
@@ -422,7 +426,8 @@ function addDistrict(parent, level) {
   districtParent.value = parent
   districtLevel.value = level
   newDistrictName.value = ''
-  const labels = { 0: '区', 1: '街道/镇', 2: '社区' }
+  // level=0表示顶级（城市/武汉市），level=1表示区，level=2表示街道，level=3表示社区
+  const labels = { 0: '城市', 1: '区', 2: '街道', 3: '社区' }
   districtLabel.value = labels[level] || '节点'
   districtDialogTitle.value = parent ? `在"${parent.name}"下新增${districtLabel.value}` : `新增${districtLabel.value}`
   showDistrictDialog.value = true

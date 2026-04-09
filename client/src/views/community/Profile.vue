@@ -171,13 +171,23 @@
             <el-divider content-position="left">基本信息</el-divider>
             <el-row :gutter="16">
               <el-col :xs="24" :sm="12">
-                <el-form-item label="社区名称">
-                  <el-input v-model="editForm.community_name" placeholder="请输入社区名称" />
+                <el-form-item label="所属区">
+                  <el-input v-model="editForm.district" disabled />
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :sm="12">
-                <el-form-item label="小区名称">
-                  <el-input v-model="editForm.community" placeholder="请输入小区名称" />
+                <el-form-item label="所属街道">
+                  <el-input v-model="editForm.street" disabled />
+                </el-form-item>
+              </el-col>
+              <el-col :xs="24" :sm="12">
+                <el-form-item label="社区名称">
+                  <el-input v-model="editForm.community_name" disabled />
+                </el-form-item>
+              </el-col>
+              <el-col :xs="24" :sm="12">
+                <el-form-item label="联系手机">
+                  <el-input v-model="editForm.username" disabled />
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :sm="12">
@@ -188,21 +198,6 @@
               <el-col :xs="24" :sm="12">
                 <el-form-item label="联系人职务">
                   <el-input v-model="editForm.position" placeholder="如：社区主任" />
-                </el-form-item>
-              </el-col>
-              <el-col :xs="24" :sm="12">
-                <el-form-item label="联系手机">
-                  <el-input v-model="editForm.username" disabled />
-                </el-form-item>
-              </el-col>
-              <el-col :xs="24" :sm="12">
-                <el-form-item label="所属行政区">
-                  <el-input v-model="editForm.district" disabled />
-                </el-form-item>
-              </el-col>
-              <el-col :xs="24" :sm="12">
-                <el-form-item label="所属街道">
-                  <el-input v-model="editForm.street" disabled />
                 </el-form-item>
               </el-col>
               <el-col :span="24">
@@ -254,6 +249,11 @@
 
             <el-divider content-position="left">社区画像数据</el-divider>
             <el-row :gutter="16">
+              <el-col :xs="24" :sm="12">
+                <el-form-item label="小区名称">
+                  <el-input v-model="editForm.community" placeholder="请输入小区名称" />
+                </el-form-item>
+              </el-col>
               <el-col :xs="24" :sm="12">
                 <el-form-item label="小区总户数">
                   <el-input-number v-model="editForm.households" :min="0" style="width:100%" />

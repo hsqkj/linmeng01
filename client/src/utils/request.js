@@ -63,7 +63,6 @@ request.interceptors.response.use(
     const message = error.response?.data?.message || error.message
 
     if (status === 401 || status === 403) {
-      // Token 无效/过期，清除对应 token 并跳转登录页
       const path = error.config?.url || ''
       let role = null
       if (path.startsWith('/admin/')) role = 'admin_token'
@@ -71,9 +70,22 @@ request.interceptors.response.use(
       else if (path.startsWith('/merchant/')) role = 'merchant_token'
       else if (path.startsWith('/ambassador/')) role = 'ambassador_token'
 
-      if (role) localStorage.removeItem(role)
-      ElMessage.error(status === 401 ? '登录已过期，请重新登录' : '无权限访问')
+      const token = role ? localStorage.getItem(role) : null
+      
+      // 公开接口列表（不需要登录的接口）
+      const publicPaths = ['/banners', '/config', '/recommend/', '/resources', '/demands', '/comments/', '/merchants', '/tags']
+      const isPublicPath = publicPaths.some(p => path.includes(p))
 
+      // 有token但过期才提示"登录已过期"
+      if (token) {
+        if (role) localStorage.removeItem(role)
+        if (!isPublicPath) {
+          ElMessage.error(status === 401 ? '登录已过期，请重新登录' : '无权限访问')
+        }
+      }
+      // 无token时不提示，直接跳转（未登录用户点击需要登录的链接）
+      
+      // 跳转登录页
       const currentPath = window.location.pathname
       if (currentPath.startsWith('/admin')) window.location.href = '/admin/login'
       else if (currentPath.startsWith('/merchant')) window.location.href = '/login/merchant'

@@ -111,7 +111,7 @@ const router = useRouter()
 
 const showEdit = ref(false)
 const filters = reactive({ keyword: '', status: '', type: '' })
-const resourceTypes = ['资金赞助', '物资提供', '人力支持', '技术支持', '专业服务', '媒体报道']
+const resourceTypes = ['专业服务', '教育培训', '场地资源', '物资捐赠', '志愿服务', '资金赞助', '技术支持', '健康医疗', '活动赞助', '媒体宣传', '技能培训', '养老服务']
 const statusType = { 0: 'info', 1: 'success', 2: 'warning' }
 const statusLabel = { 0: '待审核', 1: '已发布', 2: '已下架' }
 const allTags = ['亲子活动', '老年服务', '文化活动', '体育赛事', '教育培训', '健康医疗', '科技科普', '节庆活动', '环保公益', '商业推广', '社区建设', '志愿服务']

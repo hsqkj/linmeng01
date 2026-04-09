@@ -66,8 +66,8 @@
           <el-descriptions-item label="提交时间">{{ fmtTime(currentRow.created_at) }}</el-descriptions-item>
           <el-descriptions-item label="活动类型">{{ currentRow.activity_type || '—' }}</el-descriptions-item>
           <el-descriptions-item label="目标人群">{{ (currentRow.target_audience || []).join('、') || '—' }}</el-descriptions-item>
-          <el-descriptions-item label="开始时间">{{ currentRow.start_time || '—' }}</el-descriptions-item>
-          <el-descriptions-item label="结束时间">{{ currentRow.end_time || '—' }}</el-descriptions-item>
+          <el-descriptions-item label="开始时间">{{ fmtTime(currentRow.start_time) || '—' }}</el-descriptions-item>
+          <el-descriptions-item label="结束时间">{{ fmtTime(currentRow.end_time) || '—' }}</el-descriptions-item>
           <el-descriptions-item label="活动地点">{{ currentRow.location_name || '—' }}</el-descriptions-item>
           <el-descriptions-item label="预计参与">{{ currentRow.expected_count ? currentRow.expected_count + '人' : '—' }}</el-descriptions-item>
           <el-descriptions-item label="需求详情" :span="2">{{ currentRow.content || '—' }}</el-descriptions-item>

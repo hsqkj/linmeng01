@@ -103,7 +103,7 @@ const showUpgrade = ref(false), selectedUpgrade = ref(null)
 const memberLevelsData = ref([])
 const memberBenefitsData = ref([])  // 权益类型配置 [{name, desc, type, values:[lv1,lv2,...]}]
 
-const currentLevel = reactive({ level: 1, name: '普通会员', fee: 0, expire: '' })
+const currentLevel = reactive({ level: 1, name: '普通会员', fee: 0, expire: '', validityPeriod: 12 })
 
 // 当前用户等级权益：从 member_benefits 配置中读取当前等级对应值
 const currentBenefits = computed(() => {
@@ -215,7 +215,9 @@ async function loadMemberInfo() {
     currentLevel.name = levelDetail?.name || defaultNames[lvNum] || '普通会员'
     currentLevel.fee = levelDetail?.fee ?? 0
     currentLevel.expire = data.expire_date || data.member_expire_at || ''
-    currentLevel.validityPeriod = levelDetail?.validity_period || 12
+    // 确保有默认有效期：如果 levelDetail 不存在或 validity_period 无效，使用 12 个月
+    const vp = levelDetail?.validity_period
+    currentLevel.validityPeriod = (vp !== undefined && vp !== null && vp !== 0) ? vp : 12
   } catch {
     // 使用默认值
   }

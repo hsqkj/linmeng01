@@ -8,7 +8,7 @@ export const communityLogin = (data) => request.post('/community/login', data)
 export const communityRegister = (data) => request.post('/community/register', data)
 
 // ====== 公共信息 ======
-export const getBanners = (params) => request.get('/community/banners', { params })
+export const getBanners = (params) => request.get('/public/banners', { params })
 export const getConfig = () => request.get('/community/config')
 
 // ====== 首页 ======

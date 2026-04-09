@@ -65,6 +65,10 @@
         <el-icon><HomeFilled /></el-icon>
         <span>首页</span>
       </router-link>
+      <router-link to="/community/demands" class="mobile-nav-item" :class="{ active: $route.path.includes('/demands') }">
+        <el-icon><Document /></el-icon>
+        <span>需求</span>
+      </router-link>
       <router-link to="/community/resources" class="mobile-nav-item" :class="{ active: $route.path.includes('/resources') }">
         <el-icon><Goods /></el-icon>
         <span>资源</span>
@@ -105,7 +109,7 @@ async function loadUnreadCount() {
 function logout() {
   localStorage.removeItem('community_token')
   localStorage.removeItem('community_info')
-  router.push('/login/community')
+  router.push('/community')
 }
 
 // 监听通知已读事件
@@ -134,11 +138,11 @@ onMounted(() => {
         router.push('/community/profile')
       }).catch(() => {})
     }
+    // 登录后才加载未读通知数
+    loadUnreadCount()
+    // 每30秒刷新一次
+    refreshTimer = setInterval(loadUnreadCount, 30000)
   }
-  // 加载未读通知数
-  loadUnreadCount()
-  // 每30秒刷新一次
-  refreshTimer = setInterval(loadUnreadCount, 30000)
   // 监听通知已读事件
   window.addEventListener('notification-read', onNotificationRead)
 })
