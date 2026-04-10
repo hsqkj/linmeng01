@@ -36,18 +36,29 @@
       <div class="login-right">
         <div class="login-card">
           <h2>大使登录</h2>
+
+          <!-- 登录方式切换 -->
+          <div class="login-tabs">
+            <button :class="['tab-btn', loginMode === 'code' ? 'active' : '']" @click="loginMode = 'code'">验证码登录</button>
+            <button :class="['tab-btn', loginMode === 'password' ? 'active' : '']" @click="loginMode = 'password'">密码登录</button>
+          </div>
+
           <el-form :model="loginForm" label-position="top">
             <el-form-item label="手机号">
               <el-input v-model="loginForm.phone" placeholder="请输入手机号" maxlength="11" size="large" />
             </el-form-item>
-            <el-form-item label="验证码">
+            <!-- 验证码模式 -->
+            <el-form-item v-if="loginMode === 'code'" label="验证码">
               <div class="code-row">
                 <el-input v-model="loginForm.code" placeholder="验证码" size="large" style="flex:1" />
                 <el-button type="primary" plain size="large" @click="sendCode" :disabled="countdown > 0" style="width:120px">
                   {{ countdown > 0 ? `${countdown}s后重发` : '获取验证码' }}
                 </el-button>
               </div>
-
+            </el-form-item>
+            <!-- 密码模式 -->
+            <el-form-item v-else label="登录密码">
+              <el-input v-model="loginForm.password" type="password" placeholder="请输入登录密码" size="large" show-password />
             </el-form-item>
           </el-form>
           <el-button type="warning" size="large" style="width:100%;margin-top:8px;font-size:16px" :loading="loading" @click="doLogin">
@@ -91,15 +102,22 @@ import { ambassadorLogin } from '@/api/ambassador'
 import { applyAmbassador, sendSms } from '@/api/public'
 
 const router = useRouter()
-const loginForm = ref({ phone: '13900001111', code: '' })
+const loginForm = ref({ phone: '', code: '', password: '' })
+const loginMode = ref('code') // 'code' | 'password'
 const countdown = ref(0)
 const showAutoFill = ref(false)
 const showApply = ref(false)
 const loading = ref(false)
 const applyForm = ref({ real_name: '', phone: '', reason: '' })
 
+// 手机号格式验证
+const isValidPhone = (phone) => {
+  return /^1[3-9]\d{9}$/.test(phone)
+}
+
 async function sendCode() {
   if (!loginForm.value.phone) { ElMessage.warning('请先输入手机号'); return }
+  if (!isValidPhone(loginForm.value.phone)) { ElMessage.warning('请输入正确的手机号（11位，以1开头）'); return }
   try {
     const res = await sendSms({ phone: loginForm.value.phone, type: 'login' })
     loginForm.value.code = res.data?.code || '123456'
@@ -118,16 +136,23 @@ async function sendCode() {
 }
 
 async function doLogin() {
-  if (!loginForm.value.phone || !loginForm.value.code) { ElMessage.warning('请填写手机号和验证码'); return }
+  if (!loginForm.value.phone) { ElMessage.warning('请填写手机号'); return }
+  if (!isValidPhone(loginForm.value.phone)) { ElMessage.warning('请输入正确的手机号（11位，以1开头）'); return }
+  if (loginMode.value === 'code' && !loginForm.value.code) { ElMessage.warning('请填写验证码'); return }
+  if (loginMode.value === 'password' && !loginForm.value.password) { ElMessage.warning('请填写登录密码'); return }
   loading.value = true
   try {
-    const res = await ambassadorLogin({ phone: loginForm.value.phone, code: loginForm.value.code })
+    const payload = loginMode.value === 'code'
+      ? { phone: loginForm.value.phone, code: loginForm.value.code }
+      : { phone: loginForm.value.phone, password: loginForm.value.password }
+    const res = await ambassadorLogin(payload)
     localStorage.setItem('ambassador_token', res.data.token)
     localStorage.setItem('ambassador_info', JSON.stringify(res.data.ambassador))
     ElMessage.success('登录成功！')
     setTimeout(() => router.push('/ambassador'), 500)
   } catch (e) {
-    // 错误已在request拦截器中处理
+    const msg = e.response?.data?.message || e.message || '登录失败，请稍后重试'
+    ElMessage.error(msg)
   } finally {
     loading.value = false
   }
@@ -147,7 +172,7 @@ async function submitApply() {
     showApply.value = false
     ElMessage.success('申请已提交！平台将在1-3个工作日内审核')
   } catch (e) {
-    // 错误处理
+    ElMessage.error(e.response?.data?.message || e.message || '提交申请失败')
   }
 }
 </script>
@@ -180,7 +205,18 @@ async function submitApply() {
 .benefit-desc { color: rgba(255,255,255,.6); font-size: 13px; margin-top: 4px; }
 .login-right { display: flex; justify-content: flex-end; }
 .login-card { background: #fff; border-radius: 20px; padding: 40px; width: 100%; box-shadow: 0 24px 60px rgba(0,0,0,.3); }
-.login-card h2 { font-size: 24px; font-weight: 700; margin-bottom: 24px; color: #1a1a1a; }
+.login-card h2 { font-size: 24px; font-weight: 700; margin-bottom: 16px; color: #1a1a1a; }
+.login-tabs {
+  display: flex; gap: 0; margin-bottom: 20px;
+  border: 2px solid #e0e0e0; border-radius: 10px; overflow: hidden;
+}
+.tab-btn {
+  flex: 1; padding: 10px 0; border: none; background: #fff;
+  font-size: 14px; font-weight: 500; color: #666; cursor: pointer;
+  transition: all .2s; font-family: inherit;
+}
+.tab-btn.active { background: #813d9c; color: #fff; font-weight: 600; }
+.tab-btn:not(.active):hover { background: #f5f5f5; }
 .code-row { display: flex; gap: 12px; }
 
 .login-links { text-align: center; margin-top: 16px; font-size: 14px; color: #909399; }

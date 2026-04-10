@@ -121,9 +121,9 @@ exports.getQrCode = async (req, res) => {
       ambassador.qr_code = qrCode
     }
     
-    // 返回大使信息和专属链接
-    const baseUrl = process.env.APP_URL || 'http://localhost:5173'
-    const registerUrl = `${baseUrl}/#/register?code=${ambassador.qr_code}`
+    // 返回大使信息和专属链接（跳转到商家端注册页）
+    const baseUrl = process.env.APP_URL || 'http://150.158.12.243'
+    const registerUrl = `${baseUrl}/#/register/merchant?code=${ambassador.qr_code}`
     
     success(res, {
       qr_code: ambassador.qr_code,
@@ -318,6 +318,16 @@ exports.getCommissionConfig = async (req, res) => {
     )
     if (row && row.config_value) {
       const config = typeof row.config_value === 'string' ? JSON.parse(row.config_value) : row.config_value
+      // 标准化字段名：兼容 first_rate/firstRate 和 renew_rate/renewRate
+      if (config.level_commissions) {
+        config.level_commissions = config.level_commissions.map(l => ({
+          level: l.level,
+          name: l.name,
+          fee: l.fee,
+          firstRate: l.firstRate ?? l.first_rate ?? 0,
+          renewRate: l.renewRate ?? l.renew_rate ?? 0
+        }))
+      }
       success(res, config)
     } else {
       // 返回默认配置

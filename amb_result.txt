@@ -1,0 +1,1 @@
+SELECT SUBSTRING(config_value, 1, 100) FROM sys_configs WHERE config_key='ambassador_commission';

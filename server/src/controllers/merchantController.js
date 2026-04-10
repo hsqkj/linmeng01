@@ -66,20 +66,31 @@ exports.login = async (req, res) => {
 exports.register = async (req, res) => {
   try {
     const data = req.body
+    if (!data.password) return error(res, '请设置登录密码', 400)
     const hashedPassword = await bcrypt.hash(data.password, 10)
     
     const [existing] = await pool.query('SELECT id FROM merchants WHERE phone = ?', [data.phone])
     if (existing.length > 0) {
       return error(res, '手机号已注册', 400)
     }
+
+    // 检查用户名是否已被使用
+    if (data.username) {
+      const [uExisting] = await pool.query('SELECT id FROM merchants WHERE username = ?', [data.username])
+      if (uExisting.length > 0) {
+        return error(res, '用户名已被使用，请换一个', 400)
+      }
+    }
+
+    const username = data.username || data.phone
     
     await pool.query(
       `INSERT INTO merchants (username, password, company_name, credit_code, business_license,
        logo, description, company_type, industry, resource_types, contact_name, phone,
        address, tags, ambassador_id, status)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)`,
-      [data.phone, hashedPassword, data.company_name, data.credit_code, data.business_license,
-       data.logo, data.description, data.company_type, data.industry,
+      [username, hashedPassword, data.company_name, data.credit_code, data.business_license,
+       data.logo, data.description, data.company_type || 'merchant', data.industry,
        JSON.stringify(data.resource_types || []), data.contact_name, data.phone,
        data.address, JSON.stringify(data.tags || []), data.ambassador_id || null]
     )
@@ -95,17 +106,28 @@ exports.register = async (req, res) => {
 exports.expertRegister = async (req, res) => {
   try {
     const data = req.body
-    const hashedPassword = await bcrypt.hash(data.phone.slice(-6), 10)
+    // 使用传入的密码，否则降级到手机号后6位
+    const rawPassword = data.password || data.phone.slice(-6)
+    const hashedPassword = await bcrypt.hash(rawPassword, 10)
     
     // 检查手机号是否已注册
     const [existing] = await pool.query('SELECT id FROM merchants WHERE phone = ?', [data.phone])
     if (existing.length > 0) {
       return error(res, '手机号已注册', 400)
     }
+
+    // 检查用户名是否已被使用
+    if (data.username) {
+      const [uExisting] = await pool.query('SELECT id FROM merchants WHERE username = ?', [data.username])
+      if (uExisting.length > 0) {
+        return error(res, '用户名已被使用，请换一个', 400)
+      }
+    }
     
     // company_type = 'expert' 标识专家
     // contact_name 存真实姓名，company_name 存 "专家-{姓名}"
     const companyName = `专家-${data.realName}`
+    const username = data.username || data.phone
     
     await pool.query(
       `INSERT INTO merchants (username, password, company_name, contact_name, phone,
@@ -114,7 +136,7 @@ exports.expertRegister = async (req, res) => {
        status)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)`,
       [
-        data.phone, hashedPassword, companyName, data.realName, data.phone,
+        username, hashedPassword, companyName, data.realName, data.phone,
         'expert', data.expertType || '', data.personalPhoto || null, data.intro || null,
         data.socialIdentity || null, data.honors || null, null,
         JSON.stringify(data.tags || []), data.idCardPhoto ? JSON.stringify([data.idCardPhoto]) : null
@@ -783,12 +805,12 @@ exports.getMyFavorites = async (req, res) => {
     const offset = (page - 1) * pageSize
     
     const [rows] = await pool.query(
-      `SELECT df.id, df.create_time, d.*, c.community_name, c.district, c.street
+      `SELECT df.id, df.created_at, d.*, c.community_name, c.district, c.street
        FROM demand_favorite df
        JOIN demands d ON df.demand_id = d.id
        JOIN communities c ON d.community_id = c.id
        WHERE df.merchant_id = ?
-       ORDER BY df.create_time DESC
+       ORDER BY df.created_at DESC
        LIMIT ? OFFSET ?`,
       [req.merchant.id, parseInt(pageSize), parseInt(offset)]
     )

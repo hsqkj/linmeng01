@@ -48,9 +48,31 @@
         <el-form-item prop="manager">
           <el-input
             v-model="form.manager"
-            placeholder="请输入负责人姓名"
+            placeholder="请输入负责人姓名（姓名将作为登录名）"
             size="large"
             :prefix-icon="User"
+          />
+        </el-form-item>
+
+        <el-form-item prop="password">
+          <el-input
+            v-model="form.password"
+            type="password"
+            placeholder="设置登录密码（6-20位）"
+            size="large"
+            :prefix-icon="Lock"
+            show-password
+          />
+        </el-form-item>
+
+        <el-form-item prop="confirmPassword">
+          <el-input
+            v-model="form.confirmPassword"
+            type="password"
+            placeholder="再次输入密码"
+            size="large"
+            :prefix-icon="Lock"
+            show-password
           />
         </el-form-item>
 
@@ -97,6 +119,7 @@
             size="large"
             class="register-btn"
             :disabled="!form.agree"
+            :loading="loading"
             @click="register"
           >
             立即注册
@@ -115,8 +138,9 @@
 import { reactive, ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Phone, Key, User, OfficeBuilding, Location, Connection, CircleCheck, Trophy } from '@element-plus/icons-vue'
+import { Phone, Key, User, Lock, OfficeBuilding, Location, Connection, CircleCheck, Trophy } from '@element-plus/icons-vue'
 import { getRegions, sendSms } from '@/api/public'
+import axios from 'axios'
 
 const router = useRouter()
 const formRef = ref(null)
@@ -129,17 +153,33 @@ const form = reactive({
   street: '',
   community: '',
   manager: '',
+  password: '',
+  confirmPassword: '',
   phone: '',
   code: '',
   agree: false
 })
+
+const validateConfirmPwd = (rule, value, callback) => {
+  if (!value) return callback(new Error('请再次输入密码'))
+  if (value !== form.password) return callback(new Error('两次密码不一致'))
+  callback()
+}
 
 const rules = {
   district: [{ required: true, message: '请选择所在区', trigger: 'change' }],
   street: [{ required: true, message: '请选择街道/镇', trigger: 'change' }],
   community: [{ required: true, message: '请选择社区', trigger: 'change' }],
   manager: [{ required: true, message: '请输入负责人姓名', trigger: 'blur' }],
-  phone: [{ required: true, message: '请输入手机号', trigger: 'blur' }],
+  password: [
+    { required: true, message: '请设置登录密码', trigger: 'blur' },
+    { min: 6, max: 20, message: '密码长度6-20位', trigger: 'blur' }
+  ],
+  confirmPassword: [{ required: true, validator: validateConfirmPwd, trigger: 'blur' }],
+  phone: [
+    { required: true, message: '请输入手机号', trigger: 'blur' },
+    { pattern: /^1[3-9]\d{9}$/, message: '手机号格式不正确', trigger: 'blur' }
+  ],
   code: [{ required: true, message: '请输入验证码', trigger: 'blur' }]
 }
 
@@ -227,17 +267,38 @@ async function sendCode() {
   }
 }
 
+const loading = ref(false)
+
 const register = () => {
-  formRef.value.validate((valid) => {
+  formRef.value.validate(async (valid) => {
     if (!valid) return
     if (!form.agree) {
       ElMessage.warning('请先阅读并同意服务协议')
       return
     }
-    ElMessage.success('注册成功！即将跳转到登录页面...')
-    setTimeout(() => {
-      router.push('/login/community')
-    }, 1500)
+    loading.value = true
+    try {
+      const payload = {
+        username: form.manager,  // 姓名作为登录名
+        password: form.password,
+        real_name: form.manager,
+        phone: form.phone,
+        district: form.district,
+        street: form.street,
+        community: form.community
+      }
+      const baseURL = import.meta.env.VITE_API_BASE_URL || ''
+      await axios.post(`${baseURL}/api/community/register`, payload)
+      ElMessage.success('注册成功！即将跳转到登录页面...')
+      setTimeout(() => {
+        router.push('/login/community')
+      }, 1500)
+    } catch (e) {
+      const msg = e.response?.data?.message || e.message || '注册失败，请稍后重试'
+      ElMessage.error(msg)
+    } finally {
+      loading.value = false
+    }
   })
 }
 

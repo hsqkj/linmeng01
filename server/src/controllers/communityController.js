@@ -67,6 +67,9 @@ exports.login = async (req, res) => {
 exports.register = async (req, res) => {
   try {
     const data = req.body
+
+    // 密码校验
+    if (!data.password) return error(res, '请设置登录密码', 400)
     const hashedPassword = await bcrypt.hash(data.password, 10)
     
     // 检查手机号是否已注册
@@ -74,6 +77,17 @@ exports.register = async (req, res) => {
     if (existing.length > 0) {
       return error(res, '手机号已注册', 400)
     }
+
+    // 检查用户名是否已被使用
+    if (data.username) {
+      const [uExisting] = await pool.query('SELECT id FROM communities WHERE username = ?', [data.username])
+      if (uExisting.length > 0) {
+        return error(res, '用户名已被使用，请换一个', 400)
+      }
+    }
+
+    // username 优先用传入的，否则回退到手机号
+    const username = data.username || data.phone
     
     const [result] = await pool.query(
       `INSERT INTO communities (username, password, real_name, phone, district, street, community, 
@@ -81,7 +95,7 @@ exports.register = async (req, res) => {
        has_outdoor_plaza, has_commercial, has_school, has_park, merchant_count,
        logo, description, images, address, tags, status) 
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)`,
-      [data.phone, hashedPassword, data.real_name, data.phone, data.district, data.street,
+      [username, hashedPassword, data.real_name, data.phone, data.district, data.street,
        data.community, data.community_name, data.position, data.households, data.family_ratio,
        data.elderly_ratio, data.public_space_area, data.has_outdoor_plaza, data.has_commercial,
        data.has_school, data.has_park, data.merchant_count, data.logo, data.description,
@@ -1064,12 +1078,12 @@ exports.getMyFavorites = async (req, res) => {
     const offset = (page - 1) * pageSize
     
     const [rows] = await pool.query(
-      `SELECT rf.id, rf.create_time, r.*, m.company_name, m.logo as merchant_logo, m.member_level, m.star_rating
+      `SELECT rf.id, rf.created_at, r.*, m.company_name, m.logo as merchant_logo, m.member_level, m.star_rating
        FROM resource_favorite rf
        JOIN resources r ON rf.resource_id = r.id
        JOIN merchants m ON r.merchant_id = m.id
        WHERE rf.community_id = ?
-       ORDER BY rf.create_time DESC
+       ORDER BY rf.created_at DESC
        LIMIT ? OFFSET ?`,
       [req.community.id, parseInt(pageSize), parseInt(offset)]
     )

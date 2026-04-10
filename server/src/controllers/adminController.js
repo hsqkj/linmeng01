@@ -865,6 +865,7 @@ exports.deleteComment = async (req, res) => {
 exports.getBasicTypesConfig = async (req, res) => {
   try {
     const [rows] = await pool.query("SELECT config_value FROM sys_configs WHERE config_key = 'basic_types'")
+    const [expertRows] = await pool.query("SELECT config_value FROM sys_configs WHERE config_key = 'expert_types'")
     const defaultIndustries = [
       '教育培训', '医院诊所', '药店', '餐饮小吃', '生鲜水果',
       '美业', '保健养生', '体育健身', '银行保险', '电信服务',
@@ -876,6 +877,14 @@ exports.getBasicTypesConfig = async (req, res) => {
       '自媒体', 'IT互联网', '软件开发', '图文广告', '电子电器维修',
       '家居维修', '美发', '建筑工程', '其他'
     ]
+    // 默认专家类型（5种）
+    const defaultExpertTypes = [
+      { name: '法律咨询', desc: '法律顾问、纠纷调解等服务', count: 0, enabled: true },
+      { name: '心理健康', desc: '心理咨询、心理辅导等服务', count: 0, enabled: true },
+      { name: '医疗健康', desc: '义诊、健康讲座等服务', count: 0, enabled: true },
+      { name: '财务税务', desc: '财税顾问、代理记账等服务', count: 0, enabled: true },
+      { name: '工程技术', desc: '水电维修、网络技术等服务', count: 0, enabled: true },
+    ]
     if (rows.length === 0) {
       return success(res, {
         activityTypes: [], enterpriseTypes: [], resourceTypes: [], expertTypes: [], industryTypes: defaultIndustries.map(name => ({ name, enabled: true }))
@@ -885,6 +894,21 @@ exports.getBasicTypesConfig = async (req, res) => {
     // 兼容旧数据：补充 industryTypes
     if (!data.industryTypes || data.industryTypes.length === 0) {
       data.industryTypes = defaultIndustries.map(name => ({ name, enabled: true }))
+    }
+    // 合并 expertTypes：优先使用 expert_types 配置的29种数据
+    if (expertRows.length > 0) {
+      try {
+        const expertData = JSON.parse(expertRows[0].config_value)
+        if (Array.isArray(expertData) && expertData.length > 0) {
+          data.expertTypes = expertData.map(t => ({ ...t, count: t.count || 0, enabled: t.enabled !== false && t.status !== 0 }))
+        }
+      } catch (e) {
+        console.error('Parse expert_types error:', e)
+      }
+    }
+    // 如果没有获取到专家类型，使用默认5种
+    if (!data.expertTypes || data.expertTypes.length === 0) {
+      data.expertTypes = defaultExpertTypes
     }
     success(res, data)
   } catch (err) {

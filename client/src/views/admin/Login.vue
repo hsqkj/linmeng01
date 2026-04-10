@@ -61,7 +61,8 @@ const login = async () => {
     ElMessage.success('登录成功')
     router.push('/admin')
   } catch (e) {
-    // 错误已在request拦截器中处理
+    const msg = e.response?.data?.message || e.message || '登录失败，请稍后重试'
+    ElMessage.error(msg)
   } finally {
     loading.value = false
   }

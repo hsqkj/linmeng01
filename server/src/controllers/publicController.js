@@ -137,6 +137,12 @@ exports.applyAmbassador = async (req, res) => {
   try {
     const { real_name, phone, id_card } = req.body
     
+    // 检查手机号是否已注册
+    const [existing] = await pool.query('SELECT id FROM ambassadors WHERE phone = ?', [phone])
+    if (existing.length > 0) {
+      return error(res, '该手机号已注册，请直接登录', 400)
+    }
+    
     const hashedPassword = await require('bcryptjs').hash(phone.slice(-6), 10)
     
     // 生成渠道码
@@ -150,6 +156,9 @@ exports.applyAmbassador = async (req, res) => {
     success(res, { qrCode }, '申请已提交，请等待审核')
   } catch (err) {
     console.error('Apply ambassador error:', err)
+    if (err.code === 'ER_DUP_ENTRY') {
+      return error(res, '该手机号已注册，请直接登录', 400)
+    }
     error(res, '申请失败')
   }
 }
@@ -254,5 +263,26 @@ exports.getBanners = async (req, res) => {
   } catch (err) {
     console.error('Get banners error:', err)
     success(res, []) // 出错返回空数组，避免前端报错
+  }
+}
+
+// 根据渠道码获取大使信息（公开接口）
+exports.getAmbassadorByCode = async (req, res) => {
+  try {
+    const { code } = req.query
+    if (!code) {
+      return error(res, '缺少渠道码参数', 400)
+    }
+    const [rows] = await pool.query(
+      "SELECT id, real_name, username FROM ambassadors WHERE qr_code = ? AND status = 1 LIMIT 1",
+      [code]
+    )
+    if (rows.length === 0) {
+      return success(res, null, '未找到对应大使')
+    }
+    success(res, rows[0])
+  } catch (err) {
+    console.error('Get ambassador by code error:', err)
+    error(res, '获取大使信息失败')
   }
 }

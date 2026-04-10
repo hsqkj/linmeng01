@@ -36,4 +36,7 @@ router.get('/expert-types', PublicController.getExpertTypes)
 // 轮播图（公开接口）
 router.get('/banners', PublicController.getBanners)
 
+// 根据渠道码获取大使信息（公开接口）
+router.get('/ambassador/by-code', PublicController.getAmbassadorByCode)
+
 module.exports = router

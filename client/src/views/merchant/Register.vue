@@ -75,7 +75,7 @@
             </el-select>
           </el-form-item>
           <el-form-item label="联系人姓名" prop="contact">
-            <el-input v-model="form.contact" placeholder="请输入联系人姓名" size="large" :prefix-icon="User" />
+            <el-input v-model="form.contact" placeholder="请输入联系人姓名（将作为登录名）" size="large" :prefix-icon="User" />
           </el-form-item>
           <el-form-item label="手机号" prop="phone">
             <el-input v-model="form.phone" placeholder="请输入手机号" size="large" :prefix-icon="Phone" />
@@ -87,6 +87,15 @@
                 {{ counting ? `${countdown}s` : '获取验证码' }}
               </el-button>
             </div>
+          </el-form-item>
+          <el-form-item label="登录密码" prop="password">
+            <el-input v-model="form.password" type="password" placeholder="设置登录密码（6-20位）" size="large" :prefix-icon="Lock" show-password />
+          </el-form-item>
+          <el-form-item label="确认密码" prop="confirmPassword">
+            <el-input v-model="form.confirmPassword" type="password" placeholder="再次输入密码" size="large" :prefix-icon="Lock" show-password />
+          </el-form-item>
+          <el-form-item label="推荐人">
+            <el-input v-model="form.referrer" placeholder="使用渠道码注册时自动填入（选填）" size="large" :prefix-icon="UserFilled" disabled />
           </el-form-item>
           <el-form-item>
             <el-button type="success" size="large" class="register-btn" @click="goMerchantStep2">
@@ -199,7 +208,7 @@
         <!-- 第一步：姓名、类型、手机号、验证码 -->
         <el-form v-show="expertStep === 1" :model="expertForm" :rules="expertStep1Rules" ref="expertStep1Ref" class="register-form" label-position="top">
           <el-form-item label="真实姓名" prop="realName">
-            <el-input v-model="expertForm.realName" placeholder="请输入真实姓名" size="large" :prefix-icon="User" />
+            <el-input v-model="expertForm.realName" placeholder="请输入真实姓名（将作为登录名）" size="large" :prefix-icon="User" />
           </el-form-item>
           <el-form-item label="专家类型" prop="expertType">
             <el-select v-model="expertForm.expertType" placeholder="请选择专家类型" size="large" style="width: 100%" :loading="loadingExpertTypes">
@@ -216,6 +225,12 @@
                 {{ expertCounting ? `${expertCountdown}s` : '获取验证码' }}
               </el-button>
             </div>
+          </el-form-item>
+          <el-form-item label="登录密码" prop="password">
+            <el-input v-model="expertForm.password" type="password" placeholder="设置登录密码（6-20位）" size="large" :prefix-icon="Lock" show-password />
+          </el-form-item>
+          <el-form-item label="确认密码" prop="confirmPassword">
+            <el-input v-model="expertForm.confirmPassword" type="password" placeholder="再次输入密码" size="large" :prefix-icon="Lock" show-password />
           </el-form-item>
           <el-form-item>
             <el-button type="primary" size="large" class="register-btn" @click="goStep2">
@@ -343,13 +358,14 @@
 
 <script setup>
 import { reactive, ref, onMounted, nextTick } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Phone, Key, User, Shop, Goods, Connection, Medal, Trophy, UserFilled, Plus } from '@element-plus/icons-vue'
+import { Phone, Key, User, Shop, Goods, Connection, Medal, Trophy, UserFilled, Lock, Plus } from '@element-plus/icons-vue'
 import { getIndustries, sendSms, uploadImage, checkPhone } from '@/api/public'
 import { expertRegister } from '@/api/merchant'
 
 const router = useRouter()
+const route = useRoute()
 const formRef = ref(null)
 const expertStep1Ref = ref(null)
 const expertStep2Ref = ref(null)
@@ -364,8 +380,11 @@ const registerType = ref('')
 const merchantStep = ref(1)
 const merchantStep1Ref = ref(null)
 const form = reactive({
-  name: '', category: '', contact: '', phone: '', code: '', agree: false,
-  scale: '', address: '', license: '', licenseList: [], logo: '', logoList: [], intro: ''
+  name: '', category: '', contact: '', phone: '', code: '',
+  password: '', confirmPassword: '',
+  agree: false,
+  scale: '', address: '', license: '', licenseList: [], logo: '', logoList: [], intro: '',
+  referrer: '' // 推荐人（渠道码对应的大使姓名）
 })
 const merchantStep1Rules = {
   name: [{ required: true, message: '请输入商家/企业名称', trigger: 'blur' }],
@@ -375,7 +394,16 @@ const merchantStep1Rules = {
     { required: true, message: '请输入手机号', trigger: 'blur' },
     { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号', trigger: 'blur' }
   ],
-  code: [{ required: true, message: '请输入验证码', trigger: 'blur' }]
+  code: [{ required: true, message: '请输入验证码', trigger: 'blur' }],
+  password: [
+    { required: true, message: '请设置登录密码', trigger: 'blur' },
+    { min: 6, max: 20, message: '密码长度6-20位', trigger: 'blur' }
+  ],
+  confirmPassword: [{ required: true, validator: (rule, value, cb) => {
+    if (!value) return cb(new Error('请再次输入密码'))
+    if (value !== form.password) return cb(new Error('两次密码不一致'))
+    cb()
+  }, trigger: 'blur' }]
 }
 
 // 专家注册分步
@@ -387,6 +415,8 @@ const expertForm = reactive({
   expertType: '',
   phone: '',
   code: '',
+  password: '',
+  confirmPassword: '',
   personalPhoto: '',
   personalPhotoList: [],
   idCardPhoto: '',
@@ -405,7 +435,16 @@ const expertStep1Rules = {
     { required: true, message: '请输入手机号', trigger: 'blur' },
     { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号', trigger: 'blur' }
   ],
-  code: [{ required: true, message: '请输入验证码', trigger: 'blur' }]
+  code: [{ required: true, message: '请输入验证码', trigger: 'blur' }],
+  password: [
+    { required: true, message: '请设置登录密码', trigger: 'blur' },
+    { min: 6, max: 20, message: '密码长度6-20位', trigger: 'blur' }
+  ],
+  confirmPassword: [{ required: true, validator: (rule, value, cb) => {
+    if (!value) return cb(new Error('请再次输入密码'))
+    if (value !== expertForm.password) return cb(new Error('两次密码不一致'))
+    cb()
+  }, trigger: 'blur' }]
 }
 
 // 商家验证码倒计时
@@ -589,12 +628,31 @@ async function sendExpertCode() {
 }
 
 // 商家注册
-const register = (skipped = false) => {
+const register = async (skipped = false) => {
   if (!form.agree) { ElMessage.warning('请先阅读并同意服务协议'); return }
-  // TODO: 调用商家注册API，传递所有信息
-  const msg = skipped ? '注册成功！请登录后尽快完善企业资料' : '注册成功！即将跳转到登录页面...'
-  ElMessage.success(msg)
-  setTimeout(() => { router.push('/login/merchant') }, 1500)
+  try {
+    const { request: req } = await import('@/utils/request')
+    await req.post('/merchant/register', {
+      username: form.contact,  // 联系人姓名作为登录名
+      password: form.password,
+      company_name: form.name,
+      industry: form.category,
+      contact_name: form.contact,
+      phone: form.phone,
+      address: form.address || '',
+      scale: form.scale || '',
+      business_license: form.license || '',
+      logo: form.logo || '',
+      description: form.intro || '',
+      company_type: 'merchant',
+      referrer: form.referrer || ''
+    })
+    const msg = skipped ? '注册成功！请登录后尽快完善企业资料' : '注册成功！即将跳转到登录页面...'
+    ElMessage.success(msg)
+    setTimeout(() => { router.push('/login/merchant') }, 1500)
+  } catch (e) {
+    ElMessage.error(e.message || '注册失败，请稍后重试')
+  }
 }
 
 // 专家注册：第一步验证 → 进入第二步
@@ -620,6 +678,8 @@ async function registerExpert(skipped = false) {
   submitting.value = true
   try {
     await expertRegister({
+      username: expertForm.realName,  // 姓名作为登录名
+      password: expertForm.password,
       realName: expertForm.realName,
       expertType: expertForm.expertType,
       phone: expertForm.phone,
@@ -646,7 +706,25 @@ onMounted(() => {
   loadIndustries()
   loadExpertTypesList()
   loadDefaultTags()
+  // 检查渠道码参数，自动填入推荐人
+  const code = route.query.code
+  if (code) {
+    fetchAmbassadorByCode(code)
+  }
 })
+
+// 根据渠道码获取大使信息
+async function fetchAmbassadorByCode(code) {
+  try {
+    const { request: req } = await import('@/utils/request')
+    const resp = await req.get('/public/ambassador/by-code', { params: { code } })
+    if (resp.data && resp.data.real_name) {
+      form.referrer = resp.data.real_name
+    }
+  } catch (e) {
+    console.error('获取推荐人失败:', e)
+  }
+}
 </script>
 
 <style scoped>

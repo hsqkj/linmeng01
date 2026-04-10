@@ -15,6 +15,12 @@
         <p>邻盟 · 社区资源智能匹配</p>
       </div>
 
+      <!-- 登录方式切换 -->
+      <div class="login-tabs">
+        <button :class="['tab-btn', loginMode === 'code' ? 'active' : '']" @click="loginMode = 'code'">验证码登录</button>
+        <button :class="['tab-btn', loginMode === 'password' ? 'active' : '']" @click="loginMode = 'password'">密码登录</button>
+      </div>
+
       <div class="form-group">
         <label>手机号</label>
         <div class="input-addon">
@@ -23,7 +29,8 @@
         </div>
       </div>
 
-      <div class="form-group">
+      <!-- 验证码模式 -->
+      <div v-if="loginMode === 'code'" class="form-group">
         <label>验证码</label>
         <div style="display:flex;gap:10px">
           <input class="form-control" v-model="form.code" placeholder="请输入验证码" style="flex:1" />
@@ -31,6 +38,12 @@
             {{ counting ? `${countdown}s` : '获取验证码' }}
           </button>
         </div>
+      </div>
+
+      <!-- 密码模式 -->
+      <div v-else class="form-group">
+        <label>登录密码</label>
+        <input class="form-control" v-model="form.password" type="password" placeholder="请输入登录密码" />
       </div>
 
       <button class="btn-login merch" @click="login" :disabled="loading">
@@ -66,9 +79,12 @@ import { merchantLogin } from '@/api/merchant'
 
 const router = useRouter()
 
+const loginMode = ref('code') // 'code' | 'password'
+
 const form = reactive({
-  phone: '13900139000',
-  code: '123456',
+  phone: '',
+  code: '',
+  password: '',
   remember: false
 })
 
@@ -76,8 +92,14 @@ const counting = ref(false)
 const countdown = ref(60)
 const loading = ref(false)
 
+// 手机号格式验证
+const isValidPhone = (phone) => {
+  return /^1[3-9]\d{9}$/.test(phone)
+}
+
 const sendCode = () => {
   if (!form.phone) { ElMessage.warning('请先输入手机号'); return }
+  if (!isValidPhone(form.phone)) { ElMessage.warning('请输入正确的手机号（11位，以1开头）'); return }
   if (counting.value) return
   form.code = '123456'
   ElMessage.success('验证码已发送（测试版：123456）')
@@ -93,19 +115,35 @@ const sendCode = () => {
 }
 
 const login = async () => {
-  if (!form.phone || !form.code) {
-    ElMessage.warning('请填写手机号和验证码')
+  if (!form.phone) {
+    ElMessage.warning('请填写手机号')
+    return
+  }
+  if (!isValidPhone(form.phone)) {
+    ElMessage.warning('请输入正确的手机号（11位，以1开头）')
+    return
+  }
+  if (loginMode.value === 'code' && !form.code) {
+    ElMessage.warning('请填写验证码')
+    return
+  }
+  if (loginMode.value === 'password' && !form.password) {
+    ElMessage.warning('请填写登录密码')
     return
   }
   loading.value = true
   try {
-    const res = await merchantLogin({ phone: form.phone, code: form.code })
+    const payload = loginMode.value === 'code'
+      ? { phone: form.phone, code: form.code }
+      : { phone: form.phone, password: form.password }
+    const res = await merchantLogin(payload)
     localStorage.setItem('merchant_token', res.data.token)
     localStorage.setItem('merchant_info', JSON.stringify(res.data.merchant))
     ElMessage.success('登录成功！')
     router.push('/merchant')
   } catch (e) {
-    // 错误已在request拦截器中处理
+    const msg = e.response?.data?.message || e.message || '登录失败，请稍后重试'
+    ElMessage.error(msg)
   } finally {
     loading.value = false
   }
@@ -167,6 +205,17 @@ const goBack = () => { router.push('/') }
 .btn-login:disabled { opacity: .7; cursor: not-allowed; transform: none; }
 
 .login-divider { border-top: 1px solid #eee; margin-top: 24px; padding-top: 20px; }
+.login-tabs {
+  display: flex; gap: 0; margin-bottom: 24px;
+  border: 2px solid #e0e0e0; border-radius: 10px; overflow: hidden;
+}
+.tab-btn {
+  flex: 1; padding: 10px 0; border: none; background: #fff;
+  font-size: 14px; font-weight: 500; color: #666; cursor: pointer;
+  transition: all .2s; font-family: inherit;
+}
+.tab-btn.active { background: #e66100; color: #fff; font-weight: 600; }
+.tab-btn:not(.active):hover { background: #f5f5f5; }
 .login-tips { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; text-align: center; }
 .login-tip { padding: 10px 6px; background: #f9f9f9; border-radius: 10px; }
 .login-tip i { font-size: 22px; margin-bottom: 4px; display: block; font-style: normal; }

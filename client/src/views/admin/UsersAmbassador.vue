@@ -54,16 +54,22 @@
           <el-descriptions :column="2" border>
             <el-descriptions-item label="姓名">{{ currentAmbassador.real_name }}</el-descriptions-item>
             <el-descriptions-item label="手机号">{{ currentAmbassador.phone }}</el-descriptions-item>
-            <el-descriptions-item label="渠道码">
+            <el-descriptions-item label="渠道码" v-if="currentAmbassador.status === 1">
               <span style="font-weight:600;color:#409EFF;font-family:monospace">{{ currentAmbassador.qr_code || '未生成' }}</span>
             </el-descriptions-item>
-            <el-descriptions-item label="专属链接" :span="2">
+            <el-descriptions-item label="渠道码" v-else>
+              <span style="color:#909399">审核通过后生成</span>
+            </el-descriptions-item>
+            <el-descriptions-item label="专属链接" :span="2" v-if="currentAmbassador.status === 1">
               <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
                 <code style="background:#f5f7fa;padding:4px 8px;border-radius:4px;font-size:12px;max-width:400px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
                   {{ getRegisterUrl(currentAmbassador.qr_code) }}
                 </code>
                 <el-button type="primary" size="small" @click="copyLink(currentAmbassador.qr_code)">复制链接</el-button>
               </div>
+            </el-descriptions-item>
+            <el-descriptions-item label="专属链接" :span="2" v-else>
+              <span style="color:#909399">审核通过后生成</span>
             </el-descriptions-item>
             <el-descriptions-item label="注册时间">{{ formatTime(currentAmbassador.created_at) }}</el-descriptions-item>
             <el-descriptions-item label="账号状态">
@@ -169,24 +175,28 @@ function formatTime(time) {
 // 获取专属注册链接
 function getRegisterUrl(qrCode) {
   const baseUrl = import.meta.env.VITE_API_BASE || window.location.origin
-  return `${baseUrl}/#/register?code=${qrCode || ''}`
+  return `${baseUrl}/#/register/merchant?code=${qrCode || ''}`
 }
 
 // 复制链接
 async function copyLink(qrCode) {
   const url = getRegisterUrl(qrCode)
   try {
-    await navigator.clipboard.writeText(url)
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(url)
+    } else {
+      const textarea = document.createElement('textarea')
+      textarea.value = url
+      textarea.style.position = 'fixed'
+      textarea.style.opacity = '0'
+      document.body.appendChild(textarea)
+      textarea.select()
+      document.execCommand('copy')
+      document.body.removeChild(textarea)
+    }
     ElMessage.success('链接已复制到剪贴板')
   } catch {
-    // 降级方案
-    const textarea = document.createElement('textarea')
-    textarea.value = url
-    document.body.appendChild(textarea)
-    textarea.select()
-    document.execCommand('copy')
-    document.body.removeChild(textarea)
-    ElMessage.success('链接已复制到剪贴板')
+    ElMessage.error('复制失败，请手动复制')
   }
 }
 

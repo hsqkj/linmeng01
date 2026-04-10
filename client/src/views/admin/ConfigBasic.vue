@@ -276,11 +276,12 @@ async function loadBasicTypes() {
       { name: '非营利组织', count: 0, enabled: true },
     ]
     const defaultResourceTypes = [
-      { name: '专业服务', desc: '咨询、法律、设计等专业服务', enabled: true },
-      { name: '教育培训', desc: '课程、培训、讲座等服务', enabled: true },
-      { name: '场地资源', desc: '活动室、运动场等场地支持', enabled: true },
-      { name: '物资捐赠', desc: '图书、设备、食品等物资', enabled: true },
-      { name: '志愿服务', desc: '人力支持、活动协助等', enabled: true },
+      { name: '资金支持', desc: '活动经费、奖金等资金支持', enabled: true },
+      { name: '物资支持', desc: '图书、设备、食品等物资', enabled: true },
+      { name: '人力服务', desc: '人力支持、活动协助等', enabled: true },
+      { name: '技术服务', desc: 'IT、网络、设备维护等技术支持', enabled: true },
+      { name: '媒体宣传', desc: '公众号、媒体推广等服务', enabled: true },
+      { name: '其他', desc: '其他类型的资源支持', enabled: true },
     ]
     const defaultExpertTypes = [
       { name: '法律咨询', desc: '法律顾问、纠纷调解等服务', count: 0, enabled: true },

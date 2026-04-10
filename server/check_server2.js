@@ -1,4 +1,4 @@
-const mysql = require('mysql2/promise');
+const mysql = require('./node_modules/mysql2/promise');
 
 async function checkConfig() {
   const pool = mysql.createPool({

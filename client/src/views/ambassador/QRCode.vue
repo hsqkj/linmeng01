@@ -100,9 +100,19 @@ async function generateQRCode() {
 async function loadData() {
   loading.value = true
   try {
-    const [qrRes, homeRes] = await Promise.all([getQrCode(), getHomeData()])
-    qrData.value = qrRes.data || {}
+    // 先获取首页数据，检查审核状态
+    const homeRes = await getHomeData()
     homeData.value = homeRes.data || {}
+    
+    // 审核未通过，不显示渠道码
+    if (homeData.value.status !== 1) {
+      loading.value = false
+      return
+    }
+    
+    // 获取渠道码
+    const qrRes = await getQrCode()
+    qrData.value = qrRes.data || {}
     await generateQRCode()
   } catch { ElMessage.error("加载渠道码信息失败") }
   finally { loading.value = false }
@@ -121,9 +131,25 @@ async function downloadQR() {
 }
 
 async function copyLink() {
-  const url = qrData.value.register_url || "https://linmeng.com/register?code=" + (qrData.value.qr_code || "")
-  await navigator.clipboard.writeText(url)
-  ElMessage.success("注册链接已复制到剪贴板")
+  const url = qrData.value.register_url || "http://150.158.12.243/#/register/merchant?code=" + (qrData.value.qr_code || "")
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(url)
+    } else {
+      // 降级方案
+      const textarea = document.createElement('textarea')
+      textarea.value = url
+      textarea.style.position = 'fixed'
+      textarea.style.opacity = '0'
+      document.body.appendChild(textarea)
+      textarea.select()
+      document.execCommand('copy')
+      document.body.removeChild(textarea)
+    }
+    ElMessage.success("注册链接已复制到剪贴板")
+  } catch {
+    ElMessage.error("复制失败，请手动复制")
+  }
 }
 </script>
 
