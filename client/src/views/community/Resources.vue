@@ -135,7 +135,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { requireAuth } from '@/utils/useAuth'
 import { Search, View, Star, Shop, Share } from '@element-plus/icons-vue'
-import { getResources, toggleFavorite, getMyFavorites } from '@/api/community'
+import { getResources, toggleFavorite, getMyFavorites, getConfig } from '@/api/community'
 
 const router = useRouter()
 const showMerchantInfo = ref(false)
@@ -144,24 +144,28 @@ const loading = ref(false)
 const favoritedIds = ref(new Set())
 
 const filters = reactive({ keyword: '', type: '', rating: '', distance: '', matchOrder: 'match' })
-const resourceTypeMap = {
-  '专业服务': '专业服务',
-  '教育培训': '教育培训',
-  '场地资源': '场地资源',
-  '物资捐赠': '物资捐赠',
-  '志愿服务': '志愿服务',
-  '资金赞助': '资金赞助',
-  '技术支持': '技术支持',
-  '健康医疗': '健康医疗',
-  '活动赞助': '活动赞助',
-  '媒体宣传': '媒体宣传',
-  '技能培训': '技能培训',
-  '养老服务': '养老服务'
-}
-const resourceTypes = Object.keys(resourceTypeMap)
+const resourceTypes = ref([])
+const resourceTypeMap = {}
 const memberLevelName = { 0: '普通会员', 1: '普通会员', 2: '银牌会员', 3: '金牌会员', 4: '铂金会员', 5: '钻石会员' }
 const memberLevelType = { 0: 'info', 1: 'info', 2: '', 3: 'warning', 4: 'danger', 5: 'danger' }
-const getResourceTypeName = (type) => resourceTypeMap[type] ?? '便民服务'
+
+// 资源类型数字到中文映射
+const resourceTypeNumMap = {
+  0: '专业服务', 1: '教育培训', 2: '场地资源', 3: '物资捐赠',
+  4: '志愿服务', 5: '资金赞助', 6: '技术支持', 7: '健康医疗',
+  8: '活动赞助', 9: '媒体宣传', 10: '技能培训', 11: '养老服务'
+}
+const getResourceTypeName = (type) => resourceTypeNumMap[type] ?? resourceTypeMap[type] ?? type ?? '其他'
+
+async function loadConfig() {
+  try {
+    const res = await getConfig()
+    if (res.data?.resourceTypes?.length) {
+      resourceTypes.value = res.data.resourceTypes
+      res.data.resourceTypes.forEach(t => { resourceTypeMap[t] = t })
+    }
+  } catch {}
+}
 
 const resources = ref([])
 const total = ref(0)
@@ -254,6 +258,7 @@ function handleShare(res) {
 }
 
 onMounted(() => {
+  loadConfig()
   fetchResources()
   loadFavorites()
 })

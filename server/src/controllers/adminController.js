@@ -397,9 +397,16 @@ exports.updateMerchantStatus = async (req, res) => {
     const { id } = req.params
     const { status, rejectReason } = req.body
     
+    // 审核通过时（status=1），自动设置为免费试用等级（member_level=0）
+    let levelUpdate = ''
+    let params = [status, rejectReason || null, id]
+    if (status === 1) {
+      levelUpdate = ', member_level = 0'
+    }
+    
     await pool.query(
-      'UPDATE merchants SET status = ?, reject_reason = ? WHERE id = ?',
-      [status, rejectReason || null, id]
+      `UPDATE merchants SET status = ?, reject_reason = ?${levelUpdate} WHERE id = ?`,
+      params
     )
     
     success(res, null, '状态更新成功')
@@ -667,6 +674,15 @@ exports.getResourceAuditList = async (req, res) => {
       [parseInt(pageSize), offset]
     )
     
+    // 解析 images 字段（从 JSON 字符串转为数组）
+    rows.forEach(r => {
+      if (r.images) {
+        try { r.images = JSON.parse(r.images) } catch { r.images = [] }
+      } else {
+        r.images = []
+      }
+    })
+    
     const [[{ total }]] = await pool.query('SELECT COUNT(*) as total FROM resources WHERE status = 0')
     
     pageSuccess(res, rows, total, page, pageSize)
@@ -885,15 +901,49 @@ exports.getBasicTypesConfig = async (req, res) => {
       { name: '财务税务', desc: '财税顾问、代理记账等服务', count: 0, enabled: true },
       { name: '工程技术', desc: '水电维修、网络技术等服务', count: 0, enabled: true },
     ]
+    // 默认社区类型
+    const defaultCommunityTypes = [
+      { name: '老旧小区', enabled: true },
+      { name: '新建社区', enabled: true },
+      { name: '商品房小区', enabled: true },
+      { name: '保障房小区', enabled: true },
+      { name: '城中村', enabled: true },
+      { name: '学区社区', enabled: true },
+      { name: '产业园区', enabled: true },
+      { name: '混合型社区', enabled: true },
+    ]
+    // 默认居民类型
+    const defaultResidentTypes = [
+      { name: '青少年', enabled: true },
+      { name: '儿童', enabled: true },
+      { name: '青年', enabled: true },
+      { name: '中年', enabled: true },
+      { name: '老年', enabled: true },
+      { name: '退役军人', enabled: true },
+      { name: '残障人士', enabled: true },
+      { name: '新市民', enabled: true },
+      { name: '独居老人', enabled: true },
+      { name: '双职工家庭', enabled: true },
+    ]
     if (rows.length === 0) {
       return success(res, {
-        activityTypes: [], enterpriseTypes: [], resourceTypes: [], expertTypes: [], industryTypes: defaultIndustries.map(name => ({ name, enabled: true }))
+        activityTypes: [], enterpriseTypes: [], resourceTypes: [], expertTypes: defaultExpertTypes,
+        industryTypes: defaultIndustries.map(name => ({ name, enabled: true })),
+        communityTypes: defaultCommunityTypes, residentTypes: defaultResidentTypes
       })
     }
     const data = JSON.parse(rows[0].config_value)
     // 兼容旧数据：补充 industryTypes
     if (!data.industryTypes || data.industryTypes.length === 0) {
       data.industryTypes = defaultIndustries.map(name => ({ name, enabled: true }))
+    }
+    // 兼容旧数据：补充 communityTypes
+    if (!data.communityTypes || data.communityTypes.length === 0) {
+      data.communityTypes = defaultCommunityTypes
+    }
+    // 兼容旧数据：补充 residentTypes
+    if (!data.residentTypes || data.residentTypes.length === 0) {
+      data.residentTypes = defaultResidentTypes
     }
     // 合并 expertTypes：优先使用 expert_types 配置的29种数据
     if (expertRows.length > 0) {
@@ -1796,6 +1846,266 @@ exports.getResourceList = async (req, res) => {
   } catch (err) {
     console.error('Get resource list error:', err)
     error(res, '获取资源列表失败')
+  }
+}
+
+// ====== 智能客服配置 ======
+
+// 获取客服基本设置
+exports.getServiceConfig = async (req, res) => {
+  try {
+    const [rows] = await pool.query("SELECT config_value FROM sys_configs WHERE config_key = 'service_config'")
+    if (rows.length > 0) {
+      success(res, JSON.parse(rows[0].config_value))
+    } else {
+      success(res, {
+        name: '邻盟智能客服',
+        welcome: '您好！我是邻盟智能客服助手 👋\n请问有什么可以帮您？',
+        workTime: '周一至周五 9:00-18:00',
+        hotline: '400-888-8888',
+        email: '12494789@qq.com',
+        unknownReply: '抱歉，我暂时无法理解您的问题。您可以：\n1. 拨打客服热线：400-888-8888\n2. 发送邮件至：12494789@qq.com'
+      })
+    }
+  } catch (err) {
+    console.error('Get service config error:', err)
+    error(res, '获取客服配置失败')
+  }
+}
+
+// 保存客服基本设置
+exports.saveServiceConfig = async (req, res) => {
+  try {
+    const config = req.body
+    await pool.query(
+      "INSERT INTO sys_configs (config_key, config_value, config_type, description) VALUES ('service_config', ?, 'service', '智能客服配置') ON DUPLICATE KEY UPDATE config_value = ?",
+      [JSON.stringify(config), JSON.stringify(config)]
+    )
+    success(res, null, '客服配置已保存')
+  } catch (err) {
+    console.error('Save service config error:', err)
+    error(res, '保存客服配置失败')
+  }
+}
+
+// 获取FAQ列表
+exports.getFaqList = async (req, res) => {
+  try {
+    const [rows] = await pool.query("SELECT config_value FROM sys_configs WHERE config_key = 'service_faqs'")
+    if (rows.length > 0) {
+      success(res, JSON.parse(rows[0].config_value))
+    } else {
+      success(res, [])
+    }
+  } catch (err) {
+    console.error('Get FAQ list error:', err)
+    error(res, '获取FAQ列表失败')
+  }
+}
+
+// 创建FAQ
+exports.createFaq = async (req, res) => {
+  try {
+    const { question, answer, keywords } = req.body
+    if (!question || !answer) return error(res, '问题和回答不能为空', 400)
+
+    const [rows] = await pool.query("SELECT config_value FROM sys_configs WHERE config_key = 'service_faqs'")
+    let faqs = []
+    if (rows.length > 0) {
+      try { faqs = JSON.parse(rows[0].config_value) } catch {}
+    }
+
+    const newFaq = {
+      id: Date.now(),
+      question,
+      answer,
+      keywords: keywords || '',
+      hits: 0,
+      enabled: true
+    }
+    faqs.push(newFaq)
+
+    await pool.query(
+      "INSERT INTO sys_configs (config_key, config_value, config_type, description) VALUES ('service_faqs', ?, 'service', '智能客服FAQ') ON DUPLICATE KEY UPDATE config_value = ?",
+      [JSON.stringify(faqs), JSON.stringify(faqs)]
+    )
+
+    success(res, newFaq, 'FAQ已添加')
+  } catch (err) {
+    console.error('Create FAQ error:', err)
+    error(res, '添加FAQ失败')
+  }
+}
+
+// 更新FAQ
+exports.updateFaq = async (req, res) => {
+  try {
+    const { id } = req.params
+    const { question, answer, keywords } = req.body
+
+    const [rows] = await pool.query("SELECT config_value FROM sys_configs WHERE config_key = 'service_faqs'")
+    if (rows.length === 0) return error(res, 'FAQ不存在', 404)
+
+    let faqs = []
+    try { faqs = JSON.parse(rows[0].config_value) } catch {}
+
+    const idx = faqs.findIndex(f => f.id == id)
+    if (idx === -1) return error(res, 'FAQ不存在', 404)
+
+    if (question) faqs[idx].question = question
+    if (answer) faqs[idx].answer = answer
+    if (keywords !== undefined) faqs[idx].keywords = keywords
+
+    await pool.query(
+      "INSERT INTO sys_configs (config_key, config_value, config_type, description) VALUES ('service_faqs', ?, 'service', '智能客服FAQ') ON DUPLICATE KEY UPDATE config_value = ?",
+      [JSON.stringify(faqs), JSON.stringify(faqs)]
+    )
+
+    success(res, null, 'FAQ已更新')
+  } catch (err) {
+    console.error('Update FAQ error:', err)
+    error(res, '更新FAQ失败')
+  }
+}
+
+// 删除FAQ
+exports.deleteFaq = async (req, res) => {
+  try {
+    const { id } = req.params
+
+    const [rows] = await pool.query("SELECT config_value FROM sys_configs WHERE config_key = 'service_faqs'")
+    if (rows.length === 0) return error(res, 'FAQ不存在', 404)
+
+    let faqs = []
+    try { faqs = JSON.parse(rows[0].config_value) } catch {}
+
+    const idx = faqs.findIndex(f => f.id == id)
+    if (idx === -1) return error(res, 'FAQ不存在', 404)
+
+    faqs.splice(idx, 1)
+
+    await pool.query(
+      "INSERT INTO sys_configs (config_key, config_value, config_type, description) VALUES ('service_faqs', ?, 'service', '智能客服FAQ') ON DUPLICATE KEY UPDATE config_value = ?",
+      [JSON.stringify(faqs), JSON.stringify(faqs)]
+    )
+
+    success(res, null, 'FAQ已删除')
+  } catch (err) {
+    console.error('Delete FAQ error:', err)
+    error(res, '删除FAQ失败')
+  }
+}
+
+// 获取快捷问题列表
+exports.getQuickQuestions = async (req, res) => {
+  try {
+    const [rows] = await pool.query("SELECT config_value FROM sys_configs WHERE config_key = 'service_quick_questions'")
+    if (rows.length > 0) {
+      success(res, JSON.parse(rows[0].config_value))
+    } else {
+      success(res, [
+        { id: 1, text: '如何发布资源？', sort: 1, enabled: true },
+        { id: 2, text: '会员等级有什么区别？', sort: 2, enabled: true },
+        { id: 3, text: '如何联系商家？', sort: 3, enabled: true },
+        { id: 4, text: '撮合奖励是什么？', sort: 4, enabled: true }
+      ])
+    }
+  } catch (err) {
+    console.error('Get quick questions error:', err)
+    error(res, '获取快捷问题失败')
+  }
+}
+
+// 创建快捷问题
+exports.createQuickQuestion = async (req, res) => {
+  try {
+    const { text, sort = 1 } = req.body
+    if (!text) return error(res, '问题文本不能为空', 400)
+
+    const [rows] = await pool.query("SELECT config_value FROM sys_configs WHERE config_key = 'service_quick_questions'")
+    let questions = []
+    if (rows.length > 0) {
+      try { questions = JSON.parse(rows[0].config_value) } catch {}
+    }
+
+    const newQuestion = {
+      id: Date.now(),
+      text,
+      sort,
+      enabled: true
+    }
+    questions.push(newQuestion)
+    questions.sort((a, b) => a.sort - b.sort)
+
+    await pool.query(
+      "INSERT INTO sys_configs (config_key, config_value, config_type, description) VALUES ('service_quick_questions', ?, 'service', '智能客服快捷问题') ON DUPLICATE KEY UPDATE config_value = ?",
+      [JSON.stringify(questions), JSON.stringify(questions)]
+    )
+
+    success(res, newQuestion, '快捷问题已添加')
+  } catch (err) {
+    console.error('Create quick question error:', err)
+    error(res, '添加快捷问题失败')
+  }
+}
+
+// 更新快捷问题
+exports.updateQuickQuestion = async (req, res) => {
+  try {
+    const { id } = req.params
+    const { text, sort, enabled } = req.body
+
+    const [rows] = await pool.query("SELECT config_value FROM sys_configs WHERE config_key = 'service_quick_questions'")
+    if (rows.length === 0) return error(res, '快捷问题不存在', 404)
+
+    let questions = []
+    try { questions = JSON.parse(rows[0].config_value) } catch {}
+
+    const idx = questions.findIndex(q => q.id == id)
+    if (idx === -1) return error(res, '快捷问题不存在', 404)
+
+    if (text) questions[idx].text = text
+    if (sort !== undefined) questions[idx].sort = sort
+    if (enabled !== undefined) questions[idx].enabled = enabled
+    questions.sort((a, b) => a.sort - b.sort)
+
+    await pool.query(
+      "INSERT INTO sys_configs (config_key, config_value, config_type, description) VALUES ('service_quick_questions', ?, 'service', '智能客服快捷问题') ON DUPLICATE KEY UPDATE config_value = ?",
+      [JSON.stringify(questions), JSON.stringify(questions)]
+    )
+
+    success(res, null, '快捷问题已更新')
+  } catch (err) {
+    console.error('Update quick question error:', err)
+    error(res, '更新快捷问题失败')
+  }
+}
+
+// 删除快捷问题
+exports.deleteQuickQuestion = async (req, res) => {
+  try {
+    const { id } = req.params
+
+    const [rows] = await pool.query("SELECT config_value FROM sys_configs WHERE config_key = 'service_quick_questions'")
+    if (rows.length === 0) return error(res, '快捷问题不存在', 404)
+
+    let questions = []
+    try { questions = JSON.parse(rows[0].config_value) } catch {}
+
+    const idx = questions.findIndex(q => q.id == id)
+    if (idx === -1) return error(res, '快捷问题不存在', 404)
+
+    questions.splice(idx, 1)
+
+    await pool.query(
+      "INSERT INTO sys_configs (config_key, config_value, config_type, description) VALUES ('service_quick_questions', ?, 'service', '智能客服快捷问题') ON DUPLICATE KEY UPDATE config_value = ?",
+      [JSON.stringify(questions), JSON.stringify(questions)]
+    )
+
+    success(res, null, '快捷问题已删除')
+  } catch (err) {
+    console.error('Delete quick question error:', err)
+    error(res, '删除快捷问题失败')
   }
 }
 

@@ -27,6 +27,10 @@ exports.login = async (req, res) => {
     
     const merchant = rows[0]
     
+    if (merchant.status === 0) {
+      return error(res, '账号审核中，请耐心等待', 401)
+    }
+    
     if (merchant.status === 2) {
       return error(res, '账号已被禁用', 403)
     }
@@ -87,8 +91,8 @@ exports.register = async (req, res) => {
     await pool.query(
       `INSERT INTO merchants (username, password, company_name, credit_code, business_license,
        logo, description, company_type, industry, resource_types, contact_name, phone,
-       address, tags, ambassador_id, status)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)`,
+       address, tags, ambassador_id, member_level, status)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0)`,
       [username, hashedPassword, data.company_name, data.credit_code, data.business_license,
        data.logo, data.description, data.company_type || 'merchant', data.industry,
        JSON.stringify(data.resource_types || []), data.contact_name, data.phone,
@@ -133,8 +137,8 @@ exports.expertRegister = async (req, res) => {
       `INSERT INTO merchants (username, password, company_name, contact_name, phone,
        company_type, industry, logo, description,
        social_identity, honors, expert_intro, tags, images,
-       status)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)`,
+       member_level, status)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0)`,
       [
         username, hashedPassword, companyName, data.realName, data.phone,
         'expert', data.expertType || '', data.personalPhoto || null, data.intro || null,
@@ -410,7 +414,42 @@ exports.getResourceDetail = async (req, res) => {
       return error(res, '资源不存在', 404)
     }
     
-    success(res, rows[0])
+    // 解析 images 字段（从 JSON 字符串转为数组）
+    const resource = rows[0]
+    console.log('[DEBUG] getResourceDetail 原始数据:', {
+      images: resource.images,
+      expected_rewards: resource.expected_rewards,
+      tags: resource.tags
+    })
+    if (resource.images) {
+      try { resource.images = JSON.parse(resource.images) } catch { resource.images = [] }
+    } else {
+      resource.images = []
+    }
+    // 解析 tags 字段
+    if (resource.tags) {
+      try { resource.tags = JSON.parse(resource.tags) } catch { resource.tags = [] }
+    } else {
+      resource.tags = []
+    }
+    // 解析 expected_rewards 字段
+    if (resource.expected_rewards) {
+      try { resource.expected_rewards = JSON.parse(resource.expected_rewards) } catch { resource.expected_rewards = [] }
+    } else {
+      resource.expected_rewards = []
+    }
+    // 解析其他 JSON 字段
+    if (resource.fund_scenes) {
+      try { resource.fund_scenes = JSON.parse(resource.fund_scenes) } catch { resource.fund_scenes = [] }
+    } else { resource.fund_scenes = [] }
+    if (resource.tech_types) {
+      try { resource.tech_types = JSON.parse(resource.tech_types) } catch { resource.tech_types = [] }
+    } else { resource.tech_types = [] }
+    if (resource.media_channels) {
+      try { resource.media_channels = JSON.parse(resource.media_channels) } catch { resource.media_channels = [] }
+    } else { resource.media_channels = [] }
+    
+    success(res, resource)
   } catch (err) {
     error(res, '获取详情失败')
   }
@@ -435,6 +474,15 @@ exports.getMyResources = async (req, res) => {
       [...params, parseInt(pageSize), offset]
     )
     
+    // 解析 images 字段（从 JSON 字符串转为数组）
+    rows.forEach(r => {
+      if (r.images) {
+        try { r.images = JSON.parse(r.images) } catch { r.images = [] }
+      } else {
+        r.images = []
+      }
+    })
+    
     const [[{ total }]] = await pool.query(
       'SELECT COUNT(*) as total FROM resources WHERE ' + where,
       params
@@ -452,24 +500,46 @@ exports.createResource = async (req, res) => {
     const data = req.body
     data.merchant_id = req.merchant.id
     
+    // 中文类型名到数字的映射
+    const RESOURCE_TYPE_MAP = {
+      '专业服务': 0, '教育培训': 1, '场地资源': 2, '物资捐赠': 3,
+      '志愿服务': 4, '资金赞助': 5, '技术支持': 6, '健康医疗': 7,
+      '活动赞助': 8, '媒体宣传': 9, '技能培训': 10, '养老服务': 11
+    }
+    
+    // 转换 resource_type
+    let resourceType = data.resource_type
+    if (typeof resourceType === 'string' && !isNaN(parseInt(resourceType))) {
+      resourceType = parseInt(resourceType)
+    } else if (typeof resourceType === 'string' && RESOURCE_TYPE_MAP[resourceType] !== undefined) {
+      resourceType = RESOURCE_TYPE_MAP[resourceType]
+    }
+    
     const [result] = await pool.query(
       `INSERT INTO resources (merchant_id, resource_type, title, content, images, tags,
        min_amount, max_amount, quantity, specs, pickup_way, staff_count,
        work_duration, skill_requirements, service_scope, certification,
-       price_range, media_type, coverage, status)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)`,
-      [data.merchant_id, data.resource_type, data.title, data.content,
+       price_range, media_type, coverage, professional_type, tech_types,
+       tech_service_type, goods_expiry, fund_scenes, media_channels,
+       valid_until, expected_rewards, expected_reward_desc, status)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [data.merchant_id, resourceType, data.title, data.content,
        JSON.stringify(data.images || []), JSON.stringify(data.tags || []),
-       data.min_amount, data.max_amount, data.quantity, data.specs, data.pickup_way,
-       data.staff_count, data.work_duration, data.skill_requirements,
-       data.service_scope, data.certification, data.price_range,
-       data.media_type, data.coverage]
+       data.min_amount || 0, data.max_amount || 0, data.quantity || 0, data.specs || '', data.pickup_way || '',
+       data.staff_count || 0, data.work_duration || 0, data.skill_requirements || '',
+       data.service_scope || '', data.certification || '', data.price_range || '',
+       data.media_type || '', data.coverage || '',
+       data.professional_type || '', JSON.stringify(data.tech_types || []),
+       data.tech_service_type || '', data.goods_expiry || null, JSON.stringify(data.fund_scenes || []),
+       JSON.stringify(data.media_channels || []),
+       data.valid_until || null,
+       JSON.stringify(data.expected_rewards || []), data.expected_reward_desc || '', 0]
     )
     
     success(res, { id: result.insertId }, '资源发布成功，请等待审核')
   } catch (err) {
-    console.error('Create resource error:', err)
-    error(res, '发布资源失败')
+    console.error('Create resource error:', err.message, err.stack)
+    error(res, '发布资源失败: ' + err.message)
   }
 }
 
@@ -489,22 +559,56 @@ exports.updateResource = async (req, res) => {
     
     const data = req.body
     
+    // 中文类型名到数字的映射
+    const RESOURCE_TYPE_MAP = {
+      '专业服务': 0, '教育培训': 1, '场地资源': 2, '物资捐赠': 3,
+      '志愿服务': 4, '资金赞助': 5, '技术支持': 6, '健康医疗': 7,
+      '活动赞助': 8, '媒体宣传': 9, '技能培训': 10, '养老服务': 11
+    }
+    
+    // 转换 resource_type
+    let resourceType = data.resource_type
+    if (typeof resourceType === 'string' && !isNaN(parseInt(resourceType))) {
+      resourceType = parseInt(resourceType)
+    } else if (typeof resourceType === 'string' && RESOURCE_TYPE_MAP[resourceType] !== undefined) {
+      resourceType = RESOURCE_TYPE_MAP[resourceType]
+    }
+    
+    // 格式化日期字段
+    const formatDate = (d) => {
+      if (!d) return null
+      if (d instanceof Date) return d.toISOString().slice(0, 10)
+      if (typeof d === 'string') return d.slice(0, 10)
+      return null
+    }
+    
+    const goodsExpiry = formatDate(data.goods_expiry)
+    const validUntil = formatDate(data.valid_until)
+    
     await pool.query(
-      `UPDATE resources SET title = ?, content = ?, images = ?, tags = ?,
+      `UPDATE resources SET resource_type = ?, title = ?, content = ?, images = ?, tags = ?,
        min_amount = ?, max_amount = ?, quantity = ?, specs = ?, pickup_way = ?,
        staff_count = ?, work_duration = ?, skill_requirements = ?,
        service_scope = ?, certification = ?, price_range = ?,
-       media_type = ?, coverage = ?, status = 0 WHERE id = ?`,
-      [data.title, data.content, JSON.stringify(data.images || []),
-       JSON.stringify(data.tags || []), data.min_amount, data.max_amount,
-       data.quantity, data.specs, data.pickup_way, data.staff_count,
-       data.work_duration, data.skill_requirements, data.service_scope,
-       data.certification, data.price_range, data.media_type, data.coverage, id]
+       media_type = ?, coverage = ?, professional_type = ?, tech_types = ?,
+       tech_service_type = ?, goods_expiry = ?, fund_scenes = ?, media_channels = ?,
+       valid_until = ?, expected_rewards = ?, expected_reward_desc = ?, status = 0 WHERE id = ?`,
+      [resourceType, data.title, data.content, JSON.stringify(data.images || []),
+       JSON.stringify(data.tags || []), data.min_amount || 0, data.max_amount || 0,
+       data.quantity || 0, data.specs || '', data.pickup_way || '', data.staff_count || 0,
+       data.work_duration || 0, data.skill_requirements || '', data.service_scope || '',
+       data.certification || '', data.price_range || '', data.media_type || '', data.coverage || '',
+       data.professional_type || '', JSON.stringify(data.tech_types || []),
+       data.tech_service_type || '', goodsExpiry, JSON.stringify(data.fund_scenes || []),
+       JSON.stringify(data.media_channels || []), validUntil,
+       JSON.stringify(data.expected_rewards || []), data.expected_reward_desc || '', id]
     )
     
     success(res, null, '更新成功')
   } catch (err) {
-    error(res, '更新失败')
+    console.error('Update resource error:', err.message)
+    console.error('Stack:', err.stack)
+    error(res, '更新失败: ' + err.message)
   }
 }
 
@@ -742,7 +846,7 @@ exports.getProfile = async (req, res) => {
     const [rows] = await pool.query(
       `SELECT m.id, m.company_name, m.logo, m.description, m.company_type, m.industry,
        m.resource_types, m.contact_name, m.phone, m.address, m.tags, m.member_level, m.star_rating,
-       m.images, m.status, m.social_identity, m.honors, m.expert_intro,
+       m.images, m.status, m.social_identity, m.honors, m.expert_intro, m.business_license, m.scale,
        (SELECT COALESCE(SUM(view_count), 0) FROM resources WHERE merchant_id = m.id) as view_count,
        (SELECT MAX(end_date) FROM member_payments WHERE merchant_id = m.id AND status = 1) as member_expire_at
        FROM merchants m WHERE m.id = ?`,
@@ -765,7 +869,7 @@ exports.getProfile = async (req, res) => {
       try { result.tags = result.tags } catch {}
     }
     if (result.images && typeof result.images === 'string') {
-      try { result.images = result.images } catch {}
+      try { result.images = JSON.parse(result.images) } catch {}
     }
     
     success(res, result)
@@ -805,12 +909,12 @@ exports.getMyFavorites = async (req, res) => {
     const offset = (page - 1) * pageSize
     
     const [rows] = await pool.query(
-      `SELECT df.id, df.created_at, d.*, c.community_name, c.district, c.street
+      `SELECT df.id, df.create_time, d.*, c.community_name, c.district, c.street
        FROM demand_favorite df
        JOIN demands d ON df.demand_id = d.id
        JOIN communities c ON d.community_id = c.id
        WHERE df.merchant_id = ?
-       ORDER BY df.created_at DESC
+       ORDER BY df.create_time DESC
        LIMIT ? OFFSET ?`,
       [req.merchant.id, parseInt(pageSize), parseInt(offset)]
     )
@@ -841,13 +945,13 @@ exports.updateProfile = async (req, res) => {
     await pool.query(
       `UPDATE merchants SET company_name = ?, logo = ?, description = ?, company_type = ?,
        industry = ?, resource_types = ?, contact_name = ?, phone = ?, address = ?,
-       tags = ?, social_identity = ?, honors = ?, expert_intro = ? WHERE id = ?`,
+       tags = ?, social_identity = ?, honors = ?, expert_intro = ?, images = ? WHERE id = ?`,
       [data.company_name, data.logo, data.description, data.company_type, data.industry,
        typeof data.resource_types === 'string' ? data.resource_types : JSON.stringify(data.resource_types || []),
        data.contact_name, data.phone, data.address,
        typeof data.tags === 'string' ? data.tags : JSON.stringify(data.tags || []),
        data.social_identity || '', data.honors || '', data.expert_intro || '',
-       req.merchant.id]
+       data.images || '', req.merchant.id]
     )
     
     success(res, null, '更新成功')

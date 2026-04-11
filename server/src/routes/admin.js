@@ -117,4 +117,20 @@ router.put('/config/audit', authAdmin, AdminController.saveAuditConfig)
 router.get('/config/expert-types', authAdmin, AdminController.getExpertTypesConfig)
 router.put('/config/expert-types', authAdmin, AdminController.saveExpertTypesConfig)
 
+// 智能客服配置
+router.get('/config/service', authAdmin, AdminController.getServiceConfig)
+router.put('/config/service', authAdmin, AdminController.saveServiceConfig)
+
+// FAQ管理
+router.get('/config/faqs', authAdmin, AdminController.getFaqList)
+router.post('/config/faqs', authAdmin, AdminController.createFaq)
+router.put('/config/faqs/:id', authAdmin, AdminController.updateFaq)
+router.delete('/config/faqs/:id', authAdmin, AdminController.deleteFaq)
+
+// 快捷问题管理
+router.get('/config/quick-questions', authAdmin, AdminController.getQuickQuestions)
+router.post('/config/quick-questions', authAdmin, AdminController.createQuickQuestion)
+router.put('/config/quick-questions/:id', authAdmin, AdminController.updateQuickQuestion)
+router.delete('/config/quick-questions/:id', authAdmin, AdminController.deleteQuickQuestion)
+
 module.exports = router

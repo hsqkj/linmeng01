@@ -206,11 +206,44 @@ exports.uploadImage = [
 // 获取发布页类型配置
 exports.getPublishTypes = async (req, res) => {
   try {
-    const [rows] = await pool.query("SELECT config_key, config_value FROM sys_configs WHERE config_key IN ('activity_types', 'expert_types', 'sponsor_types', 'reward_types', 'target_groups', 'community_tags', 'merchant_tags')")
+    const [rows] = await pool.query("SELECT config_key, config_value FROM sys_configs WHERE config_key IN ('activity_types', 'expert_types', 'sponsor_types', 'reward_types', 'target_groups', 'community_tags', 'merchant_tags', 'basic_types')")
     const result = {}
     rows.forEach(r => {
       try {
-        result[r.config_key] = JSON.parse(r.config_value)
+        const parsed = JSON.parse(r.config_value)
+        // basic_types 包含 resourceTypes 等
+        if (r.config_key === 'basic_types') {
+          // 提取 resourceTypes
+          if (parsed.resourceTypes) {
+            result.resource_types = parsed.resourceTypes.filter(t => t.enabled !== false).map(t => t.name || t)
+          }
+          // 提取 activityTypes
+          if (parsed.activityTypes) {
+            result.activity_types = parsed.activityTypes.filter(t => t.enabled !== false).map(t => t.name || t)
+          }
+          // 提取 expertTypes
+          if (parsed.expertTypes) {
+            result.expert_types = parsed.expertTypes.filter(t => t.enabled !== false).map(t => t.name || t)
+          }
+          // 提取 enterpriseTypes
+          if (parsed.enterpriseTypes) {
+            result.enterprise_types = parsed.enterpriseTypes.filter(t => t.enabled !== false).map(t => t.name || t)
+          }
+          // 提取 communityTypes
+          if (parsed.communityTypes) {
+            result.community_types = parsed.communityTypes.filter(t => t.enabled !== false).map(t => t.name || t)
+          }
+          // 提取 residentTypes
+          if (parsed.residentTypes) {
+            result.resident_types = parsed.residentTypes.filter(t => t.enabled !== false).map(t => t.name || t)
+          }
+          // 提取 industryTypes
+          if (parsed.industryTypes) {
+            result.industry_types = parsed.industryTypes.filter(t => t.enabled !== false).map(t => t.name || t)
+          }
+        } else {
+          result[r.config_key] = parsed
+        }
       } catch {
         result[r.config_key] = r.config_value
       }
@@ -224,6 +257,10 @@ exports.getPublishTypes = async (req, res) => {
       result.reward_types = ['活动冠名权', '现场展台/展位', '主持人口播', '背景板/横幅Logo展示', '活动物料品牌露出', '社区公众号推文宣传', '网格群/小区业主群宣传', '荣誉证书', '现场宣传横幅', '宣传栏长期展示', '媒体报道', '现场派发宣传资料']
       result.community_tags = ['老旧小区', '新建社区', '亲子社区', '老龄化社区', '学区社区', '商圈社区', '文化社区', '体育社区', '绿色社区', '公共空间丰富', '商业密集', '志愿服务活跃']
       result.merchant_tags = ['连锁品牌', '本地企业', '上市公司', '高端品牌', '大众品牌', '公益导向', '长期合作', '亲子品牌', '老年服务', '全国服务', '精准获客', '社会责任']
+      result.resource_types = ['专业服务', '教育培训', '场地资源', '物资捐赠', '志愿服务', '资金赞助', '技术支持', '健康医疗', '活动赞助', '媒体宣传', '技能培训', '养老服务']
+      result.community_types = ['老旧小区', '新建社区', '亲子社区', '老龄化社区', '学区社区', '商圈社区', '文化社区', '体育社区', '绿色社区']
+      result.resident_types = ['青少年/儿童', '青年', '中老年', '宝妈', '退役军人', '残疾群体', '困难家庭']
+      result.industry_types = ['教育培训', '医疗健康', '金融服务', '餐饮服务', '零售服务', '其他']
     }
     success(res, result)
   } catch (err) {

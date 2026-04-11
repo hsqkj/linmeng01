@@ -88,8 +88,8 @@ const router = useRouter()
 const loginMode = ref('code') // 'code' | 'password'
 
 const form = reactive({
-  phone: '13800138000',
-  code: '123456',
+  phone: '',
+  code: '',
   password: '',
   remember: false
 })

@@ -87,6 +87,7 @@
           <el-menu-item index="/admin/config/anti-flying">防飞单配置</el-menu-item>
           <el-menu-item index="/admin/config/audit">内容审核设置</el-menu-item>
           <el-menu-item index="/admin/config/admin">管理员配置</el-menu-item>
+          <el-menu-item index="/admin/config/service">智能客服配置</el-menu-item>
         </el-sub-menu>
       </el-menu>
 
@@ -188,6 +189,7 @@
           <el-menu-item index="/admin/config/algorithm">匹配算法配置</el-menu-item>
           <el-menu-item index="/admin/config/ambassador">大使提成配置</el-menu-item>
           <el-menu-item index="/admin/config/admin">管理员配置</el-menu-item>
+          <el-menu-item index="/admin/config/service">智能客服配置</el-menu-item>
         </el-sub-menu>
       </el-menu>
 
@@ -269,7 +271,8 @@ const pageTitles = {
   '/admin/config/banner': '轮播图配置',
   '/admin/config/algorithm': '匹配算法配置',
   '/admin/config/ambassador': '大使提成配置',
-  '/admin/config/admin': '管理员配置'
+  '/admin/config/admin': '管理员配置',
+  '/admin/config/service': '智能客服配置'
 }
 const pageTitle = computed(() => pageTitles[route.path] || '管理后台')
 </script>

@@ -11,7 +11,7 @@
           <div class="resource-header">
             <div class="resource-meta">
               <el-tag :type="resourceTypeTag[currentResource.resource_type]" size="large" effect="dark">
-                {{ resourceTypeName[currentResource.resource_type] }}
+                {{ getResourceTypeName(currentResource.resource_type) }}
               </el-tag>
               <el-tag :type="statusTypeTag[currentResource.status]" size="small" style="margin-left:8px">
                 {{ statusName[currentResource.status] }}
@@ -29,20 +29,108 @@
             <div class="info-grid">
               <div class="info-item">
                 <span class="info-label">资源类型</span>
-                <span class="info-value"><el-tag size="small">{{ resourceTypeName[currentResource.resource_type] }}</el-tag></span>
+                <span class="info-value"><el-tag size="small">{{ getResourceTypeName(currentResource.resource_type) }}</el-tag></span>
               </div>
-              <div class="info-item" v-if="currentResource.min_amount || currentResource.max_amount">
-                <span class="info-label">价值范围</span>
-                <span class="info-value">{{ currentResource.min_amount }} ~ {{ currentResource.max_amount }}元</span>
-              </div>
-              <div class="info-item" v-if="currentResource.quantity">
-                <span class="info-label">物资数量</span>
-                <span class="info-value">{{ currentResource.quantity }}</span>
-              </div>
-              <div class="info-item" v-if="currentResource.staff_count">
-                <span class="info-label">人员数量</span>
-                <span class="info-value">{{ currentResource.staff_count }}人</span>
-              </div>
+              <!-- 资金赞助字段 -->
+              <template v-if="getCurrentResourceType() === '资金赞助'">
+                <div class="info-item" v-if="currentResource.min_amount || currentResource.max_amount">
+                  <span class="info-label">赞助金额范围</span>
+                  <span class="info-value">{{ currentResource.min_amount || 0 }} ~ {{ currentResource.max_amount || 0 }} 元</span>
+                </div>
+                <div class="info-item" v-if="currentResource.fund_scenes && currentResource.fund_scenes.length > 0">
+                  <span class="info-label">适用场景</span>
+                  <span class="info-value">
+                    <el-tag v-for="s in currentResource.fund_scenes" :key="s" size="small" style="margin-right:4px">
+                      {{ {festival:'节庆活动',welfare:'公益活动',sports:'体育赛事',education:'教育活动',culture:'文化活动',any:'不限场景'}[s] || s }}
+                    </el-tag>
+                  </span>
+                </div>
+              </template>
+              <!-- 物资捐赠字段 -->
+              <template v-if="getCurrentResourceType() === '物资捐赠'">
+                <div class="info-item" v-if="currentResource.specs">
+                  <span class="info-label">物资清单</span>
+                  <span class="info-value">{{ currentResource.specs }}</span>
+                </div>
+                <div class="info-item" v-if="currentResource.quantity">
+                  <span class="info-label">物资数量</span>
+                  <span class="info-value">{{ currentResource.quantity }}</span>
+                </div>
+                <div class="info-item" v-if="currentResource.pickup_way">
+                  <span class="info-label">领取方式</span>
+                  <span class="info-value">{{ {delivery:'可配送',pickup:'自取',both:'均可'}[currentResource.pickup_way] || currentResource.pickup_way }}</span>
+                </div>
+                <div class="info-item" v-if="currentResource.goods_expiry">
+                  <span class="info-label">有效期至</span>
+                  <span class="info-value">{{ currentResource.goods_expiry }}</span>
+                </div>
+              </template>
+              <!-- 志愿服务字段 -->
+              <template v-if="getCurrentResourceType() === '志愿服务'">
+                <div class="info-item" v-if="currentResource.staff_count">
+                  <span class="info-label">可派遣人数</span>
+                  <span class="info-value">{{ currentResource.staff_count }}人</span>
+                </div>
+                <div class="info-item" v-if="currentResource.work_duration">
+                  <span class="info-label">单次服务时长</span>
+                  <span class="info-value">{{ currentResource.work_duration }}小时</span>
+                </div>
+                <div class="info-item" v-if="currentResource.skill_requirements">
+                  <span class="info-label">人员类型描述</span>
+                  <span class="info-value">{{ currentResource.skill_requirements }}</span>
+                </div>
+              </template>
+              <!-- 技术支持字段 -->
+              <template v-if="getCurrentResourceType() === '技术支持'">
+                <div class="info-item" v-if="currentResource.tech_types && currentResource.tech_types.length > 0">
+                  <span class="info-label">技术类型</span>
+                  <span class="info-value">
+                    <el-tag v-for="t in currentResource.tech_types" :key="t" size="small" style="margin-right:4px">
+                      {{ {equipment:'设备器材',software:'软件系统',network:'网络通信',av:'专业音视频',lighting:'灯光设备',smart:'智能设备'}[t] || t }}
+                    </el-tag>
+                  </span>
+                </div>
+                <div class="info-item" v-if="currentResource.tech_service_type">
+                  <span class="info-label">服务方式</span>
+                  <span class="info-value">{{ {rent:'设备租借',service:'提供服务团队',both:'均可'}[currentResource.tech_service_type] || currentResource.tech_service_type }}</span>
+                </div>
+              </template>
+              <!-- 专业服务字段 -->
+              <template v-if="getCurrentResourceType() === '专业服务'">
+                <div class="info-item" v-if="currentResource.professional_type">
+                  <span class="info-label">专业服务类型</span>
+                  <span class="info-value">{{ currentResource.professional_type }}</span>
+                </div>
+                <div class="info-item" v-if="currentResource.service_scope">
+                  <span class="info-label">服务范围</span>
+                  <span class="info-value">{{ {city:'全市',district:'本区',online:'线上'}[currentResource.service_scope] || currentResource.service_scope }}</span>
+                </div>
+                <div class="info-item" v-if="currentResource.certification">
+                  <span class="info-label">资质证明</span>
+                  <span class="info-value">{{ currentResource.certification }}</span>
+                </div>
+                <div class="info-item" v-if="currentResource.price_range">
+                  <span class="info-label">收费标准</span>
+                  <span class="info-value">{{ {free:'免费',discount:'优惠价',market:'市场价'}[currentResource.price_range] || currentResource.price_range }}</span>
+                </div>
+              </template>
+              <!-- 媒体宣传字段 -->
+              <template v-if="getCurrentResourceType() === '媒体宣传'">
+                <div class="info-item" v-if="currentResource.media_channels && currentResource.media_channels.length > 0">
+                  <span class="info-label">媒体渠道</span>
+                  <span class="info-value">
+                    <el-tag v-for="c in currentResource.media_channels" :key="c" size="small" style="margin-right:4px">{{ c }}</el-tag>
+                  </span>
+                </div>
+                <div class="info-item" v-if="currentResource.media_type">
+                  <span class="info-label">媒体类型</span>
+                  <span class="info-value">{{ currentResource.media_type }}</span>
+                </div>
+                <div class="info-item" v-if="currentResource.coverage">
+                  <span class="info-label">覆盖范围</span>
+                  <span class="info-value">{{ currentResource.coverage }}</span>
+                </div>
+              </template>
             </div>
           </div>
 
@@ -52,21 +140,48 @@
             <p class="description">{{ currentResource.content || '暂无详情' }}</p>
           </div>
 
-          <!-- 服务/规格说明 -->
-          <div class="section" v-if="currentResource.service_scope || currentResource.specs">
-            <h3>🎯 服务说明</h3>
-            <div class="provide-block">
-              <div v-if="currentResource.service_scope">服务范围：{{ currentResource.service_scope }}</div>
-              <div v-if="currentResource.specs">规格要求：{{ currentResource.specs }}</div>
-              <div v-if="currentResource.certification">资质证明：{{ currentResource.certification }}</div>
-              <div v-if="currentResource.price_range">收费标准：{{ currentResource.price_range }}</div>
-            </div>
-          </div>
-
           <!-- 标签 -->
           <div class="section" v-if="currentResource.tags && currentResource.tags.length">
             <h3>🏷️ 资源标签</h3>
             <el-tag v-for="tag in currentResource.tags" :key="tag" type="primary" effect="light" style="margin:4px">{{ tag }}</el-tag>
+          </div>
+
+          <!-- 期望回报 -->
+          <div class="section" v-if="currentResource.expected_rewards && currentResource.expected_rewards.length">
+            <h3>🎁 期望回报</h3>
+            <div class="info-grid">
+              <div class="info-item" style="grid-column: 1 / -1">
+                <span class="info-label">回报类型</span>
+                <span class="info-value">
+                  <el-tag v-for="r in currentResource.expected_rewards" :key="r" type="warning" style="margin-right:4px">{{ r }}</el-tag>
+                </span>
+              </div>
+              <div class="info-item" v-if="currentResource.expected_reward_desc" style="grid-column: 1 / -1">
+                <span class="info-label">回报说明</span>
+                <span class="info-value">{{ currentResource.expected_reward_desc }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 有效期 -->
+          <div class="section" v-if="currentResource.valid_until">
+            <h3>📅 有效期至</h3>
+            <p class="description">{{ currentResource.valid_until }}</p>
+          </div>
+
+          <!-- 图片展示 -->
+          <div class="section" v-if="currentResource.images && currentResource.images.length">
+            <h3>📷 资源图片</h3>
+            <div class="image-gallery">
+              <el-image 
+                v-for="(img, idx) in currentResource.images" 
+                :key="idx"
+                :src="img" 
+                :preview-src-list="currentResource.images"
+                fit="cover"
+                class="gallery-image"
+              />
+            </div>
           </div>
 
           <!-- 留言区 -->
@@ -129,7 +244,7 @@ import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { ArrowLeft } from '@element-plus/icons-vue'
-import { getResourceComments, getMyResources } from '@/api/merchant'
+import { getResourceComments, getResourceDetail } from '@/api/merchant'
 import { replyComment } from '@/api/merchant'
 
 const route = useRoute()
@@ -138,30 +253,54 @@ const comments = ref([])
 const commentText = ref('')
 const commentLoading = ref(false)
 
+// 资源类型映射（数字到中文）
 const resourceTypeName = {
-  1: '资金', 2: '物资', 3: '人力', 4: '技术', 5: '服务', 6: '媒体'
+  0: '专业服务', 1: '教育培训', 2: '场地资源', 3: '物资捐赠',
+  4: '志愿服务', 5: '资金赞助', 6: '技术支持', 7: '健康医疗',
+  8: '活动赞助', 9: '媒体宣传', 10: '技能培训', 11: '养老服务'
 }
 const resourceTypeTag = {
-  1: 'danger', 2: 'warning', 3: 'success', 4: 'info', 5: '', 6: 'primary'
+  0: '', 1: 'success', 2: 'warning', 3: 'info', 4: 'danger', 5: 'warning', 6: 'primary', 7: 'success', 8: 'info', 9: 'warning', 10: 'danger', 11: ''
 }
 const statusTypeTag = { 1: 'success', 0: 'warning', 2: 'info', 3: 'danger' }
 const statusName = { 1: '已通过', 0: '待审核', 2: '已拒绝', 3: '已下架' }
 
+// 获取资源类型中文名称
+function getResourceTypeName(type) {
+  if (typeof type === 'string' && resourceTypeName[type] !== undefined) {
+    return resourceTypeName[type]
+  }
+  const num = parseInt(type)
+  return resourceTypeName[num] || type || '未知'
+}
+
+// 获取当前资源的资源类型（中文）
+function getCurrentResourceType() {
+  return getResourceTypeName(currentResource.value?.resource_type)
+}
+
+// 获取标签列表
+function getTagsList(tags) {
+  if (!tags) return []
+  if (Array.isArray(tags)) return tags
+  if (typeof tags === 'string') {
+    try { return JSON.parse(tags) } catch { return [] }
+  }
+  return []
+}
+
 async function loadResource() {
   try {
-    const res = await getMyResources()
-    const resourceId = parseInt(route.params.id)
-    const found = (res.data || []).find(r => r.id === resourceId)
-    if (found) {
-      // 如果API返回的数据不够完整，补充本地字段
-      currentResource.value = {
-        ...found,
-        resource_type: found.resource_type || 1,
-        status: found.status || 1,
-        title: found.title || '资源详情',
-        tags: found.tags || []
-      }
+    // 使用专门的详情 API 获取完整信息
+    const res = await getResourceDetail(route.params.id)
+    const data = res.data || {}
+    // 后端已返回解析后的数组，直接使用
+    currentResource.value = {
+      ...data,
+      tags: Array.isArray(data.tags) ? data.tags : getTagsList(data.tags),
+      images: Array.isArray(data.images) ? data.images : getTagsList(data.images)
     }
+    console.log('Resource loaded:', currentResource.value)
   } catch (e) {
     console.error('加载资源失败', e)
   }
@@ -229,6 +368,8 @@ onMounted(() => {
 .info-value { font-size: 14px; color: #303133; }
 .description { color: #606266; line-height: 1.8; font-size: 14px; }
 .provide-block { background: #f0f9ff; border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 8px; font-size: 14px; color: #303133; }
+.image-gallery { display: flex; flex-wrap: wrap; gap: 12px; }
+.gallery-image { width: 150px; height: 150px; border-radius: 8px; cursor: pointer; }
 .comment-input { margin-bottom: 20px; }
 .comment-list { display: flex; flex-direction: column; gap: 16px; }
 .comment-item { display: flex; gap: 12px; }

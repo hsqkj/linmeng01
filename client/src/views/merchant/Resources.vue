@@ -31,7 +31,7 @@
       <el-table-column prop="title" label="资源标题" min-width="200" />
       <el-table-column prop="resource_type" label="资源类型" width="120">
         <template #default="{ row }">
-          <el-tag size="small">{{ row.resource_type }}</el-tag>
+          <el-tag size="small">{{ getResourceTypeName(row.resource_type) }}</el-tag>
         </template>
       </el-table-column>
       <el-table-column prop="status" label="状态" width="90">
@@ -65,38 +65,6 @@
         @current-change="onPageChange"
       />
     </div>
-
-    <!-- 编辑对话框 -->
-    <el-dialog v-model="showEdit" title="编辑资源" width="700px">
-      <el-form :model="editForm" label-width="110px">
-        <el-form-item label="资源标题" required>
-          <el-input v-model="editForm.title" placeholder="如：星巴克活动赞助计划" />
-        </el-form-item>
-        <el-form-item label="资源类型" required>
-          <el-select v-model="editForm.resource_type" style="width:100%">
-            <el-option v-for="t in resourceTypes" :key="t" :label="t" :value="t" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="资源说明">
-          <el-input v-model="editForm.content" type="textarea" :rows="3" placeholder="简要描述资源内容..." />
-        </el-form-item>
-        <el-form-item label="可提供内容">
-          <el-input v-model="editForm.provide_content" type="textarea" :rows="2" placeholder="如：活动资金1万~5万元，物资支持等" />
-        </el-form-item>
-        <el-form-item label="期望回报">
-          <el-input v-model="editForm.expected_return" type="textarea" :rows="2" placeholder="如：冠名权、展台位置、公众号推文等" />
-        </el-form-item>
-        <el-form-item label="标签">
-          <div class="tag-selector">
-            <el-check-tag v-for="t in allTags" :key="t" :checked="editForm.tags.includes(t)" @change="toggleTag(t)" style="margin:4px">{{ t }}</el-check-tag>
-          </div>
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="showEdit = false">取消</el-button>
-        <el-button type="primary" @click="saveEdit">保存</el-button>
-      </template>
-    </el-dialog>
   </div>
 </template>
 
@@ -109,20 +77,43 @@ import { getMyResources, updateResource, deleteResource as delResource } from '@
 
 const router = useRouter()
 
-const showEdit = ref(false)
 const filters = reactive({ keyword: '', status: '', type: '' })
-const resourceTypes = ['专业服务', '教育培训', '场地资源', '物资捐赠', '志愿服务', '资金赞助', '技术支持', '健康医疗', '活动赞助', '媒体宣传', '技能培训', '养老服务']
 const statusType = { 0: 'info', 1: 'success', 2: 'warning' }
 const statusLabel = { 0: '待审核', 1: '已发布', 2: '已下架' }
 const allTags = ['亲子活动', '老年服务', '文化活动', '体育赛事', '教育培训', '健康医疗', '科技科普', '节庆活动', '环保公益', '商业推广', '社区建设', '志愿服务']
+const customTag = ref('')
+
+// 资源类型映射（数字到中文）
+const resourceTypeName = {
+  0: '专业服务', 1: '教育培训', 2: '场地资源', 3: '物资捐赠',
+  4: '志愿服务', 5: '资金赞助', 6: '技术支持', 7: '健康医疗',
+  8: '活动赞助', 9: '媒体宣传', 10: '技能培训', 11: '养老服务'
+}
+
+// 获取资源类型中文名称
+function getResourceTypeName(type) {
+  if (typeof type === 'string' && resourceTypeName[type] !== undefined) {
+    return resourceTypeName[type]
+  }
+  const num = parseInt(type)
+  return resourceTypeName[num] || type || '未知'
+}
+
+// 获取标签列表
+function getTagsList(tags) {
+  if (!tags) return []
+  if (Array.isArray(tags)) return tags
+  if (typeof tags === 'string') {
+    try { return JSON.parse(tags) } catch { return [] }
+  }
+  return []
+}
 
 const myResources = ref([])
 const total = ref(0)
 const currentPage = ref(1)
 const pageSize = 10
 const loading = ref(false)
-
-const editForm = reactive({ id: null, title: '', resource_type: '', content: '', provide_content: '', expected_return: '', tags: [] })
 
 async function fetchMyResources() {
   loading.value = true
@@ -146,27 +137,8 @@ function viewDetail(row) {
 }
 
 function editResource(row) {
-  Object.assign(editForm, {
-    id: row.id,
-    title: row.title,
-    resource_type: row.resource_type,
-    content: row.content,
-    provide_content: row.provide_content,
-    expected_return: row.expected_return,
-    tags: typeof row.tags === 'string' ? JSON.parse(row.tags) : (row.tags || [])
-  })
-  showEdit.value = true
-}
-
-async function saveEdit() {
-  try {
-    await updateResource(editForm.id, editForm)
-    ElMessage.success('资源已更新')
-    showEdit.value = false
-    fetchMyResources()
-  } catch {
-    // handled by interceptor
-  }
+  // 跳转到独立编辑页面
+  router.push(`/merchant/resources/edit/${row.id}`)
 }
 
 async function toggleStatus(row, newStatus) {
@@ -190,12 +162,6 @@ async function deleteResource(row) {
   } catch {
     // user cancelled
   }
-}
-
-function toggleTag(tag) {
-  const idx = editForm.tags.indexOf(tag)
-  if (idx >= 0) editForm.tags.splice(idx, 1)
-  else editForm.tags.push(tag)
 }
 
 function doSearch() {
@@ -222,7 +188,6 @@ onMounted(() => {
 .page-header h2 { margin: 0; font-size: 22px; font-weight: 700; }
 .filter-bar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; align-items: center; }
 .pagination { margin-top: 20px; display: flex; justify-content: flex-end; }
-.tag-selector { display: flex; flex-wrap: wrap; }
 
 @media (max-width: 768px) {
   .page { padding-bottom: 70px; }

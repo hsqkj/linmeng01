@@ -81,17 +81,22 @@
               <el-button type="primary" text style="margin-top:12px" @click="startEdit">编辑照片</el-button>
             </el-tab-pane>
 
-            <!-- 图文介绍Tab（仅商家） -->
-            <el-tab-pane v-if="!isExpert" label="图文介绍" name="gallery">
-              <p style="color:#909399;font-size:13px;margin-bottom:12px">可上传商品图文介绍、成功案例等，让社区更了解您的品牌</p>
-              <el-empty v-if="!galleryList.length" description="暂无图文介绍" :image-size="60" />
-              <div v-else class="gallery-grid">
-                <div v-for="(img, idx) in galleryList" :key="idx" class="gallery-item">
-                  <el-image :src="img" fit="cover" style="width:100%;height:120px;border-radius:6px" />
-                  <div class="gallery-label">{{ idx + 1 }}</div>
+            <!-- 产品/服务介绍Tab（仅商家） -->
+            <el-tab-pane v-if="!isExpert" label="产品/服务" name="gallery">
+              <p style="color:#909399;font-size:13px;margin-bottom:12px">展示您的产品或服务，让社区更了解您的业务</p>
+              <el-empty v-if="!galleryList.length" description="暂无产品/服务介绍" :image-size="60" />
+              <div v-else class="products-list">
+                <div v-for="(product, idx) in galleryList" :key="idx" class="product-card">
+                  <div v-if="product.image" class="product-card-image">
+                    <el-image :src="product.image" fit="cover" style="width:100%;height:160px;border-radius:6px" :preview-src-list="product.image ? [product.image] : []" />
+                  </div>
+                  <div v-if="product.title || product.description" class="product-card-content">
+                    <h4 v-if="product.title" class="product-card-title">{{ product.title }}</h4>
+                    <p v-if="product.description" class="product-card-desc">{{ product.description }}</p>
+                  </div>
                 </div>
               </div>
-              <el-button type="primary" text style="margin-top:12px" @click="startEdit">添加/编辑图文</el-button>
+              <el-button type="primary" text style="margin-top:12px" @click="startEdit">编辑产品/服务</el-button>
             </el-tab-pane>
 
             <el-tab-pane label="我的标签" name="tags">
@@ -199,7 +204,7 @@
               <!-- 照片上传（专家有头像+身份证，商家只有Logo） -->
               <el-col v-if="isExpert" :span="24">
                 <el-form-item label="个人照片">
-                  <el-upload class="avatar-uploader" action="/api/public/upload" :show-file-list="false" :on-success="(r) => { editForm.logo = r.data?.url || r.url; }" accept="image/*">
+                  <el-upload class="avatar-uploader" action="/api/public/upload" :show-file-list="false" :on-success="(r) => { editForm.logo = r.data?.url || r.url; }" accept="image/*" name="image">
                     <el-avatar :size="80" :src="editForm.logo" v-if="editForm.logo" />
                     <div v-else class="upload-placeholder">
                       <el-icon :size="24"><Plus /></el-icon>
@@ -210,7 +215,7 @@
               </el-col>
               <el-col v-if="isExpert" :span="24">
                 <el-form-item label="身份证照片">
-                  <el-upload action="/api/public/upload" :show-file-list="false" :on-success="(r) => { editForm.idCardPhoto = r.data?.url || r.url; }" accept="image/*">
+                  <el-upload action="/api/public/upload" :show-file-list="false" :on-success="(r) => { editForm.idCardPhoto = r.data?.url || r.url; }" accept="image/*" name="image">
                     <div class="upload-placeholder" style="width:180px;height:110px">
                       <template v-if="editForm.idCardPhoto">
                         <el-image :src="editForm.idCardPhoto" style="width:100%;height:100%;border-radius:6px" fit="cover" />
@@ -225,17 +230,62 @@
               </el-col>
               <el-col v-if="!isExpert" :span="24">
                 <el-form-item label="企业Logo">
-                  <el-input v-model="editForm.logo" placeholder="输入Logo图片URL" />
-                  <div v-if="editForm.logo" style="margin-top:8px">
-                    <el-avatar :size="48" :src="editForm.logo" />
-                  </div>
+                  <el-upload class="avatar-uploader" action="/api/public/upload" :show-file-list="false" :on-success="(r) => { editForm.logo = r.data?.url || r.url; }" accept="image/*" name="image">
+                    <el-avatar :size="80" :src="editForm.logo" v-if="editForm.logo" />
+                    <div v-else class="upload-placeholder">
+                      <el-icon :size="24"><Plus /></el-icon>
+                      <span>上传Logo</span>
+                    </div>
+                  </el-upload>
                 </el-form-item>
               </el-col>
               <el-col v-if="!isExpert" :span="24">
-                <el-form-item label="图文介绍">
-                  <el-input v-model="editForm.imagesStr" type="textarea" :rows="2" placeholder="输入图片URL，多个用英文逗号分隔" />
-                  <div v-if="editForm.imagesList && editForm.imagesList.length" style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
-                    <el-image v-for="(img,idx) in editForm.imagesList" :key="idx" :src="img" fit="cover" style="width:60px;height:60px;border-radius:6px" />
+                <el-form-item label="营业执照">
+                  <div v-if="editForm.business_license" style="display:flex;align-items:center;gap:12px">
+                    <el-image :src="editForm.business_license" style="width:160px;height:100px;border-radius:6px" fit="cover" :preview-src-list="[editForm.business_license]" />
+                    <span style="color:#909399;font-size:12px">营业执照不可修改</span>
+                  </div>
+                  <span v-else style="color:#909399">暂无营业执照</span>
+                </el-form-item>
+              </el-col>
+              <el-col v-if="!isExpert" :span="24">
+                <el-form-item label="产品/服务介绍">
+                  <div class="products-editor">
+                    <div v-for="(product, idx) in editForm.products" :key="idx" class="product-item">
+                      <div class="product-header">
+                        <span class="product-num">产品 {{ idx + 1 }}</span>
+                        <el-button text type="danger" size="small" @click="removeProduct(idx)" :disabled="editForm.products.length <= 1">
+                          <el-icon><Delete /></el-icon> 删除
+                        </el-button>
+                      </div>
+                      <div class="product-body">
+                        <el-input v-model="product.title" placeholder="产品/服务名称（选填）" style="margin-bottom:8px" />
+                        <el-input v-model="product.description" type="textarea" :rows="2" placeholder="产品/服务详细介绍（选填）" style="margin-bottom:8px" />
+                        <div class="product-image-upload">
+                          <el-upload
+                            action="/api/public/upload"
+                            :show-file-list="false"
+                            :on-success="(r) => { product.image = r.data?.url || r.url; }"
+                            accept="image/*"
+                            name="image"
+                          >
+                            <div v-if="product.image" class="product-image-preview">
+                              <el-image :src="product.image" style="width:100%;height:100%;border-radius:6px" fit="cover" />
+                              <div class="product-image-mask">
+                                <el-icon><Edit /></el-icon> 更换图片
+                              </div>
+                            </div>
+                            <div v-else class="product-image-placeholder">
+                              <el-icon :size="24"><Plus /></el-icon>
+                              <span>上传图片</span>
+                            </div>
+                          </el-upload>
+                        </div>
+                      </div>
+                    </div>
+                    <el-button type="primary" plain @click="addProduct" style="margin-top:8px">
+                      <el-icon><Plus /></el-icon> 添加产品/服务
+                    </el-button>
                   </div>
                 </el-form-item>
               </el-col>
@@ -244,20 +294,20 @@
                   <el-input v-model="editForm.description" type="textarea" :rows="3" :placeholder="isExpert ? '介绍您的专业背景、擅长领域等...' : '简要介绍企业主营业务、优势等...'" />
                 </el-form-item>
               </el-col>
-              <!-- 专家独有字段 -->
-              <el-col v-if="isExpert" :span="24">
+              <!-- 企业身份字段 -->
+              <el-col :span="24">
                 <el-form-item label="社会身份">
                   <el-input v-model="editForm.social_identity" type="textarea" :rows="2" placeholder="如：XX协会会员、XX机构合作方等" />
                 </el-form-item>
               </el-col>
-              <el-col v-if="isExpert" :span="24">
+              <el-col :span="24">
                 <el-form-item label="荣誉资质">
-                  <el-input v-model="editForm.honors" type="textarea" :rows="2" placeholder="如：2024年度最具社会责任感专家、XX行业标杆等" />
+                  <el-input v-model="editForm.honors" type="textarea" :rows="2" placeholder="如：行业认证、荣誉证书、社会荣誉等" />
                 </el-form-item>
               </el-col>
-              <el-col v-if="isExpert" :span="24">
-                <el-form-item label="专家介绍">
-                  <el-input v-model="editForm.expert_intro" type="textarea" :rows="2" placeholder="介绍您的专业背景、擅长领域、代表案例等" />
+              <el-col :span="24">
+                <el-form-item label="公司专家介绍">
+                  <el-input v-model="editForm.expert_intro" type="textarea" :rows="3" placeholder="介绍公司的专家团队、专业背景、擅长领域等" />
                 </el-form-item>
               </el-col>
             </el-row>
@@ -288,7 +338,7 @@
 import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Shop, Edit, Star, Plus } from '@element-plus/icons-vue'
+import { Shop, Edit, Star, Plus, Delete } from '@element-plus/icons-vue'
 import { getProfile, updateProfile, getMyResources, toggleFavorite, getMyFavorites, getExpertTypes } from '@/api/merchant'
 
 const router = useRouter()
@@ -367,10 +417,26 @@ const galleryList = computed(() => {
   if (!profile.value.images) return []
   if (isExpert.value) return [] // 专家照片走 idCardImages
   const images = profile.value.images
-  // 如果已经是数组，直接返回
+  // 如果是产品对象数组
+  if (Array.isArray(images) && images.length > 0 && typeof images[0] === 'object') {
+    return images.filter(p => p.image || p.title || p.description)
+  }
+  // 如果是纯图片数组
   if (Array.isArray(images)) return images.filter(Boolean)
-  // 如果是字符串，按逗号分割
-  if (typeof images === 'string') return images.split(',').filter(Boolean)
+  // 如果是字符串，尝试解析JSON
+  if (typeof images === 'string') {
+    try {
+      const parsed = JSON.parse(images)
+      if (Array.isArray(parsed)) {
+        if (parsed.length > 0 && typeof parsed[0] === 'object') {
+          return parsed.filter(p => p.image || p.title || p.description)
+        }
+        return parsed.filter(Boolean)
+      }
+    } catch {}
+    // 旧格式逗号分隔
+    return images.split(',').filter(Boolean)
+  }
   return []
 })
 
@@ -382,14 +448,15 @@ const editForm = ref({
   phone: '',
   address: '',
   logo: '',
+  business_license: '',
   idCardPhoto: '',
-  imagesStr: '',
-  imagesList: [],
   description: '',
   social_identity: '',
   honors: '',
   expert_intro: '',
-  tagsList: []
+  tagsList: [],
+  // 产品/服务介绍
+  products: []
 })
 
 async function loadProfile() {
@@ -415,7 +482,30 @@ function startEdit() {
   const tags = profile.value.tags
   const tagsArray = Array.isArray(tags) ? tags : (typeof tags === 'string' && tags ? (tags.startsWith('[') ? JSON.parse(tags) : tags.split(',')) : [])
   const images = profile.value.images
-  const imagesArray = Array.isArray(images) ? images : (typeof images === 'string' && images ? (images.startsWith('[') ? JSON.parse(images).filter(Boolean) : images.split(',').filter(Boolean)) : [])
+  // 解析产品/服务介绍
+  let products = []
+  if (images) {
+    if (Array.isArray(images)) {
+      // 如果是数组，可能是产品列表
+      if (images.length > 0 && typeof images[0] === 'object') {
+        products = images
+      } else {
+        // 旧格式的纯图片数组，转为简单格式
+        products = images.filter(Boolean).map(img => ({ title: '', description: '', image: img }))
+      }
+    } else if (typeof images === 'string' && images.startsWith('[')) {
+      try {
+        const parsed = JSON.parse(images)
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          if (typeof parsed[0] === 'object') {
+            products = parsed
+          } else {
+            products = parsed.filter(Boolean).map(img => ({ title: '', description: '', image: img }))
+          }
+        }
+      } catch {}
+    }
+  }
 
   editForm.value = {
     company_name: profile.value.company_name || '',
@@ -425,14 +515,14 @@ function startEdit() {
     phone: profile.value.phone || '',
     address: profile.value.address || '',
     logo: profile.value.logo || '',
-    idCardPhoto: isExpert.value ? (imagesArray[0] || '') : '',
-    imagesStr: imagesArray.join(','),
-    imagesList: imagesArray,
+    business_license: profile.value.business_license || '',
+    idCardPhoto: '',
     description: profile.value.description || '',
     social_identity: profile.value.social_identity || '',
     honors: profile.value.honors || '',
     expert_intro: profile.value.expert_intro || '',
-    tagsList: tagsArray
+    tagsList: tagsArray,
+    products: products.length > 0 ? products : [{ title: '', description: '', image: '' }]
   }
   editing.value = true
   infoTab.value = 'basic'
@@ -442,6 +532,18 @@ function toggleTag(tag) {
   const idx = editForm.value.tagsList.indexOf(tag)
   if (idx >= 0) editForm.value.tagsList.splice(idx, 1)
   else editForm.value.tagsList.push(tag)
+}
+
+// 添加产品/服务
+function addProduct() {
+  editForm.value.products.push({ title: '', description: '', image: '' })
+}
+
+// 删除产品/服务
+function removeProduct(index) {
+  if (editForm.value.products.length > 1) {
+    editForm.value.products.splice(index, 1)
+  }
 }
 
 async function saveProfile() {
@@ -467,7 +569,9 @@ async function saveProfile() {
     if (!isExpert.value) {
       data.scale = editForm.value.scale
       data.address = editForm.value.address
-      data.images = editForm.value.imagesStr.split(',').map(s => s.trim()).filter(Boolean).join(',')
+      // 产品/服务介绍：过滤空产品后保存为JSON
+      const validProducts = editForm.value.products.filter(p => p.title || p.description || p.image)
+      data.images = JSON.stringify(validProducts)
     }
     // 专家身份证照片
     if (isExpert.value && editForm.value.idCardPhoto) {
@@ -574,6 +678,28 @@ watch(infoTab, (newTab) => {
 .fav-desc { font-size: 13px; color: #606266; margin: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .upload-placeholder { width: 80px; height: 80px; border: 1px dashed #dcdfe6; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #909399; cursor: pointer; font-size: 12px; gap: 4px; transition: border-color 0.2s; }
 .upload-placeholder:hover { border-color: #409EFF; color: #409EFF; }
+
+/* 产品/服务编辑样式 */
+.products-editor { display: flex; flex-direction: column; gap: 16px; }
+.product-item { background: #f5f7fa; border-radius: 8px; padding: 16px; }
+.product-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.product-num { font-weight: 600; color: #303133; }
+.product-body { display: flex; flex-direction: column; gap: 8px; }
+.product-image-upload { width: 120px; }
+.product-image-placeholder { width: 120px; height: 80px; border: 1px dashed #dcdfe6; border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #909399; cursor: pointer; font-size: 12px; gap: 4px; }
+.product-image-placeholder:hover { border-color: #409EFF; color: #409EFF; }
+.product-image-preview { width: 120px; height: 80px; border-radius: 6px; overflow: hidden; position: relative; cursor: pointer; }
+.product-image-mask { position: absolute; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 12px; opacity: 0; transition: opacity 0.2s; }
+.product-image-preview:hover .product-image-mask { opacity: 1; }
+
+/* 产品列表展示样式 */
+.products-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
+.product-card { background: #fff; border: 1px solid #ebeef5; border-radius: 8px; overflow: hidden; transition: box-shadow 0.2s; }
+.product-card:hover { box-shadow: 0 2px 12px rgba(0,0,0,0.1); }
+.product-card-image { width: 100%; }
+.product-card-content { padding: 12px; }
+.product-card-title { font-size: 14px; font-weight: 600; color: #303133; margin: 0 0 8px; }
+.product-card-desc { font-size: 13px; color: #606266; margin: 0; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 
 @media (max-width: 768px) {
   .page { padding-bottom: 70px; }

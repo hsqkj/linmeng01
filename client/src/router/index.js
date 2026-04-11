@@ -85,6 +85,7 @@ const routes = [
       { path: 'resources', name: 'MerchantResources', component: () => import('@/views/merchant/Resources.vue') },
       { path: 'resources/:id', name: 'ResourceDetail', component: () => import('@/views/merchant/ResourceDetail.vue') },
       { path: 'resources/publish', name: 'PublishResource', component: () => import('@/views/merchant/PublishResource.vue') },
+      { path: 'resources/edit/:id', name: 'EditResource', component: () => import('@/views/merchant/EditResource.vue') },
       { path: 'demands', name: 'MerchantDemands', component: () => import('@/views/merchant/Demands.vue') },
       { path: 'demands/:id', name: 'DemandDetail', component: () => import('@/views/merchant/DemandDetail.vue') },
       { path: 'profile', name: 'MerchantProfile', component: () => import('@/views/merchant/Profile.vue') },
@@ -145,7 +146,8 @@ const routes = [
       { path: 'config/ambassador', name: 'AdminConfigAmbassador', component: () => import('@/views/admin/ConfigAmbassador.vue') },
       { path: 'config/anti-flying', name: 'AdminConfigAntiFlying', component: () => import('@/views/admin/ConfigAntiFlying.vue') },
       { path: 'config/audit', name: 'AdminConfigAudit', component: () => import('@/views/admin/ConfigAudit.vue') },
-      { path: 'config/admin', name: 'AdminConfigAdmin', component: () => import('@/views/admin/ConfigAdmin.vue') }
+      { path: 'config/admin', name: 'AdminConfigAdmin', component: () => import('@/views/admin/ConfigAdmin.vue') },
+      { path: 'config/service', name: 'AdminConfigService', component: () => import('@/views/admin/ConfigService.vue') }
     ]
   }
 ]

@@ -26,6 +26,7 @@ router.post('/ambassador/apply', PublicController.applyAmbassador)
 
 // 图片上传
 router.post('/upload/image', PublicController.uploadImage)
+router.post('/upload', PublicController.uploadImage)  // 别名
 
 // 发布页类型配置
 router.get('/publish-types', PublicController.getPublishTypes)

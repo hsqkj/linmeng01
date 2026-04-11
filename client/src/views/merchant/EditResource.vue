@@ -1,8 +1,8 @@
 <template>
-  <div class="publish-resource">
+  <div class="edit-resource">
     <div class="page-header">
       <el-button text @click="$router.back()"><el-icon><ArrowLeft /></el-icon> 返回</el-button>
-      <h2>发布商家资源</h2>
+      <h2>编辑商家资源</h2>
     </div>
 
     <el-steps :active="activeStep" finish-status="success" class="steps">
@@ -100,7 +100,7 @@
           </el-form-item>
         </template>
 
-        <!-- 人力支持/志愿服务 -->
+        <!-- 人力支持 -->
         <template v-if="form.resource_type === '志愿服务'">
           <el-row :gutter="16">
             <el-col :span="8">
@@ -196,6 +196,228 @@
           </el-form-item>
         </template>
 
+        <!-- 教育培训 -->
+        <template v-if="form.resource_type === '教育培训'">
+          <el-form-item label="培训类型（可多选）">
+            <el-checkbox-group v-model="form.eduTypes">
+              <el-checkbox label="skill">技能培训</el-checkbox>
+              <el-checkbox label="culture">文化艺术</el-checkbox>
+              <el-checkbox label="health">健康养生</el-checkbox>
+              <el-checkbox label="science">科技科普</el-checkbox>
+              <el-checkbox label="finance">金融理财</el-checkbox>
+              <el-checkbox label="legal">法律常识</el-checkbox>
+            </el-checkbox-group>
+          </el-form-item>
+          <el-form-item label="培训内容描述" required>
+            <el-input v-model="form.eduDesc" type="textarea" :rows="4" placeholder="详细说明可提供的培训内容，如：课程名称、课时安排、适合人群、预期效果等" />
+          </el-form-item>
+          <el-row :gutter="16">
+            <el-col :span="12">
+              <el-form-item label="服务范围">
+                <el-select v-model="form.serviceScope" style="width:100%">
+                  <el-option label="全市" value="city" />
+                  <el-option label="本区" value="district" />
+                  <el-option label="线上" value="online" />
+                </el-select>
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="收费标准">
+                <el-select v-model="form.pricingType" style="width:100%">
+                  <el-option label="免费" value="free" />
+                  <el-option label="优惠价" value="discount" />
+                  <el-option label="市场价" value="market" />
+                </el-select>
+              </el-form-item>
+            </el-col>
+          </el-row>
+        </template>
+
+        <!-- 场地资源 -->
+        <template v-if="form.resource_type === '场地资源'">
+          <el-form-item label="场地名称" required>
+            <el-input v-model="form.spaceName" placeholder="如：社区活动中心三楼会议室" />
+          </el-form-item>
+          <el-row :gutter="16">
+            <el-col :span="12">
+              <el-form-item label="场地面积（平米）">
+                <el-input-number v-model="form.spaceArea" :min="0" style="width:100%" />
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="可容纳人数">
+                <el-input-number v-model="form.capacity" :min="0" style="width:100%" />
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-form-item label="场地类型（可多选）">
+            <el-checkbox-group v-model="form.spaceTypes">
+              <el-checkbox label="meeting">会议室</el-checkbox>
+              <el-checkbox label="activity">活动室</el-checkbox>
+              <el-checkbox label="sports">运动场地</el-checkbox>
+              <el-checkbox label="outdoor">户外场地</el-checkbox>
+              <el-checkbox label="parking">停车场</el-checkbox>
+            </el-checkbox-group>
+          </el-form-item>
+          <el-form-item label="设施配套">
+            <el-checkbox-group v-model="form.facilities">
+              <el-checkbox label="projector">投影仪</el-checkbox>
+              <el-checkbox label="audio">音响设备</el-checkbox>
+              <el-checkbox label="ac">空调</el-checkbox>
+              <el-checkbox label="wifi">WiFi</el-checkbox>
+              <el-checkbox label="parking_fac">停车位</el-checkbox>
+            </el-checkbox-group>
+          </el-form-item>
+          <el-form-item label="开放时间">
+            <el-input v-model="form.openHours" placeholder="如：周一至周五 9:00-18:00" />
+          </el-form-item>
+          <el-form-item label="场地使用说明" required>
+            <el-input v-model="form.spaceUsageDesc" type="textarea" :rows="4" placeholder="详细说明场地使用规则、注意事项等" />
+          </el-form-item>
+        </template>
+
+        <!-- 健康医疗 -->
+        <template v-if="form.resource_type === '健康医疗'">
+          <el-form-item label="服务类型（可多选）">
+            <el-checkbox-group v-model="form.healthTypes">
+              <el-checkbox label="checkup">健康体检</el-checkbox>
+              <el-checkbox label="consult">健康咨询</el-checkbox>
+              <el-checkbox label="lecture">健康讲座</el-checkbox>
+              <el-checkbox label="nursing">护理服务</el-checkbox>
+              <el-checkbox label="rehab">康复训练</el-checkbox>
+            </el-checkbox-group>
+          </el-form-item>
+          <el-form-item label="服务描述" required>
+            <el-input v-model="form.healthDesc" type="textarea" :rows="4" placeholder="详细说明可提供的健康医疗服务内容" />
+          </el-form-item>
+          <el-form-item label="资质证明">
+            <el-input v-model="form.qualification" type="textarea" :rows="3" placeholder="如：执业医师资格证、护士证等" />
+          </el-form-item>
+          <el-row :gutter="16">
+            <el-col :span="12">
+              <el-form-item label="服务范围">
+                <el-select v-model="form.serviceScope" style="width:100%">
+                  <el-option label="全市" value="city" />
+                  <el-option label="本区" value="district" />
+                </el-select>
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="收费标准">
+                <el-select v-model="form.pricingType" style="width:100%">
+                  <el-option label="免费" value="free" />
+                  <el-option label="优惠价" value="discount" />
+                  <el-option label="市场价" value="market" />
+                </el-select>
+              </el-form-item>
+            </el-col>
+          </el-row>
+        </template>
+
+        <!-- 活动赞助 -->
+        <template v-if="form.resource_type === '活动赞助'">
+          <el-form-item label="赞助类型（可多选）">
+            <el-checkbox-group v-model="form.eventTypes">
+              <el-checkbox label="planning">活动策划</el-checkbox>
+              <el-checkbox label="materials">活动物料</el-checkbox>
+              <el-checkbox label="catering">餐饮支持</el-checkbox>
+              <el-checkbox label="prize">奖品奖品</el-checkbox>
+              <el-checkbox label="decoration">场地布置</el-checkbox>
+            </el-checkbox-group>
+          </el-form-item>
+          <el-row :gutter="16">
+            <el-col :span="12">
+              <el-form-item label="赞助预算范围（元）">
+                <el-input-number v-model="form.min_amount" :min="0" style="width:100%" />
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="最高预算（元）">
+                <el-input-number v-model="form.max_amount" :min="0" style="width:100%" />
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-form-item label="赞助说明" required>
+            <el-input v-model="form.eventDesc" type="textarea" :rows="4" placeholder="详细说明可提供的活动赞助内容" />
+          </el-form-item>
+        </template>
+
+        <!-- 技能培训 -->
+        <template v-if="form.resource_type === '技能培训'">
+          <el-form-item label="技能类型（可多选）">
+            <el-checkbox-group v-model="form.skillTypes">
+              <el-checkbox label="cooking">烹饪美食</el-checkbox>
+              <el-checkbox label="handcraft">手工制作</el-checkbox>
+              <el-checkbox label="it">电脑技术</el-checkbox>
+              <el-checkbox label="beauty">美容美发</el-checkbox>
+              <el-checkbox label="fitness">健身指导</el-checkbox>
+              <el-checkbox label="gardening">园艺绿化</el-checkbox>
+            </el-checkbox-group>
+          </el-form-item>
+          <el-form-item label="培训内容描述" required>
+            <el-input v-model="form.skillDesc" type="textarea" :rows="4" placeholder="详细说明可提供的技能培训内容" />
+          </el-form-item>
+          <el-row :gutter="16">
+            <el-col :span="12">
+              <el-form-item label="服务范围">
+                <el-select v-model="form.serviceScope" style="width:100%">
+                  <el-option label="全市" value="city" />
+                  <el-option label="本区" value="district" />
+                  <el-option label="线上" value="online" />
+                </el-select>
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="收费标准">
+                <el-select v-model="form.pricingType" style="width:100%">
+                  <el-option label="免费" value="free" />
+                  <el-option label="优惠价" value="discount" />
+                  <el-option label="市场价" value="market" />
+                </el-select>
+              </el-form-item>
+            </el-col>
+          </el-row>
+        </template>
+
+        <!-- 养老服务 -->
+        <template v-if="form.resource_type === '养老服务'">
+          <el-form-item label="服务类型（可多选）">
+            <el-checkbox-group v-model="form.elderTypes">
+              <el-checkbox label="care">日常照护</el-checkbox>
+              <el-checkbox label="medical">医疗陪护</el-checkbox>
+              <el-checkbox label="rehab">康复理疗</el-checkbox>
+              <el-checkbox label="meal">助餐服务</el-checkbox>
+              <el-checkbox label="clean">助洁服务</el-checkbox>
+              <el-checkbox label="activity">文娱活动</el-checkbox>
+            </el-checkbox-group>
+          </el-form-item>
+          <el-form-item label="服务描述" required>
+            <el-input v-model="form.elderDesc" type="textarea" :rows="4" placeholder="详细说明可提供的养老服务内容" />
+          </el-form-item>
+          <el-form-item label="资质证明">
+            <el-input v-model="form.qualification" type="textarea" :rows="3" placeholder="如：养老护理员证、健康证等" />
+          </el-form-item>
+          <el-row :gutter="16">
+            <el-col :span="12">
+              <el-form-item label="服务范围">
+                <el-select v-model="form.serviceScope" style="width:100%">
+                  <el-option label="全市" value="city" />
+                  <el-option label="本区" value="district" />
+                </el-select>
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="收费标准">
+                <el-select v-model="form.pricingType" style="width:100%">
+                  <el-option label="免费" value="free" />
+                  <el-option label="优惠价" value="discount" />
+                  <el-option label="市场价" value="market" />
+                </el-select>
+              </el-form-item>
+            </el-col>
+          </el-row>
+        </template>
+
         <!-- 通用字段 -->
         <el-divider />
         <el-form-item label="详细介绍" required>
@@ -257,7 +479,7 @@
 
       <!-- 步骤4：提交 -->
       <div v-if="activeStep === 3" class="step-content">
-        <el-result icon="success" title="资源信息填写完成！" sub-title="提交后将进入审核队列（通常4小时内完成）">
+        <el-result icon="success" title="资源信息编辑完成！" sub-title="提交后将重新进入审核队列（通常4小时内完成）">
           <template #extra>
             <div class="preview-card">
               <div class="preview-item"><span class="label">资源类型：</span>{{ resourceTypeLabel }}</div>
@@ -287,16 +509,18 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { ArrowLeft, Plus, Check, Warning } from '@element-plus/icons-vue'
-import { createResource } from '@/api/merchant'
+import { getMyResources, updateResource } from '@/api/merchant'
 import { uploadImage } from '@/api/public'
 
 const router = useRouter()
+const route = useRoute()
 const activeStep = ref(0)
 const submitting = ref(false)
 const customTag = ref('')
+const resourceId = ref(null)
 
 // 发布类型配置 - 从后端API加载
 const resourceTypes = ref([
@@ -319,13 +543,61 @@ const merchantTagOptions = ref(['连锁品牌', '本地企业', '上市公司', 
 const communityTypeOptions = ref([])
 const expectedRewardOptions = ref(['活动冠名权', '现场展台', '社区公众号宣传', '业主群推送', '荣誉证书', '现场横幅', '宣传栏展示', '主持人口播', '媒体报道', '感谢状'])
 
+// 资源类型映射（数字到中文）
+const resourceTypeName = {
+  0: '专业服务', 1: '教育培训', 2: '场地资源', 3: '物资捐赠',
+  4: '志愿服务', 5: '资金赞助', 6: '技术支持', 7: '健康医疗',
+  8: '活动赞助', 9: '媒体宣传', 10: '技能培训', 11: '养老服务'
+}
+
+// 获取资源类型中文名称
+function getResourceTypeName(type) {
+  if (typeof type === 'string' && resourceTypeName[type] !== undefined) {
+    return resourceTypeName[type]
+  }
+  const num = parseInt(type)
+  return resourceTypeName[num] || type || '未知'
+}
+
+// 获取标签列表
+function getTagsList(tags) {
+  if (!tags) return []
+  if (Array.isArray(tags)) return tags
+  if (typeof tags === 'string') {
+    try { return JSON.parse(tags) } catch { return [] }
+  }
+  return []
+}
+
+// 获取图片列表（转换为 el-upload 需要的对象格式）
+function getImagesList(images) {
+  if (!images) return []
+  let list = []
+  if (Array.isArray(images)) {
+    list = images
+  } else if (typeof images === 'string') {
+    try { list = JSON.parse(images) } catch { list = [] }
+  }
+  if (!Array.isArray(list)) return []
+  
+  // 转换为 el-upload 需要的对象格式：{ name, url }
+  return list.map((img, idx) => {
+    if (typeof img === 'string') {
+      return { name: `image_${idx + 1}`, url: img }
+    }
+    if (typeof img === 'object' && img.url) {
+      return { name: img.name || `image_${idx + 1}`, url: img.url }
+    }
+    return null
+  }).filter(Boolean)
+}
+
 async function loadPublishTypes() {
   try {
     const { getPublishTypes } = await import('@/api/merchant')
     const res = await getPublishTypes()
     const data = res.data || {}
     if (data.merchant_tags) merchantTagOptions.value = data.merchant_tags
-    // 加载资源类型配置
     if (data.resource_types && data.resource_types.length > 0) {
       const typeConfig = {
         '专业服务': { icon: '🎓', desc: '咨询、法律、设计等专业服务' },
@@ -348,7 +620,6 @@ async function loadPublishTypes() {
         desc: typeConfig[name]?.desc || ''
       }))
     }
-    // 加载社区类型配置
     if (data.community_types && data.community_types.length > 0) {
       communityTypeOptions.value = data.community_types
     }
@@ -357,8 +628,111 @@ async function loadPublishTypes() {
   }
 }
 
+async function loadResource() {
+  try {
+    const res = await getMyResources({ page: 1, pageSize: 100 })
+    const list = res.data?.list || res.data || []
+    const resource = list.find(r => r.id === parseInt(route.params.id))
+    if (!resource) {
+      ElMessage.error('资源不存在')
+      router.push('/merchant/resources')
+      return
+    }
+    
+    resourceId.value = resource.id
+    
+    // 获取资源类型中文名
+    const typeName = getResourceTypeName(resource.resource_type)
+    
+    // 直接更新 form.value 的各个属性，保持响应式
+    const f = form.value
+    f.resource_type = typeName
+    f.title = resource.title || ''
+    f.content = resource.content || ''
+    f.tags = getTagsList(resource.tags)
+    f.resourceImages = getImagesList(resource.images)
+    
+    // 资金赞助
+    f.min_amount = resource.min_amount || 0
+    f.max_amount = resource.max_amount || 0
+    f.fundScenes = getTagsList(resource.fund_scenes)
+    
+    // 物资捐赠
+    f.goodsDetail = resource.specs || ''
+    f.goodsExpiry = resource.goods_expiry || ''
+    f.pickup_way = resource.pickup_way || 'both'
+    f.goodsImages = getImagesList(resource.goods_images)
+    
+    // 人力支持
+    f.staff_count = resource.staff_count || 0
+    f.work_duration = resource.work_duration || 0
+    f.manpowerDesc = resource.skill_requirements || ''
+    
+    // 技术支持
+    f.techTypes = getTagsList(resource.tech_types)
+    f.techDesc = ''
+    f.techServiceType = resource.tech_service_type || 'both'
+    
+    // 专业服务
+    f.professionalType = resource.professional_type || ''
+    f.qualification = resource.certification || ''
+    f.serviceScope = resource.service_scope || 'city'
+    f.pricingType = resource.price_range || 'free'
+    
+    // 媒体报道
+    f.mediaChannels = getTagsList(resource.media_channels)
+    f.mediaDesc = ''
+    
+    // 教育培训
+    f.eduTypes = []
+    f.eduDesc = ''
+    
+    // 场地资源
+    f.spaceName = resource.space_name || ''
+    f.spaceArea = resource.space_area || 0
+    f.capacity = resource.capacity || 0
+    f.spaceTypes = getTagsList(resource.space_types)
+    f.facilities = getTagsList(resource.facilities)
+    f.openHours = resource.open_hours || ''
+    f.spaceUsageDesc = resource.space_usage_desc || ''
+    
+    // 健康医疗
+    f.healthTypes = []
+    f.healthDesc = ''
+    
+    // 活动赞助
+    f.eventTypes = getTagsList(resource.event_types)
+    f.eventDesc = ''
+    
+    // 技能培训
+    f.skillTypes = []
+    f.skillDesc = ''
+    
+    // 养老服务
+    f.elderTypes = []
+    f.elderDesc = ''
+    
+    // 期望回报
+    f.expectedRewards = getTagsList(resource.expected_rewards)
+    f.expectedRewardDesc = resource.expected_reward_desc || ''
+    f.targetCommunityTypes = ['any']
+    f.validUntil = resource.valid_until || ''
+    
+    console.log('Resource loaded, type:', typeName, 'form:', JSON.stringify({
+      resource_type: f.resource_type,
+      title: f.title,
+      content: f.content
+    }))
+  } catch (err) {
+    console.error('Load resource error:', err)
+    ElMessage.error('加载资源失败')
+    router.push('/merchant/resources')
+  }
+}
+
 onMounted(() => {
   loadPublishTypes()
+  loadResource()
 })
 
 const form = ref({
@@ -369,6 +743,12 @@ const form = ref({
   techTypes: [], techDesc: '', techServiceType: 'both',
   professionalType: '', qualification: '', serviceScope: 'city', pricingType: 'free',
   mediaChannels: [], mediaDesc: '',
+  eduTypes: [], eduDesc: '',
+  spaceName: '', spaceArea: 0, capacity: 0, spaceTypes: [], facilities: [], openHours: '', spaceUsageDesc: '',
+  healthTypes: [], healthDesc: '',
+  eventTypes: [], eventDesc: '',
+  skillTypes: [], skillDesc: '',
+  elderTypes: [], elderDesc: '',
   expectedRewards: [], expectedRewardDesc: '', targetCommunityTypes: ['any'], validUntil: ''
 })
 
@@ -434,7 +814,7 @@ async function submitResource() {
     for (const img of (form.value.resourceImages || [])) {
       if (!img) continue
       if (img.url && img.url.startsWith('blob:') && img.raw) {
-        // 本地文件，需要上传
+        // 本地新选文件，需要上传
         const res = await uploadImage(img.raw)
         if (res.data && res.data.url) {
           uploadedImages.push('http://localhost:3000' + res.data.url)
@@ -449,7 +829,7 @@ async function submitResource() {
       resource_type: form.value.resource_type,
       title: form.value.title,
       // 内容：合并所有类型的内容描述
-      content: form.value.content || form.value.manpowerDesc || form.value.goodsDetail || form.value.techDesc || form.value.mediaDesc || '',
+      content: form.value.content || form.value.manpowerDesc || form.value.goodsDetail || form.value.techDesc || form.value.mediaDesc || form.value.eduDesc || form.value.spaceUsageDesc || form.value.healthDesc || form.value.eventDesc || form.value.skillDesc || form.value.elderDesc || '',
       tags: form.value.tags,
       images: uploadedImages,
       // 资金赞助
@@ -464,6 +844,7 @@ async function submitResource() {
       // 人力支持
       staff_count: form.value.staff_count || 0,
       work_duration: form.value.work_duration || 0,
+      skill_requirements: form.value.manpowerDesc || '',
       // 技术支持
       tech_types: form.value.techTypes || [],
       tech_service_type: form.value.techServiceType || '',
@@ -481,8 +862,8 @@ async function submitResource() {
       expected_rewards: form.value.expectedRewards || [],
       expected_reward_desc: form.value.expectedRewardDesc || ''
     }
-    await createResource(data)
-    ElMessage.success('资源已提交审核！审核通过后将推送给匹配社区')
+    await updateResource(resourceId.value, data)
+    ElMessage.success('资源已更新，提交审核！')
     setTimeout(() => router.push('/merchant/resources'), 1500)
   } catch (err) {
     ElMessage.error('提交失败，请重试')
@@ -493,7 +874,7 @@ async function submitResource() {
 </script>
 
 <style scoped>
-.publish-resource { max-width: 800px; margin: 0 auto; padding: 20px; }
+.edit-resource { max-width: 800px; margin: 0 auto; padding: 20px; }
 .page-header { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
 .page-header h2 { flex: 1; margin: 0; font-size: 22px; font-weight: 700; }
 .steps { margin-bottom: 32px; }

@@ -99,7 +99,7 @@
                     <div class="fav-info">
                       <div class="fav-title">{{ item.resource_title || item.title }}</div>
                       <div class="fav-meta">
-                        <el-tag size="small" type="info">{{ item.resource_type }}</el-tag>
+                        <el-tag size="small" type="info">{{ getResourceTypeName(item.resource_type) }}</el-tag>
                         <span class="fav-merchant">{{ item.company_name }}</span>
                       </div>
                     </div>
@@ -353,6 +353,15 @@ const rewardPage = ref(1)
 const rewardPageSize = 10
 const rewardStatusName = { 0: '待发放', 1: '待领取', 2: '已领取', 3: '已失效' }
 const rewardStatusType = { 0: 'warning', 1: 'primary', 2: 'success', 3: 'info' }
+
+// 资源类型数字到中文映射
+const resourceTypeNumMap = {
+  0: '专业服务', 1: '教育培训', 2: '场地资源', 3: '物资捐赠',
+  4: '志愿服务', 5: '资金赞助', 6: '技术支持', 7: '健康医疗',
+  8: '活动赞助', 9: '媒体宣传', 10: '技能培训', 11: '养老服务'
+}
+const getResourceTypeName = (type) => resourceTypeNumMap[type] ?? type ?? '其他'
+
 const rewardStats = computed(() => ({
   totalCount: rewards.value.length,
   pendingCount: rewards.value.filter(r => r.status === 1).length,

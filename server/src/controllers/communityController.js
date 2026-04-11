@@ -27,6 +27,10 @@ exports.login = async (req, res) => {
     
     const community = rows[0]
     
+    if (community.status === 0) {
+      return error(res, '账号审核中，请耐心等待', 401)
+    }
+    
     if (community.status === 2) {
       return error(res, '账号已被禁用', 403)
     }
@@ -130,7 +134,17 @@ exports.getConfig = async (req, res) => {
     // 获取地区
     const [regions] = await pool.query('SELECT * FROM regions ORDER BY level, sort_order')
     
-    success(res, { tags, regions })
+    // 获取资源类型配置
+    const [typeRows] = await pool.query("SELECT config_value FROM sys_configs WHERE config_key = 'basic_types'")
+    let resourceTypes = []
+    if (typeRows.length > 0 && typeRows[0].config_value) {
+      try {
+        const basicTypes = JSON.parse(typeRows[0].config_value)
+        resourceTypes = (basicTypes.resourceTypes || []).filter(t => t.enabled !== false).map(t => t.name)
+      } catch {}
+    }
+    
+    success(res, { tags, regions, resourceTypes })
   } catch (err) {
     error(res, '获取配置失败')
   }
@@ -148,6 +162,15 @@ exports.getRecommendResources = async (req, res) => {
        ORDER BY m.member_level DESC, m.star_rating DESC
        LIMIT 20`
     )
+
+    // 解析 images 字段（从 JSON 字符串转为数组）
+    resources.forEach(r => {
+      if (r.images) {
+        try { r.images = JSON.parse(r.images) } catch { r.images = [] }
+      } else {
+        r.images = []
+      }
+    })
 
     // 公开接口统一返回中等匹配度，登录后展示个性化
     const result = resources.map(r => ({
@@ -213,6 +236,15 @@ exports.getResources = async (req, res) => {
       [...params, parseInt(pageSize), offset]
     )
     
+    // 解析 images 字段（从 JSON 字符串转为数组）
+    rows.forEach(r => {
+      if (r.images) {
+        try { r.images = JSON.parse(r.images) } catch { r.images = [] }
+      } else {
+        r.images = []
+      }
+    })
+    
     // 获取匹配度
     let matchResult = rows.map(r => ({ ...r, matchScore: 3, matchHearts: 3 }))
     if (req.community?.id) {
@@ -247,7 +279,8 @@ exports.getResourceDetail = async (req, res) => {
     
     const [rows] = await pool.query(
       `SELECT r.*, m.company_name, m.logo as merchant_logo, m.contact_name, m.phone as merchant_phone,
-       m.star_rating, m.member_level, m.description as merchant_description, m.industry
+       m.star_rating, m.member_level, m.description as merchant_description, m.industry,
+       m.social_identity, m.honors, m.expert_intro, m.images as merchant_images, m.address
        FROM resources r
        JOIN merchants m ON r.merchant_id = m.id
        WHERE r.id = ?`,
@@ -277,10 +310,31 @@ exports.getResourceDetail = async (req, res) => {
     // 检查是否可以查看联系方式（金牌会员Lv3及以上）
     const canViewContact = rows[0].member_level >= 3
     
+    // 计算会员有效期
+    let validUntil = '长期有效'
+    if (rows[0].member_level >= 0) {
+      const [[payment]] = await pool.query(
+        'SELECT end_date FROM member_payments WHERE merchant_id = ? AND status = 1 ORDER BY end_date DESC LIMIT 1',
+        [rows[0].merchant_id]
+      )
+      if (payment?.end_date) {
+        validUntil = new Date(payment.end_date).toLocaleDateString('zh-CN')
+      }
+    }
+    
+    // 解析 images 字段（从 JSON 字符串转为数组）
+    const resource = rows[0]
+    if (resource.images) {
+      try { resource.images = JSON.parse(resource.images) } catch { resource.images = [] }
+    } else {
+      resource.images = []
+    }
+    
     const result = {
-      ...rows[0],
+      ...resource,
       matchScore: Math.round(matchScore),
-      matchHearts
+      matchHearts,
+      valid_until: validUntil
     }
     
     if (!canViewContact) {
@@ -1078,12 +1132,12 @@ exports.getMyFavorites = async (req, res) => {
     const offset = (page - 1) * pageSize
     
     const [rows] = await pool.query(
-      `SELECT rf.id, rf.created_at, r.*, m.company_name, m.logo as merchant_logo, m.member_level, m.star_rating
+      `SELECT rf.id, rf.create_time, r.*, m.company_name, m.logo as merchant_logo, m.member_level, m.star_rating
        FROM resource_favorite rf
        JOIN resources r ON rf.resource_id = r.id
        JOIN merchants m ON r.merchant_id = m.id
        WHERE rf.community_id = ?
-       ORDER BY rf.created_at DESC
+       ORDER BY rf.create_time DESC
        LIMIT ? OFFSET ?`,
       [req.community.id, parseInt(pageSize), parseInt(offset)]
     )

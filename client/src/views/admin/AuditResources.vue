@@ -16,7 +16,7 @@
     <el-table :data="resources" stripe border @selection-change="selected = $event" v-loading="loading">
       <el-table-column type="selection" width="50" />
       <el-table-column prop="title" label="资源标题" min-width="180" show-overflow-tooltip />
-      <el-table-column prop="resource_type" label="类型" width="110"><template #default="{ row }"><el-tag size="small">{{ row.resource_type }}</el-tag></template></el-table-column>
+      <el-table-column prop="resource_type" label="类型" width="110"><template #default="{ row }"><el-tag size="small">{{ getResourceTypeName(row.resource_type) }}</el-tag></template></el-table-column>
       <el-table-column prop="company_name" label="发布商家" width="140" />
       <el-table-column prop="member_level" label="会员等级" width="100"><template #default="{ row }"><el-tag :type="levelColors[levelLabel(row.member_level)]" size="small">{{ levelLabel(row.member_level) }}</el-tag></template></el-table-column>
       <el-table-column prop="created_at" label="提交时间" width="160">
@@ -36,17 +36,103 @@
     </div>
 
     <!-- 资源详情对话框 -->
-    <el-dialog v-model="showDetail" title="资源详情" width="700px" v-if="currentResource">
+    <el-dialog v-model="showDetail" title="资源详情" width="900px" v-if="currentResource">
       <el-descriptions :column="2" border>
         <el-descriptions-item label="资源标题" :span="2">{{ currentResource.title }}</el-descriptions-item>
-        <el-descriptions-item label="资源类型"><el-tag size="small">{{ currentResource.resource_type }}</el-tag></el-descriptions-item>
+        <el-descriptions-item label="资源类型"><el-tag size="small">{{ getResourceTypeName(currentResource.resource_type) }}</el-tag></el-descriptions-item>
         <el-descriptions-item label="审核状态"><el-tag :type="statusColors[currentResource.status]" size="small">{{ statusLabels[currentResource.status] }}</el-tag></el-descriptions-item>
         <el-descriptions-item label="发布商家">{{ currentResource.company_name }}</el-descriptions-item>
         <el-descriptions-item label="会员等级"><el-tag :type="levelColors[levelLabel(currentResource.member_level)]" size="small">{{ levelLabel(currentResource.member_level) }}</el-tag></el-descriptions-item>
         <el-descriptions-item label="提交时间">{{ fmtTime(currentResource.created_at) }}</el-descriptions-item>
-        <el-descriptions-item label="服务范围">{{ currentResource.service_scope || '—' }}</el-descriptions-item>
+        <el-descriptions-item label="浏览量">{{ currentResource.view_count || 0 }}</el-descriptions-item>
+
+        <!-- 资金赞助字段（类型5或中文"资金赞助"） -->
+        <template v-if="getCurrentResourceType() === '资金赞助'">
+          <el-descriptions-item v-if="currentResource.min_amount || currentResource.max_amount" label="赞助金额范围" :span="2">
+            {{ currentResource.min_amount || 0 }} ~ {{ currentResource.max_amount || 0 }} 元
+          </el-descriptions-item>
+          <el-descriptions-item v-if="jsonLen(currentResource.fund_scenes) > 0" label="适用场景" :span="2">
+            <el-tag v-for="s in mapJsonItems(currentResource.fund_scenes, fundScenesMap)" :key="s" size="small" style="margin-right:4px">{{ s }}</el-tag>
+          </el-descriptions-item>
+        </template>
+
+        <!-- 物资捐赠字段（类型3或中文"物资捐赠"） -->
+        <template v-if="getCurrentResourceType() === '物资捐赠'">
+          <el-descriptions-item v-if="currentResource.specs" label="物资清单" :span="2">{{ currentResource.specs }}</el-descriptions-item>
+          <el-descriptions-item v-if="currentResource.quantity" label="物资数量">{{ currentResource.quantity }}</el-descriptions-item>
+          <el-descriptions-item v-if="currentResource.pickup_way" label="领取方式">
+            {{ pickupWayMap[currentResource.pickup_way] || currentResource.pickup_way }}
+          </el-descriptions-item>
+          <el-descriptions-item v-if="currentResource.goods_expiry" label="有效期至">{{ currentResource.goods_expiry }}</el-descriptions-item>
+        </template>
+
+        <!-- 人力支持/志愿服务字段（类型4或中文"志愿服务"） -->
+        <template v-if="getCurrentResourceType() === '志愿服务'">
+          <el-descriptions-item v-if="currentResource.staff_count" label="可派遣人数">{{ currentResource.staff_count }}人</el-descriptions-item>
+          <el-descriptions-item v-if="currentResource.work_duration" label="单次服务时长">{{ currentResource.work_duration }}小时</el-descriptions-item>
+          <el-descriptions-item v-if="currentResource.skill_requirements" label="人员类型描述" :span="2">{{ currentResource.skill_requirements }}</el-descriptions-item>
+        </template>
+
+        <!-- 技术支持字段（类型6或中文"技术支持"） -->
+        <template v-if="getCurrentResourceType() === '技术支持'">
+          <el-descriptions-item v-if="jsonLen(currentResource.tech_types) > 0" label="技术类型" :span="2">
+            <el-tag v-for="t in mapJsonItems(currentResource.tech_types, techTypesMap)" :key="t" size="small" style="margin-right:4px">{{ t }}</el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item v-if="currentResource.tech_service_type" label="服务方式">
+            {{ techServiceMap[currentResource.tech_service_type] || currentResource.tech_service_type }}
+          </el-descriptions-item>
+        </template>
+
+        <!-- 专业服务字段（类型0或中文"专业服务"） -->
+        <template v-if="getCurrentResourceType() === '专业服务'">
+          <el-descriptions-item v-if="currentResource.professional_type" label="专业服务类型">{{ currentResource.professional_type }}</el-descriptions-item>
+          <el-descriptions-item v-if="currentResource.service_scope" label="服务范围">
+            {{ serviceScopeMap[currentResource.service_scope] || currentResource.service_scope }}
+          </el-descriptions-item>
+          <el-descriptions-item v-if="currentResource.certification" label="资质证明">{{ currentResource.certification }}</el-descriptions-item>
+          <el-descriptions-item v-if="currentResource.price_range" label="收费标准">
+            {{ priceRangeMap[currentResource.price_range] || currentResource.price_range }}
+          </el-descriptions-item>
+        </template>
+
+        <!-- 媒体报道字段（类型9或中文"媒体宣传"） -->
+        <template v-if="getCurrentResourceType() === '媒体宣传'">
+          <el-descriptions-item v-if="jsonLen(currentResource.media_channels) > 0" label="媒体渠道" :span="2">
+            <el-tag v-for="c in safeJsonParse(currentResource.media_channels)" :key="c" size="small" style="margin-right:4px">{{ c }}</el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item v-if="currentResource.media_type" label="媒体类型">{{ currentResource.media_type }}</el-descriptions-item>
+          <el-descriptions-item v-if="currentResource.coverage" label="覆盖范围">{{ currentResource.coverage }}</el-descriptions-item>
+        </template>
+        <!-- 通用字段 -->
         <el-descriptions-item label="资源说明" :span="2">{{ currentResource.content || '—' }}</el-descriptions-item>
+        <!-- 标签 -->
+        <el-descriptions-item label="资源标签" :span="2">
+          <template v-if="jsonLen(currentResource.tags) > 0">
+            <el-tag v-for="tag in safeJsonParse(currentResource.tags)" :key="tag" size="small" style="margin-right:4px">{{ tag }}</el-tag>
+          </template>
+          <span v-else>—</span>
+        </el-descriptions-item>
+        <!-- 期望回报 -->
+        <el-descriptions-item v-if="jsonLen(currentResource.expected_rewards) > 0" label="期望回报类型" :span="2">
+          <el-tag v-for="r in safeJsonParse(currentResource.expected_rewards)" :key="r" size="small" type="warning" style="margin-right:4px">{{ r }}</el-tag>
+        </el-descriptions-item>
+        <el-descriptions-item v-if="currentResource.expected_reward_desc" label="期望回报说明" :span="2">{{ currentResource.expected_reward_desc }}</el-descriptions-item>
+        <el-descriptions-item v-if="currentResource.valid_until" label="有效期至">{{ currentResource.valid_until }}</el-descriptions-item>
       </el-descriptions>
+      <!-- 图片展示 -->
+      <div v-if="jsonLen(currentResource.images) > 0" class="detail-images">
+        <span class="images-label">资源图片：</span>
+        <div class="image-list">
+          <el-image 
+            v-for="(img, idx) in safeJsonParse(currentResource.images)" 
+            :key="idx"
+            :src="img" 
+            :preview-src-list="safeJsonParse(currentResource.images)"
+            fit="cover"
+            class="detail-image"
+          />
+        </div>
+      </div>
       <div v-if="currentResource.status === 2 && currentResource.reject_reason" style="margin-top:12px;padding:12px;background:#fff5f5;border-radius:6px;color:#F56C6C">
         <strong>驳回原因：</strong>{{ currentResource.reject_reason }}
       </div>
@@ -77,6 +163,27 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Warning } from '@element-plus/icons-vue'
 import { getResourceAuditList, passResource, rejectResource } from '@/api/admin'
 
+// 安全解析 JSON，返回数组或默认值
+function safeJsonParse(str, defaultVal = []) {
+  if (!str) return defaultVal
+  try {
+    const parsed = typeof str === 'string' ? JSON.parse(str) : str
+    return Array.isArray(parsed) ? parsed : defaultVal
+  } catch {
+    return defaultVal
+  }
+}
+
+// 获取 JSON 数组长度
+function jsonLen(str) {
+  return safeJsonParse(str).length
+}
+
+// 映射 JSON 数组为中文标签
+function mapJsonItems(str, map) {
+  return safeJsonParse(str).map(item => map[item] || item)
+}
+
 const filterType = ref(''), filterStatus = ref('待审核'), searchKey = ref('')
 const selected = ref([]), showDetail = ref(false), showRejectDialog = ref(false)
 const currentResource = ref(null), rejectReason = ref(''), rejectTarget = ref(null)
@@ -91,6 +198,39 @@ const levelLabel = (lvl) => ({ 1:'普通会员', 2:'银牌会员', 3:'金牌会�
 const levelColors = { '普通会员': 'info', '银牌会员': 'info', '金牌会员': 'warning', '铂金会员': 'danger', '钻石会员': 'danger' }
 const statusLabels = { 0: '待审核', 1: '已通过', 2: '已驳回' }
 const statusColors = { 0: 'warning', 1: 'success', 2: 'danger' }
+
+// 资金场景映射
+const fundScenesMap = { festival:'节庆活动', welfare:'公益活动', sports:'体育赛事', education:'教育活动', culture:'文化活动', any:'不限场景' }
+// 技术类型映射
+const techTypesMap = { equipment:'设备器材', software:'软件系统', network:'网络通信', av:'专业音视频', lighting:'灯光设备', smart:'智能设备' }
+// 领取方式映射
+const pickupWayMap = { delivery:'可配送', pickup:'自取', both:'均可' }
+// 服务方式映射
+const techServiceMap = { rent:'设备租借', service:'提供服务团队', both:'均可' }
+// 服务范围映射
+const serviceScopeMap = { city:'全市', district:'本区', online:'线上' }
+// 收费标准映射
+const priceRangeMap = { free:'免费', discount:'优惠价', market:'市场价' }
+
+const resourceTypeName = {
+  0: '专业服务', 1: '教育培训', 2: '场地资源', 3: '物资捐赠',
+  4: '志愿服务', 5: '资金赞助', 6: '技术支持', 7: '健康医疗',
+  8: '活动赞助', 9: '媒体宣传', 10: '技能培训', 11: '养老服务'
+}
+
+// 获取资源类型中文名称
+function getResourceTypeName(type) {
+  if (typeof type === 'string' && resourceTypeName[type] !== undefined) {
+    return resourceTypeName[type]
+  }
+  const num = parseInt(type)
+  return resourceTypeName[num] || type || '未知'
+}
+
+// 获取当前资源的资源类型（中文）
+function getCurrentResourceType() {
+  return getResourceTypeName(currentResource.value?.resource_type)
+}
 
 async function loadResources() {
   loading.value = true
@@ -147,6 +287,10 @@ function fmtTime(t) { return t ? String(t).slice(0, 16).replace('T', ' ') : '' }
 .pending-banner { background: #fff5f5; border: 1px solid #ffd0d0; border-radius: 8px; padding: 10px 16px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; color: #F56C6C; }
 .filter-bar { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
 .pagination { margin-top: 16px; display: flex; justify-content: flex-end; }
+.detail-images { margin-top: 16px; }
+.images-label { font-size: 14px; color: #606266; display: block; margin-bottom: 8px; }
+.image-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.detail-image { width: 100px; height: 100px; border-radius: 4px; cursor: pointer; }
 
 @media (max-width: 768px) {
   .audit-page {

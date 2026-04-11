@@ -10,27 +10,32 @@
             <el-button type="primary" @click="openAdd('activityTypes','活动类型')"><el-icon><Plus /></el-icon> 新增</el-button>
           </div>
           <el-table :data="activityTypes" stripe border>
-            <el-table-column type="index" width="60" label="序号" />
+            <el-table-column width="100" align="center">
+              <template #default="{ $index }">
+                <el-button text :disabled="$index === 0" @click="moveUp(activityTypes, $index)" title="上移"><el-icon><Top /></el-icon></el-button>
+                <el-button text :disabled="$index === activityTypes.length - 1" @click="moveDown(activityTypes, $index)" title="下移"><el-icon><Bottom /></el-icon></el-button>
+              </template>
+            </el-table-column>
             <el-table-column prop="name" label="类型名称" min-width="150">
               <template #default="{ row, $index }">
-                <el-input v-if="row.editing" v-model="row.name" size="small" @blur="row.editing=false" @keyup.enter="row.editing=false" />
+                <el-input v-if="row.editing" v-model="row.name" size="small" @blur="row.editing=false; saveInlineEdit(row)" @keyup.enter="row.editing=false; saveInlineEdit(row)" />
                 <span v-else>{{ row.name }}</span>
               </template>
             </el-table-column>
             <el-table-column prop="desc" label="说明" min-width="200">
               <template #default="{ row }">
-                <el-input v-if="row.editing" v-model="row.desc" size="small" />
+                <el-input v-if="row.editing" v-model="row.desc" size="small" @blur="saveInlineEdit(row)" />
                 <span v-else style="color:#909399;font-size:13px">{{ row.desc }}</span>
               </template>
             </el-table-column>
             <el-table-column prop="count" label="已关联需求" width="110" align="center" />
             <el-table-column prop="enabled" label="启用" width="80" align="center">
-              <template #default="{ row }"><el-switch v-model="row.enabled" /></template>
+              <template #default="{ row }"><el-switch v-model="row.enabled" @change="saveInlineEdit(row)" /></template>
             </el-table-column>
             <el-table-column label="操作" width="130" align="center">
               <template #default="{ row }">
                 <el-button text type="primary" size="small" @click="row.editing=true">编辑</el-button>
-                <el-button text type="danger" size="small" @click="deleteItem(activityTypes.value, row)">删除</el-button>
+                <el-button text type="danger" size="small" @click="deleteItem(activityTypes, row)">删除</el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -45,27 +50,32 @@
             <el-button type="primary" @click="openAdd('expertTypes','专家类型')"><el-icon><Plus /></el-icon> 新增</el-button>
           </div>
           <el-table :data="expertTypes" stripe border>
-            <el-table-column type="index" width="60" />
+            <el-table-column width="100" align="center">
+              <template #default="{ $index }">
+                <el-button text :disabled="$index === 0" @click="moveUp(expertTypes, $index)" title="上移"><el-icon><Top /></el-icon></el-button>
+                <el-button text :disabled="$index === expertTypes.length - 1" @click="moveDown(expertTypes, $index)" title="下移"><el-icon><Bottom /></el-icon></el-button>
+              </template>
+            </el-table-column>
             <el-table-column prop="name" label="专家类型" min-width="150">
               <template #default="{ row }">
-                <el-input v-if="row.editing" v-model="row.name" size="small" @blur="row.editing=false" />
+                <el-input v-if="row.editing" v-model="row.name" size="small" @blur="row.editing=false; saveInlineEdit(row)" />
                 <span v-else>{{ row.name }}</span>
               </template>
             </el-table-column>
             <el-table-column prop="desc" label="说明" min-width="200">
               <template #default="{ row }">
-                <el-input v-if="row.editing" v-model="row.desc" size="small" />
+                <el-input v-if="row.editing" v-model="row.desc" size="small" @blur="saveInlineEdit(row)" />
                 <span v-else style="color:#909399;font-size:13px">{{ row.desc }}</span>
               </template>
             </el-table-column>
             <el-table-column prop="count" label="已关联需求" width="110" align="center" />
             <el-table-column prop="enabled" label="启用" width="80" align="center">
-              <template #default="{ row }"><el-switch v-model="row.enabled" /></template>
+              <template #default="{ row }"><el-switch v-model="row.enabled" @change="saveInlineEdit(row)" /></template>
             </el-table-column>
             <el-table-column label="操作" width="130" align="center">
               <template #default="{ row }">
                 <el-button text type="primary" size="small" @click="row.editing=true">编辑</el-button>
-                <el-button text type="danger" size="small" @click="deleteItem(expertTypes.value, row)">删除</el-button>
+                <el-button text type="danger" size="small" @click="deleteItem(expertTypes, row)">删除</el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -80,7 +90,12 @@
             <el-button type="primary" @click="openAdd('industryTypes','行业分类')"><el-icon><Plus /></el-icon> 新增</el-button>
           </div>
           <el-table :data="industryTypes" stripe border>
-            <el-table-column type="index" width="60" />
+            <el-table-column width="100" align="center">
+              <template #default="{ $index }">
+                <el-button text :disabled="$index === 0" @click="moveUp(industryTypes, $index)" title="上移"><el-icon><Top /></el-icon></el-button>
+                <el-button text :disabled="$index === industryTypes.length - 1" @click="moveDown(industryTypes, $index)" title="下移"><el-icon><Bottom /></el-icon></el-button>
+              </template>
+            </el-table-column>
             <el-table-column prop="name" label="行业名称" min-width="150">
               <template #default="{ row }">
                 <el-input v-if="row.editing" v-model="row.name" size="small" @blur="row.editing=false; saveInlineEdit(row)" @keyup.enter="row.editing=false; saveInlineEdit(row)" />
@@ -108,21 +123,26 @@
             <el-button type="primary" @click="openAdd('enterpriseTypes','企业类型')"><el-icon><Plus /></el-icon> 新增</el-button>
           </div>
           <el-table :data="enterpriseTypes" stripe border>
-            <el-table-column type="index" width="60" />
+            <el-table-column width="100" align="center">
+              <template #default="{ $index }">
+                <el-button text :disabled="$index === 0" @click="moveUp(enterpriseTypes, $index)" title="上移"><el-icon><Top /></el-icon></el-button>
+                <el-button text :disabled="$index === enterpriseTypes.length - 1" @click="moveDown(enterpriseTypes, $index)" title="下移"><el-icon><Bottom /></el-icon></el-button>
+              </template>
+            </el-table-column>
             <el-table-column prop="name" label="类型名称" min-width="150">
               <template #default="{ row }">
-                <el-input v-if="row.editing" v-model="row.name" size="small" @blur="row.editing=false" />
+                <el-input v-if="row.editing" v-model="row.name" size="small" @blur="row.editing=false; saveInlineEdit(row)" />
                 <span v-else>{{ row.name }}</span>
               </template>
             </el-table-column>
             <el-table-column prop="count" label="已关联商家" width="110" align="center" />
             <el-table-column prop="enabled" label="启用" width="80" align="center">
-              <template #default="{ row }"><el-switch v-model="row.enabled" /></template>
+              <template #default="{ row }"><el-switch v-model="row.enabled" @change="saveInlineEdit(row)" /></template>
             </el-table-column>
             <el-table-column label="操作" width="130" align="center">
               <template #default="{ row }">
                 <el-button text type="primary" size="small" @click="row.editing=true">编辑</el-button>
-                <el-button text type="danger" size="small" @click="deleteItem(enterpriseTypes.value, row)">删除</el-button>
+                <el-button text type="danger" size="small" @click="deleteItem(enterpriseTypes, row)">删除</el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -137,26 +157,97 @@
             <el-button type="primary" @click="openAdd('resourceTypes','资源类型')"><el-icon><Plus /></el-icon> 新增</el-button>
           </div>
           <el-table :data="resourceTypes" stripe border>
-            <el-table-column type="index" width="60" />
+            <el-table-column width="100" align="center">
+              <template #default="{ $index }">
+                <el-button text :disabled="$index === 0" @click="moveUp(resourceTypes, $index)" title="上移"><el-icon><Top /></el-icon></el-button>
+                <el-button text :disabled="$index === resourceTypes.length - 1" @click="moveDown(resourceTypes, $index)" title="下移"><el-icon><Bottom /></el-icon></el-button>
+              </template>
+            </el-table-column>
             <el-table-column prop="name" label="资源类型" min-width="120">
               <template #default="{ row }">
-                <el-input v-if="row.editing" v-model="row.name" size="small" @blur="row.editing=false" />
+                <el-input v-if="row.editing" v-model="row.name" size="small" @blur="row.editing=false; saveInlineEdit(row)" @keyup.enter="row.editing=false; saveInlineEdit(row)" />
                 <span v-else>{{ row.name }}</span>
               </template>
             </el-table-column>
             <el-table-column prop="desc" label="说明" min-width="200">
               <template #default="{ row }">
-                <el-input v-if="row.editing" v-model="row.desc" size="small" />
+                <el-input v-if="row.editing" v-model="row.desc" size="small" @blur="saveInlineEdit(row)" />
                 <span v-else style="color:#909399;font-size:13px">{{ row.desc }}</span>
               </template>
             </el-table-column>
             <el-table-column prop="enabled" label="启用" width="80" align="center">
-              <template #default="{ row }"><el-switch v-model="row.enabled" /></template>
+              <template #default="{ row }"><el-switch v-model="row.enabled" @change="saveInlineEdit(row)" /></template>
             </el-table-column>
             <el-table-column label="操作" width="130" align="center">
               <template #default="{ row }">
                 <el-button text type="primary" size="small" @click="row.editing=true">编辑</el-button>
-                <el-button text type="danger" size="small" @click="deleteItem(resourceTypes.value, row)">删除</el-button>
+                <el-button text type="danger" size="small" @click="deleteItem(resourceTypes, row)">删除</el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+        </div>
+      </el-tab-pane>
+
+      <!-- 社区类型 -->
+      <el-tab-pane label="社区类型" name="communityType">
+        <div class="config-section">
+          <div class="section-header">
+            <p class="section-desc">社区类型用于描述社区特征，影响智能匹配和筛选</p>
+            <el-button type="primary" @click="openAdd('communityTypes','社区类型')"><el-icon><Plus /></el-icon> 新增</el-button>
+          </div>
+          <el-table :data="communityTypes" stripe border>
+            <el-table-column width="100" align="center">
+              <template #default="{ $index }">
+                <el-button text :disabled="$index === 0" @click="moveUp(communityTypes, $index)" title="上移"><el-icon><Top /></el-icon></el-button>
+                <el-button text :disabled="$index === communityTypes.length - 1" @click="moveDown(communityTypes, $index)" title="下移"><el-icon><Bottom /></el-icon></el-button>
+              </template>
+            </el-table-column>
+            <el-table-column prop="name" label="社区类型" min-width="150">
+              <template #default="{ row }">
+                <el-input v-if="row.editing" v-model="row.name" size="small" @blur="row.editing=false; saveInlineEdit(row)" @keyup.enter="row.editing=false; saveInlineEdit(row)" />
+                <span v-else>{{ row.name }}</span>
+              </template>
+            </el-table-column>
+            <el-table-column prop="enabled" label="启用" width="80" align="center">
+              <template #default="{ row }"><el-switch v-model="row.enabled" @change="saveInlineEdit(row)" /></template>
+            </el-table-column>
+            <el-table-column label="操作" width="130" align="center">
+              <template #default="{ row }">
+                <el-button text type="primary" size="small" @click="row.editing=true">编辑</el-button>
+                <el-button text type="danger" size="small" @click="deleteItem(communityTypes, row)">删除</el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+        </div>
+      </el-tab-pane>
+
+      <!-- 居民类型 -->
+      <el-tab-pane label="居民类型" name="residentType">
+        <div class="config-section">
+          <div class="section-header">
+            <p class="section-desc">居民类型用于描述居民群体特征，影响智能匹配和筛选</p>
+            <el-button type="primary" @click="openAdd('residentTypes','居民类型')"><el-icon><Plus /></el-icon> 新增</el-button>
+          </div>
+          <el-table :data="residentTypes" stripe border>
+            <el-table-column width="100" align="center">
+              <template #default="{ $index }">
+                <el-button text :disabled="$index === 0" @click="moveUp(residentTypes, $index)" title="上移"><el-icon><Top /></el-icon></el-button>
+                <el-button text :disabled="$index === residentTypes.length - 1" @click="moveDown(residentTypes, $index)" title="下移"><el-icon><Bottom /></el-icon></el-button>
+              </template>
+            </el-table-column>
+            <el-table-column prop="name" label="居民类型" min-width="150">
+              <template #default="{ row }">
+                <el-input v-if="row.editing" v-model="row.name" size="small" @blur="row.editing=false; saveInlineEdit(row)" @keyup.enter="row.editing=false; saveInlineEdit(row)" />
+                <span v-else>{{ row.name }}</span>
+              </template>
+            </el-table-column>
+            <el-table-column prop="enabled" label="启用" width="80" align="center">
+              <template #default="{ row }"><el-switch v-model="row.enabled" @change="saveInlineEdit(row)" /></template>
+            </el-table-column>
+            <el-table-column label="操作" width="130" align="center">
+              <template #default="{ row }">
+                <el-button text type="primary" size="small" @click="row.editing=true">编辑</el-button>
+                <el-button text type="danger" size="small" @click="deleteItem(residentTypes, row)">删除</el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -231,7 +322,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Location } from '@element-plus/icons-vue'
+import { Plus, Location, Top, Bottom } from '@element-plus/icons-vue'
 import { getRegions, createRegion, updateRegion, deleteRegion as deleteRegionApi, getBasicTypesConfig, saveBasicTypesConfig } from '@/api/admin'
 
 const loading = ref(false)
@@ -251,6 +342,8 @@ const enterpriseTypes = ref([])
 const resourceTypes = ref([])
 const expertTypes = ref([])
 const industryTypes = ref([])
+const communityTypes = ref([])
+const residentTypes = ref([])
 const districtTree = ref([])
 
 async function loadBasicTypes() {
@@ -331,6 +424,42 @@ async function loadBasicTypes() {
     } else {
       industryTypes.value = data.industryTypes.map(t => ({ ...t, enabled: t.enabled !== false, editing: false }))
     }
+
+    // 社区类型
+    const defaultCommunityTypes = [
+      { name: '老旧小区', enabled: true },
+      { name: '新建社区', enabled: true },
+      { name: '亲子社区', enabled: true },
+      { name: '老龄化社区', enabled: true },
+      { name: '学区社区', enabled: true },
+      { name: '商圈社区', enabled: true },
+      { name: '文化社区', enabled: true },
+      { name: '体育社区', enabled: true },
+      { name: '绿色社区', enabled: true },
+    ].map(name => ({ name, enabled: true, editing: false }))
+
+    if (!data.communityTypes || data.communityTypes.length === 0) {
+      communityTypes.value = defaultCommunityTypes
+    } else {
+      communityTypes.value = data.communityTypes.map(t => ({ ...t, enabled: t.enabled !== false, editing: false }))
+    }
+
+    // 居民类型
+    const defaultResidentTypes = [
+      { name: '青少年/儿童', enabled: true },
+      { name: '青年', enabled: true },
+      { name: '中老年', enabled: true },
+      { name: '宝妈', enabled: true },
+      { name: '退役军人', enabled: true },
+      { name: '残疾群体', enabled: true },
+      { name: '困难家庭', enabled: true },
+    ].map(name => ({ name, enabled: true, editing: false }))
+
+    if (!data.residentTypes || data.residentTypes.length === 0) {
+      residentTypes.value = defaultResidentTypes
+    } else {
+      residentTypes.value = data.residentTypes.map(t => ({ ...t, enabled: t.enabled !== false, editing: false }))
+    }
   } catch {}
   finally { loading.value = false }
 }
@@ -341,7 +470,9 @@ async function saveTypes() {
     enterpriseTypes: enterpriseTypes.value.map(t => ({ name: t.name, enabled: t.enabled })),
     resourceTypes: resourceTypes.value.map(t => ({ name: t.name, desc: t.desc, enabled: t.enabled })),
     expertTypes: expertTypes.value.map(t => ({ name: t.name, desc: t.desc, enabled: t.enabled })),
-    industryTypes: industryTypes.value.map(t => ({ name: t.name, enabled: t.enabled }))
+    industryTypes: industryTypes.value.map(t => ({ name: t.name, enabled: t.enabled })),
+    communityTypes: communityTypes.value.map(t => ({ name: t.name, enabled: t.enabled })),
+    residentTypes: residentTypes.value.map(t => ({ name: t.name, enabled: t.enabled }))
   })
 }
 
@@ -379,7 +510,7 @@ function openAdd(listName, title) {
 
 async function confirmAdd() {
   if (!newItemName.value.trim()) { ElMessage.warning('请输入名称'); return }
-  const lists = { activityTypes, enterpriseTypes, resourceTypes, expertTypes, industryTypes }
+  const lists = { activityTypes, enterpriseTypes, resourceTypes, expertTypes, industryTypes, communityTypes, residentTypes }
   const listRef = lists[currentList.value]
   if (listRef) {
     const item = { name: newItemName.value.trim(), count: 0, enabled: true, editing: false, desc: newItemDesc.value }
@@ -405,17 +536,39 @@ async function saveInlineEdit(row) {
   }
 }
 
+// 移动项目
+async function moveUp(list, index) {
+  if (index <= 0) return
+  const arr = list.value
+  const temp = arr[index - 1]
+  arr[index - 1] = arr[index]
+  arr[index] = temp
+  await saveTypes()
+  ElMessage.success('已上移')
+}
+
+async function moveDown(list, index) {
+  if (index >= list.value.length - 1) return
+  const arr = list.value
+  const temp = arr[index + 1]
+  arr[index + 1] = arr[index]
+  arr[index] = temp
+  await saveTypes()
+  ElMessage.success('已下移')
+}
+
 async function deleteItem(list, row) {
   ElMessageBox.confirm(`确认删除"${row.name}"？`, '删除确认', { type: 'warning' })
     .then(async () => {
-      const idx = list.value.indexOf(row)
+      const arr = list.value
+      const idx = arr.indexOf(row)
       if (idx >= 0) {
-        list.value.splice(idx, 1)
+        arr.splice(idx, 1)
         try {
           await saveTypes()
           ElMessage.success('已删除')
         } catch {
-          list.value.splice(idx, 0, row)
+          arr.splice(idx, 0, row)
           ElMessage.error('删除失败，请重试')
         }
       }

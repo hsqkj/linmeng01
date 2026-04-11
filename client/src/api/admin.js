@@ -135,3 +135,19 @@ export const saveAlgorithmConfig = (data) => request.put('/admin/config/algorith
 // ====== 专家类型管理 ======
 export const getExpertTypes = () => request.get('/admin/config/expert-types')
 export const saveExpertTypes = (data) => request.put('/admin/config/expert-types', data)
+
+// ====== 智能客服配置 ======
+export const getServiceConfig = () => request.get('/admin/config/service')
+export const saveServiceConfig = (data) => request.put('/admin/config/service', data)
+
+// FAQ管理
+export const getFaqList = () => request.get('/admin/config/faqs')
+export const createFaq = (data) => request.post('/admin/config/faqs', data)
+export const updateFaq = (id, data) => request.put(`/admin/config/faqs/${id}`, data)
+export const deleteFaq = (id) => request.delete(`/admin/config/faqs/${id}`)
+
+// 快捷问题管理
+export const getQuickQuestions = () => request.get('/admin/config/quick-questions')
+export const createQuickQuestion = (data) => request.post('/admin/config/quick-questions', data)
+export const updateQuickQuestion = (id, data) => request.put(`/admin/config/quick-questions/${id}`, data)
+export const deleteQuickQuestion = (id) => request.delete(`/admin/config/quick-questions/${id}`)

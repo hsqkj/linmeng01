@@ -60,7 +60,12 @@ request.interceptors.response.use(
   },
   (error) => {
     const status = error.response?.status
-    const message = error.response?.data?.message || error.message
+    const apiMessage = error.response?.data?.message || '' // 后端返回的业务错误消息
+    const message = apiMessage || error.message
+
+    // 登录接口列表（登录失败时显示后端消息，不跳转）
+    const loginPaths = ['/admin/login', '/community/login', '/merchant/login', '/ambassador/login']
+    const isLoginPath = loginPaths.some(p => error.config?.url?.includes(p))
 
     if (status === 401 || status === 403) {
       const path = error.config?.url || ''
@@ -75,6 +80,11 @@ request.interceptors.response.use(
       // 公开接口列表（不需要登录的接口）
       const publicPaths = ['/banners', '/config', '/recommend/', '/resources', '/demands', '/comments/', '/merchants', '/tags']
       const isPublicPath = publicPaths.some(p => path.includes(p))
+
+      // 登录接口：不显示消息，只reject，让组件的catch块处理显示
+      if (isLoginPath) {
+        return Promise.reject(new Error(apiMessage || '登录失败'))
+      }
 
       // 有token但过期才提示"登录已过期"
       if (token) {

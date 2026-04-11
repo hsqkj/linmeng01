@@ -90,7 +90,14 @@
             </template>
             <!-- 商家独有信息 -->
             <template v-else>
-              <el-descriptions-item label="营业执照">{{ currentMerchant?.business_license || '-' }}</el-descriptions-item>
+              <el-descriptions-item label="Logo" :span="2">
+                <el-image v-if="currentMerchant?.logo" :src="currentMerchant.logo" style="width:80px;height:80px;border-radius:8px" fit="cover" :preview-src-list="[currentMerchant.logo]" />
+                <span v-else style="color:#909399">暂无Logo</span>
+              </el-descriptions-item>
+              <el-descriptions-item label="营业执照" :span="2">
+                <el-image v-if="currentMerchant?.business_license" :src="currentMerchant.business_license" style="width:120px;height:80px;border-radius:6px" fit="cover" :preview-src-list="[currentMerchant.business_license]" />
+                <span v-else style="color:#909399">暂无营业执照</span>
+              </el-descriptions-item>
               <el-descriptions-item label="地址">{{ currentMerchant?.address || '-' }}</el-descriptions-item>
             </template>
           </el-descriptions>
@@ -126,7 +133,20 @@
             <el-descriptions-item label="简介" :span="2">{{ currentMerchant?.description || '暂无简介' }}</el-descriptions-item>
             <el-descriptions-item label="社会身份" :span="2">{{ currentMerchant?.social_identity || '暂无' }}</el-descriptions-item>
             <el-descriptions-item label="荣誉资质" :span="2">{{ currentMerchant?.honors || '暂无' }}</el-descriptions-item>
+            <el-descriptions-item label="专家介绍" :span="2">{{ currentMerchant?.expert_intro || '暂无' }}</el-descriptions-item>
           </el-descriptions>
+          <div v-if="merchantProducts.length" style="margin-top:20px">
+            <h4 style="margin-bottom:12px">产品/服务介绍</h4>
+            <div class="admin-products-grid">
+              <div v-for="(p, idx) in merchantProducts" :key="idx" class="admin-product-item">
+                <el-image v-if="p.image" :src="p.image" fit="cover" style="width:100%;height:120px;border-radius:6px" :preview-src-list="merchantProducts.filter(x=>x.image).map(x=>x.image)" />
+                <div v-if="p.title || p.description" style="padding:8px">
+                  <div v-if="p.title" style="font-weight:600;font-size:13px;margin-bottom:4px">{{ p.title }}</div>
+                  <div v-if="p.description" style="font-size:12px;color:#606266">{{ p.description }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
         </el-tab-pane>
 
         <el-tab-pane label="标签" name="tags">
@@ -248,8 +268,22 @@ const parsedImages = computed(() => {
   if (!currentMerchant.value?.images) return []
   try {
     const imgs = typeof currentMerchant.value.images === 'string' ? JSON.parse(currentMerchant.value.images) : currentMerchant.value.images
+    // 如果是对象数组（新产品格式），返回空数组，交给 merchantProducts 处理
+    if (Array.isArray(imgs) && imgs.length > 0 && typeof imgs[0] === 'object') return []
     return Array.isArray(imgs) ? imgs.filter(Boolean) : []
   } catch { return [] }
+})
+
+const merchantProducts = computed(() => {
+  const images = currentMerchant.value?.images
+  if (!images) return []
+  try {
+    const parsed = typeof images === 'string' ? JSON.parse(images) : images
+    if (Array.isArray(parsed) && parsed.length > 0 && typeof parsed[0] === 'object') {
+      return parsed.filter(p => p.image || p.title || p.description)
+    }
+  } catch {}
+  return []
 })
 
 async function loadMerchants() {
@@ -388,6 +422,8 @@ function fmtTime(t) { return t ? String(t).slice(0, 16).replace('T', ' ') : '' }
 .star.filled { color: #f56c6c; }
 .rating-selector { padding: 4px 0; }
 .img-label { font-size: 12px; color: #909399; margin-bottom: 4px; }
+.admin-products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
+.admin-product-item { background: #f5f7fa; border-radius: 8px; overflow: hidden; }
 
 @media (max-width: 768px) {
   .users-page {

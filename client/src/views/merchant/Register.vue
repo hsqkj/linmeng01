@@ -31,7 +31,7 @@
     <div class="register-container">
       <div class="register-header">
         <el-icon :size="40" color="#67C23A"><Shop /></el-icon>
-        <h2>{{ registerType === 'expert' ? '专家注册' : '商家注册' }}</h2>
+        <h2>{{ registerType === 'expert' ? '商家/专家注册' : '商家/专家注册' }}</h2>
         <p>邻盟 - 社区资源智能匹配助手</p>
       </div>
 
@@ -362,7 +362,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Phone, Key, User, Shop, Goods, Connection, Medal, Trophy, UserFilled, Lock, Plus } from '@element-plus/icons-vue'
 import { getIndustries, sendSms, uploadImage, checkPhone } from '@/api/public'
-import { expertRegister } from '@/api/merchant'
+import { expertRegister, merchantRegister } from '@/api/merchant'
 
 const router = useRouter()
 const route = useRoute()
@@ -631,8 +631,7 @@ async function sendExpertCode() {
 const register = async (skipped = false) => {
   if (!form.agree) { ElMessage.warning('请先阅读并同意服务协议'); return }
   try {
-    const { request: req } = await import('@/utils/request')
-    await req.post('/merchant/register', {
+    await merchantRegister({
       username: form.contact,  // 联系人姓名作为登录名
       password: form.password,
       company_name: form.name,
