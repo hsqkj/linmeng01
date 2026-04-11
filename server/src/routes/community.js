@@ -34,11 +34,11 @@ router.get('/demands/:id', CommunityController.getDemandDetail)
 router.get('/comments/demand/:id', CommunityController.getDemandComments)
 router.get('/comments/resource/:id', CommunityController.getResourceComments)
 
+// 商家详情（公开，仅显示基本信息，不含联系方式）
+router.get('/merchants/:id', CommunityController.getMerchantDetail)
+
 // 需要认证的路由
 router.use(authCommunity)
-
-// 商家详情（防飞单）
-router.get('/merchants/:id', CommunityController.getMerchantDetail)
 
 // 需求管理
 router.get('/my/demands', CommunityController.getMyDemands)

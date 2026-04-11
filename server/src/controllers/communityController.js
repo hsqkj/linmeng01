@@ -347,13 +347,13 @@ exports.getResourceDetail = async (req, res) => {
   }
 }
 
-// 商家详情
+// 商家详情（公开接口，不返回联系方式）
 exports.getMerchantDetail = async (req, res) => {
   try {
     const { id } = req.params
     
     const [rows] = await pool.query(
-      `SELECT id, company_name, logo, description, industry, contact_name, tags, star_rating, member_level
+      `SELECT id, company_name, logo, description, industry, tags, star_rating, member_level, address, social_identity, honors, expert_intro
        FROM merchants WHERE id = ? AND status = 1`,
       [id]
     )
@@ -362,13 +362,7 @@ exports.getMerchantDetail = async (req, res) => {
       return error(res, '商家不存在', 404)
     }
     
-    // 检查是否可以查看联系方式
-    const canViewContact = rows[0].member_level >= 3
-    
-    if (!canViewContact) {
-      delete rows[0].contact_name
-    }
-    
+    // 公开接口不返回联系方式
     success(res, rows[0])
   } catch (err) {
     error(res, '获取商家详情失败')

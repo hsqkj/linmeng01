@@ -1,24 +1,28 @@
-const mysql = require('mysql2/promise');
+const pymysql = require('pymysql');
 
-async function check() {
-  const pool = mysql.createPool({
+async function main() {
+  const conn = pymysql.connect({
     host: 'localhost',
     user: 'root',
     password: 'root',
-    database: 'linmeng',
-    waitForConnections: true,
-    connectionLimit: 2
+    database: 'linmeng'
   });
 
-  try {
-    const [rows] = await pool.query('SHOW COLUMNS FROM communities');
-    console.log('Communities table columns:');
-    rows.forEach(r => console.log(r.Field));
-  } catch (e) {
-    console.error('Error:', e.message);
-  } finally {
-    await pool.end();
-  }
+  const cursor = conn.cursor();
+
+  // 查看 resources 表结构
+  console.log('=== resources 表结构 ===');
+  cursor.execute('DESCRIBE resources');
+  const fields = cursor.fetchall();
+  fields.forEach(f => console.log(f[0]));
+
+  // 查看 demands 表结构
+  console.log('\n=== demands 表结构 ===');
+  cursor.execute('DESCRIBE demands');
+  const demandFields = cursor.fetchall();
+  demandFields.forEach(f => console.log(f[0]));
+
+  conn.close();
 }
 
-check();
+main().catch(console.error);

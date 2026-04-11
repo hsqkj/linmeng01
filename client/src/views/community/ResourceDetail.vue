@@ -17,7 +17,11 @@
                 <el-tag :type="memberLevelTagType" size="large">{{ memberLevelName }}</el-tag>
                 <el-tag type="info" size="small">{{ getResourceTypeName(resource.resource_type) }}</el-tag>
               </div>
-              <h1 class="merchant-name">{{ resource.title || resource.company_name || '资源名称' }}</h1>
+              <h1 class="merchant-name">
+                <el-link type="primary" @click="showMerchantProfile" :underline="false">
+                  {{ resource.title || resource.company_name || '资源名称' }}
+                </el-link>
+              </h1>
               <div class="merchant-rating">
                 <span class="rating-label">商家评级：</span>
                 <span class="star-rating-text">{{ resource.star_rating || 0 }}星</span>
@@ -323,22 +327,25 @@
 
     <!-- 商家信息详情弹窗 -->
     <el-dialog v-model="showFullMerchantDialog" :title="(resource?.company_name || '商家') + ' - 商家详细信息'" width="560px">
+      <div class="merchant-profile-header" v-if="merchantProfile?.logo">
+        <img :src="merchantProfile.logo" class="merchant-profile-logo" />
+      </div>
       <el-descriptions :column="2" border>
-        <el-descriptions-item label="商家名称">{{ resource?.company_name || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="行业分类">{{ resource?.industry || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="商家名称">{{ merchantProfile?.company_name || resource?.company_name || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="行业分类">{{ merchantProfile?.industry || resource?.industry || '-' }}</el-descriptions-item>
         <el-descriptions-item label="会员等级">
-          <el-tag :type="memberLevelTagType" size="small">{{ memberLevelName }}</el-tag>
+          <el-tag :type="merchantProfile?.member_level ? memberLevelTagTypeMap[merchantProfile.member_level] : ''" size="small">
+            {{ merchantProfile?.member_level ? memberLevelMap[merchantProfile.member_level] : memberLevelName }}
+          </el-tag>
         </el-descriptions-item>
         <el-descriptions-item label="平台评级">
-          <span class="star-rating-text">{{ resource?.star_rating || 0 }}星</span>
+          <span class="star-rating-text">{{ merchantProfile?.star_rating || resource?.star_rating || 0 }}星</span>
         </el-descriptions-item>
-        <el-descriptions-item label="商家地址">{{ resource?.address || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="联系人"><el-link type="primary" @click="contactService">请联系平台客服</el-link></el-descriptions-item>
-        <el-descriptions-item label="联系电话"><el-link type="primary" @click="contactService">请联系平台客服</el-link></el-descriptions-item>
-        <el-descriptions-item label="商家简介" :span="2">{{ resource?.merchant_description || '暂无简介' }}</el-descriptions-item>
-        <el-descriptions-item label="社会身份" :span="2">{{ resource?.social_identity || '暂无' }}</el-descriptions-item>
-        <el-descriptions-item label="资质荣誉" :span="2">{{ resource?.honors || '暂无' }}</el-descriptions-item>
-        <el-descriptions-item label="专家介绍" :span="2">{{ resource?.expert_intro || '暂无' }}</el-descriptions-item>
+        <el-descriptions-item label="商家地址" :span="2">{{ merchantProfile?.address || resource?.address || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="商家简介" :span="2">{{ merchantProfile?.description || resource?.merchant_description || '暂无简介' }}</el-descriptions-item>
+        <el-descriptions-item label="社会身份" :span="2">{{ merchantProfile?.social_identity || resource?.social_identity || '暂无' }}</el-descriptions-item>
+        <el-descriptions-item label="资质荣誉" :span="2">{{ merchantProfile?.honors || resource?.honors || '暂无' }}</el-descriptions-item>
+        <el-descriptions-item label="专家介绍" :span="2">{{ merchantProfile?.expert_intro || resource?.expert_intro || '暂无' }}</el-descriptions-item>
       </el-descriptions>
       <template #footer>
         <el-button @click="showFullMerchantDialog = false">关闭</el-button>
@@ -402,7 +409,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { ArrowLeft } from '@element-plus/icons-vue'
-import { getResourceDetail, getResourceComments, createResourceComment } from '@/api/community'
+import { getResourceDetail, getResourceComments, createResourceComment, getMerchantDetail } from '@/api/community'
 
 const route = useRoute()
 const router = useRouter()
@@ -415,6 +422,8 @@ const showFullMerchantDialog = ref(false)
 const showServiceDialog = ref(false)
 const commentLoading = ref(false)
 const comments = ref([])
+const merchantProfile = ref(null)
+const merchantProfileLoading = ref(false)
 
 // 智能客服相关
 const serviceInput = ref('')
@@ -710,6 +719,21 @@ function showMerchantInfoDialog() {
   showFullMerchantDialog.value = true
 }
 
+async function showMerchantProfile() {
+  const merchantId = resource.value?.merchant_id
+  if (!merchantId) return
+  merchantProfileLoading.value = true
+  try {
+    const res = await getMerchantDetail(merchantId)
+    merchantProfile.value = res.data
+    showFullMerchantDialog.value = true
+  } catch (e) {
+    ElMessage.error('获取商家信息失败')
+  } finally {
+    merchantProfileLoading.value = false
+  }
+}
+
 onMounted(() => {
   loadResource()
   loadComments()
@@ -795,6 +819,8 @@ onMounted(() => {
 .message-item.user .message-content { background: #409EFF; color: #fff; }
 .message-time { font-size: 11px; color: #909399; margin-top: 4px; text-align: right; }
 .service-input { border-top: 1px solid #ebeef5; padding-top: 12px; }
+.merchant-profile-header { text-align: center; margin-bottom: 16px; }
+.merchant-profile-logo { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid #f0f0f0; }
 
 @media (max-width: 768px) {
   .detail-layout { grid-template-columns: 1fr; }

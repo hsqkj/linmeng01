@@ -1,24 +1,25 @@
-const mysql = require('mysql2/promise');
+const mysql = require('mysql2');
 
-async function check() {
-  const pool = mysql.createPool({
-    host: 'localhost',
-    user: 'root',
-    password: 'root',
-    database: 'linmeng',
-    waitForConnections: true,
-    connectionLimit: 2
-  });
+const pool = mysql.createPool({
+  host: 'localhost',
+  user: 'root',
+  password: 'root',
+  database: 'linmeng'
+});
 
-  try {
-    const [rows] = await pool.query('SHOW COLUMNS FROM communities');
-    console.log('Communities table columns:');
-    rows.forEach(r => console.log(r.Field));
-  } catch (e) {
-    console.error('Error:', e.message);
-  } finally {
-    await pool.end();
+pool.query("SELECT config_value FROM sys_configs WHERE config_key = 'basic_types'", (err, rows) => {
+  if (err) {
+    console.error('Error:', err.message);
+    pool.end();
+    return;
   }
-}
-
-check();
+  if (rows.length > 0) {
+    const data = JSON.parse(rows[0].config_value);
+    console.log('communityTypes:', JSON.stringify(data.communityTypes, null, 2));
+    console.log('residentTypes:', JSON.stringify(data.residentTypes, null, 2));
+    console.log('Keys:', Object.keys(data));
+  } else {
+    console.log('No data found');
+  }
+  pool.end();
+});

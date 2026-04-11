@@ -1,182 +1,184 @@
-# 长期记忆 MEMORY.md
+# MEMORY.md - 长期记忆
 
-## 基本信息
-- **AI名称：** 小邻
-- **用户称呼：** 大彭
+## ⚠️ 项目路径（重要）
+- **项目根目录**：`D:\WorkBuddy\20260331205655`（不是C盘！）
+- **前端代码**：`D:\WorkBuddy\20260331205655\client\src\`
+- **后端代码**：`D:\WorkBuddy\20260331205655\server\src\`（注意是server\src，不是server\server）
+- **所有文件操作必须使用 D:\ 开头**
 
-## 项目：邻盟 - 社区资源智能匹配助手
-- **状态：** 全栈功能实现完成 v3.3 ✅（2026-04-06）
-- **项目路径：** `D:\WorkBuddy\20260331205655`（2026-04-06从C盘迁移，备份位置：D:\WorkBuddy\backups\）
-- **v3.3更新（2026-04-05）：**
-  - 移动端适配全面完成（27个文件全部添加768px响应式CSS）
-  - 招商大使端真实渠道码功能（qrcode库生成真实二维码）
-  - 大使通知真实发送机制（管理后台→message表→大使端显示）
-  - 大使提成配置数据同步（管理后台配置→大使首页展示）
-  - 大使渠道码页面UI优化（手机端按钮横向排列）
-  - 修复大使端消息删除同步问题（删除通知时同时清理message表）
-  - **重要规范**：恢复备份文件前必须先经过用户同意
-- **v3.2更新（2026-04-04 22:06）：**
-- **v3.2更新（2026-04-04 22:06）：**
-  - 修复社区端和商家端首页轮播图图片不显示：前端优先用 image_url，否则降级渐变色；支持点击跳转
-  - 社区登录/注册页"撮合奖励"文案去掉具体金额，改为"成功合作可获得奖励"
-  - 备份至 `D:\WorkBuddy\backups\20260404_220536\`
-- **v3.1更新（2026-04-04 21:30）：**
-  - 新增管理后台撮合奖励配置页面（ConfigReward.vue）
-  - 增加默认标签：社区标签29个、商家标签32个
-  - 登录/注册页增加功能介绍模块（社区端+商家端）
-  - 扩充客服问答内容（10个常见问题+完整答案）
-  - 实现撮合奖励自动生成：acceptIntention时自动创建reward_records
-  - 更新撮合奖励配置为200元
-- **2026-04-04 21:18 Bug修复：**
-  - 删除客服问答中的"什么是防飞单保护？"问答
-  - 删除登录/注册页的"防飞单保护"功能介绍
-  - 修复撮合奖励配置保存不生效问题：后端saveRewardConfig改为保存reward_base和level_bonus
-- **2026-04-04 20:51 生成文档：**
-  - 技术说明书：数据库设计、API接口、项目结构、部署指南
-  - 产品使用说明书：四端使用指南、功能亮点、常见问题
-  - 文档位置：WorkBuddy全局存储brain目录
-- **撮合奖励功能/财务管理：** 已实现撮合成功时自动生成奖励记录
-- **2026-04-04 20:41 更新需求说明书：**
-  - 备份旧版本至 `需求说明书_v2.0_20260404.md`
-  - 更新至 v3.0，记录后端API全部完成、手机端适配、收藏功能、图片上传等更新
-- **2026-04-04 凌晨 UI/UX功能增强：**
-  - 社区端首页推荐商家：匹配度改为"匹配度"标签+红心，去掉百分比
-  - 资源广场卡片：新增logo图片、标签、收藏图标（Star图标+API）
-  - 消息中心链接：匹配提醒→资源详情、审核通知→需求详情、撮合成功→意向页面
-  - 社区端和商家端个人中心：新增"我的收藏"标签页
-  - 社区端资料编辑：Logo改为图片上传、场地图片改为多图上传组件
-  - 后端新增图片上传接口：POST /api/public/upload/image
-  - 新增悬浮客服聊天组件：client/src/components/ServiceChat.vue
-  - 社区端和商家端首页布局：添加悬浮客服图标（右下角固定）
-  - AI审核机制设计文档：AI_AUDIT_DESIGN.md
-- **撮合成功标准：** 商家与社区之间完成合作意向确认，意向状态变为"已接受/已合作"
-- **撮合奖励功能/财务管理：** 尚未实现，待后续开发
-- **2026-04-04 20:51 生成文档：**
-  - 技术说明书：数据库设计、API接口、项目结构、部署指南
-  - 产品使用说明书：四端使用指南、功能亮点、常见问题
-  - 文档位置：WorkBuddy全局存储brain目录
-- **2026-04-03 22:50 UI/UX优化修复：**
-  - 修复 DemandDetail.vue 数组 split 问题（target_audience/tags/sponsor_types 可能是数组）
-  - 资源广场筛选：移除后端不支持的"行业分类"筛选器，修复参数映射
-  - 匹配度红心：左侧添加"匹配度"文字标签，去掉百分比显示
-  - 商家赞助详情页：隐藏联系方式，改为"请联系平台客服"链接跳转到留言咨询页
-  - 资源广场点击商家名称：改为跳转商家详情页 `/community/merchants/:id`
-  - 时间格式：统一为 YYYY-MM-DD HH:mm（去掉秒）
-- **撮合成功标准：** 商家与社区之间完成合作意向确认，意向状态变为"已接受/已合作"
-- **2026-04-03 08:35 全面修复：**
-  - merchant/Demands.vue 删除重复 </script> 标签
-  - admin.js 删除重复 getAlgorithmConfig Mock定义
-  - communityController.getResources 添加 req.community?.id 守卫，移除ORDER BY match_score
-  - merchantController.getResources 完全重写为正确的公开列表接口（JOIN merchants，不依赖登录）
-  - publicController/adminController getTags 移除不存在的sort_order排序字段
-  - 数据库补充：system_notifications表、tags.sort_order字段、ambassadors提现字段、withdraw_records表
-  - 创建 client/public/logo.svg（品牌图标）
-  - 生成4张SVG占位Banner图，更新数据库URL
-  - 后端重启脚本：Stop-Process + Start-Process + netstat验证
-- **晚间更新（2026-04-02 22:30-23:51）：**
-  - admin.js 路径全面对齐后端路由（users前缀、config前缀、PUT方法）
-  - UsersAmbassador.vue/ConfigTags.vue/ConfigBanner.vue/ConfigAdmin.vue 完全重写为API调用
-  - ConfigMember.vue/ConfigAmbassador.vue/ConfigRating.vue save函数对接真实API
-  - ConfigBasic.vue 行政区划迁移到getRegions/createRegion/updateRegion/deleteRegion API
-  - ConfigBasic.vue 活动/企业/资源/专家类型全部对接 API（新增 GET/PUT basic-types）
-  - ConfigMember.vue/ConfigAmbassador.vue/ConfigRating.vue 新增 onMounted 加载配置
-  - ConfigAlgorithm.vue 完全重构对接真实 API
-  - Notifications.vue 新建（系统通知 CRUD 管理页面）
-  - AdminLayout 侧边栏新增"系统通知"菜单项
-  - 测试数据改为武汉市（seed-test-data.js 3个社区改为江岸区/武昌区/洪山区）
-  - init-db 行政区划改为武汉市数据
-  - 遗留：无（Mock→API 迁移全部完成）
-- **Git commit（2026-04-02 23:51）：** commit 804ee67
-- **手机端优化（2026-04-03 13:50）：** 全部页面手机端响应式优化完成，包含汉堡菜单、抽屉导航、全局组件样式优化
-- **手机端优化（2026-04-03 14:20）：** 修复管理后台抽屉菜单项不可见（drawer body 设为深色背景 + 菜单项加显式颜色）；商家需求详情页加底部留白；管理后台和大使端抽屉样式全面修复
-- **Bug修复（2026-04-03 16:02）：** `getDemandDetail` 路由在 `authMerchant` 之前注册，导致未登录时 req.merchant=undefined → 查询 `merchants WHERE id=undefined` 返回空 → `merchant.member_level` 抛 TypeError → 500。将路由移到 authMerchant 之后；修复 SELECT 重复字段 `c.households`；添加错误日志
-- **需求广场11项改造（2026-04-03 21:41）：**
-  - 商家需求详情页：修复loading空白（路由移至auth前）、matchHearts字段、demand_type_name显示、收藏按钮
-  - 商家需求广场 Demands.vue：区/街道/社区改为三级下拉（武汉13区数据）、keyword搜索生效、demand_type_name标签、view_count浏览量、收藏按钮（Star图标+API）
-  - 社区资源广场 Resources.vue：keyword搜索生效（后端已支持）、view_count浏览量、距离筛选下拉（3/5/10/20公里）
-  - 社区去掉"需求广场"菜单：CommunityLayout.vue 删除PC和手机端导航项、router/index.js 删除 demands/square 路由
-  - 数据库：`demand_favorite.activity_id` → `demand_id`
-  - 后端收藏API：toggleFavorite、getMyFavorites（复用demand_favorite表）
-  - 前端API：merchant.js 新增toggleFavorite/getMyFavorites
-- **待完成/待确认：** 社区资料页、商家资料页的"UI原型"字段补充（需用户提供UI原型截图确认具体字段）；社区资源详情页暂无地图定位（数据库无经纬度字段）
-- **公网地址（2026-04-03）：** http://c0bb71.r12.cpolar.top（cpolar内网穿透，临时地址，会随服务重启变化）
-- **下午更新（2026-04-02 17:45-18:00）：**
-  - 页面标题修改：社区「商家资源」→「资源广场」，商家「社区需求」→「需求广场」
-  - 留言咨询隔离：新增 `getMyComments` 接口，留言咨询tab只显示当前社区的留言和回复
-  - Mock数据迁移（已完成大部分）：
-    - 社区：Home.vue / Resources.vue / ResourceDetail.vue（新建） / Demands.vue / Profile.vue / Messages.vue（意向tab+留言tab）
-    - 商家：Home.vue / Demands.vue / Resources.vue / DemandDetail.vue（新建） / Profile.vue / Messages.vue（新建） / PublishResource.vue
-  - 后端新增：getCommentReplies（商家评论回复）、community getProfile增强（统计+画像）、community updateProfile增强、merchant getProfile增强、merchant createIntention修复（自动取community_id）
-  - 待完成：社区 Messages.vue（系统通知tab）、招商大使全部5页、管理后台全部16页
-- **测试数据待改为武汉市（未完成）：** init-db.js 中的上海地址需改为武汉
-- **说明书位置：** `c:\Users\12494\AppData\Roaming\WorkBuddy\User\globalStorage\tencent-cloud.coding-copilot\brain\d37c227963164a71ae4631a82fe471d4\需求说明书.md`（v2.0）
-- **技术栈：** Node.js + Express + Vue3 + MySQL
-- **已确认事项：**
-  - 平台名称：邻盟
-  - 只做PC网页版（响应式，支持手机端查看）
-  - 登录方式：手机号+验证码（测试版自动填入），四端独立登录页
-  - 注册信息：包含Logo、场地图片、简介、地图定位、小区详细画像数据
-  - 标签体系：可选择或自定义，后台可配置
-  - 广告轮播图：社区端与商家端首页展示，后台可配置
-  - 后台配置：匹配算法、管理员、标签、广告、会员、提成、奖励、防飞单等级、基础数据均可配置
-  - 匹配度展示：五颗心形式
-  - 需求批量导入：支持Excel模板
-  - 会员权益：支持自定义添加
-  - 数据统计：包含待审核数量统计
-  - 留言回复：需求/资源下可留言互动，后台可管理
-  - 目标对象：9类人群可选
-  - 商家回报：9种回报方式
-  - **登录后提醒：** 社区与商家登录后会提醒用户补充基本信息
-- **已设计默认值：**
-  - 会员年费：免费/¥999/¥2999/¥5999/¥12000
-  - 招商大使提成：首次20% / 续费10%
-  - 撮合奖励：每笔200元物资
-  - 轮播图：4张测试用内容
-  - 标签：社区12个 + 商家12个预设标签
-  - 测试数据：6个商家、6条资源、5条留言、3条已完成合作
-- **防飞单关键设计：** 金牌（Lv3）及以上会员才能查看社区详细联系方式（后台可配置）
-- **工作区：** `D:\WorkBuddy\20260331205655\`
-- **Git仓库：** 已初始化，master分支
-- **每日备份：** 每日23:00自动备份，保留30天
-- **最近更新（2026-04-02 13:00）后端正式对接：**
-  - 数据库：MySQL，密码root，数据库名linmeng，已初始化15个表
-  - 后端启动方式：cd server && node src/app.js（端口3000）
-  - 前端启动方式：cd client && node node_modules/vite/bin/vite.js --port 5173 --host
-  - 修复了permissions字段(MySQL JSON类型被mysql2自动反序列化为数组)导致的登录500错误
-  - app.js改用绝对路径加载.env：dotenv.config({ path: path.join(__dirname,'..', '.env') })
-  - 社区/商家/大使登录接口支持验证码模式（测试版：123456/888888）
-  - 前端新增：src/utils/request.js（axios封装），src/api/admin.js/community.js/merchant.js/ambassador.js/public.js
-  - 四个登录页全部对接真实API，管理员改为用户名+密码方式
-  - 测试数据：3个社区、6个商家、2个大使、3条需求、4条资源、1条完成合作、2条留言、5条轮播图
-  - 测试账号：admin/admin123，社区13800138000/123456，商家13900139000/123456，大使13900001111/888888
-- **最近更新（2026-04-02 01:41）：**
-  - 管理后台商家评级功能（UsersMerchant.vue + ConfigRating.vue + ConfigAdmin.vue）
-  - 商家列表显示平台评级（5星），可修改评级
-  - 新增商家评级配置页面（维度权重、星级规则、评分指标）
-  - 管理员权限增加"商家评级"选项
-  - 需求说明书更新至v1.9
-- **v1.8 更新（2026-04-02 01:19）：**
-  - 合作意向页"接受合作"与"婉拒"增加确认弹窗
-  - 留言咨询页增加回复功能，支持层级显示回复内容
-  - 商家注册页行业分类扩展为31个：教育培训、医院诊所、药店、餐饮小吃、生鲜水果、美业、保健养生、体育健身、银行保险、电信服务、商超零售、快递物流、家政服务、废旧回收、五金建材、家居装修、家纺布艺、电子电器、房产中介、汽车服务、旅游服务、鲜花礼品、电影演出、娱乐休闲、服装服饰、酒店宾馆、茶艺咖啡、宠物服务、眼镜、酒水饮料、办公用品、设备租赁、其他
-  - 增加商家五星评级系统（starRating字段），推荐展示时星级优先显示
-  - 商家详情页同时显示会员等级（如金牌会员）与平台评级（5星）
-- **v1.8 更新（2026-04-02 凌晨）：**
-  - 社区注册页删除多余的"社区名称"输入框（后面会通过三级级联选择）
-  - 商家登录页添加ElMessage导入，修复登录无反应问题
-  - 社区登录页移除登录时"请补充基本信息"提示（改为在个人中心提示）
-  - 招商大使Layout顶部栏添加"退出登录"按钮
-  - 招商大使退出按钮没反应，添加useRouter导入
-  - 商家资料页增加"行业分类"字段（新选项含：社工服务、养老服务、新闻媒体、自媒体、IT互联网、软件开发、图文广告、电子电器维修、家居维修、美发、建筑工程等）
-  - 商家端需求详情页点击社区名可弹窗查看社区基本信息
-- **v1.8 更新（2026-04-02 01:14）：**
-  - 社区登录页添加House图标导入，修复登录按钮无反应问题
-  - 商家注册页行业分类同步更新为43个选项（与商家资料页一致）
-  - 社区登录页图标改为OfficeBuilding（与注册页一致），修复按钮无反应问题
-- **v1.8 更新（2026-04-02 01:19）：**
-  - 社区首页Home.vue添加StarFilled图标导入（之前漏掉了），修复登录跳转报错
-  - 社区首页Home.vue红心改为span元素+CSS样式
-  - 社区个人中心Profile.vue的Building图标改为OfficeBuilding
-  - 社区登录页的House图标替换为OfficeBuilding（与注册页一致）
-  - 社区端首页匹配度计算修正（matchScore直接作为红心数量）
-  - 需求说明书更新至v1.8（含43个行业分类、五星评级系统说明）
+## 用户信息
+- **项目**：邻盟（LinMeng）- 社区互助平台
+- **域名**：3qall.com
+- **联系邮箱**：12494789@qq.com
+
+## 项目部署状态（2026-04-09）
+
+### 服务器信息
+- **腾讯云服务器**：150.158.12.243
+- **系统**：Ubuntu 24.04.4 LTS
+- **SSH连接**：用户名 **ubuntu**，密钥位于 `D:\WorkBuddy\linmeng2026key.pem`
+- **MySQL连接**：`mysql -u root -proot linmeng`
+- **已安装**：Node.js, MySQL, Nginx, PM2
+- **防火墙**：ufw 已启用，端口 22/80/443/3000 已开放
+
+### 数据库同步问题（2026-04-09）
+- **问题**：服务器 sys_configs 表缺少配置项，导致网站显示异常
+- **同步内容**：anti_flying, expert_types, level_bonus, reward_base
+- **解决方案**：使用 SSH 连接 ubuntu@150.158.12.243 执行 SQL 插入
+
+### 网站状态
+- **IP访问**：http://150.158.12.243 ✅ 正常工作
+- **域名访问**：http://www.3qall.com ✅ 正常工作
+- **项目目录**：`/var/www/linmeng/`（前端：`frontend`，后端：`server`）
+- **API运行**：`pm2 start server/src/app.js --name linmeng-server`
+
+### 本地开发配置（2026-04-10更新）
+- **本地MySQL**：安装在 `C:\Program Files\MySQL\MySQL Server 8.4`，root密码 `root`
+- **本地数据库**：`linmeng`（已从服务器同步）
+  - 183条行政区数据（包含新增的3个开发区）
+  - 37条需求数据
+  - 31条资源数据
+  - 54条标签数据
+  - 30种专家类型
+- **后端连接本地**：`server/.env.local` 已配置 `DB_HOST=localhost`
+- **开发预览**：前端 `localhost:5173` → 后端 `localhost:3000` → 本地 MySQL
+
+### 开发流程（安全验证）
+1. 本地修改代码
+2. 本地 `npm run build` 构建
+3. 本地 `npm run dev` 预览（连接服务器数据库，数据完整）
+4. 确认无误后上传到服务器
+
+### 数据库配置（sys_configs）
+| 配置键 | 说明 |
+|--------|------|
+| member_levels | 会员等级配置 |
+| member_benefits | 会员权益配置 |
+| ambassador_commission | 大使提成配置 |
+| match_algorithm | 匹配算法权重 |
+| match_reward | 撮合奖励配置 |
+| anti_flying | 防飞单规则 |
+| expert_types | 专家类型 |
+| level_bonus | 等级奖励 |
+| reward_base | 奖励基础配置 |
+| basic_types | 基础数据类型 |
+| rating_config | 评分配置 |
+| anti_flying_level | 防飞单等级门槛 |
+
+## 测试账号（密码均为 123456）
+- 管理员：admin
+- 社区账号：liuyong, zhanghua, wangli, lisimin, chenjie
+- 大使账号：dashi1-dashi5
+- 商家账号：shangjia1-shangjia10, whsp1-whsp20
+
+## 工作习惯与注意事项
+
+### 🔴 页面验证规则（2026-04-10）
+- **用 preview_url 打开页面验证前，必须先用 `Get-NetTCPConnection -LocalPort 3000,5173` 确认服务在运行（状态=Listen）**
+- 确认服务正常后再用 preview_url 打开页面
+
+### PowerShell 命令规范
+- ❌ **不要用 `curl`** - Windows PowerShell 中 `curl` 是 `Invoke-WebRequest` 的别名，处理响应流时会卡住
+- ✅ **用 `Invoke-WebRequest` 或 `curl.exe`** - 建议加 `-TimeoutSec 10` 设置超时
+  ```powershell
+  # 正确方式1: PowerShell原生命令
+  Invoke-WebRequest -Uri "http://localhost:3000/api/xxx" -UseBasicParsing -TimeoutSec 10
+  
+  # 正确方式2: 真正的curl
+  curl.exe -s http://localhost:3000/api/xxx
+  ```
+
+### 服务状态检查
+- 端口检查用 `Get-NetTCPConnection -LocalPort xxx`
+- TCP连通性用 `Test-NetConnection -ComputerName localhost -Port xxx`
+
+### 前端调试
+- 本地开发前端：**http://localhost:5173**
+- 本地开发后端：**http://localhost:3000**
+- 记得按 `Ctrl+F5` 强制刷新清除缓存
+
+### 后端重启
+- 如果后端无响应，先 `Stop-Process -Name node -Force` 再重启
+- 启动命令：`cd D:\WorkBuddy\20260331205655\server; node src/app.js`
+- 用 `Start-Process powershell -ArgumentList "-NoExit","-Command","..."` 启动可看到日志
+
+### 前端部署（2026-04-09更新）
+- **前端目录**：`/var/www/linmeng/client`
+- **部署步骤**：
+  1. `npm run build` 构建前端
+  2. SSH到服务器：`ssh -i "D:\WorkBuddy\linmeng2026key.pem" ubuntu@150.158.12.243`
+  3. 清空目录：`sudo rm -rf /var/www/linmeng/client/* && sudo chown -R ubuntu:ubuntu /var/www/linmeng/client`
+  4. 本地SCP上传：`scp -i "D:\WorkBuddy\linmeng2026key.pem" -r "D:\WorkBuddy\20260331205655\client\dist\*" ubuntu@150.158.12.243:/var/www/linmeng/client/`
+
+### 功能更新记录（2026-04-09）
+1. **社区端登录提示优化**：手机号不存在时提示"该手机号尚未注册，请先注册"
+2. **未登录访问**：社区端和商家端首页允许未登录访问，但详情页需登录
+3. **管理后台菜单**：需求列表和资源列表已移至"内容审核"下级菜单
+
+### 功能更新记录（2026-04-10）
+1. **行政区更新**：服务器regions表新增3个开发区（东湖新技术开发区、武汉经济技术开发区、东湖风景区）及其街道数据
+2. **数据库同步**：本地数据库已同步服务器数据（demands 37条，resources 31条）
+3. **社区注册页优化**：区、街、社区选择框改为一行显示
+4. **资源类型统一**：管理后台 basic_types.resourceTypes 扩展为12种（专业服务、教育培训、场地资源、物资捐赠、志愿服务、资金赞助、技术支持、健康医疗、活动赞助、媒体宣传、技能培训、养老服务），商家端和社区端前端代码已同步更新
+5. **资源卡片布局**：收藏/关注/分享三等分居中布局
+6. **社区编辑页优化**：区街社区名不可修改，小区名称移至社区画像区域
+7. **测试数据中文化**：demands和resources表的英文标题、内容已更新为中文
+8. **商家会员有效期修复**：
+   - 问题：金牌会员显示"长期有效"而不是"12个月"
+   - 修复：Member.vue 和 Profile.vue 中添加默认值处理
+   - 会员等级有效期映射：免费试用3个月、普通3个月、银牌12个月、金牌12个月、铂金12个月、钻石12个月
+9. **备份与部署（2026-04-10 02:18）**：
+   - 本地备份：linmeng_backup_2026-04-10_02-18-34.zip (19.91 MB)
+   - 前端已部署到服务器
+   - 数据库配置已同步到服务器
+
+### 功能更新记录（2026-04-11）
+1. **管理后台基础数据配置增强**：
+   - 新增"社区类型"标签页：用于描述社区特征（老旧小区、新建社区、亲子社区等）
+   - 新增"居民类型"标签页：用于描述居民群体特征（青少年、儿童、青年、退役军人等）
+   - 所有类型列表（活动类型、专家类型、企业类型、行业分类、资源类型、社区类型、居民类型）添加排序功能（上下移动按钮）
+   - 新增、编辑、删除、启用/禁用均可自动保存
+
+2. **API同步更新**：
+   - 后端 `getPublishTypes` API 更新：返回 community_types、resident_types、industry_types 等新类型
+   - 商家端发布资源页面：从管理后台加载社区类型配置
+   - 前端各页面：社区端、商家的发布页面均通过API获取类型配置
+
+3. **基础数据类型结构**（sys_configs.basic_types）：
+   - activityTypes: 活动类型
+   - expertTypes: 专家类型
+   - enterpriseTypes: 企业类型
+   - industryTypes: 行业分类
+   - resourceTypes: 资源类型
+   - communityTypes: 社区类型（新增）
+   - residentTypes: 居民类型（新增）
+
+4. **社区端资源详情页修复（2026-04-11）**：
+   - 问题：资源类型显示数字、可提供内容/期望回报字段显示不正确、缺少地址/logo/图片等字段
+   - 修复：资源类型显示中文映射、移除不存在的字段、按类型显示相关字段、新增商家信息展示
+   - 修改文件：
+     - `client/src/views/community/ResourceDetail.vue`（前端页面，完全重写）
+     - `server/src/controllers/communityController.js`（后端接口增加 expert_intro 字段）
+
+5. **社区端资源详情页增强（2026-04-11 03:55）**：
+   - 资源类型显示中文（0-11映射：专业服务、教育培训、场地资源、物资捐赠、志愿服务、资金赞助、技术支持、健康医疗、活动赞助、媒体宣传、技能培训、养老服务）
+   - 按资源类型显示相关字段（金额范围、物资数量、领取方式、派遣人数、服务时长、服务范围、资质证明、收费标准、媒体类型、覆盖范围）
+   - 新增商家信息展示：地址(merchant_address)、Logo(merchant_logo)、资源图片(images)、商家图文(merchant_images)
+   - 新增商家介绍字段：社会身份(social_identity)、资质荣誉(honors)、专家介绍(expert_intro)
+   - 移除不存在的字段：provide_content、expected_return（数据库中不存在）
+
+6. **商家资源期望回报功能（2026-04-11 04:00）**：
+   - 数据库：resources 表新增 expected_rewards（期望回报类型）、expected_reward_desc（期望回报说明）字段
+   - 后端：merchantController.js 的 createResource/updateResource 接口添加这两个字段
+   - 后端：communityController.js 的 getResourceDetail 接口返回 expected_rewards、expected_reward_desc
+   - 前端：商家发布资源页 PublishResource.vue 提交时带上 expectedRewards、expectedRewardDesc
+   - 前端：社区端 ResourceDetail.vue 重点展示"可提供内容"和"期望回报"区块
+
+7. **商家发布资源字段完整提交（2026-04-11 04:25）**：
+   - 问题：前端填写的很多字段没有提交到后端，导致详情页显示不正确
+   - 数据库：resources 表新增 professional_type、tech_types、tech_service_type、goods_expiry、fund_scenes、media_channels、valid_until 字段
+   - 数据库：demands 表新增 expert_count、frequency、need_visit、fee、expert_qualification、space_name、space_area、space_types、facilities、open_hours、cooperation_types、brand_display_types、space_usage_desc、volunteer_points 等字段
+   - 后端：merchantController.js 的 createResource/updateResource 接口添加所有新字段
+   - 前端：PublishResource.vue 提交时带上所有字段（professional_type、pricingType、mediaChannels 等）
+   - 前端：ResourceDetail.vue 添加专业服务类型、技术类型、媒体渠道等显示，以及标签中文映射
+   - 新增映射函数：getServiceScopeLabel、getPricingTypeLabel、getTechTypeLabel、getTechServiceTypeLabel、getMediaChannelLabel
