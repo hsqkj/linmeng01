@@ -322,10 +322,16 @@ exports.getResourceDetail = async (req, res) => {
       }
     }
     
-    // 解析 images 字段（从 JSON 字符串转为数组）
+    // 解析 images 字段（JSON类型可能返回数组或字符串）
     const resource = rows[0]
     if (resource.images) {
-      try { resource.images = JSON.parse(resource.images) } catch { resource.images = [] }
+      if (Array.isArray(resource.images)) {
+        // 已是数组，无需处理
+      } else if (typeof resource.images === 'string') {
+        try { resource.images = JSON.parse(resource.images) } catch { resource.images = [] }
+      } else {
+        resource.images = []
+      }
     } else {
       resource.images = []
     }
