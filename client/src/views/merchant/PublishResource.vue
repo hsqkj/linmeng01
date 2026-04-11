@@ -437,11 +437,17 @@ async function submitResource() {
         // 本地文件，需要上传
         const res = await uploadImage(img.raw)
         if (res.data && res.data.url) {
-          uploadedImages.push('http://localhost:3000' + res.data.url)
+          // 直接使用相对路径，服务器和本地都能正常工作
+          uploadedImages.push(res.data.url)
         }
       } else if (img.url && !img.url.startsWith('blob:')) {
-        // 已上传的图片，直接用
-        uploadedImages.push(img.url)
+        // 已上传的图片，直接用（可能是相对路径或完整URL）
+        let url = img.url
+        // 如果是完整的 localhost URL，转换为相对路径
+        if (url.includes('localhost:3000')) {
+          url = url.substring(url.indexOf('/uploads'))
+        }
+        uploadedImages.push(url)
       }
     }
 
