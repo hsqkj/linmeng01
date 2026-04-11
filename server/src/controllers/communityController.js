@@ -186,16 +186,33 @@ exports.getRecommendResources = async (req, res) => {
   }
 }
 
-// 资源类型字符串→整数映射
-const RESOURCE_TYPE_MAP = {
-  '便民服务': 0, '教育培训': 1, '健康医疗': 2, '体育健身': 3,
-  '文化娱乐': 4, '养老服务': 5, '社区商业': 6, '公益活动': 7,
-  '活动赞助': 8, '技能培训': 9
+// 资源类型字符串→整数映射（从数据库动态加载）
+let RESOURCE_TYPE_MAP = {}
+let resourceTypeLoaded = false
+
+// 加载资源类型配置
+async function loadResourceTypes() {
+  if (resourceTypeLoaded) return
+  try {
+    const [rows] = await pool.query("SELECT config_value FROM sys_configs WHERE config_key = 'basic_types'")
+    if (rows.length > 0) {
+      const config = JSON.parse(rows[0].config_value)
+      if (config.resourceTypes && config.resourceTypes.length > 0) {
+        config.resourceTypes.filter(t => t.enabled !== false).forEach((t, idx) => {
+          RESOURCE_TYPE_MAP[t.name || t] = idx
+        })
+      }
+    }
+  } catch (e) {
+    console.error('加载资源类型失败:', e.message)
+  }
+  resourceTypeLoaded = true
 }
 
 // 资源大厅
 exports.getResources = async (req, res) => {
   try {
+    await loadResourceTypes()
     const { page = 1, pageSize = 10, type, level, sort, keyword, distance } = req.query
     const offset = (page - 1) * pageSize
 

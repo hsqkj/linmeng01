@@ -200,14 +200,16 @@ const getResourceTypeName = (type) => {
   return type || '其他'
 }
 
-// 会员等级数字到中文映射
-const memberLevelMap = { 0: '普通会员', 1: '普通会员', 2: '银牌会员', 3: '金牌会员', 4: '铂金会员', 5: '钻石会员' }
+// 会员等级数字到中文映射（从API动态加载）
+const memberLevelMapData = ref({})
+const memberLevelMap = computed(() => memberLevelMapData.value)
 
-// 加载资源类型配置
+// 加载资源类型配置（同时加载会员等级）
 async function loadResourceTypes() {
   try {
     const { getPublishTypes } = await import('@/api/community')
     const res = await getPublishTypes()
+    // 资源类型
     if (res.data?.resource_types?.length) {
       const map = {}
       res.data.resource_types.forEach((name, idx) => {
@@ -215,6 +217,14 @@ async function loadResourceTypes() {
         map[name] = name
       })
       resourceTypeNumMap.value = map
+    }
+    // 会员等级
+    if (res.data?.member_levels?.length) {
+      const map = {}
+      res.data.member_levels.forEach(item => {
+        map[item.level] = item.name
+      })
+      memberLevelMapData.value = map
     }
   } catch {}
 }

@@ -142,9 +142,9 @@
   </div>
 </template>
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getAmbassadors, getAmbassadorDetail, updateAmbassadorStatus } from '@/api/admin'
+import { getAmbassadors, getAmbassadorDetail, updateAmbassadorStatus, getMemberConfig } from '@/api/admin'
 
 const ambassadors = ref([])
 const loading = ref(false)
@@ -164,7 +164,9 @@ const commissionRecords = ref([])
 
 const statusName = { 0: '待审核', 1: '正常', 2: '已禁用' }
 const statusTagType = { 0: 'warning', 1: 'success', 2: 'danger' }
-const memberLevelName = { 0: '普通会员', 1: '普通会员', 2: '银牌会员', 3: '金牌会员', 4: '铂金会员', 5: '钻石会员' }
+// 会员等级名称映射（从API动态加载）
+const memberLevelNameData = ref({})
+const memberLevelName = computed(() => memberLevelNameData.value)
 
 function formatTime(time) {
   if (!time) return '-'
@@ -294,7 +296,22 @@ async function enableAmbassador(row) {
 
 onMounted(() => {
   loadAmbassadors()
+  loadMemberConfig()
 })
+
+// 加载会员等级配置
+async function loadMemberConfig() {
+  try {
+    const res = await getMemberConfig()
+    if (res.data?.member_levels?.length) {
+      const map = {}
+      res.data.member_levels.forEach((level, idx) => {
+        map[idx] = level.name || level
+      })
+      memberLevelNameData.value = map
+    }
+  } catch {}
+}
 </script>
 <style scoped>
 .users-page { max-width: 1200px; margin: 0 auto; }

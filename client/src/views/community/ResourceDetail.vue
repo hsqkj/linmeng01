@@ -60,8 +60,8 @@
                 <span class="info-value"><el-tag size="small">{{ getResourceTypeName(resource.resource_type) }}</el-tag></span>
               </div>
               
-              <!-- 专业服务(0) 专属字段 -->
-              <template v-if="currentResourceType === 0">
+              <!-- 专业服务 专属字段 -->
+              <template v-if="currentResourceTypeName === '专业服务'">
                 <div class="info-item" v-if="resource.professional_type">
                   <span class="info-label">专业服务类型</span>
                   <span class="info-value"><el-tag type="success" size="small">{{ resource.professional_type }}</el-tag></span>
@@ -79,9 +79,9 @@
                   <span class="info-value">{{ getPricingTypeLabel(resource.price_range) }}</span>
                 </div>
               </template>
-              
-              <!-- 资金赞助(5) 专属字段 -->
-              <template v-if="currentResourceType === 5">
+
+              <!-- 资金赞助 专属字段 -->
+              <template v-if="currentResourceTypeName === '资金赞助'">
                 <div class="info-item" v-if="resource.min_amount > 0 || resource.max_amount > 0">
                   <span class="info-label">赞助金额范围</span>
                   <span class="info-value">{{ resource.min_amount || 0 }} ~ {{ resource.max_amount || 0 }} 元</span>
@@ -93,9 +93,13 @@
                   </span>
                 </div>
               </template>
-              
-              <!-- 物资捐赠(3) 专属字段 -->
-              <template v-if="currentResourceType === 3">
+
+              <!-- 物资支持 专属字段 -->
+              <template v-if="currentResourceTypeName === '物资支持'">
+                <div class="info-item" v-if="resource.specs">
+                  <span class="info-label">物资详情</span>
+                  <span class="info-value">{{ resource.specs }}</span>
+                </div>
                 <div class="info-item" v-if="resource.quantity">
                   <span class="info-label">物资数量</span>
                   <span class="info-value">{{ resource.quantity }}</span>
@@ -109,9 +113,9 @@
                   <span class="info-value">{{ resource.goods_expiry }}</span>
                 </div>
               </template>
-              
-              <!-- 人力支持/志愿服务(4) 专属字段 -->
-              <template v-if="currentResourceType === 4">
+
+              <!-- 人力服务 专属字段 -->
+              <template v-if="currentResourceTypeName === '人力服务'">
                 <div class="info-item" v-if="resource.staff_count">
                   <span class="info-label">可派遣人数</span>
                   <span class="info-value">{{ resource.staff_count }}人</span>
@@ -120,37 +124,77 @@
                   <span class="info-label">单次服务时长</span>
                   <span class="info-value">{{ resource.work_duration }}小时</span>
                 </div>
-              </template>
-              
-              <!-- 技术支持(6) 专属字段 -->
-              <template v-if="currentResourceType === 6">
-                <div class="info-item" v-if="techTypesList.length">
-                  <span class="info-label">技术类型</span>
-                  <span class="info-value">
-                    <el-tag v-for="t in techTypesList" :key="t" size="small" style="margin:2px">{{ getTechTypeLabel(t) }}</el-tag>
-                  </span>
-                </div>
-                <div class="info-item" v-if="resource.tech_service_type">
-                  <span class="info-label">服务方式</span>
-                  <span class="info-value">{{ getTechServiceTypeLabel(resource.tech_service_type) }}</span>
+                <div class="info-item" v-if="resource.manpower_desc">
+                  <span class="info-label">人员类型描述</span>
+                  <span class="info-value">{{ resource.manpower_desc }}</span>
                 </div>
               </template>
-              
-              <!-- 媒体报道(9) 专属字段 -->
-              <template v-if="currentResourceType === 9">
+
+              <!-- 志愿服务 专属字段 -->
+              <template v-if="currentResourceTypeName === '志愿服务'">
+                <div class="info-item" v-if="resource.staff_count">
+                  <span class="info-label">志愿者人数</span>
+                  <span class="info-value">{{ resource.staff_count }}人</span>
+                </div>
+                <div class="info-item" v-if="resource.work_duration">
+                  <span class="info-label">单次服务时长</span>
+                  <span class="info-value">{{ resource.work_duration }}小时</span>
+                </div>
+                <div class="info-item" v-if="resource.manpower_desc">
+                  <span class="info-label">志愿者类型描述</span>
+                  <span class="info-value">{{ resource.manpower_desc }}</span>
+                </div>
+              </template>
+
+              <!-- 媒体宣传 专属字段 -->
+              <template v-if="currentResourceTypeName === '媒体宣传'">
                 <div class="info-item" v-if="mediaChannelsList.length">
                   <span class="info-label">媒体渠道</span>
                   <span class="info-value">
                     <el-tag v-for="c in mediaChannelsList" :key="c" size="small" type="warning" style="margin:2px">{{ getMediaChannelLabel(c) }}</el-tag>
                   </span>
                 </div>
-                <div class="info-item" v-if="resource.media_type">
-                  <span class="info-label">媒体类型</span>
-                  <span class="info-value">{{ resource.media_type }}</span>
+                <div class="info-item" v-if="resource.media_desc">
+                  <span class="info-label">媒体资源描述</span>
+                  <span class="info-value">{{ resource.media_desc }}</span>
                 </div>
-                <div class="info-item" v-if="resource.coverage">
-                  <span class="info-label">覆盖范围</span>
-                  <span class="info-value">{{ resource.coverage }}</span>
+              </template>
+
+              <!-- 就业岗位 专属字段 -->
+              <template v-if="currentResourceTypeName === '就业岗位'">
+                <div class="info-item" v-if="resource.staff_count">
+                  <span class="info-label">招聘人数</span>
+                  <span class="info-value">{{ resource.staff_count }}人</span>
+                </div>
+                <div class="info-item" v-if="resource.work_type">
+                  <span class="info-label">岗位类型</span>
+                  <span class="info-value">{{ getWorkTypeLabel(resource.work_type) }}</span>
+                </div>
+                <div class="info-item" v-if="resource.salary_range">
+                  <span class="info-label">薪资范围</span>
+                  <span class="info-value">{{ resource.salary_range }}</span>
+                </div>
+              </template>
+
+              <!-- 场地支持 专属字段 -->
+              <template v-if="currentResourceTypeName === '场地支持'">
+                <div class="info-item" v-if="resource.space_area">
+                  <span class="info-label">场地面积</span>
+                  <span class="info-value">{{ resource.space_area }}平方米</span>
+                </div>
+                <div class="info-item" v-if="resource.capacity">
+                  <span class="info-label">可容纳人数</span>
+                  <span class="info-value">{{ resource.capacity }}人</span>
+                </div>
+                <div class="info-item" v-if="facilitiesList.length">
+                  <span class="info-label">场地设施</span>
+                  <span class="info-value">
+                    <el-tag v-for="f in facilitiesList" :key="f" size="small" style="margin:2px">{{ getFacilityLabel(f) }}</el-tag>
+                  </span>
+                </div>
+                <div class="info-item" v-if="resource.open_hours">
+                  <span class="info-label">开放时间</span>
+                  <span class="info-value">{{ resource.open_hours }}</span>
                 </div>
               </template>
               
@@ -409,7 +453,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { ArrowLeft } from '@element-plus/icons-vue'
-import { getResourceDetail, getResourceComments, createResourceComment, getMerchantDetail } from '@/api/community'
+import { getResourceDetail, getResourceComments, createResourceComment, getMerchantDetail, getConfig } from '@/api/community'
 
 const route = useRoute()
 const router = useRouter()
@@ -498,11 +542,21 @@ function getResourceTypeName(type) {
   return type || '其他'
 }
 
-// 加载资源类型配置
+// 会员等级名称映射（从API动态加载）
+const memberLevelNameData = ref({})
+
+// 媒体渠道映射（从API动态加载）
+const mediaChannelData = ref({})
+function getMediaChannelLabel(val) {
+  return mediaChannelData.value[val] || val || ''
+}
+
+// 加载资源类型配置（同时加载会员等级和媒体渠道）
 async function loadResourceTypes() {
   try {
     const { getPublishTypes } = await import('@/api/community')
     const res = await getPublishTypes()
+    // 资源类型
     if (res.data?.resource_types?.length) {
       const map = {}
       res.data.resource_types.forEach((name, idx) => {
@@ -510,6 +564,22 @@ async function loadResourceTypes() {
         map[name] = name
       })
       resourceTypeMap.value = map
+    }
+    // 会员等级
+    if (res.data?.member_levels?.length) {
+      const map = {}
+      res.data.member_levels.forEach(item => {
+        map[item.level] = item.name
+      })
+      memberLevelNameData.value = map
+    }
+    // 媒体渠道
+    if (res.data?.media_channels?.length) {
+      const map = {}
+      res.data.media_channels.forEach(name => {
+        map[name] = name
+      })
+      mediaChannelData.value = map
     }
   } catch {}
 }
@@ -545,15 +615,6 @@ const techServiceTypeMap = {
 }
 function getTechServiceTypeLabel(val) {
   return techServiceTypeMap[val] || val || ''
-}
-
-// 媒体渠道映射
-const mediaChannelMap = {
-  'news': '新闻网站/APP', 'wechat': '微信公众号', 'video': '短视频（抖音/视频号）',
-  'tv': '电视/广播', 'paper': '报纸'
-}
-function getMediaChannelLabel(val) {
-  return mediaChannelMap[val] || val || ''
 }
 
 // 技术类型列表
@@ -604,11 +665,42 @@ const currentResourceType = computed(() => {
   return typeof type === 'number' ? type : parseInt(type) || 0
 })
 
-// 会员等级映射
-const memberLevelMap = { 0: '普通会员', 1: '银牌会员', 2: '金牌会员', 3: '铂金会员', 4: '钻石会员', 5: '钻石会员' }
+// 当前资源类型（名称）- 用于判断显示专属字段
+const currentResourceTypeName = computed(() => {
+  return getResourceTypeName(resource.value?.resource_type)
+})
+
+// 场地设施列表
+const facilitiesList = computed(() => {
+  const facilities = resource.value?.facilities
+  if (!facilities) return []
+  if (Array.isArray(facilities)) return facilities
+  if (typeof facilities === 'string') {
+    try { return JSON.parse(facilities) } catch { return [] }
+  }
+  return []
+})
+
+// 场地设施映射
+const facilityMap = {
+  'projector': '投影仪', 'wifi': 'WiFi', 'aircon': '空调',
+  'stage': '舞台', 'sound': '音响', 'parking': '停车位'
+}
+function getFacilityLabel(val) {
+  return facilityMap[val] || val || ''
+}
+
+// 岗位类型映射
+const workTypeMap = {
+  'fulltime': '全职', 'parttime': '兼职', 'intern': '实习', 'any': '不限'
+}
+function getWorkTypeLabel(val) {
+  return workTypeMap[val] || val || ''
+}
+
 const memberLevelTagTypeMap = { 0: 'info', 1: '', 2: 'warning', 3: 'danger', 4: 'danger', 5: 'danger' }
 
-const memberLevelName = computed(() => memberLevelMap[resource.value?.member_level] || '普通会员')
+const memberLevelName = computed(() => memberLevelNameData.value[resource.value?.member_level] || '普通会员')
 const memberLevelTagType = computed(() => memberLevelTagTypeMap[resource.value?.member_level] || 'info')
 
 // 标签列表

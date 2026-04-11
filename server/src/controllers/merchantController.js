@@ -183,9 +183,11 @@ exports.getConfig = async (req, res) => {
   }
 }
 
+
 // 推荐需求（公开接口，不需要登录）
 exports.getRecommendDemands = async (req, res) => {
   try {
+    await Promise.all([loadDemandTypes(), loadResidentTypes(), loadCommunityTags(), loadResourceTypes()])
     const [demands] = await pool.query(
       `SELECT d.*, c.community_name, c.district, c.street, c.households
        FROM demands d
@@ -211,28 +213,129 @@ exports.getRecommendDemands = async (req, res) => {
   }
 }
 
-// 需求大厅
-const DEMAND_TYPE_MAP = { 0: '活动赞助', 1: '专家服务', 2: '空间运营', 3: '物资赞助', 4: '健康服务', 5: '教育培训' }
-const DEMAND_TYPE_NAME = { '活动赞助': '活动赞助', '专家服务': '专家服务', '空间运营': '空间运营', '物资赞助': '物资赞助', '健康服务': '健康服务', '教育培训': '教育培训' }
+// 需求大厅 - 需求类型映射（从数据库动态加载）
+let DEMAND_TYPE_MAP = {}
+let demandTypeLoaded = false
 
-// 居民类型映射（与 resident_types 顺序一致）
-const RESIDENT_TYPE_MAP = ['青少年/儿童', '青年', '中老年', '宝妈', '退役军人', '残疾群体', '困难家庭', '志愿者']
+async function loadDemandTypes() {
+  if (demandTypeLoaded) return
+  try {
+    const [rows] = await pool.query("SELECT config_value FROM sys_configs WHERE config_key = 'demand_types'")
+    if (rows.length > 0) {
+      const types = JSON.parse(rows[0].config_value)
+      types.forEach((name, idx) => {
+        DEMAND_TYPE_MAP[idx] = name
+        DEMAND_TYPE_MAP[name] = name
+      })
+    }
+  } catch (e) {
+    console.error('加载需求类型失败:', e.message)
+  }
+  demandTypeLoaded = true
+}
 
-// 资源类型映射
-const RESOURCE_TYPE_MAP = ['专业服务', '教育培训', '场地资源', '物资捐赠', '志愿服务', '资金赞助', '技术支持', '健康医疗', '活动赞助', '媒体宣传', '技能培训', '养老服务']
+const DEMAND_TYPE_NAME = {} // 保留空对象用于兼容
 
-// 社区标签映射（ID → 名称）
-const COMMUNITY_TAG_MAP = {
-  1: '老旧小区', 2: '新建社区', 3: '青年社区', 4: '老龄化社区', 5: '亲子社区',
-  6: '学区社区', 7: '商圈社区', 8: '产业园区', 9: '交通枢纽', 10: '景区周边',
-  11: '文化社区', 12: '体育社区', 13: '绿色社区', 14: '智慧社区', 15: '志愿社区',
-  16: '商业密集', 17: '公共空间丰富', 18: '学校密集', 19: '公园环绕',
-  40: '社区活动', 41: '志愿服务', 42: '文化演出', 43: '体育运动',
-  44: '教育培训', 45: '健康义诊', 46: '法律咨询', 47: '便民服务'
+// 资源类型缓存（从数据库动态加载）
+let RESOURCE_TYPE_MAP = []
+let resourceTypeLoaded = false
+
+// 加载资源类型配置
+async function loadResourceTypes() {
+  if (resourceTypeLoaded) return
+  try {
+    const [rows] = await pool.query("SELECT config_value FROM sys_configs WHERE config_key = 'basic_types'")
+    if (rows.length > 0) {
+      const config = JSON.parse(rows[0].config_value)
+      if (config.resourceTypes && config.resourceTypes.length > 0) {
+        RESOURCE_TYPE_MAP = config.resourceTypes.filter(t => t.enabled !== false).map(t => t.name || t)
+      }
+    }
+  } catch (e) {
+    console.error('加载资源类型失败:', e.message)
+  }
+  resourceTypeLoaded = true
+}
+
+// 获取资源类型名称到索引的映射
+async function getResourceTypeNameToIndexMap() {
+  await loadResourceTypes()
+  const map = {}
+  RESOURCE_TYPE_MAP.forEach((name, idx) => {
+    map[name] = idx
+  })
+  return map
+}
+
+
+// 资源类型映射（从数据库动态加载）
+// 使用 getResourceTypeName() 函数获取类型名称，确保先调用 loadResourceTypes()
+
+// 居民类型映射（从数据库动态加载）
+let RESIDENT_TYPE_MAP = []
+let residentTypeLoaded = false
+
+// 加载居民类型配置
+async function loadResidentTypes() {
+  if (residentTypeLoaded) return
+  try {
+    const [rows] = await pool.query("SELECT config_value FROM sys_configs WHERE config_key = 'basic_types'")
+    if (rows.length > 0) {
+      const config = JSON.parse(rows[0].config_value)
+      if (config.residentTypes && config.residentTypes.length > 0) {
+        RESIDENT_TYPE_MAP = config.residentTypes.filter(t => t.enabled !== false).map(t => t.name || t)
+      }
+    }
+  } catch (e) {
+    console.error('加载居民类型失败:', e.message)
+  }
+  residentTypeLoaded = true
+}
+
+// 社区标签映射（从数据库动态加载）
+let COMMUNITY_TAG_MAP = {}
+let communityTagLoaded = false
+
+// 加载社区标签配置
+async function loadCommunityTags() {
+  if (communityTagLoaded) return
+  try {
+    const [rows] = await pool.query("SELECT config_value FROM sys_configs WHERE config_key = 'basic_types'")
+    if (rows.length > 0) {
+      const config = JSON.parse(rows[0].config_value)
+      if (config.communityTags && config.communityTags.length > 0) {
+        const map = {}
+        config.communityTags.filter(t => t.enabled !== false).forEach((t, idx) => {
+          map[idx + 1] = t.name || t
+        })
+        COMMUNITY_TAG_MAP = map
+      }
+    }
+  } catch (e) {
+    console.error('加载社区标签失败:', e.message)
+  }
+  communityTagLoaded = true
+}
+
+// 获取资源类型名称
+function getResourceTypeName(idx) {
+  if (RESOURCE_TYPE_MAP.length === 0) return `类型${idx}`
+  return RESOURCE_TYPE_MAP[idx] || `类型${idx}`
+}
+
+// 同步加载资源类型（用于不需要等待的场景，返回默认映射）
+function getResourceTypeIndex(typeName) {
+  // 先尝试从已加载的映射中获取
+  const idx = RESOURCE_TYPE_MAP.indexOf(typeName)
+  if (idx !== -1) return idx
+  // 如果未加载，返回默认值
+  return null
 }
 
 // 映射需求数组字段为中文名称
 function mapDemandFields(d) {
+  // 如果资源类型未加载，尝试同步获取（使用默认值）
+
   // target_audience: 数字索引 → 居民类型名称
   let targetAudienceNames = []
   if (d.target_audience) {
@@ -256,7 +359,7 @@ function mapDemandFields(d) {
   if (d.required_types) {
     try {
       const arr = typeof d.required_types === 'string' ? JSON.parse(d.required_types) : d.required_types
-      requiredTypeNames = arr.map(i => RESOURCE_TYPE_MAP[i] || `类型${i}`).filter(Boolean)
+      requiredTypeNames = arr.map(i => getResourceTypeName(i)).filter(Boolean)
     } catch {}
   }
 
@@ -270,12 +373,13 @@ function mapDemandFields(d) {
 
 exports.getDemands = async (req, res) => {
   try {
+    await Promise.all([loadDemandTypes(), loadResidentTypes(), loadCommunityTags(), loadResourceTypes()])
     const { page = 1, pageSize = 10, type, district, street, community, sort, keyword } = req.query
     const offset = (page - 1) * pageSize
-    
+
     let where = 'd.status = 1 AND c.status = 1'
     const params = []
-    
+
     if (type) {
       // 支持数字或字符串
       const typeNum = parseInt(type)
@@ -347,8 +451,9 @@ exports.getDemands = async (req, res) => {
 // 需求详情（公开接口，联系方式根据会员等级决定）
 exports.getDemandDetail = async (req, res) => {
   try {
+    await Promise.all([loadDemandTypes(), loadResidentTypes(), loadCommunityTags(), loadResourceTypes()])
     const { id } = req.params
-    
+
     const [rows] = await pool.query(
       `SELECT d.*, c.community_name, c.district, c.street, c.address, c.households
        FROM demands d
@@ -559,18 +664,15 @@ exports.createResource = async (req, res) => {
     const data = req.body
     data.merchant_id = req.merchant.id
     
-    // 中文类型名到数字的映射（管理后台配置的9个类型）
-    const RESOURCE_TYPE_MAP = {
-      '资金赞助': 0, '物资支持': 1, '人力服务': 2, '专业服务': 3,
-      '媒体宣传': 4, '就业岗位': 5, '志愿服务': 6, '场地支持': 7, '其他': 8
-    }
+    // 从数据库加载资源类型映射
+    const typeMap = await getResourceTypeNameToIndexMap()
     
     // 转换 resource_type（如果已经是数字则直接使用）
     let resourceType = data.resource_type
     if (typeof resourceType === 'string' && !isNaN(parseInt(resourceType))) {
       resourceType = parseInt(resourceType)
-    } else if (typeof resourceType === 'string' && RESOURCE_TYPE_MAP[resourceType] !== undefined) {
-      resourceType = RESOURCE_TYPE_MAP[resourceType]
+    } else if (typeof resourceType === 'string' && typeMap[resourceType] !== undefined) {
+      resourceType = typeMap[resourceType]
     }
     
     const [result] = await pool.query(
@@ -619,18 +721,15 @@ exports.updateResource = async (req, res) => {
     
     const data = req.body
     
-    // 中文类型名到数字的映射（管理后台配置的9个类型）
-    const RESOURCE_TYPE_MAP = {
-      '资金赞助': 0, '物资支持': 1, '人力服务': 2, '专业服务': 3,
-      '媒体宣传': 4, '就业岗位': 5, '志愿服务': 6, '场地支持': 7, '其他': 8
-    }
+    // 从数据库加载资源类型映射
+    const typeMap = await getResourceTypeNameToIndexMap()
     
     // 转换 resource_type
     let resourceType = data.resource_type
     if (typeof resourceType === 'string' && !isNaN(parseInt(resourceType))) {
       resourceType = parseInt(resourceType)
-    } else if (typeof resourceType === 'string' && RESOURCE_TYPE_MAP[resourceType] !== undefined) {
-      resourceType = RESOURCE_TYPE_MAP[resourceType]
+    } else if (typeof resourceType === 'string' && typeMap[resourceType] !== undefined) {
+      resourceType = typeMap[resourceType]
     }
     
     // 格式化日期字段
@@ -967,9 +1066,10 @@ exports.toggleFavorite = async (req, res) => {
 
 exports.getMyFavorites = async (req, res) => {
   try {
+    await loadDemandTypes() // 确保需求类型已加载
     const { page = 1, pageSize = 10 } = req.query
     const offset = (page - 1) * pageSize
-    
+
     const [rows] = await pool.query(
       `SELECT df.id, df.create_time, d.*, c.community_name, c.district, c.street
        FROM demand_favorite df

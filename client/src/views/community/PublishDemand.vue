@@ -716,8 +716,8 @@ const recoverableDraftId = ref(null)
 const recoverableDraftTitle = ref('')
 
 // 发布类型配置 - 从后端API加载
-const activityTypes = ref(['文艺演出', '体育赛事', '公益活动', '节庆活动', '亲子活动', '健康讲座', '环保活动', '法制宣传', '职业技能培训', '文化展览', '趣味运动会', '其他'])
-const expertTypes = ref(['法律咨询', '医疗健康', '心理辅导', '教育培训', '技能培训', '金融理财', '社会工作', '文艺指导', '体育健身', '营养指导', '其他'])
+const activityTypes = ref([])
+const expertTypes = ref([])
 const targetGroupOptions = ref(['青少年/儿童', '中老年', '青年', '宝妈', '退役军人', '残疾群体', '孤寡老人', '困难家庭', '全体居民'])
 const sponsorTypeOptions = ref([
   { label: '💵 资金赞助', value: 'fund' },

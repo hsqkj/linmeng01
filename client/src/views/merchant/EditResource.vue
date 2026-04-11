@@ -636,42 +636,6 @@ function getImagesList(images) {
   }).filter(Boolean)
 }
 
-async function loadPublishTypes() {
-  try {
-    const { getPublishTypes } = await import('@/api/merchant')
-    const res = await getPublishTypes()
-    const data = res.data || {}
-    if (data.merchant_tags) merchantTagOptions.value = data.merchant_tags
-    if (data.resource_types && data.resource_types.length > 0) {
-      const typeConfig = {
-        '专业服务': { icon: '🎓', desc: '咨询、法律、设计等专业服务' },
-        '教育培训': { icon: '📚', desc: '课程、培训、讲座等服务' },
-        '场地资源': { icon: '🏠', desc: '活动室、运动场地等场所支持' },
-        '物资捐赠': { icon: '📦', desc: '图书、设备、食品等物资' },
-        '志愿服务': { icon: '👥', desc: '人力支持、活动协助等' },
-        '资金赞助': { icon: '💵', desc: '活动经费、奖金等资金支持' },
-        '技术支持': { icon: '💻', desc: 'IT、网络、设备维护等技术支持' },
-        '健康医疗': { icon: '🏥', desc: '义诊、健康讲座等服务' },
-        '活动赞助': { icon: '🎉', desc: '活动策划、物料等赞助' },
-        '媒体宣传': { icon: '📰', desc: '公众号、媒体推广等服务' },
-        '技能培训': { icon: '🛠️', desc: '技能传授、指导等服务' },
-        '养老服务': { icon: '👴', desc: '助老服务、健康管理等' }
-      }
-      resourceTypes.value = data.resource_types.map(name => ({
-        value: name,
-        label: name,
-        icon: typeConfig[name]?.icon || '📋',
-        desc: typeConfig[name]?.desc || ''
-      }))
-    }
-    if (data.community_types && data.community_types.length > 0) {
-      communityTypeOptions.value = data.community_types
-    }
-  } catch {
-    // 使用默认值
-  }
-}
-
 async function loadResource() {
   try {
     const res = await getMyResources({ page: 1, pageSize: 100 })

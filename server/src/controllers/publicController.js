@@ -206,7 +206,7 @@ exports.uploadImage = [
 // 获取发布页类型配置
 exports.getPublishTypes = async (req, res) => {
   try {
-    const [rows] = await pool.query("SELECT config_key, config_value FROM sys_configs WHERE config_key IN ('activity_types', 'expert_types', 'sponsor_types', 'reward_types', 'target_groups', 'community_tags', 'merchant_tags', 'basic_types')")
+    const [rows] = await pool.query("SELECT config_key, config_value FROM sys_configs WHERE config_key IN ('activity_types', 'expert_types', 'sponsor_types', 'reward_types', 'target_groups', 'community_tags', 'merchant_tags', 'basic_types', 'demand_types', 'member_levels')")
     const result = {}
     rows.forEach(r => {
       try {
@@ -241,6 +241,16 @@ exports.getPublishTypes = async (req, res) => {
           if (parsed.industryTypes) {
             result.industry_types = parsed.industryTypes.filter(t => t.enabled !== false).map(t => t.name || t)
           }
+          // 提取 professionalServiceTypes（专业服务子类型）
+          if (parsed.professionalServiceTypes) {
+            result.professional_service_types = parsed.professionalServiceTypes.filter(t => t.enabled !== false).map(t => t.name || t)
+          }
+        } else if (r.config_key === 'member_levels') {
+          // 提取会员等级名称（从数组中提取 name）
+          result.member_levels = parsed.map((level, index) => ({
+            level: index,
+            name: level.name || level
+          }))
         } else {
           result[r.config_key] = parsed
         }
@@ -248,20 +258,7 @@ exports.getPublishTypes = async (req, res) => {
         result[r.config_key] = r.config_value
       }
     })
-    // 如果数据库没有配置，返回默认值
-    if (Object.keys(result).length === 0) {
-      result.activity_types = ['文艺演出', '体育赛事', '公益活动', '节庆活动', '亲子活动', '健康讲座', '环保活动', '法制宣传', '职业技能培训', '文化展览', '趣味运动会', '其他']
-      result.expert_types = ['法律咨询', '医疗健康', '心理辅导', '教育培训', '技能培训', '金融理财', '社会工作', '文艺指导', '体育健身', '营养指导', '其他']
-      result.target_groups = ['青少年/儿童', '中老年', '青年', '宝妈', '退役军人', '残疾群体', '孤寡老人', '困难家庭', '全体居民']
-      result.sponsor_types = [{ label: '💵 资金赞助', value: 'fund' }, { label: '📦 物资提供', value: 'goods' }, { label: '👥 人力支持', value: 'manpower' }, { label: '💻 技术支持', value: 'tech' }, { label: '📰 媒体报道', value: 'media' }]
-      result.reward_types = ['活动冠名权', '现场展台/展位', '主持人口播', '背景板/横幅Logo展示', '活动物料品牌露出', '社区公众号推文宣传', '网格群/小区业主群宣传', '荣誉证书', '现场宣传横幅', '宣传栏长期展示', '媒体报道', '现场派发宣传资料']
-      result.community_tags = ['老旧小区', '新建社区', '亲子社区', '老龄化社区', '学区社区', '商圈社区', '文化社区', '体育社区', '绿色社区', '公共空间丰富', '商业密集', '志愿服务活跃']
-      result.merchant_tags = ['连锁品牌', '本地企业', '上市公司', '高端品牌', '大众品牌', '公益导向', '长期合作', '亲子品牌', '老年服务', '全国服务', '精准获客', '社会责任']
-      result.resource_types = ['专业服务', '教育培训', '场地资源', '物资捐赠', '志愿服务', '资金赞助', '技术支持', '健康医疗', '活动赞助', '媒体宣传', '技能培训', '养老服务']
-      result.community_types = ['老旧小区', '新建社区', '亲子社区', '老龄化社区', '学区社区', '商圈社区', '文化社区', '体育社区', '绿色社区']
-      result.resident_types = ['青少年/儿童', '青年', '中老年', '宝妈', '退役军人', '残疾群体', '困难家庭']
-      result.industry_types = ['教育培训', '医疗健康', '金融服务', '餐饮服务', '零售服务', '其他']
-    }
+    // 如果数据库没有配置，返回空对象（前端应确保管理后台已配置）
     success(res, result)
   } catch (err) {
     error(res, '获取类型配置失败')
@@ -271,7 +268,7 @@ exports.getPublishTypes = async (req, res) => {
 // 获取专家类型列表（公开接口）
 exports.getExpertTypes = async (req, res) => {
   try {
-    // 优先从 sys_configs 读取
+    // 从 sys_configs 读取
     const [rows] = await pool.query("SELECT config_value FROM sys_configs WHERE config_key = 'expert_types'")
     if (rows.length > 0) {
       try {
@@ -279,9 +276,8 @@ exports.getExpertTypes = async (req, res) => {
         return success(res, types.map(t => typeof t === 'string' ? { name: t, status: 1 } : t))
       } catch {}
     }
-    // 降级返回默认值
-    const defaultTypes = ['法律咨询', '医疗健康', '心理辅导', '教育培训', '技能培训', '金融理财', '社会工作', '文艺指导', '体育健身', '营养指导', '其他']
-    success(res, defaultTypes.map(t => ({ name: t, status: 1 })))
+    // 返回空数组（管理后台应确保已配置）
+    success(res, [])
   } catch (err) {
     error(res, '获取专家类型失败')
   }

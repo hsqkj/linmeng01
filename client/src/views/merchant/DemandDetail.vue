@@ -275,7 +275,7 @@ import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { requireAuth } from '@/utils/useAuth'
 import { ArrowLeft, InfoFilled, Warning, Lock, Phone, Message, User, Location, Loading } from '@element-plus/icons-vue'
-import { getDemandDetail, getDemandComments, createDemandComment, getCommentReplies, createIntention, getCommunityDetail, toggleFavorite } from '@/api/merchant'
+import { getDemandDetail, getDemandComments, createDemandComment, getCommentReplies, createIntention, getCommunityDetail, toggleFavorite, getPublishTypes } from '@/api/merchant'
 
 const route = useRoute()
 const loading = ref(true)
@@ -298,14 +298,26 @@ const memberLevel = ref(0)
 const storedMerchant = JSON.parse(localStorage.getItem('merchant_info') || '{}')
 memberLevel.value = storedMerchant.member_level || 0
 
-const demandTypeMap = {
-  0: '活动赞助', 1: '专家服务', 2: '空间运营',
-  3: '物资赞助', 4: '健康服务', 5: '教育培训',
-  '活动赞助': '活动赞助', '专家服务': '专家服务', '空间运营': '空间运营',
-  '物资赞助': '物资赞助', '健康服务': '健康服务', '教育培训': '教育培训'
+// 需求类型映射（从API动态加载）
+const demandTypeMap = ref({})
+const demandTypeName = computed(() => {
+  const type = demand.value?.demand_type
+  return demandTypeMap.value[type] ?? demand.value?.demand_type_name ?? '需求'
+})
+// 加载需求类型配置
+async function loadDemandTypes() {
+  try {
+    const res = await getPublishTypes()
+    if (res.data?.demand_types?.length) {
+      const map = {}
+      res.data.demand_types.forEach((name, idx) => {
+        map[idx] = name
+        map[name] = name
+      })
+      demandTypeMap.value = map
+    }
+  } catch {}
 }
-
-const demandTypeName = computed(() => demandTypeMap[demand.value?.demand_type] || demand.value?.demand_type_name || '需求')
 
 function parseRewards(reward) {
   if (!reward) return []
@@ -498,6 +510,7 @@ async function toggleFav() {
 
 onMounted(async () => {
   loading.value = true
+  loadDemandTypes()
   await Promise.allSettled([loadDemand(), loadComments()])
   loading.value = false
 })

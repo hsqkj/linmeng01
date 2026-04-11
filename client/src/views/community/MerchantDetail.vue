@@ -359,8 +359,10 @@ function sendServiceMessage() {
   askQuestion(q)
 }
 
-const memberLevelMap = { 0: '普通会员', 1: '银牌会员', 2: '金牌会员', 3: '铂金会员', 4: '钻石会员' }
-const memberLevelTagTypeMap = { 0: 'info', 1: '', 2: 'warning', 3: 'danger', 4: 'danger' }
+// 会员等级名称映射（从API动态加载）
+const memberLevelMapData = ref({})
+const memberLevelMap = computed(() => memberLevelMapData.value)
+const memberLevelTagTypeMap = { 0: 'info', 1: '', 2: 'warning', 3: 'danger', 4: 'danger', 5: 'danger' }
 
 // 资源类型映射（从API动态加载）
 const resourceTypeMap = ref({})
@@ -379,11 +381,12 @@ const getResourceTypeName = (type) => {
   return '其他'
 }
 
-// 加载资源类型配置
+// 加载资源类型和会员等级配置
 async function loadResourceTypes() {
   try {
     const { getPublishTypes } = await import('@/api/community')
     const res = await getPublishTypes()
+    // 资源类型
     if (res.data?.resource_types?.length) {
       const map = {}
       res.data.resource_types.forEach((name, idx) => {
@@ -391,6 +394,14 @@ async function loadResourceTypes() {
         map[name] = name
       })
       resourceTypeMap.value = map
+    }
+    // 会员等级
+    if (res.data?.member_levels?.length) {
+      const map = {}
+      res.data.member_levels.forEach(item => {
+        map[item.level] = item.name
+      })
+      memberLevelMapData.value = map
     }
   } catch {}
 }

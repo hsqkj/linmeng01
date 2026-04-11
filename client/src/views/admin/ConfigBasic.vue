@@ -186,6 +186,43 @@
             </el-table-column>
           </el-table>
         </div>
+
+        <!-- 专业服务子类型配置（仅当存在"专业服务"类型时显示） -->
+        <div v-if="hasResourceType('专业服务')" class="config-section" style="margin-top:20px">
+          <div class="section-header">
+            <p class="section-desc">专业服务子类型用于商家选择"专业服务"类型时进一步细分服务类别</p>
+            <el-button type="primary" @click="openAdd('professionalServiceTypes','专业服务子类型')"><el-icon><Plus /></el-icon> 新增子类型</el-button>
+          </div>
+          <el-table :data="professionalServiceTypes" stripe border>
+            <el-table-column width="100" align="center">
+              <template #default="{ $index }">
+                <el-button text :disabled="$index === 0" @click="moveUp(professionalServiceTypes, $index)" title="上移"><el-icon><Top /></el-icon></el-button>
+                <el-button text :disabled="$index === professionalServiceTypes.length - 1" @click="moveDown(professionalServiceTypes, $index)" title="下移"><el-icon><Bottom /></el-icon></el-button>
+              </template>
+            </el-table-column>
+            <el-table-column prop="name" label="子类型名称" min-width="150">
+              <template #default="{ row }">
+                <el-input v-if="row.editing" v-model="row.name" size="small" @blur="row.editing=false; saveInlineEdit(row)" @keyup.enter="row.editing=false; saveInlineEdit(row)" />
+                <span v-else>{{ row.name }}</span>
+              </template>
+            </el-table-column>
+            <el-table-column prop="desc" label="说明" min-width="200">
+              <template #default="{ row }">
+                <el-input v-if="row.editing" v-model="row.desc" size="small" @blur="saveInlineEdit(row)" />
+                <span v-else style="color:#909399;font-size:13px">{{ row.desc }}</span>
+              </template>
+            </el-table-column>
+            <el-table-column prop="enabled" label="启用" width="80" align="center">
+              <template #default="{ row }"><el-switch v-model="row.enabled" @change="saveInlineEdit(row)" /></template>
+            </el-table-column>
+            <el-table-column label="操作" width="130" align="center">
+              <template #default="{ row }">
+                <el-button text type="primary" size="small" @click="row.editing=true">编辑</el-button>
+                <el-button text type="danger" size="small" @click="deleteItem(professionalServiceTypes, row)">删除</el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+        </div>
       </el-tab-pane>
 
       <!-- 社区类型 -->
@@ -344,7 +381,13 @@ const expertTypes = ref([])
 const industryTypes = ref([])
 const communityTypes = ref([])
 const residentTypes = ref([])
+const professionalServiceTypes = ref([]) // 专业服务子类型
 const districtTree = ref([])
+
+// 检查是否存在指定名称的资源类型
+function hasResourceType(name) {
+  return resourceTypes.value.some(t => t.name === name && t.enabled !== false)
+}
 
 async function loadBasicTypes() {
   loading.value = true
@@ -460,6 +503,28 @@ async function loadBasicTypes() {
     } else {
       residentTypes.value = data.residentTypes.map(t => ({ ...t, enabled: t.enabled !== false, editing: false }))
     }
+
+    // 专业服务子类型
+    const defaultProfessionalServiceTypes = [
+      { name: '法律咨询', desc: '法律顾问、纠纷调解、法律援助等', enabled: true },
+      { name: '心理咨询', desc: '心理咨询、心理辅导、情绪疏导等', enabled: true },
+      { name: '健康医疗', desc: '义诊、健康讲座、康复指导等', enabled: true },
+      { name: '活动策划', desc: '活动策划、执行指导、现场协助等', enabled: true },
+      { name: '教育培训', desc: '课程讲授、技能培训、讲座等', enabled: true },
+      { name: '设计服务', desc: '海报设计、VI设计、宣传物料等', enabled: true },
+      { name: 'IT技术', desc: '软件开发、网络维护、电脑维修等', enabled: true },
+      { name: '财务税务', desc: '财税顾问、代理记账、税务筹划等', enabled: true },
+      { name: '工程维修', desc: '水电维修、门窗修理、管道疏通等', enabled: true },
+      { name: '摄影摄像', desc: '活动摄影、视频拍摄、后期制作等', enabled: true },
+      { name: '文艺指导', desc: '舞蹈编排、合唱指导、节目编排等', enabled: true },
+      { name: '其他专业', desc: '其他专业服务', enabled: true },
+    ].map(t => ({ ...t, editing: false }))
+
+    if (!data.professionalServiceTypes || data.professionalServiceTypes.length === 0) {
+      professionalServiceTypes.value = defaultProfessionalServiceTypes
+    } else {
+      professionalServiceTypes.value = data.professionalServiceTypes.map(t => ({ ...t, enabled: t.enabled !== false, editing: false }))
+    }
   } catch {}
   finally { loading.value = false }
 }
@@ -472,7 +537,8 @@ async function saveTypes() {
     expertTypes: expertTypes.value.map(t => ({ name: t.name, desc: t.desc, enabled: t.enabled })),
     industryTypes: industryTypes.value.map(t => ({ name: t.name, enabled: t.enabled })),
     communityTypes: communityTypes.value.map(t => ({ name: t.name, enabled: t.enabled })),
-    residentTypes: residentTypes.value.map(t => ({ name: t.name, enabled: t.enabled }))
+    residentTypes: residentTypes.value.map(t => ({ name: t.name, enabled: t.enabled })),
+    professionalServiceTypes: professionalServiceTypes.value.map(t => ({ name: t.name, desc: t.desc, enabled: t.enabled }))
   })
 }
 
@@ -510,7 +576,7 @@ function openAdd(listName, title) {
 
 async function confirmAdd() {
   if (!newItemName.value.trim()) { ElMessage.warning('请输入名称'); return }
-  const lists = { activityTypes, enterpriseTypes, resourceTypes, expertTypes, industryTypes, communityTypes, residentTypes }
+  const lists = { activityTypes, enterpriseTypes, resourceTypes, expertTypes, industryTypes, communityTypes, residentTypes, professionalServiceTypes }
   const listRef = lists[currentList.value]
   if (listRef) {
     const item = { name: newItemName.value.trim(), count: 0, enabled: true, editing: false, desc: newItemDesc.value }
@@ -537,30 +603,27 @@ async function saveInlineEdit(row) {
 }
 
 // 移动项目
-async function moveUp(list, index) {
+function moveUp(arr, index) {
   if (index <= 0) return
-  const arr = list.value
   const temp = arr[index - 1]
   arr[index - 1] = arr[index]
   arr[index] = temp
-  await saveTypes()
+  saveTypes()
   ElMessage.success('已上移')
 }
 
-async function moveDown(list, index) {
-  if (index >= list.value.length - 1) return
-  const arr = list.value
+function moveDown(arr, index) {
+  if (index >= arr.length - 1) return
   const temp = arr[index + 1]
   arr[index + 1] = arr[index]
   arr[index] = temp
-  await saveTypes()
+  saveTypes()
   ElMessage.success('已下移')
 }
 
-async function deleteItem(list, row) {
+async function deleteItem(arr, row) {
   ElMessageBox.confirm(`确认删除"${row.name}"？`, '删除确认', { type: 'warning' })
     .then(async () => {
-      const arr = list.value
       const idx = arr.indexOf(row)
       if (idx >= 0) {
         arr.splice(idx, 1)

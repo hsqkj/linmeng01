@@ -330,21 +330,15 @@ exports.getCommissionConfig = async (req, res) => {
       }
       success(res, config)
     } else {
-      // 返回默认配置
+      // 返回空配置（管理后台应确保已配置）
       success(res, {
-        firstRate: 20,
-        renewRate: 10,
-        minWithdraw: 100,
+        firstRate: 0,
+        renewRate: 0,
+        minWithdraw: 0,
         settlePeriod: 'monthly',
         arrivalDays: '3',
-        remark: '招商大使提成政策：成功邀请商家入驻并完成付费后，首次入会按年费的20%结算提成；商家每年续费后，按续费金额的10%追加提成。提成每月1日统一结算，最低提现100元，3个工作日内到账。',
-        level_commissions: [
-          { level: 1, name: '普通会员', fee: 0, firstRate: 0, renewRate: 0 },
-          { level: 2, name: '银牌会员', fee: 999, firstRate: 20, renewRate: 10 },
-          { level: 3, name: '金牌会员', fee: 2999, firstRate: 20, renewRate: 10 },
-          { level: 4, name: '铂金会员', fee: 5999, firstRate: 20, renewRate: 10 },
-          { level: 5, name: '钻石会员', fee: 12000, firstRate: 20, renewRate: 10 }
-        ]
+        remark: '',
+        level_commissions: []
       })
     }
   } catch (err) {

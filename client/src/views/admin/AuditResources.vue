@@ -197,7 +197,9 @@ const pageSize = 10
 // 资源类型映射（从API动态加载）
 const resourceTypeNumMap = ref({})
 const resourceTypeName = ref({})
-const levelLabel = (lvl) => ({ 0:'普通会员', 1:'普通会员', 2:'银牌会员', 3:'金牌会员', 4:'铂金会员', 5:'钻石会员' })[lvl] || '普通会员'
+// 会员等级映射（从API动态加载）
+const memberLevelConfig = ref({})
+const levelLabel = (lvl) => memberLevelConfig.value[lvl] || 'Lv' + lvl
 const levelColors = { 0: 'info', 1: 'info', 2: 'info', 3: 'warning', 4: 'danger', 5: 'danger', '普通会员': 'info', '银牌会员': 'info', '金牌会员': 'warning', '铂金会员': 'danger', '钻石会员': 'danger' }
 const statusLabels = { 0: '待审核', 1: '已通过', 2: '已驳回' }
 const statusColors = { 0: 'warning', 1: 'success', 2: 'danger' }
@@ -230,30 +232,30 @@ function getResourceTypeName(type) {
   return type || '其他'
 }
 
-// 加载资源类型配置
+// 加载资源类型配置和会员等级
 async function loadResourceTypes() {
   try {
-    const { getPublishTypes } = await import('@/api/merchant')
-    const res = await getPublishTypes()
-    if (res.data?.resource_types?.length) {
+    const { getPublishTypes, getMemberConfig } = await import('@/api/merchant')
+    const [publishRes, memberRes] = await Promise.all([getPublishTypes(), getMemberConfig()])
+    // 资源类型
+    if (publishRes.data?.resource_types?.length) {
       const map = {}
-      res.data.resource_types.forEach((name, idx) => {
+      publishRes.data.resource_types.forEach((name, idx) => {
         map[idx] = name
         map[name] = name
       })
       resourceTypeNumMap.value = map
       resourceTypeName.value = map
     }
+    // 会员等级配置
+    if (memberRes.data?.member_levels?.length) {
+      const map = {}
+      memberRes.data.member_levels.forEach(l => {
+        map[l.level] = l.name || 'Lv' + l.level
+      })
+      memberLevelConfig.value = map
+    }
   } catch {}
-}
-
-// 获取资源类型中文名称
-function getResourceTypeName(type) {
-  if (typeof type === 'string' && resourceTypeName[type] !== undefined) {
-    return resourceTypeName[type]
-  }
-  const num = parseInt(type)
-  return resourceTypeName[num] || type || '未知'
 }
 
 // 获取当前资源的资源类型（中文）

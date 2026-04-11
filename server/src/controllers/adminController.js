@@ -898,57 +898,24 @@ exports.getBasicTypesConfig = async (req, res) => {
       '自媒体', 'IT互联网', '软件开发', '图文广告', '电子电器维修',
       '家居维修', '美发', '建筑工程', '其他'
     ]
-    // 默认专家类型（5种）
-    const defaultExpertTypes = [
-      { name: '法律咨询', desc: '法律顾问、纠纷调解等服务', count: 0, enabled: true },
-      { name: '心理健康', desc: '心理咨询、心理辅导等服务', count: 0, enabled: true },
-      { name: '医疗健康', desc: '义诊、健康讲座等服务', count: 0, enabled: true },
-      { name: '财务税务', desc: '财税顾问、代理记账等服务', count: 0, enabled: true },
-      { name: '工程技术', desc: '水电维修、网络技术等服务', count: 0, enabled: true },
-    ]
-    // 默认社区类型
-    const defaultCommunityTypes = [
-      { name: '老旧小区', enabled: true },
-      { name: '新建社区', enabled: true },
-      { name: '商品房小区', enabled: true },
-      { name: '保障房小区', enabled: true },
-      { name: '城中村', enabled: true },
-      { name: '学区社区', enabled: true },
-      { name: '产业园区', enabled: true },
-      { name: '混合型社区', enabled: true },
-    ]
-    // 默认居民类型
-    const defaultResidentTypes = [
-      { name: '青少年', enabled: true },
-      { name: '儿童', enabled: true },
-      { name: '青年', enabled: true },
-      { name: '中年', enabled: true },
-      { name: '老年', enabled: true },
-      { name: '退役军人', enabled: true },
-      { name: '残障人士', enabled: true },
-      { name: '新市民', enabled: true },
-      { name: '独居老人', enabled: true },
-      { name: '双职工家庭', enabled: true },
-    ]
     if (rows.length === 0) {
       return success(res, {
-        activityTypes: [], enterpriseTypes: [], resourceTypes: [], expertTypes: defaultExpertTypes,
-        industryTypes: defaultIndustries.map(name => ({ name, enabled: true })),
-        communityTypes: defaultCommunityTypes, residentTypes: defaultResidentTypes
+        activityTypes: [], enterpriseTypes: [], resourceTypes: [], expertTypes: [],
+        industryTypes: [], communityTypes: [], residentTypes: []
       })
     }
     const data = JSON.parse(rows[0].config_value)
-    // 兼容旧数据：补充 industryTypes
+    // 兼容旧数据：补充空数组
     if (!data.industryTypes || data.industryTypes.length === 0) {
-      data.industryTypes = defaultIndustries.map(name => ({ name, enabled: true }))
+      data.industryTypes = []
     }
-    // 兼容旧数据：补充 communityTypes
+    // 兼容旧数据：补充空数组
     if (!data.communityTypes || data.communityTypes.length === 0) {
-      data.communityTypes = defaultCommunityTypes
+      data.communityTypes = []
     }
-    // 兼容旧数据：补充 residentTypes
+    // 兼容旧数据：补充空数组
     if (!data.residentTypes || data.residentTypes.length === 0) {
-      data.residentTypes = defaultResidentTypes
+      data.residentTypes = []
     }
     // 合并 expertTypes：优先使用 expert_types 配置的29种数据
     if (expertRows.length > 0) {

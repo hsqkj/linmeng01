@@ -49,7 +49,7 @@
             <span v-for="n in 5" :key="n" class="heart" :class="{filled: n <= (demand.matchScore || 0)}">♥</span>
           </div>
           <div class="card-actions">
-            <el-tag size="small" :type="typeColors[demand.demand_type_name || getDemandTypeName(demand.demand_type)]">{{ demand.demand_type_name || getDemandTypeName(demand.demand_type) }}</el-tag>
+            <el-tag size="small" :type="getTypeColor(demand.demand_type_name || getDemandTypeName(demand.demand_type))">{{ demand.demand_type_name || getDemandTypeName(demand.demand_type) }}</el-tag>
             <el-icon class="fav-btn" :class="{favorited: demand.isFavorited}" @click.stop="toggleFav(demand)" :title="demand.isFavorited ? '取消收藏' : '收藏'"><Star /></el-icon>
           </div>
         </div>
@@ -136,15 +136,33 @@ import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { requireAuth } from '@/utils/useAuth'
 import { Search, Location, Calendar, Loading, Star, View } from '@element-plus/icons-vue'
-import { getDemands, getCommunityDetail, toggleFavorite, getMyFavorites } from '@/api/merchant'
+import { getDemands, getCommunityDetail, toggleFavorite, getMyFavorites, getPublishTypes } from '@/api/merchant'
 
 const router = useRouter()
 
 const filters = reactive({ keyword: '', type: '', sortBy: 'newest', district: '', street: '', community: '' })
-const typeColors = { '活动赞助': 'primary', '专家服务': 'success', '空间运营': 'warning', '物资赞助': 'danger', '健康服务': 'info', '教育培训': '' }
+// 需求类型映射（从API动态加载）
+const typeColorsMap = ref({})
 // 数字到中文映射（用于 fallback）
-const demandTypeNumMap = { 0: '活动赞助', 1: '专家服务', 2: '空间运营', 3: '物资赞助', 4: '健康服务', 5: '教育培训' }
-function getDemandTypeName(type) { return demandTypeNumMap[type] ?? type ?? '需求' }
+const demandTypeNumMap = ref({})
+const getTypeColor = (typeName) => typeColorsMap.value[typeName] || 'primary'
+function getDemandTypeName(type) { return demandTypeNumMap.value[type] ?? type ?? '需求' }
+// 加载需求类型配置
+async function loadDemandTypes() {
+  try {
+    const res = await getPublishTypes()
+    if (res.data?.demand_types?.length) {
+      const map = {}
+      const colors = ['primary', 'success', 'warning', 'danger', 'info', '']
+      res.data.demand_types.forEach((name, idx) => {
+        map[idx] = name
+        map[name] = name
+        typeColorsMap.value[name] = colors[idx % colors.length]
+      })
+      demandTypeNumMap.value = map
+    }
+  } catch {}
+}
 
 // 武汉市区/街道/社区数据
 const districts = ['江岸区', '江汉区', '硚口区', '汉阳区', '武昌区', '青山区', '洪山区', '东西湖区', '汉南区', '蔡甸区', '江夏区', '黄陂区', '新洲区']
@@ -288,6 +306,7 @@ function onPageChange(page) {
 }
 
 onMounted(() => {
+  loadDemandTypes()
   loadFavorites().then(fetchDemands)
 })
 </script>

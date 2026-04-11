@@ -40,7 +40,7 @@
             <span v-for="n in 5" :key="n" class="heart" :class="{filled: n <= (demand.matchScore || 0)}">♥</span>
             <span class="score-pct">{{ demand.matchScore ? demand.matchScore * 20 + '%' : '' }}匹配</span>
           </div>
-          <el-tag size="small" :type="typeColors[demand.demand_type]">{{ demandTypeMap[demand.demand_type] || demand.demand_type }}</el-tag>
+          <el-tag size="small" :type="getTypeColor(demand.demand_type)">{{ demandTypeMap[demand.demand_type] || demand.demand_type }}</el-tag>
         </div>
         <h4 class="demand-title">{{ demand.title }}</h4>
         <div class="demand-meta">
@@ -113,20 +113,33 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Search, OfficeBuilding, Calendar, Loading } from '@element-plus/icons-vue'
-import { getDemands } from '@/api/community'
+import { getDemands, getPublishTypes } from '@/api/community'
 
 const router = useRouter()
 
 const filters = reactive({ keyword: '', type: '', district: '', sortBy: 'newest' })
 
-// 需求类型数字→中文映射
-const demandTypeMap = {
-  0: '活动赞助', 1: '专家服务', 2: '空间运营',
-  3: '物资赞助', 4: '健康服务', 5: '教育培训'
+// 需求类型映射（从API动态加载）
+const demandTypeMap = ref({})
+const typeColorsMap = ref({})
+const typeColorsList = ['primary', 'success', 'warning', 'danger', 'info', '']
+function getTypeColor(idx) {
+  return typeColorsMap.value[idx] || 'primary'
 }
-const typeColors = {
-  0: 'primary', 1: 'success', 2: 'warning',
-  3: 'danger', 4: 'info', 5: 'warning'
+// 加载需求类型配置
+async function loadDemandTypes() {
+  try {
+    const res = await getPublishTypes()
+    if (res.data?.demand_types?.length) {
+      const map = {}
+      res.data.demand_types.forEach((name, idx) => {
+        map[idx] = name
+        map[name] = name
+        typeColorsMap.value[idx] = typeColorsList[idx % typeColorsList.length]
+      })
+      demandTypeMap.value = map
+    }
+  } catch {}
 }
 // 目标对象数字→中文映射
 const audienceMap = {
@@ -218,6 +231,7 @@ function onPageChange(page) {
 }
 
 onMounted(() => {
+  loadDemandTypes()
   fetchDemands()
 })
 </script>

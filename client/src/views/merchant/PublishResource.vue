@@ -123,15 +123,6 @@
 
         <!-- 场地支持 -->
         <template v-if="form.resource_type === '场地支持'">
-          <el-form-item label="场地描述" required>
-            <el-input v-model="form.techDesc" type="textarea" :rows="4" placeholder="请详细描述场地情况，如：
-- 场地类型：会议室、活动室、运动场等
-- 可容纳人数：
-- 场地面积：
-- 可提供的设施：
-- 开放时间：
-- 费用说明：" />
-          </el-form-item>
           <el-row :gutter="16">
             <el-col :span="12">
               <el-form-item label="场地面积（平方米）">
@@ -161,15 +152,6 @@
 
         <!-- 就业岗位 -->
         <template v-if="form.resource_type === '就业岗位'">
-          <el-form-item label="岗位描述" required>
-            <el-input v-model="form.techDesc" type="textarea" :rows="4" placeholder="请详细描述就业岗位，如：
-- 岗位名称：
-- 招聘人数：
-- 薪资待遇：
-- 工作时间：
-- 工作地点：
-- 岗位要求：" />
-          </el-form-item>
           <el-row :gutter="16">
             <el-col :span="12">
               <el-form-item label="招聘人数">
@@ -255,58 +237,8 @@
               <el-checkbox label="paper">报纸</el-checkbox>
             </el-checkbox-group>
           </el-form-item>
-          <el-form-item label="媒体资源描述" required>
-            <el-input v-model="form.mediaDesc" type="textarea" :rows="4" placeholder="详细说明您的媒体资源，如：
-- 微信公众号：粉丝15万，单篇阅读量5000+
-- 抖音号：粉丝8万，视频平均播放量2万+
-- 地方新闻网站：日活用户50万
-覆盖范围越详细，社区选择意愿越高！" />
-          </el-form-item>
-        </template>
-
-        <!-- 专业服务 -->
-        <template v-if="form.resource_type === '专业服务'">
-          <el-form-item label="服务类型" required>
-            <el-select v-model="form.professionalType" placeholder="选择专业服务类型" style="width:100%">
-              <el-option v-for="t in professionalTypes" :key="t" :label="t" :value="t" />
-            </el-select>
-          </el-form-item>
-          <el-form-item label="资质证明描述">
-            <el-input v-model="form.qualification" type="textarea" :rows="3" placeholder="如：注册律师，执业20年，擅长劳动争议、物业纠纷；具备律师资格证（证号：xxx）" />
-          </el-form-item>
-          <el-row :gutter="16">
-            <el-col :span="12">
-              <el-form-item label="服务区域">
-                <el-select v-model="form.serviceScope" placeholder="选择服务区域" style="width:100%">
-                  <el-option label="全市" value="city" />
-                  <el-option label="本区" value="district" />
-                  <el-option label="本街道" value="street" />
-                  <el-option label="全国（线上）" value="nationwide" />
-                </el-select>
-              </el-form-item>
-            </el-col>
-            <el-col :span="12">
-              <el-form-item label="收费标准">
-                <el-select v-model="form.pricingType" style="width:100%">
-                  <el-option label="免费（公益赞助）" value="free" />
-                  <el-option label="优惠价（面议）" value="discount" />
-                  <el-option label="市场价" value="market" />
-                </el-select>
-              </el-form-item>
-            </el-col>
-          </el-row>
-        </template>
-
-        <!-- 媒体宣传 -->
-        <template v-if="form.resource_type === '媒体宣传'">
-          <el-form-item label="可提供媒体类型（可多选）" required>
-            <el-checkbox-group v-model="form.mediaChannels">
-              <el-checkbox label="news">新闻网站/APP</el-checkbox>
-              <el-checkbox label="wechat">微信公众号</el-checkbox>
-              <el-checkbox label="video">短视频（抖音/视频号）</el-checkbox>
-              <el-checkbox label="tv">电视/广播</el-checkbox>
-              <el-checkbox label="paper">报纸</el-checkbox>
-            </el-checkbox-group>
+          <el-form-item label="覆盖范围">
+            <el-input v-model="form.coverage" placeholder="如：全国、本地、本区" />
           </el-form-item>
           <el-form-item label="媒体资源描述" required>
             <el-input v-model="form.mediaDesc" type="textarea" :rows="4" placeholder="详细说明您的媒体资源，如：
@@ -422,7 +354,7 @@ const customTag = ref('')
 // 发布类型配置 - 从后端API加载，默认空数组由API填充
 const resourceTypes = ref([])
 
-// 管理后台9个资源类型的图标和描述配置
+// 资源类型配置（与 ConfigBasic.vue 保持一致）
 const typeConfig = {
   '资金赞助': { icon: '💵', desc: '活动经费、奖金等资金支持' },
   '物资支持': { icon: '📦', desc: '图书、设备、食品、活动与宣传物料、奖品等物资' },
@@ -435,7 +367,7 @@ const typeConfig = {
   '其他': { icon: '📋', desc: '其他类型的资源支持' }
 }
 
-const professionalTypes = ref(['法律咨询', '心理辅导', '健康医疗', '教育培训', '金融理财', '文化艺术', 'IT服务', '设备维护', '设计服务', '活动策划', '家政养老', '其他'])
+const professionalTypes = ref([])
 const merchantTagOptions = ref(['连锁品牌', '本地企业', '上市公司', '高端品牌', '大众品牌', '公益导向', '长期合作', '亲子品牌', '老年服务', '全国服务', '精准获客', '社会责任'])
 const communityTypeOptions = ref([])
 const expectedRewardOptions = ref(['活动冠名权', '现场展台', '社区公众号宣传', '业主群推送', '荣誉证书', '现场横幅', '宣传栏展示', '主持人口播', '媒体报道', '感谢状'])
@@ -455,6 +387,10 @@ async function loadPublishTypes() {
         desc: typeConfig[name]?.desc || ''
       }))
     }
+    // 加载专业服务类型
+    if (data.professional_service_types && data.professional_service_types.length > 0) {
+      professionalTypes.value = data.professional_service_types
+    }
     // 加载社区类型配置
     if (data.community_types && data.community_types.length > 0) {
       communityTypeOptions.value = data.community_types
@@ -473,12 +409,9 @@ const form = ref({
   min_amount: 0, max_amount: 50000, fundScenes: [],
   goodsDetail: '', goodsExpiry: '', pickup_way: 'both', goodsImages: [],
   staff_count: 1, work_duration: 4, manpowerDesc: '',
-  techTypes: [], techDesc: '', techServiceType: 'both',
   professionalType: '', qualification: '', serviceScope: 'city', pricingType: 'free',
-  mediaChannels: [], mediaDesc: '',
-  // 场地支持字段
+  mediaChannels: [], coverage: '', mediaDesc: '',
   spaceArea: 0, capacity: 0, facilities: [], openHours: '',
-  // 就业岗位字段
   workType: '', salaryRange: '',
   expectedRewards: [], expectedRewardDesc: '', targetCommunityTypes: ['any'], validUntil: ''
 })
@@ -492,7 +425,7 @@ const titlePlaceholder = computed(() => {
     '资金赞助': '如：某企业赞助社区活动经费5万元',
     '物资支持': '如：提供活动奖品、矿泉水、宣传物料等物资',
     '人力服务': '如：提供5人专业活动执行团队',
-    '专业服务': '如：律师免费为居民提供法律咨询',
+    '专业服务': '如：法律咨询、健康医疗、活动策划等',
     '媒体宣传': '如：公众号10万粉丝免费宣传推广',
     '就业岗位': '如：提供社区就业岗位若干名',
     '志愿服务': '如：组织志愿者团队参与社区服务',
@@ -562,8 +495,7 @@ async function submitResource() {
     const data = {
       resource_type: form.value.resource_type,
       title: form.value.title,
-      // 内容：合并所有类型的内容描述
-      content: form.value.content || form.value.manpowerDesc || form.value.goodsDetail || form.value.techDesc || form.value.mediaDesc || '',
+      content: form.value.content || '',
       tags: form.value.tags,
       images: uploadedImages,
       // 资金赞助
@@ -586,6 +518,7 @@ async function submitResource() {
       price_range: form.value.pricingType || '',
       // 媒体报道
       media_channels: form.value.mediaChannels || [],
+      coverage: form.value.coverage || '',
       media_desc: form.value.mediaDesc || '',
       // 场地支持
       space_area: form.value.spaceArea || 0,

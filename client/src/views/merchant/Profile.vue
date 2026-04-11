@@ -339,7 +339,7 @@ import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Shop, Edit, Star, Plus, Delete } from '@element-plus/icons-vue'
-import { getProfile, updateProfile, getMyResources, toggleFavorite, getMyFavorites, getExpertTypes } from '@/api/merchant'
+import { getProfile, updateProfile, getMyResources, toggleFavorite, getMyFavorites, getExpertTypes, getPublishTypes } from '@/api/merchant'
 
 const router = useRouter()
 const loading = ref(true)
@@ -353,18 +353,15 @@ const favLoading = ref(false)
 
 const isExpert = computed(() => profile.value.company_type === 'expert')
 
-const memberLevelName = { 0: '免费试用', 1: '普通会员', 2: '银牌会员', 3: '金牌会员', 4: '铂金会员', 5: '钻石会员' }
+// 会员等级名称（从 API 动态加载）
+const memberLevelNameMap = ref({})
+const memberLevelName = computed(() => memberLevelNameMap.value[profile.value?.member_level] || '普通会员')
 
 // 会员等级对应的有效期（月数）
 const memberLevelValidity = { 0: 3, 1: 3, 2: 12, 3: 12, 4: 12, 5: 12 }
 
-const industryTypes = [
-  '教育培训', '医院诊所', '药店', '餐饮小吃', '生鲜水果', '美业', '保健养生', '体育健身', '银行保险', '电信服务',
-  '商超零售', '快递物流', '家政服务', '废旧回收', '五金建材', '家居装修', '家纺布艺', '电子电器', '房产中介', '汽车服务',
-  '旅游服务', '鲜花礼品', '电影演出', '娱乐休闲', '服装服饰', '酒店宾馆', '茶艺咖啡', '宠物服务', '眼镜', '酒水饮料',
-  '办公用品', '设备租赁', '社工服务', '养老服务', '新闻媒体', '自媒体', 'IT互联网', '软件开发', '图文广告',
-  '电子电器维修', '家居维修', '美发', '建筑工程', '其他'
-]
+// 行业分类（从 API 动态加载）
+const industryTypes = ref([])
 
 const expertTypes = ref([])
 
@@ -591,7 +588,30 @@ async function saveProfile() {
 onMounted(() => {
   loadProfile()
   loadExpertTypes()
+  loadPublishTypes()
 })
+
+// 加载发布类型配置（会员等级、行业分类）
+async function loadPublishTypes() {
+  try {
+    const res = await getPublishTypes()
+    const data = res.data || {}
+    // 加载会员等级配置
+    if (data.member_levels && Array.isArray(data.member_levels)) {
+      const map = {}
+      data.member_levels.forEach(item => {
+        map[item.level] = item.name
+      })
+      memberLevelNameMap.value = map
+    }
+    // 加载行业分类配置
+    if (data.industry_types && Array.isArray(data.industry_types)) {
+      industryTypes.value = data.industry_types
+    }
+  } catch (err) {
+    console.error('加载发布类型配置失败:', err)
+  }
+}
 
 // 加载专家类型列表
 async function loadExpertTypes() {

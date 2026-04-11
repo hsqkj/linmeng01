@@ -225,7 +225,7 @@ import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { requireAuth, isLoggedIn as checkLogin } from '@/utils/useAuth'
-import { getBanners, getRecommendDemands, getProfile, getMyResources, getMyIntentions, getMemberInfo, getCommunityDetail } from '@/api/merchant'
+import { getBanners, getRecommendDemands, getProfile, getMyResources, getMyIntentions, getMemberInfo, getCommunityDetail, getPublishTypes } from '@/api/merchant'
 import { Medal, StarFilled, Goods, View, Connection, CircleCheck, User, Calendar, Loading, Edit } from '@element-plus/icons-vue'
 
 const router = useRouter()
@@ -238,7 +238,6 @@ const matchedDemands = ref([])
 const profile = ref({})
 const stats = ref({ resources: 0, intentions: 0, completed: 0 })
 const loading = ref(false)
-const memberLevelName = { 0: '免费试用', 1: '普通会员', 2: '银牌会员', 3: '金牌会员', 4: '铂金会员', 5: '钻石会员' }
 
 // 判断是否为专家
 const isExpert = computed(() => profile.value.company_type === 'expert')
@@ -276,6 +275,9 @@ const bannerColors = [
 onMounted(async () => {
   loading.value = true
   try {
+    // 并行加载需求类型和初始数据
+    loadDemandTypes()
+
     const promises = [
       getBanners(),
       getRecommendDemands()
@@ -361,13 +363,39 @@ const contactCommunity = (demand) => {
   ElMessage.success(`已向${demand.community_name}发送合作意向`)
 }
 
-// 会员等级名称映射（用于详情弹窗）
-const memberLevelNameMap = { 0: '免费试用', 1: '普通会员', 2: '银牌会员', 3: '金牌会员', 4: '铂金会员', 5: '钻石会员' }
+// 会员等级名称映射（从API动态加载）
+const memberLevelNameMapData = ref({})
+const memberLevelNameMap = computed(() => memberLevelNameMapData.value)
 const memberLevelTagType = { 0: 'info', 1: 'info', 2: '', 3: 'warning', 4: 'danger', 5: 'danger' }
 
-// 需求类型数字到中文映射
-const demandTypeMap = { 0: '活动赞助', 1: '专家服务', 2: '空间运营', 3: '物资赞助', 4: '健康服务', 5: '教育培训' }
-const getDemandTypeName = (type) => demandTypeMap[type] ?? type ?? '需求'
+// 需求类型映射（从API动态加载）
+const demandTypeMap = ref({})
+function getDemandTypeName(type) {
+  return demandTypeMap.value[type] ?? type ?? '需求'
+}
+// 加载需求类型和会员等级配置
+async function loadDemandTypes() {
+  try {
+    const res = await getPublishTypes()
+    // 加载需求类型
+    if (res.data?.demand_types?.length) {
+      const map = {}
+      res.data.demand_types.forEach((name, idx) => {
+        map[idx] = name
+        map[name] = name
+      })
+      demandTypeMap.value = map
+    }
+    // 加载会员等级配置
+    if (res.data?.member_levels?.length) {
+      const map = {}
+      res.data.member_levels.forEach(item => {
+        map[item.level] = item.name
+      })
+      memberLevelNameMapData.value = map
+    }
+  } catch {}
+}
 </script>
 
 <style scoped>

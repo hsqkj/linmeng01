@@ -18,7 +18,7 @@
       </el-select>
       <el-select v-model="filterLevel" placeholder="会员等级" style="width:130px" clearable>
         <el-option label="全部" value="" />
-        <el-option label="免费试用" :value="0" /><el-option label="普通会员" :value="1" /><el-option label="银牌会员" :value="2" /><el-option label="金牌会员" :value="3" /><el-option label="铂金会员" :value="4" /><el-option label="钻石会员" :value="5" />
+        <el-option v-for="lv in levelFilterOptions" :key="lv.lv" :label="lv.name" :value="lv.lv" />
       </el-select>
       <el-select v-model="filterStatus" placeholder="状态" style="width:110px" clearable>
         <el-option label="全部" value="" /><el-option label="待审核" :value="0" /><el-option label="正常" :value="1" /><el-option label="已禁用" :value="2" />
@@ -240,18 +240,16 @@ const total = ref(0)
 const page = ref(1)
 const pageSize = 10
 
-const levelLabel = (lvl) => ({ 0:'免费试用', 1:'普通会员', 2:'银牌会员', 3:'金牌会员', 4:'铂金会员', 5:'钻石会员' })[lvl] || '普通会员'
+// 会员等级配置（从API动态加载）
+const memberLevelConfig = ref({})
+const levelLabel = (lvl) => memberLevelConfig.value[lvl] || 'Lv' + lvl
 const enterpriseOptions = ref([])
 const industryOptions = ref([])
 const levelColor = { '免费试用': 'info', '普通会员': '', '银牌会员': 'success', '金牌会员': 'warning', '铂金会员': 'danger', '钻石会员': 'danger' }
-const levelOptions = ref([
-  { lv: 0, name: '免费试用', fee: '0' },
-  { lv: 1, name: '普通会员', fee: '0' },
-  { lv: 2, name: '银牌会员', fee: '999' },
-  { lv: 3, name: '金牌会员', fee: '2999' },
-  { lv: 4, name: '铂金会员', fee: '5999' },
-  { lv: 5, name: '钻石会员', fee: '12000' }
-])
+const levelOptions = ref([])
+const levelFilterOptions = computed(() => {
+  return Object.entries(memberLevelConfig.value).map(([lv, name]) => ({ lv: parseInt(lv), name }))
+})
 const statusLabels = { 0: '待审核', 1: '正常', 2: '已禁用' }
 const statusTag = { 0: 'warning', 1: 'success', 2: 'danger' }
 
@@ -321,6 +319,12 @@ async function loadFilterOptions() {
       levelOptions.value = memberRes.data.member_levels.map(l => ({
         lv: l.level, name: l.name || 'Lv' + l.level, fee: l.fee || 0
       }))
+      // 设置会员等级名称映射
+      const map = {}
+      memberRes.data.member_levels.forEach(l => {
+        map[l.level] = l.name || 'Lv' + l.level
+      })
+      memberLevelConfig.value = map
     }
   } catch {}
 }

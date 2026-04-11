@@ -146,7 +146,10 @@ const favoritedIds = ref(new Set())
 const filters = reactive({ keyword: '', type: '', rating: '', distance: '', matchOrder: 'match' })
 const resourceTypes = ref([])
 const resourceTypeMap = ref({})
-const memberLevelName = { 0: '普通会员', 1: '普通会员', 2: '银牌会员', 3: '金牌会员', 4: '铂金会员', 5: '钻石会员' }
+
+// 会员等级名称映射（从API动态加载）
+const memberLevelName = ref({})
+const memberLevelNameData = ref({})
 const memberLevelType = { 0: 'info', 1: 'info', 2: '', 3: 'warning', 4: 'danger', 5: 'danger' }
 
 // 资源类型数字到中文映射（从API动态加载）
@@ -170,6 +173,7 @@ const getResourceTypeName = (type) => {
 async function loadConfig() {
   try {
     const res = await getConfig()
+    // 加载资源类型
     if (res.data?.resourceTypes?.length) {
       resourceTypes.value = res.data.resourceTypes
       // 构建数字到中文的映射
@@ -179,6 +183,15 @@ async function loadConfig() {
         map[t] = t
       })
       resourceTypeMap.value = map
+    }
+    // 加载会员等级配置
+    if (res.data?.member_levels?.length) {
+      const map = {}
+      res.data.member_levels.forEach(item => {
+        map[item.level] = item.name
+      })
+      memberLevelNameData.value = map
+      memberLevelName.value = map
     }
   } catch {}
 }
