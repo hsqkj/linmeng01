@@ -825,12 +825,12 @@ exports.grantReward = async (req, res) => {
 
 exports.getComments = async (req, res) => {
   try {
-    const { page = 1, pageSize = 10, type, keyword } = req.query
+    const { page = 1, pageSize = 10, type, keyword, status } = req.query
     const offset = (parseInt(page) - 1) * parseInt(pageSize)
-    
+
     let where = '1=1'
     let queryParams = []
-    
+
     if (type === 'demand') {
       where += ' AND c.demand_id IS NOT NULL'
     } else if (type === 'resource') {
@@ -839,6 +839,11 @@ exports.getComments = async (req, res) => {
     if (keyword) {
       where += ` AND c.content LIKE ?`
       queryParams.push('%' + keyword + '%')
+    }
+    // 支持 status 筛选（0=已删除，1=正常，空=全部）
+    if (status !== undefined && status !== '') {
+      where += ' AND c.status = ?'
+      queryParams.push(parseInt(status))
     }
 
     const [rows] = await pool.query(

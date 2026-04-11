@@ -154,7 +154,7 @@
             <el-avatar :size="48" :src="demand.community?.logo || `https://ui-avatars.com/api/?name=${encodeURIComponent(demand.community_name || '社')}&background=4A90D9&color=fff`" />
             <div class="community-info">
               <h4 style="cursor:pointer;color:#409EFF" @click.stop="viewCommunityDetail(demand)">{{ demand.community_name }}</h4>
-              <el-tag size="small" type="info">{{ demand.demand_type }}</el-tag>
+              <el-tag size="small" type="info">{{ getDemandTypeName(demand.demand_type) }}</el-tag>
             </div>
           </div>
 
@@ -364,6 +364,10 @@ const contactCommunity = (demand) => {
 // 会员等级名称映射（用于详情弹窗）
 const memberLevelNameMap = { 0: '免费试用', 1: '普通会员', 2: '银牌会员', 3: '金牌会员', 4: '铂金会员', 5: '钻石会员' }
 const memberLevelTagType = { 0: 'info', 1: 'info', 2: '', 3: 'warning', 4: 'danger', 5: 'danger' }
+
+// 需求类型数字到中文映射
+const demandTypeMap = { 0: '活动赞助', 1: '专家服务', 2: '空间运营', 3: '物资赞助', 4: '健康服务', 5: '教育培训' }
+const getDemandTypeName = (type) => demandTypeMap[type] ?? type ?? '需求'
 </script>
 
 <style scoped>
