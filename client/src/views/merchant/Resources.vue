@@ -83,20 +83,46 @@ const statusLabel = { 0: '待审核', 1: '已发布', 2: '已下架' }
 const allTags = ['亲子活动', '老年服务', '文化活动', '体育赛事', '教育培训', '健康医疗', '科技科普', '节庆活动', '环保公益', '商业推广', '社区建设', '志愿服务']
 const customTag = ref('')
 
-// 资源类型映射（数字到中文）
-const resourceTypeName = {
-  0: '专业服务', 1: '教育培训', 2: '场地资源', 3: '物资捐赠',
-  4: '志愿服务', 5: '资金赞助', 6: '技术支持', 7: '健康医疗',
-  8: '活动赞助', 9: '媒体宣传', 10: '技能培训', 11: '养老服务'
-}
+// 资源类型映射（从API动态加载）
+const resourceTypeName = ref({})
+const resourceTypes = ref([])
 
 // 获取资源类型中文名称
 function getResourceTypeName(type) {
-  if (typeof type === 'string' && resourceTypeName[type] !== undefined) {
-    return resourceTypeName[type]
+  // 如果是字符串且在映射中存在
+  if (typeof type === 'string' && resourceTypeName.value[type] !== undefined) {
+    return resourceTypeName.value[type]
   }
+  // 如果是数字
   const num = parseInt(type)
-  return resourceTypeName[num] || type || '未知'
+  if (!isNaN(num) && resourceTypeName.value[num] !== undefined) {
+    return resourceTypeName.value[num]
+  }
+  // 如果是字符串类型名称，直接返回
+  if (typeof type === 'string') {
+    return type
+  }
+  return type || '未知'
+}
+
+// 加载资源类型配置
+async function loadResourceTypes() {
+  try {
+    const { getPublishTypes } = await import('@/api/merchant')
+    const res = await getPublishTypes()
+    if (res.data?.resource_types?.length) {
+      resourceTypes.value = res.data.resource_types
+      // 构建数字到中文的映射
+      const map = {}
+      res.data.resource_types.forEach((name, idx) => {
+        map[idx] = name
+        map[name] = name
+      })
+      resourceTypeName.value = map
+    }
+  } catch {
+    // 使用空映射
+  }
 }
 
 // 获取标签列表
@@ -179,6 +205,7 @@ function onPageChange(page) {
 
 onMounted(() => {
   fetchMyResources()
+  loadResourceTypes()
 })
 </script>
 

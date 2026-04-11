@@ -12,12 +12,12 @@
       </el-input>
       <el-select v-model="filters.type" placeholder="需求类型" style="width:130px" clearable>
         <el-option label="全部类型" value="" />
-        <el-option label="活动赞助" value="活动赞助" />
-        <el-option label="专家服务" value="专家服务" />
-        <el-option label="空间运营" value="空间运营" />
-        <el-option label="物资赞助" value="物资赞助" />
-        <el-option label="健康服务" value="健康服务" />
-        <el-option label="教育培训" value="教育培训" />
+        <el-option label="活动赞助" :value="0" />
+        <el-option label="专家服务" :value="1" />
+        <el-option label="空间运营" :value="2" />
+        <el-option label="物资赞助" :value="3" />
+        <el-option label="健康服务" :value="4" />
+        <el-option label="教育培训" :value="5" />
       </el-select>
       <el-select v-model="filters.district" placeholder="区" style="width:100px" clearable>
         <el-option label="全部区" value="" />
@@ -40,7 +40,7 @@
             <span v-for="n in 5" :key="n" class="heart" :class="{filled: n <= (demand.matchScore || 0)}">♥</span>
             <span class="score-pct">{{ demand.matchScore ? demand.matchScore * 20 + '%' : '' }}匹配</span>
           </div>
-          <el-tag size="small" :type="typeColors[demand.demand_type]">{{ demand.demand_type }}</el-tag>
+          <el-tag size="small" :type="typeColors[demand.demand_type]">{{ demandTypeMap[demand.demand_type] || demand.demand_type }}</el-tag>
         </div>
         <h4 class="demand-title">{{ demand.title }}</h4>
         <div class="demand-meta">
@@ -118,7 +118,21 @@ import { getDemands } from '@/api/community'
 const router = useRouter()
 
 const filters = reactive({ keyword: '', type: '', district: '', sortBy: 'newest' })
-const typeColors = { '活动赞助': 'primary', '专家服务': 'success', '空间运营': 'warning', '物资赞助': 'danger', '健康服务': 'info', '教育培训': 'warning' }
+
+// 需求类型数字→中文映射
+const demandTypeMap = {
+  0: '活动赞助', 1: '专家服务', 2: '空间运营',
+  3: '物资赞助', 4: '健康服务', 5: '教育培训'
+}
+const typeColors = {
+  0: 'primary', 1: 'success', 2: 'warning',
+  3: 'danger', 4: 'info', 5: 'warning'
+}
+// 目标对象数字→中文映射
+const audienceMap = {
+  0: '老年人', 1: '儿童', 2: '青少年', 3: '家庭', 4: '退役军人',
+  5: '残障人士', 6: '新业态从业者', 7: '社区居民', 8: '其他'
+}
 
 const demands = ref([])
 const total = ref(0)
@@ -152,10 +166,18 @@ async function fetchDemands() {
 
 function parseAudience(val) {
   if (!val) return []
+  let arr = []
   if (typeof val === 'string') {
-    try { return JSON.parse(val) } catch { return val.split(',') }
+    try { arr = JSON.parse(val) } catch { arr = val.split(',') }
+  } else {
+    arr = val
   }
-  return val
+  // 数字→中文映射
+  return arr.map(v => {
+    const n = parseInt(v)
+    if (!isNaN(n) && audienceMap[n] !== undefined) return audienceMap[n]
+    return v
+  })
 }
 
 function viewDetail(demand) {

@@ -154,14 +154,14 @@
             <el-avatar :size="48" :src="demand.community?.logo || `https://ui-avatars.com/api/?name=${encodeURIComponent(demand.community_name || '社')}&background=4A90D9&color=fff`" />
             <div class="community-info">
               <h4 style="cursor:pointer;color:#409EFF" @click.stop="viewCommunityDetail(demand)">{{ demand.community_name }}</h4>
-              <el-tag size="small" type="info">{{ getDemandTypeName(demand.demand_type) }}</el-tag>
+              <el-tag size="small" type="info">{{ demand.demand_type_name || getDemandTypeName(demand.demand_type) }}</el-tag>
             </div>
           </div>
 
           <h4 class="demand-title">{{ demand.title }}</h4>
 
           <div class="demand-tags">
-            <el-tag v-for="tag in (demand.tags || [])" :key="tag" size="small" effect="plain">
+            <el-tag v-for="tag in (demand.tags_names || [])" :key="tag" size="small" effect="plain">
               {{ tag }}
             </el-tag>
           </div>

@@ -31,7 +31,7 @@
                 <div class="info-item">
                   <span class="info-label">目标对象</span>
                   <span class="info-value">
-                    <el-tag v-for="g in (demand.target_audience ? (Array.isArray(demand.target_audience) ? demand.target_audience : demand.target_audience.split(',')) : [])" :key="g" size="small" type="warning" style="margin:2px">{{ g }}</el-tag>
+                    <el-tag v-for="g in (demand.target_audience ? (Array.isArray(demand.target_audience) ? demand.target_audience : demand.target_audience.split(',')) : [])" :key="g" size="small" type="warning" style="margin:2px">{{ getAudienceName(g) }}</el-tag>
                   </span>
                 </div>
                 <div class="info-item">
@@ -172,8 +172,24 @@ const demand = ref(null)
 const intentions = ref([])
 
 const demandTypeName = {
+  // 数字键（API返回）
+  0: '活动赞助', 1: '专家服务', 2: '空间运营',
+  3: '物资赞助', 4: '健康服务', 5: '教育培训',
+  // 中文键（兼容）
   '活动赞助': '活动赞助', '专家服务': '专家服务', '空间运营': '空间运营',
   '物资赞助': '物资赞助', '健康服务': '健康服务', '教育培训': '教育培训'
+}
+
+// 目标对象数字→中文映射
+const audienceMap = {
+  0: '老年人', 1: '儿童', 2: '青少年', 3: '家庭', 4: '退役军人',
+  5: '残障人士', 6: '新业态从业者', 7: '社区居民', 8: '其他'
+}
+
+function getAudienceName(val) {
+  const n = parseInt(val)
+  if (!isNaN(n) && audienceMap[n] !== undefined) return audienceMap[n]
+  return val
 }
 
 const statusName = { 0: '待审核', 1: '已发布', 2: '已下架' }

@@ -42,13 +42,37 @@ const page = ref(1)
 const pageSize = 20
 const total = ref(0)
 
-// 资源类型数字到中文映射
-const resourceTypeNumMap = {
-  0: '专业服务', 1: '教育培训', 2: '场地资源', 3: '物资捐赠',
-  4: '志愿服务', 5: '资金赞助', 6: '技术支持', 7: '健康医疗',
-  8: '活动赞助', 9: '媒体宣传', 10: '技能培训', 11: '养老服务'
+// 资源类型映射（从API动态加载）
+const resourceTypeNumMap = ref({})
+const getResourceTypeName = (type) => {
+  if (typeof type === 'string' && resourceTypeNumMap.value[type] !== undefined) {
+    return resourceTypeNumMap.value[type]
+  }
+  const num = parseInt(type)
+  if (!isNaN(num) && resourceTypeNumMap.value[num] !== undefined) {
+    return resourceTypeNumMap.value[num]
+  }
+  if (typeof type === 'string') {
+    return type
+  }
+  return type || '其他'
 }
-const getResourceTypeName = (type) => resourceTypeNumMap[type] ?? type ?? '其他'
+
+// 加载资源类型配置
+async function loadResourceTypes() {
+  try {
+    const { getPublishTypes } = await import('@/api/community')
+    const res = await getPublishTypes()
+    if (res.data?.resource_types?.length) {
+      const map = {}
+      res.data.resource_types.forEach((name, idx) => {
+        map[idx] = name
+        map[name] = name
+      })
+      resourceTypeNumMap.value = map
+    }
+  } catch {}
+}
 
 async function loadFavorites() {
   loading.value = true
@@ -74,6 +98,7 @@ function toggleFav(item) {
 
 onMounted(() => {
   loadFavorites()
+  loadResourceTypes()
 })
 </script>
 

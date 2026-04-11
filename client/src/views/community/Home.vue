@@ -139,7 +139,7 @@
               <div class="merchant-meta-row">
                 <span class="star-rating-text">{{ resource.star_rating || 0 }}星</span>
                 <el-divider direction="vertical" />
-                <el-tag size="small" type="info">{{ resource.member_level || '普通会员' }}</el-tag>
+                <el-tag size="small" type="info">{{ memberLevelMap[resource.member_level] || '普通会员' }}</el-tag>
                 <el-divider direction="vertical" />
                 <span class="view-count"><el-icon :size="12"><View /></el-icon> {{ resource.view_count || 0 }}</span>
               </div>
@@ -184,13 +184,40 @@ const profile = ref({})
 const stats = ref({ demands: 0, intentions: 0, completed: 0, rewards: 0 })
 const loading = ref(false)
 
-// 资源类型数字到中文映射
-const resourceTypeNumMap = {
-  0: '专业服务', 1: '教育培训', 2: '场地资源', 3: '物资捐赠',
-  4: '志愿服务', 5: '资金赞助', 6: '技术支持', 7: '健康医疗',
-  8: '活动赞助', 9: '媒体宣传', 10: '技能培训', 11: '养老服务'
+// 资源类型映射（从API动态加载）
+const resourceTypeNumMap = ref({})
+const getResourceTypeName = (type) => {
+  if (typeof type === 'string' && resourceTypeNumMap.value[type] !== undefined) {
+    return resourceTypeNumMap.value[type]
+  }
+  const num = parseInt(type)
+  if (!isNaN(num) && resourceTypeNumMap.value[num] !== undefined) {
+    return resourceTypeNumMap.value[num]
+  }
+  if (typeof type === 'string') {
+    return type
+  }
+  return type || '其他'
 }
-const getResourceTypeName = (type) => resourceTypeNumMap[type] ?? type ?? '其他'
+
+// 会员等级数字到中文映射
+const memberLevelMap = { 0: '普通会员', 1: '普通会员', 2: '银牌会员', 3: '金牌会员', 4: '铂金会员', 5: '钻石会员' }
+
+// 加载资源类型配置
+async function loadResourceTypes() {
+  try {
+    const { getPublishTypes } = await import('@/api/community')
+    const res = await getPublishTypes()
+    if (res.data?.resource_types?.length) {
+      const map = {}
+      res.data.resource_types.forEach((name, idx) => {
+        map[idx] = name
+        map[name] = name
+      })
+      resourceTypeNumMap.value = map
+    }
+  } catch {}
+}
 
 const bannerColors = [
   'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
@@ -211,6 +238,9 @@ onMounted(async () => {
     if (isLoggedIn) {
       promises.push(getProfile(), getMyDemands({ pageSize: 1 }), getMyIntentions({ pageSize: 50 }))
     }
+    
+    // 加载资源类型配置
+    promises.push(loadResourceTypes())
 
     const results = await Promise.allSettled(promises)
 

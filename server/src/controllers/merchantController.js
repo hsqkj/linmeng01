@@ -198,8 +198,10 @@ exports.getRecommendDemands = async (req, res) => {
     // 公开接口统一返回中等匹配度，登录后展示个性化
     const result = demands.map(d => ({
       ...d,
+      demand_type_name: DEMAND_TYPE_MAP[d.demand_type] || '需求',
       matchScore: 3,
-      matchHearts: 3
+      matchHearts: 3,
+      ...mapDemandFields(d)
     }))
 
     success(res, result)
@@ -212,6 +214,59 @@ exports.getRecommendDemands = async (req, res) => {
 // 需求大厅
 const DEMAND_TYPE_MAP = { 0: '活动赞助', 1: '专家服务', 2: '空间运营', 3: '物资赞助', 4: '健康服务', 5: '教育培训' }
 const DEMAND_TYPE_NAME = { '活动赞助': '活动赞助', '专家服务': '专家服务', '空间运营': '空间运营', '物资赞助': '物资赞助', '健康服务': '健康服务', '教育培训': '教育培训' }
+
+// 居民类型映射（与 resident_types 顺序一致）
+const RESIDENT_TYPE_MAP = ['青少年/儿童', '青年', '中老年', '宝妈', '退役军人', '残疾群体', '困难家庭', '志愿者']
+
+// 资源类型映射
+const RESOURCE_TYPE_MAP = ['专业服务', '教育培训', '场地资源', '物资捐赠', '志愿服务', '资金赞助', '技术支持', '健康医疗', '活动赞助', '媒体宣传', '技能培训', '养老服务']
+
+// 社区标签映射（ID → 名称）
+const COMMUNITY_TAG_MAP = {
+  1: '老旧小区', 2: '新建社区', 3: '青年社区', 4: '老龄化社区', 5: '亲子社区',
+  6: '学区社区', 7: '商圈社区', 8: '产业园区', 9: '交通枢纽', 10: '景区周边',
+  11: '文化社区', 12: '体育社区', 13: '绿色社区', 14: '智慧社区', 15: '志愿社区',
+  16: '商业密集', 17: '公共空间丰富', 18: '学校密集', 19: '公园环绕',
+  40: '社区活动', 41: '志愿服务', 42: '文化演出', 43: '体育运动',
+  44: '教育培训', 45: '健康义诊', 46: '法律咨询', 47: '便民服务'
+}
+
+// 映射需求数组字段为中文名称
+function mapDemandFields(d) {
+  // target_audience: 数字索引 → 居民类型名称
+  let targetAudienceNames = []
+  if (d.target_audience) {
+    try {
+      const arr = typeof d.target_audience === 'string' ? JSON.parse(d.target_audience) : d.target_audience
+      targetAudienceNames = arr.map(i => RESIDENT_TYPE_MAP[i] || `类型${i}`).filter(Boolean)
+    } catch {}
+  }
+
+  // tags: 标签ID → 标签名称
+  let tagNames = []
+  if (d.tags) {
+    try {
+      const arr = typeof d.tags === 'string' ? JSON.parse(d.tags) : d.tags
+      tagNames = arr.map(id => COMMUNITY_TAG_MAP[id] || `标签${id}`).filter(Boolean)
+    } catch {}
+  }
+
+  // required_types: 数字索引 → 资源类型名称
+  let requiredTypeNames = []
+  if (d.required_types) {
+    try {
+      const arr = typeof d.required_types === 'string' ? JSON.parse(d.required_types) : d.required_types
+      requiredTypeNames = arr.map(i => RESOURCE_TYPE_MAP[i] || `类型${i}`).filter(Boolean)
+    } catch {}
+  }
+
+  return {
+    ...d,
+    target_audience_names: targetAudienceNames,
+    tags_names: tagNames,
+    required_types_names: requiredTypeNames
+  }
+}
 
 exports.getDemands = async (req, res) => {
   try {
@@ -278,7 +333,8 @@ exports.getDemands = async (req, res) => {
       ...d,
       demand_type_name: DEMAND_TYPE_MAP[d.demand_type] || '需求',
       matchScore: 3,
-      matchHearts: 3
+      matchHearts: 3,
+      ...mapDemandFields(d)
     }))
     
     pageSuccess(res, result, total, page, pageSize)
@@ -309,19 +365,22 @@ exports.getDemandDetail = async (req, res) => {
     
     const row = rows[0]
     row.demand_type_name = DEMAND_TYPE_MAP[row.demand_type] || '需求'
-    
+
     // 添加匹配度信息
     row.matchScore = 3
     row.matchHearts = 3
-    
+
+    // 映射数组字段
+    const mapped = mapDemandFields(row)
+
     // 联系方式：仅金牌会员（Lv3）及以上可见
     let canViewContact = false
     if (req.merchant?.id) {
       const [[merchant]] = await pool.query('SELECT member_level FROM merchants WHERE id = ?', [req.merchant.id])
       canViewContact = merchant?.member_level >= 3
     }
-    
-    const result = { ...row, canViewContact }
+
+    const result = { ...mapped, canViewContact }
     if (!canViewContact) {
       delete result.address
     }
@@ -500,14 +559,13 @@ exports.createResource = async (req, res) => {
     const data = req.body
     data.merchant_id = req.merchant.id
     
-    // 中文类型名到数字的映射
+    // 中文类型名到数字的映射（管理后台配置的9个类型）
     const RESOURCE_TYPE_MAP = {
-      '专业服务': 0, '教育培训': 1, '场地资源': 2, '物资捐赠': 3,
-      '志愿服务': 4, '资金赞助': 5, '技术支持': 6, '健康医疗': 7,
-      '活动赞助': 8, '媒体宣传': 9, '技能培训': 10, '养老服务': 11
+      '资金赞助': 0, '物资支持': 1, '人力服务': 2, '专业服务': 3,
+      '媒体宣传': 4, '就业岗位': 5, '志愿服务': 6, '场地支持': 7, '其他': 8
     }
     
-    // 转换 resource_type
+    // 转换 resource_type（如果已经是数字则直接使用）
     let resourceType = data.resource_type
     if (typeof resourceType === 'string' && !isNaN(parseInt(resourceType))) {
       resourceType = parseInt(resourceType)
@@ -518,20 +576,22 @@ exports.createResource = async (req, res) => {
     const [result] = await pool.query(
       `INSERT INTO resources (merchant_id, resource_type, title, content, images, tags,
        min_amount, max_amount, quantity, specs, pickup_way, staff_count,
-       work_duration, skill_requirements, service_scope, certification,
-       price_range, media_type, coverage, professional_type, tech_types,
-       tech_service_type, goods_expiry, fund_scenes, media_channels,
+       work_duration, manpower_desc, service_scope, certification,
+       price_range, professional_type, media_channels, media_desc,
+       goods_expiry, fund_scenes, space_area, capacity, facilities, open_hours,
+       work_type, salary_range,
        valid_until, expected_rewards, expected_reward_desc, status)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [data.merchant_id, resourceType, data.title, data.content,
        JSON.stringify(data.images || []), JSON.stringify(data.tags || []),
        data.min_amount || 0, data.max_amount || 0, data.quantity || 0, data.specs || '', data.pickup_way || '',
-       data.staff_count || 0, data.work_duration || 0, data.skill_requirements || '',
+       data.staff_count || 0, data.work_duration || 0, data.manpower_desc || '',
        data.service_scope || '', data.certification || '', data.price_range || '',
-       data.media_type || '', data.coverage || '',
-       data.professional_type || '', JSON.stringify(data.tech_types || []),
-       data.tech_service_type || '', data.goods_expiry || null, JSON.stringify(data.fund_scenes || []),
-       JSON.stringify(data.media_channels || []),
+       data.professional_type || '',
+       JSON.stringify(data.media_channels || []), data.media_desc || '',
+       data.goods_expiry || null, JSON.stringify(data.fund_scenes || []),
+       data.space_area || 0, data.capacity || 0, JSON.stringify(data.facilities || []), data.open_hours || '',
+       data.work_type || '', data.salary_range || '',
        data.valid_until || null,
        JSON.stringify(data.expected_rewards || []), data.expected_reward_desc || '', 0]
     )
@@ -559,11 +619,10 @@ exports.updateResource = async (req, res) => {
     
     const data = req.body
     
-    // 中文类型名到数字的映射
+    // 中文类型名到数字的映射（管理后台配置的9个类型）
     const RESOURCE_TYPE_MAP = {
-      '专业服务': 0, '教育培训': 1, '场地资源': 2, '物资捐赠': 3,
-      '志愿服务': 4, '资金赞助': 5, '技术支持': 6, '健康医疗': 7,
-      '活动赞助': 8, '媒体宣传': 9, '技能培训': 10, '养老服务': 11
+      '资金赞助': 0, '物资支持': 1, '人力服务': 2, '专业服务': 3,
+      '媒体宣传': 4, '就业岗位': 5, '志愿服务': 6, '场地支持': 7, '其他': 8
     }
     
     // 转换 resource_type
@@ -588,20 +647,23 @@ exports.updateResource = async (req, res) => {
     await pool.query(
       `UPDATE resources SET resource_type = ?, title = ?, content = ?, images = ?, tags = ?,
        min_amount = ?, max_amount = ?, quantity = ?, specs = ?, pickup_way = ?,
-       staff_count = ?, work_duration = ?, skill_requirements = ?,
-       service_scope = ?, certification = ?, price_range = ?,
-       media_type = ?, coverage = ?, professional_type = ?, tech_types = ?,
-       tech_service_type = ?, goods_expiry = ?, fund_scenes = ?, media_channels = ?,
+       staff_count = ?, work_duration = ?, manpower_desc = ?,
+       service_scope = ?, certification = ?, price_range = ?, professional_type = ?,
+       media_channels = ?, media_desc = ?,
+       goods_expiry = ?, fund_scenes = ?,
+       space_area = ?, capacity = ?, facilities = ?, open_hours = ?,
+       work_type = ?, salary_range = ?,
        valid_until = ?, expected_rewards = ?, expected_reward_desc = ?, status = 0 WHERE id = ?`,
       [resourceType, data.title, data.content, JSON.stringify(data.images || []),
        JSON.stringify(data.tags || []), data.min_amount || 0, data.max_amount || 0,
        data.quantity || 0, data.specs || '', data.pickup_way || '', data.staff_count || 0,
-       data.work_duration || 0, data.skill_requirements || '', data.service_scope || '',
-       data.certification || '', data.price_range || '', data.media_type || '', data.coverage || '',
-       data.professional_type || '', JSON.stringify(data.tech_types || []),
-       data.tech_service_type || '', goodsExpiry, JSON.stringify(data.fund_scenes || []),
-       JSON.stringify(data.media_channels || []), validUntil,
-       JSON.stringify(data.expected_rewards || []), data.expected_reward_desc || '', id]
+       data.work_duration || 0, data.manpower_desc || '', data.service_scope || '',
+       data.certification || '', data.price_range || '', data.professional_type || '',
+       JSON.stringify(data.media_channels || []), data.media_desc || '',
+       goodsExpiry, JSON.stringify(data.fund_scenes || []),
+       data.space_area || 0, data.capacity || 0, JSON.stringify(data.facilities || []), data.open_hours || '',
+       data.work_type || '', data.salary_range || '',
+       validUntil, JSON.stringify(data.expected_rewards || []), data.expected_reward_desc || '', id]
     )
     
     success(res, null, '更新成功')

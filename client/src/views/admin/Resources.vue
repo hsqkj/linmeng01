@@ -41,7 +41,7 @@
         <el-descriptions :column="2" border>
           <el-descriptions-item label="商家">{{ currentRow.company_name }}</el-descriptions-item>
           <el-descriptions-item label="创建时间">{{ fmtTime(currentRow.created_at) }}</el-descriptions-item>
-          <el-descriptions-item label="资源类型">{{ currentRow.resource_type || '—' }}</el-descriptions-item>
+          <el-descriptions-item label="资源类型">{{ resourceTypeMap[currentRow.resource_type] || currentRow.resource_type || '—' }}</el-descriptions-item>
           <el-descriptions-item label="行业">{{ currentRow.industry || '—' }}</el-descriptions-item>
           <el-descriptions-item label="资源详情" :span="2">{{ currentRow.content || '—' }}</el-descriptions-item>
         </el-descriptions>
@@ -67,6 +67,40 @@ const currentRow = ref(null)
 
 const statusColors = { 0: 'info', 1: 'success', 2: 'danger' }
 const statusLabels = { 0: '待审核', 1: '已通过', 2: '已驳回' }
+
+// 资源类型映射（从API动态加载）
+const resourceTypeMap = ref({})
+
+// 获取资源类型名称
+function getResourceTypeName(type) {
+  if (typeof type === 'string' && resourceTypeMap.value[type] !== undefined) {
+    return resourceTypeMap.value[type]
+  }
+  const num = parseInt(type)
+  if (!isNaN(num) && resourceTypeMap.value[num] !== undefined) {
+    return resourceTypeMap.value[num]
+  }
+  if (typeof type === 'string') {
+    return type
+  }
+  return type || '其他'
+}
+
+// 加载资源类型配置
+async function loadResourceTypes() {
+  try {
+    const { getPublishTypes } = await import('@/api/merchant')
+    const res = await getPublishTypes()
+    if (res.data?.resource_types?.length) {
+      const map = {}
+      res.data.resource_types.forEach((name, idx) => {
+        map[idx] = name
+        map[name] = name
+      })
+      resourceTypeMap.value = map
+    }
+  } catch {}
+}
 
 function fmtTime(t) {
   if (!t) return '—'
@@ -99,7 +133,7 @@ function viewDetail(row) {
   showDetail.value = true
 }
 
-onMounted(() => { loadData() })
+onMounted(() => { loadData(); loadResourceTypes() })
 </script>
 
 <style scoped>

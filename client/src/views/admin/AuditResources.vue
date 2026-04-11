@@ -5,7 +5,7 @@
     <div class="filter-bar">
       <el-select v-model="filterType" placeholder="资源类型" style="width:130px">
         <el-option label="全部" value="" />
-        <el-option v-for="t in ['资金赞助','物资提供','人力支持','技术支持','专业服务','媒体报道']" :key="t" :label="t" :value="t" />
+        <el-option v-for="(label, key) in resourceTypeNumMap" :key="key" :label="label" :value="Number(key)" />
       </el-select>
       <el-select v-model="filterStatus" placeholder="审核状态" style="width:130px">
         <el-option label="全部" value="" /><el-option label="待审核" value="待审核" /><el-option label="已通过" value="已通过" /><el-option label="已驳回" value="已驳回" />
@@ -194,8 +194,11 @@ const pendingCount = ref(0)
 const page = ref(1)
 const pageSize = 10
 
-const levelLabel = (lvl) => ({ 1:'普通会员', 2:'银牌会员', 3:'金牌会员', 4:'铂金会员', 5:'钻石会员' })[lvl] || '普通会员'
-const levelColors = { '普通会员': 'info', '银牌会员': 'info', '金牌会员': 'warning', '铂金会员': 'danger', '钻石会员': 'danger' }
+// 资源类型映射（从API动态加载）
+const resourceTypeNumMap = ref({})
+const resourceTypeName = ref({})
+const levelLabel = (lvl) => ({ 0:'普通会员', 1:'普通会员', 2:'银牌会员', 3:'金牌会员', 4:'铂金会员', 5:'钻石会员' })[lvl] || '普通会员'
+const levelColors = { 0: 'info', 1: 'info', 2: 'info', 3: 'warning', 4: 'danger', 5: 'danger', '普通会员': 'info', '银牌会员': 'info', '金牌会员': 'warning', '铂金会员': 'danger', '钻石会员': 'danger' }
 const statusLabels = { 0: '待审核', 1: '已通过', 2: '已驳回' }
 const statusColors = { 0: 'warning', 1: 'success', 2: 'danger' }
 
@@ -212,10 +215,36 @@ const serviceScopeMap = { city:'全市', district:'本区', online:'线上' }
 // 收费标准映射
 const priceRangeMap = { free:'免费', discount:'优惠价', market:'市场价' }
 
-const resourceTypeName = {
-  0: '专业服务', 1: '教育培训', 2: '场地资源', 3: '物资捐赠',
-  4: '志愿服务', 5: '资金赞助', 6: '技术支持', 7: '健康医疗',
-  8: '活动赞助', 9: '媒体宣传', 10: '技能培训', 11: '养老服务'
+// 获取资源类型名称
+function getResourceTypeName(type) {
+  if (typeof type === 'string' && resourceTypeName.value[type] !== undefined) {
+    return resourceTypeName.value[type]
+  }
+  const num = parseInt(type)
+  if (!isNaN(num) && resourceTypeName.value[num] !== undefined) {
+    return resourceTypeName.value[num]
+  }
+  if (typeof type === 'string') {
+    return type
+  }
+  return type || '其他'
+}
+
+// 加载资源类型配置
+async function loadResourceTypes() {
+  try {
+    const { getPublishTypes } = await import('@/api/merchant')
+    const res = await getPublishTypes()
+    if (res.data?.resource_types?.length) {
+      const map = {}
+      res.data.resource_types.forEach((name, idx) => {
+        map[idx] = name
+        map[name] = name
+      })
+      resourceTypeNumMap.value = map
+      resourceTypeName.value = map
+    }
+  } catch {}
 }
 
 // 获取资源类型中文名称
@@ -243,7 +272,7 @@ async function loadResources() {
   finally { loading.value = false }
 }
 
-onMounted(() => { loadResources() })
+onMounted(() => { loadResources(); loadResourceTypes() })
 
 function viewResource(row) { currentResource.value = row; showDetail.value = true }
 

@@ -523,40 +523,84 @@ const customTag = ref('')
 const resourceId = ref(null)
 
 // 发布类型配置 - 从后端API加载
-const resourceTypes = ref([
-  { value: '专业服务', icon: '🎓', label: '专业服务', desc: '咨询、法律、设计等专业服务' },
-  { value: '教育培训', icon: '📚', label: '教育培训', desc: '课程、培训、讲座等服务' },
-  { value: '场地资源', icon: '🏠', label: '场地资源', desc: '活动室、运动场地等场所支持' },
-  { value: '物资捐赠', icon: '📦', label: '物资捐赠', desc: '图书、设备、食品等物资' },
-  { value: '志愿服务', icon: '👥', label: '志愿服务', desc: '人力支持、活动协助等' },
-  { value: '资金赞助', icon: '💵', label: '资金赞助', desc: '活动经费、奖金等资金支持' },
-  { value: '技术支持', icon: '💻', label: '技术支持', desc: 'IT、网络、设备维护等技术支持' },
-  { value: '健康医疗', icon: '🏥', label: '健康医疗', desc: '义诊、健康讲座等服务' },
-  { value: '活动赞助', icon: '🎉', label: '活动赞助', desc: '活动策划、物料等赞助' },
-  { value: '媒体宣传', icon: '📰', label: '媒体宣传', desc: '公众号、媒体推广等服务' },
-  { value: '技能培训', icon: '🛠️', label: '技能培训', desc: '技能传授、指导等服务' },
-  { value: '养老服务', icon: '👴', label: '养老服务', desc: '助老服务、健康管理等' }
-])
+const resourceTypes = ref([])
+
+// 资源类型映射（从API动态加载）
+const resourceTypeName = ref({})
 
 const professionalTypes = ref(['法律咨询', '医疗健康', '心理辅导', '教育培训', '金融理财', '技能培训', '营养指导', '体育健身', '文艺指导', '社会工作', '其他'])
 const merchantTagOptions = ref(['连锁品牌', '本地企业', '上市公司', '高端品牌', '大众品牌', '公益导向', '长期合作', '亲子品牌', '老年服务', '全国服务', '精准获客', '社会责任'])
 const communityTypeOptions = ref([])
 const expectedRewardOptions = ref(['活动冠名权', '现场展台', '社区公众号宣传', '业主群推送', '荣誉证书', '现场横幅', '宣传栏展示', '主持人口播', '媒体报道', '感谢状'])
 
-// 资源类型映射（数字到中文）
-const resourceTypeName = {
-  0: '专业服务', 1: '教育培训', 2: '场地资源', 3: '物资捐赠',
-  4: '志愿服务', 5: '资金赞助', 6: '技术支持', 7: '健康医疗',
-  8: '活动赞助', 9: '媒体宣传', 10: '技能培训', 11: '养老服务'
+// 资源类型图标和描述映射
+const resourceTypeIcons = {
+  '资金赞助': { icon: '💵', desc: '活动经费、奖金等资金支持' },
+  '物资支持': { icon: '📦', desc: '图书、设备、食品、活动与宣传物料、奖品等物资' },
+  '人力服务': { icon: '👥', desc: '人力支持、活动协助等' },
+  '专业服务': { icon: '🎓', desc: '法律、心理、咨询、设计、活动策划、健康医疗等' },
+  '媒体宣传': { icon: '📰', desc: '公众号、媒体推广等服务' },
+  '就业岗位': { icon: '💼', desc: '提供就业岗位' },
+  '志愿服务': { icon: '❤️', desc: '奉献爱心志愿服务' },
+  '场地支持': { icon: '🏠', desc: '会议室、活动室、运动场等场地空间资源支持' },
+  '其他': { icon: '📋', desc: '其他类型的资源支持' }
 }
 
 // 获取资源类型中文名称
 function getResourceTypeName(type) {
-  if (typeof type === 'string' && resourceTypeName[type] !== undefined) {
-    return resourceTypeName[type]
+  // 如果是字符串且在映射中存在
+  if (typeof type === 'string' && resourceTypeName.value[type] !== undefined) {
+    return resourceTypeName.value[type]
   }
+  // 如果是数字
   const num = parseInt(type)
-  return resourceTypeName[num] || type || '未知'
+  if (!isNaN(num) && resourceTypeName.value[num] !== undefined) {
+    return resourceTypeName.value[num]
+  }
+  // 如果是字符串类型名称，直接返回
+  if (typeof type === 'string') {
+    return type
+  }
+  return type || '未知'
+}
+
+// 加载资源类型配置
+async function loadPublishTypes() {
+  try {
+    const { getPublishTypes } = await import('@/api/merchant')
+    const res = await getPublishTypes()
+    const data = res.data || {}
+    
+    // 加载资源类型
+    if (data.resource_types && data.resource_types.length > 0) {
+      resourceTypes.value = data.resource_types.map(name => ({
+        value: name,
+        label: name,
+        icon: resourceTypeIcons[name]?.icon || '📋',
+        desc: resourceTypeIcons[name]?.desc || ''
+      }))
+      
+      // 构建数字到中文的映射
+      const map = {}
+      data.resource_types.forEach((name, idx) => {
+        map[idx] = name
+        map[name] = name
+      })
+      resourceTypeName.value = map
+    }
+    
+    // 加载社区类型配置
+    if (data.community_types && data.community_types.length > 0) {
+      communityTypeOptions.value = data.community_types
+    }
+    
+    // 加载商家标签
+    if (data.merchant_tags) {
+      merchantTagOptions.value = data.merchant_tags
+    }
+  } catch {
+    // 使用默认值
+  }
 }
 
 // 获取标签列表

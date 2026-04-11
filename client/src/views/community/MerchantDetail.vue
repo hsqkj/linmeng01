@@ -361,12 +361,39 @@ function sendServiceMessage() {
 
 const memberLevelMap = { 0: '普通会员', 1: '银牌会员', 2: '金牌会员', 3: '铂金会员', 4: '钻石会员' }
 const memberLevelTagTypeMap = { 0: 'info', 1: '', 2: 'warning', 3: 'danger', 4: 'danger' }
-const resourceTypeMap = {
-  0: '便民服务', 1: '教育培训', 2: '健康医疗', 3: '体育健身',
-  4: '文化娱乐', 5: '养老服务', 6: '社区商业', 7: '公益活动',
-  8: '活动赞助', 9: '技能培训', 10: '其他'
+
+// 资源类型映射（从API动态加载）
+const resourceTypeMap = ref({})
+const getResourceTypeName = (type) => {
+  if (type === null || type === undefined || type === '') return '其他'
+  if (typeof type === 'string' && resourceTypeMap.value[type] !== undefined) {
+    return resourceTypeMap.value[type]
+  }
+  const n = parseInt(type)
+  if (!isNaN(n) && resourceTypeMap.value[n] !== undefined) {
+    return resourceTypeMap.value[n]
+  }
+  if (typeof type === 'string') {
+    return type
+  }
+  return '其他'
 }
-const getResourceTypeName = (type) => resourceTypeMap[type] || '便民服务'
+
+// 加载资源类型配置
+async function loadResourceTypes() {
+  try {
+    const { getPublishTypes } = await import('@/api/community')
+    const res = await getPublishTypes()
+    if (res.data?.resource_types?.length) {
+      const map = {}
+      res.data.resource_types.forEach((name, idx) => {
+        map[idx] = name
+        map[name] = name
+      })
+      resourceTypeMap.value = map
+    }
+  } catch {}
+}
 
 const memberLevelName = computed(() => memberLevelMap[resource.value?.member_level] || '普通会员')
 const memberLevelTagType = computed(() => memberLevelTagTypeMap[resource.value?.member_level] || 'info')
@@ -465,6 +492,7 @@ function showMerchantInfoDialog() {
 onMounted(() => {
   loadResource()
   loadComments()
+  loadResourceTypes()
 })
 </script>
 

@@ -80,8 +80,14 @@ const filterStatus = ref('')
 const showDetail = ref(false)
 const currentRow = ref(null)
 
-const typeColors = { '活动赞助': 'warning', '专家服务': 'primary', '空间运营': 'success' }
-const typeLabels = { '活动赞助': '活动赞助', '专家服务': '专家服务', '空间运营': '空间运营' }
+const typeLabels = {
+  0: '活动赞助', 1: '专家服务', 2: '空间运营',
+  3: '物资赞助', 4: '健康服务', 5: '教育培训'
+}
+const typeColors = {
+  0: 'primary', 1: 'success', 2: 'warning',
+  3: 'danger', 4: 'info', 5: 'warning'
+}
 const statusColors = { 0: 'info', 1: 'success', 2: 'danger' }
 const statusLabels = { 0: '待审核', 1: '已通过', 2: '已驳回' }
 

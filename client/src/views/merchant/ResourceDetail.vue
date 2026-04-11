@@ -10,7 +10,7 @@
         <div class="resource-card">
           <div class="resource-header">
             <div class="resource-meta">
-              <el-tag :type="resourceTypeTag[currentResource.resource_type]" size="large" effect="dark">
+              <el-tag :type="resourceTypeTag.value[currentResource.resource_type]" size="large" effect="dark">
                 {{ getResourceTypeName(currentResource.resource_type) }}
               </el-tag>
               <el-tag :type="statusTypeTag[currentResource.status]" size="small" style="margin-left:8px">
@@ -253,30 +253,57 @@ const comments = ref([])
 const commentText = ref('')
 const commentLoading = ref(false)
 
-// 资源类型映射（数字到中文）
-const resourceTypeName = {
-  0: '专业服务', 1: '教育培训', 2: '场地资源', 3: '物资捐赠',
-  4: '志愿服务', 5: '资金赞助', 6: '技术支持', 7: '健康医疗',
-  8: '活动赞助', 9: '媒体宣传', 10: '技能培训', 11: '养老服务'
-}
-const resourceTypeTag = {
-  0: '', 1: 'success', 2: 'warning', 3: 'info', 4: 'danger', 5: 'warning', 6: 'primary', 7: 'success', 8: 'info', 9: 'warning', 10: 'danger', 11: ''
-}
+// 资源类型映射（从API动态加载）
+const resourceTypeName = ref({})
+const resourceTypeTag = ref({})
 const statusTypeTag = { 1: 'success', 0: 'warning', 2: 'info', 3: 'danger' }
 const statusName = { 1: '已通过', 0: '待审核', 2: '已拒绝', 3: '已下架' }
 
 // 获取资源类型中文名称
 function getResourceTypeName(type) {
-  if (typeof type === 'string' && resourceTypeName[type] !== undefined) {
-    return resourceTypeName[type]
+  // 如果是字符串且在映射中存在
+  if (typeof type === 'string' && resourceTypeName.value[type] !== undefined) {
+    return resourceTypeName.value[type]
   }
+  // 如果是数字
   const num = parseInt(type)
-  return resourceTypeName[num] || type || '未知'
+  if (!isNaN(num) && resourceTypeName.value[num] !== undefined) {
+    return resourceTypeName.value[num]
+  }
+  // 如果是字符串类型名称，直接返回
+  if (typeof type === 'string') {
+    return type
+  }
+  return type || '未知'
 }
 
 // 获取当前资源的资源类型（中文）
 function getCurrentResourceType() {
   return getResourceTypeName(currentResource.value?.resource_type)
+}
+
+// 加载资源类型配置
+async function loadResourceTypes() {
+  try {
+    const { getPublishTypes } = await import('@/api/merchant')
+    const res = await getPublishTypes()
+    if (res.data?.resource_types?.length) {
+      // 构建数字到中文的映射
+      const nameMap = {}
+      const tagMap = {}
+      const colors = ['', 'success', 'warning', 'info', 'danger', 'primary', 'success', 'info', 'warning', 'danger', '']
+      res.data.resource_types.forEach((name, idx) => {
+        nameMap[idx] = name
+        nameMap[name] = name
+        tagMap[idx] = colors[idx % colors.length] || ''
+        tagMap[name] = colors[idx % colors.length] || ''
+      })
+      resourceTypeName.value = nameMap
+      resourceTypeTag.value = tagMap
+    }
+  } catch {
+    // 使用空映射
+  }
 }
 
 // 获取标签列表
@@ -347,6 +374,7 @@ function submitReply() {
 onMounted(() => {
   loadResource()
   loadComments()
+  loadResourceTypes()
 })
 </script>
 

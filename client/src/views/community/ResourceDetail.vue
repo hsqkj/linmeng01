@@ -481,18 +481,37 @@ function sendServiceMessage() {
   askQuestion(q)
 }
 
-// 资源类型映射
-const resourceTypeMap = {
-  0: '专业服务', 1: '教育培训', 2: '场地资源', 3: '物资捐赠',
-  4: '志愿服务', 5: '资金赞助', 6: '技术支持', 7: '健康医疗',
-  8: '活动赞助', 9: '媒体宣传', 10: '技能培训', 11: '养老服务'
-}
+// 资源类型映射（从API动态加载）
+const resourceTypeMap = ref({})
 
 function getResourceTypeName(type) {
-  if (resourceTypeMap[type] !== undefined) {
-    return resourceTypeMap[type]
+  if (typeof type === 'string' && resourceTypeMap.value[type] !== undefined) {
+    return resourceTypeMap.value[type]
   }
-  return resourceTypeMap[parseInt(type)] || '其他'
+  const num = parseInt(type)
+  if (!isNaN(num) && resourceTypeMap.value[num] !== undefined) {
+    return resourceTypeMap.value[num]
+  }
+  if (typeof type === 'string') {
+    return type
+  }
+  return type || '其他'
+}
+
+// 加载资源类型配置
+async function loadResourceTypes() {
+  try {
+    const { getPublishTypes } = await import('@/api/community')
+    const res = await getPublishTypes()
+    if (res.data?.resource_types?.length) {
+      const map = {}
+      res.data.resource_types.forEach((name, idx) => {
+        map[idx] = name
+        map[name] = name
+      })
+      resourceTypeMap.value = map
+    }
+  } catch {}
 }
 
 // 服务范围映射
@@ -586,8 +605,8 @@ const currentResourceType = computed(() => {
 })
 
 // 会员等级映射
-const memberLevelMap = { 0: '普通会员', 1: '银牌会员', 2: '金牌会员', 3: '铂金会员', 4: '钻石会员' }
-const memberLevelTagTypeMap = { 0: 'info', 1: '', 2: 'warning', 3: 'danger', 4: 'danger' }
+const memberLevelMap = { 0: '普通会员', 1: '银牌会员', 2: '金牌会员', 3: '铂金会员', 4: '钻石会员', 5: '钻石会员' }
+const memberLevelTagTypeMap = { 0: 'info', 1: '', 2: 'warning', 3: 'danger', 4: 'danger', 5: 'danger' }
 
 const memberLevelName = computed(() => memberLevelMap[resource.value?.member_level] || '普通会员')
 const memberLevelTagType = computed(() => memberLevelTagTypeMap[resource.value?.member_level] || 'info')
@@ -737,6 +756,7 @@ async function showMerchantProfile() {
 onMounted(() => {
   loadResource()
   loadComments()
+  loadResourceTypes()
 })
 </script>
 

@@ -164,7 +164,7 @@ const commissionRecords = ref([])
 
 const statusName = { 0: '待审核', 1: '正常', 2: '已禁用' }
 const statusTagType = { 0: 'warning', 1: 'success', 2: 'danger' }
-const memberLevelName = { 1: '普通会员', 2: '银牌会员', 3: '金牌会员', 4: '铂金会员', 5: '钻石会员' }
+const memberLevelName = { 0: '普通会员', 1: '普通会员', 2: '银牌会员', 3: '金牌会员', 4: '铂金会员', 5: '钻石会员' }
 
 function formatTime(time) {
   if (!time) return '-'

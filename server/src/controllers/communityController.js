@@ -386,7 +386,7 @@ exports.getDemands = async (req, res) => {
     
     if (type) {
       where += ' AND d.demand_type = ?'
-      params.push(type)
+      params.push(parseInt(type))
     }
     
     let orderBy = 'd.created_at DESC'

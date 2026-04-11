@@ -49,7 +49,7 @@
             <span v-for="n in 5" :key="n" class="heart" :class="{filled: n <= (demand.matchScore || 0)}">♥</span>
           </div>
           <div class="card-actions">
-            <el-tag size="small" :type="typeColors[demand.demand_type_name]">{{ demand.demand_type_name || demand.demand_type }}</el-tag>
+            <el-tag size="small" :type="typeColors[demand.demand_type_name || getDemandTypeName(demand.demand_type)]">{{ demand.demand_type_name || getDemandTypeName(demand.demand_type) }}</el-tag>
             <el-icon class="fav-btn" :class="{favorited: demand.isFavorited}" @click.stop="toggleFav(demand)" :title="demand.isFavorited ? '取消收藏' : '收藏'"><Star /></el-icon>
           </div>
         </div>
@@ -64,12 +64,12 @@
           <span>{{ demand.start_time ? demand.start_time.split('T')[0] : '-' }}</span>
         </div>
         <div class="demand-tags">
-          <el-tag v-for="g in (demand.target_audience || [])" :key="g" size="small" type="info" style="margin:2px">{{ g }}</el-tag>
+          <el-tag v-for="g in (demand.target_audience_names || [])" :key="g" size="small" type="info" style="margin:2px">{{ g }}</el-tag>
         </div>
         <div class="demand-footer">
           <div class="sponsor-types">
             <span style="font-size:12px;color:#909399">所需：</span>
-            <el-tag v-for="s in (demand.required_types || [])" :key="s" size="small" style="margin:2px">{{ s }}</el-tag>
+            <el-tag v-for="s in (demand.required_types_names || [])" :key="s" size="small" style="margin:2px">{{ s }}</el-tag>
           </div>
           <div class="footer-right">
             <span class="view-count"><el-icon :size="12"><View /></el-icon> {{ demand.view_count || 0 }}</span>
@@ -142,6 +142,9 @@ const router = useRouter()
 
 const filters = reactive({ keyword: '', type: '', sortBy: 'newest', district: '', street: '', community: '' })
 const typeColors = { '活动赞助': 'primary', '专家服务': 'success', '空间运营': 'warning', '物资赞助': 'danger', '健康服务': 'info', '教育培训': '' }
+// 数字到中文映射（用于 fallback）
+const demandTypeNumMap = { 0: '活动赞助', 1: '专家服务', 2: '空间运营', 3: '物资赞助', 4: '健康服务', 5: '教育培训' }
+function getDemandTypeName(type) { return demandTypeNumMap[type] ?? type ?? '需求' }
 
 // 武汉市区/街道/社区数据
 const districts = ['江岸区', '江汉区', '硚口区', '汉阳区', '武昌区', '青山区', '洪山区', '东西湖区', '汉南区', '蔡甸区', '江夏区', '黄陂区', '新洲区']

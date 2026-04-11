@@ -8,15 +8,18 @@
     <div class="filter-bar">
       <el-select v-model="filterType" placeholder="需求类型" style="width:130px">
         <el-option label="全部" value="" />
-        <el-option label="活动赞助" value="活动赞助" />
-        <el-option label="专家服务" value="专家服务" />
-        <el-option label="空间运营" value="空间运营" />
+        <el-option label="活动赞助" :value="0" />
+        <el-option label="专家服务" :value="1" />
+        <el-option label="空间运营" :value="2" />
+        <el-option label="物资赞助" :value="3" />
+        <el-option label="健康服务" :value="4" />
+        <el-option label="教育培训" :value="5" />
       </el-select>
       <el-select v-model="filterStatus" placeholder="审核状态" style="width:130px">
         <el-option label="全部" value="" />
-        <el-option label="待审核" value="待审核" />
-        <el-option label="已通过" value="已通过" />
-        <el-option label="已驳回" value="已驳回" />
+        <el-option label="待审核" :value="0" />
+        <el-option label="已通过" :value="1" />
+        <el-option label="已驳回" :value="2" />
       </el-select>
       <el-input v-model="searchKey" placeholder="搜索需求名称" style="width:200px" clearable />
       <el-button type="primary" :disabled="!selectedRows.length" @click="batchApprove">批量通过（{{ selectedRows.length }}）</el-button>
@@ -113,7 +116,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Warning } from '@element-plus/icons-vue'
 import { getDemandAuditList, passDemand, rejectDemand } from '@/api/admin'
 
-const filterType = ref(''), filterStatus = ref('待审核'), searchKey = ref('')
+const filterType = ref(''), filterStatus = ref(0), searchKey = ref('')
 const selectedRows = ref([]), showDetail = ref(false), showRejectDialog = ref(false)
 const currentRow = ref(null), rejectReason = ref(''), rejectTarget = ref(null)
 const demands = ref([])
@@ -123,8 +126,14 @@ const pendingCount = ref(0)
 const page = ref(1)
 const pageSize = 10
 
-const typeLabels = { 1: '活动赞助', 2: '专家服务', 3: '空间运营' }
-const typeColors = { 1: 'primary', 2: 'success', 3: 'warning' }
+const typeLabels = {
+  0: '活动赞助', 1: '专家服务', 2: '空间运营',
+  3: '物资赞助', 4: '健康服务', 5: '教育培训'
+}
+const typeColors = {
+  0: 'primary', 1: 'success', 2: 'warning',
+  3: 'danger', 4: 'info', 5: 'warning'
+}
 const statusLabels = { 0: '待审核', 1: '已通过', 2: '已驳回' }
 const statusColors = { 0: 'warning', 1: 'success', 2: 'danger' }
 

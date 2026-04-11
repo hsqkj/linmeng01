@@ -196,7 +196,7 @@ const recentMerchants = ref([])
 const monthCommission = ref(0)
 const commissionConfig = ref({})
 
-const levelLabel = (lvl) => ({ 1:'普通会员', 2:'银牌会员', 3:'金牌会员', 4:'铂金会员', 5:'钻石会员' })[lvl] || '普通会员'
+const levelLabel = (lvl) => ({ 0:'免费试用', 1:'普通会员', 2:'银牌会员', 3:'金牌会员', 4:'铂金会员', 5:'钻石会员' })[lvl] || '普通会员'
 const levelColors = { '普通会员': 'info', '银牌会员': 'info', '金牌会员': 'warning', '铂金会员': 'warning', '钻石会员': 'danger' }
 const statusLabel = { 0:'待审核', 1:'已缴费', 2:'禁用' }
 const statusTag = { 0:'warning', 1:'success', 2:'info' }

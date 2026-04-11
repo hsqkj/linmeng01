@@ -67,13 +67,15 @@
           </el-form-item>
         </template>
 
-        <!-- 物资捐赠 -->
-        <template v-if="form.resource_type === '物资捐赠'">
+        <!-- 物资支持 -->
+        <template v-if="form.resource_type === '物资支持'">
           <el-form-item label="物资清单" required>
             <el-input v-model="form.goodsDetail" type="textarea" :rows="5"
               placeholder="请详细列出可提供的物资，如：
 - 矿泉水 500ml，可提供500瓶
 - 礼品袋 可提供200个，规格：28×35cm
+- 车辆租赁：可提供几台、何种车型
+- 优惠券：面值多少、数量多少
 每种物资单独列出，包含数量和规格，便于社区快速判断" />
           </el-form-item>
           <el-row :gutter="16">
@@ -100,8 +102,8 @@
           </el-form-item>
         </template>
 
-        <!-- 人力支持/志愿服务 -->
-        <template v-if="form.resource_type === '志愿服务'">
+        <!-- 人力服务 -->
+        <template v-if="form.resource_type === '人力服务'">
           <el-row :gutter="16">
             <el-col :span="8">
               <el-form-item label="可派遣人数" required>
@@ -119,27 +121,146 @@
           </el-form-item>
         </template>
 
-        <!-- 技术支持 -->
-        <template v-if="form.resource_type === '技术支持'">
-          <el-form-item label="技术类型（可多选）" required>
-            <el-checkbox-group v-model="form.techTypes">
-              <el-checkbox label="equipment">设备器材</el-checkbox>
-              <el-checkbox label="software">软件系统</el-checkbox>
-              <el-checkbox label="network">网络通信</el-checkbox>
-              <el-checkbox label="av">专业音视频</el-checkbox>
-              <el-checkbox label="lighting">灯光设备</el-checkbox>
-              <el-checkbox label="smart">智能设备</el-checkbox>
+        <!-- 场地支持 -->
+        <template v-if="form.resource_type === '场地支持'">
+          <el-form-item label="场地描述" required>
+            <el-input v-model="form.techDesc" type="textarea" :rows="4" placeholder="请详细描述场地情况，如：
+- 场地类型：会议室、活动室、运动场等
+- 可容纳人数：
+- 场地面积：
+- 可提供的设施：
+- 开放时间：
+- 费用说明：" />
+          </el-form-item>
+          <el-row :gutter="16">
+            <el-col :span="12">
+              <el-form-item label="场地面积（平方米）">
+                <el-input-number v-model="form.spaceArea" :min="0" placeholder="场地面积" style="width:100%" />
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="可容纳人数">
+                <el-input-number v-model="form.capacity" :min="0" placeholder="可容纳人数" style="width:100%" />
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-form-item label="场地设施">
+            <el-checkbox-group v-model="form.facilities">
+              <el-checkbox label="projector">投影仪</el-checkbox>
+              <el-checkbox label="wifi">WiFi</el-checkbox>
+              <el-checkbox label="aircon">空调</el-checkbox>
+              <el-checkbox label="stage">舞台</el-checkbox>
+              <el-checkbox label="sound">音响</el-checkbox>
+              <el-checkbox label="parking">停车位</el-checkbox>
             </el-checkbox-group>
           </el-form-item>
-          <el-form-item label="技术服务描述" required>
-            <el-input v-model="form.techDesc" type="textarea" :rows="4" placeholder="详细说明可提供的技术支持，如：专业音响系统（额定功率1000W，适合500人场地）、专业灯光设备（含舞台追光、氛围灯）、专业摄影摄像团队" />
+          <el-form-item label="开放时间">
+            <el-input v-model="form.openHours" placeholder="如：周一至周五 9:00-18:00" />
           </el-form-item>
-          <el-form-item label="服务方式">
-            <el-radio-group v-model="form.techServiceType">
-              <el-radio label="rent">设备租借</el-radio>
-              <el-radio label="service">提供服务团队</el-radio>
-              <el-radio label="both">均可</el-radio>
-            </el-radio-group>
+        </template>
+
+        <!-- 就业岗位 -->
+        <template v-if="form.resource_type === '就业岗位'">
+          <el-form-item label="岗位描述" required>
+            <el-input v-model="form.techDesc" type="textarea" :rows="4" placeholder="请详细描述就业岗位，如：
+- 岗位名称：
+- 招聘人数：
+- 薪资待遇：
+- 工作时间：
+- 工作地点：
+- 岗位要求：" />
+          </el-form-item>
+          <el-row :gutter="16">
+            <el-col :span="12">
+              <el-form-item label="招聘人数">
+                <el-input-number v-model="form.staff_count" :min="1" style="width:100%" />
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="岗位类型">
+                <el-select v-model="form.workType" placeholder="选择岗位类型" style="width:100%">
+                  <el-option label="全职" value="fulltime" />
+                  <el-option label="兼职" value="parttime" />
+                  <el-option label="实习" value="intern" />
+                  <el-option label="不限" value="any" />
+                </el-select>
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-form-item label="薪资范围">
+            <el-input v-model="form.salaryRange" placeholder="如：3000-8000元/月" />
+          </el-form-item>
+        </template>
+
+        <!-- 志愿服务 -->
+        <template v-if="form.resource_type === '志愿服务'">
+          <el-row :gutter="16">
+            <el-col :span="8">
+              <el-form-item label="志愿者人数" required>
+                <el-input-number v-model="form.staff_count" :min="1" :max="200" style="width:100%" />
+              </el-form-item>
+            </el-col>
+            <el-col :span="8">
+              <el-form-item label="单次最长服务时长（小时）">
+                <el-input-number v-model="form.work_duration" :min="1" :step="0.5" style="width:100%" />
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-form-item label="志愿者类型描述" required>
+            <el-input v-model="form.manpowerDesc" type="textarea" :rows="4" placeholder="如：5名专业活动策划人员（有500人以上活动执行经验）、3名主持人（普通话一甲）、10名志愿者（具备急救培训证书）" />
+          </el-form-item>
+        </template>
+
+        <!-- 专业服务 -->
+        <template v-if="form.resource_type === '专业服务'">
+          <el-form-item label="服务类型" required>
+            <el-select v-model="form.professionalType" placeholder="选择专业服务类型" style="width:100%">
+              <el-option v-for="t in professionalTypes" :key="t" :label="t" :value="t" />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="资质证明描述">
+            <el-input v-model="form.qualification" type="textarea" :rows="3" placeholder="如：注册律师，执业20年，擅长劳动争议、物业纠纷；具备律师资格证（证号：xxx）" />
+          </el-form-item>
+          <el-row :gutter="16">
+            <el-col :span="12">
+              <el-form-item label="服务区域">
+                <el-select v-model="form.serviceScope" placeholder="选择服务区域" style="width:100%">
+                  <el-option label="全市" value="city" />
+                  <el-option label="本区" value="district" />
+                  <el-option label="本街道" value="street" />
+                  <el-option label="全国（线上）" value="nationwide" />
+                </el-select>
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="收费标准">
+                <el-select v-model="form.pricingType" style="width:100%">
+                  <el-option label="免费（公益赞助）" value="free" />
+                  <el-option label="优惠价（面议）" value="discount" />
+                  <el-option label="市场价" value="market" />
+                </el-select>
+              </el-form-item>
+            </el-col>
+          </el-row>
+        </template>
+
+        <!-- 媒体宣传 -->
+        <template v-if="form.resource_type === '媒体宣传'">
+          <el-form-item label="可提供媒体类型（可多选）" required>
+            <el-checkbox-group v-model="form.mediaChannels">
+              <el-checkbox label="news">新闻网站/APP</el-checkbox>
+              <el-checkbox label="wechat">微信公众号</el-checkbox>
+              <el-checkbox label="video">短视频（抖音/视频号）</el-checkbox>
+              <el-checkbox label="tv">电视/广播</el-checkbox>
+              <el-checkbox label="paper">报纸</el-checkbox>
+            </el-checkbox-group>
+          </el-form-item>
+          <el-form-item label="媒体资源描述" required>
+            <el-input v-model="form.mediaDesc" type="textarea" :rows="4" placeholder="详细说明您的媒体资源，如：
+- 微信公众号：粉丝15万，单篇阅读量5000+
+- 抖音号：粉丝8万，视频平均播放量2万+
+- 地方新闻网站：日活用户50万
+覆盖范围越详细，社区选择意愿越高！" />
           </el-form-item>
         </template>
 
@@ -298,23 +419,23 @@ const activeStep = ref(0)
 const submitting = ref(false)
 const customTag = ref('')
 
-// 发布类型配置 - 从后端API加载
-const resourceTypes = ref([
-  { value: '专业服务', icon: '🎓', label: '专业服务', desc: '咨询、法律、设计等专业服务' },
-  { value: '教育培训', icon: '📚', label: '教育培训', desc: '课程、培训、讲座等服务' },
-  { value: '场地资源', icon: '🏠', label: '场地资源', desc: '活动室、运动场地等场所支持' },
-  { value: '物资捐赠', icon: '📦', label: '物资捐赠', desc: '图书、设备、食品等物资' },
-  { value: '志愿服务', icon: '👥', label: '志愿服务', desc: '人力支持、活动协助等' },
-  { value: '资金赞助', icon: '💵', label: '资金赞助', desc: '活动经费、奖金等资金支持' },
-  { value: '技术支持', icon: '💻', label: '技术支持', desc: 'IT、网络、设备维护等技术支持' },
-  { value: '健康医疗', icon: '🏥', label: '健康医疗', desc: '义诊、健康讲座等服务' },
-  { value: '活动赞助', icon: '🎉', label: '活动赞助', desc: '活动策划、物料等赞助' },
-  { value: '媒体宣传', icon: '📰', label: '媒体宣传', desc: '公众号、媒体推广等服务' },
-  { value: '技能培训', icon: '🛠️', label: '技能培训', desc: '技能传授、指导等服务' },
-  { value: '养老服务', icon: '👴', label: '养老服务', desc: '助老服务、健康管理等' }
-])
+// 发布类型配置 - 从后端API加载，默认空数组由API填充
+const resourceTypes = ref([])
 
-const professionalTypes = ref(['法律咨询', '医疗健康', '心理辅导', '教育培训', '金融理财', '技能培训', '营养指导', '体育健身', '文艺指导', '社会工作', '其他'])
+// 管理后台9个资源类型的图标和描述配置
+const typeConfig = {
+  '资金赞助': { icon: '💵', desc: '活动经费、奖金等资金支持' },
+  '物资支持': { icon: '📦', desc: '图书、设备、食品、活动与宣传物料、奖品等物资' },
+  '人力服务': { icon: '👥', desc: '人力支持、活动协助等' },
+  '专业服务': { icon: '🎓', desc: '法律、心理、咨询、设计、活动策划、健康医疗等' },
+  '媒体宣传': { icon: '📰', desc: '公众号、媒体推广等服务' },
+  '就业岗位': { icon: '💼', desc: '提供就业岗位' },
+  '志愿服务': { icon: '❤️', desc: '奉献爱心志愿服务' },
+  '场地支持': { icon: '🏠', desc: '会议室、活动室、运动场等场地空间资源支持' },
+  '其他': { icon: '📋', desc: '其他类型的资源支持' }
+}
+
+const professionalTypes = ref(['法律咨询', '心理辅导', '健康医疗', '教育培训', '金融理财', '文化艺术', 'IT服务', '设备维护', '设计服务', '活动策划', '家政养老', '其他'])
 const merchantTagOptions = ref(['连锁品牌', '本地企业', '上市公司', '高端品牌', '大众品牌', '公益导向', '长期合作', '亲子品牌', '老年服务', '全国服务', '精准获客', '社会责任'])
 const communityTypeOptions = ref([])
 const expectedRewardOptions = ref(['活动冠名权', '现场展台', '社区公众号宣传', '业主群推送', '荣誉证书', '现场横幅', '宣传栏展示', '主持人口播', '媒体报道', '感谢状'])
@@ -325,22 +446,8 @@ async function loadPublishTypes() {
     const res = await getPublishTypes()
     const data = res.data || {}
     if (data.merchant_tags) merchantTagOptions.value = data.merchant_tags
-    // 加载资源类型配置
+    // 加载资源类型配置（从管理后台获取，支持自定义配置）
     if (data.resource_types && data.resource_types.length > 0) {
-      const typeConfig = {
-        '专业服务': { icon: '🎓', desc: '咨询、法律、设计等专业服务' },
-        '教育培训': { icon: '📚', desc: '课程、培训、讲座等服务' },
-        '场地资源': { icon: '🏠', desc: '活动室、运动场地等场所支持' },
-        '物资捐赠': { icon: '📦', desc: '图书、设备、食品等物资' },
-        '志愿服务': { icon: '👥', desc: '人力支持、活动协助等' },
-        '资金赞助': { icon: '💵', desc: '活动经费、奖金等资金支持' },
-        '技术支持': { icon: '💻', desc: 'IT、网络、设备维护等技术支持' },
-        '健康医疗': { icon: '🏥', desc: '义诊、健康讲座等服务' },
-        '活动赞助': { icon: '🎉', desc: '活动策划、物料等赞助' },
-        '媒体宣传': { icon: '📰', desc: '公众号、媒体推广等服务' },
-        '技能培训': { icon: '🛠️', desc: '技能传授、指导等服务' },
-        '养老服务': { icon: '👴', desc: '助老服务、健康管理等' }
-      }
       resourceTypes.value = data.resource_types.map(name => ({
         value: name,
         label: name,
@@ -365,10 +472,14 @@ const form = ref({
   resource_type: '', title: '', content: '', tags: [], resourceImages: [],
   min_amount: 0, max_amount: 50000, fundScenes: [],
   goodsDetail: '', goodsExpiry: '', pickup_way: 'both', goodsImages: [],
-  staff_count: 3, work_duration: 8, manpowerDesc: '',
+  staff_count: 1, work_duration: 4, manpowerDesc: '',
   techTypes: [], techDesc: '', techServiceType: 'both',
   professionalType: '', qualification: '', serviceScope: 'city', pricingType: 'free',
   mediaChannels: [], mediaDesc: '',
+  // 场地支持字段
+  spaceArea: 0, capacity: 0, facilities: [], openHours: '',
+  // 就业岗位字段
+  workType: '', salaryRange: '',
   expectedRewards: [], expectedRewardDesc: '', targetCommunityTypes: ['any'], validUntil: ''
 })
 
@@ -378,18 +489,15 @@ const resourceTypeLabel = computed(() => {
 
 const titlePlaceholder = computed(() => {
   const map = {
-    '资金赞助': '如：星巴克咖啡支持活动资金5万元',
-    '物资捐赠': '如：礼品套装300份，免费赞助社区活动',
-    '志愿服务': '如：提供5人专业活动执行团队',
-    '技术支持': '如：专业音响灯光设备免费支持',
-    '专业服务': '如：法律专家免费为居民提供咨询',
-    '媒体宣传': '如：公众号15万粉丝免费宣传推广',
-    '教育培训': '如：专业讲师团队提供免费培训课程',
-    '场地资源': '如：社区活动中心免费借用',
-    '健康医疗': '如：专业医生团队提供义诊服务',
-    '活动赞助': '如：活动策划及物料赞助支持',
-    '技能培训': '如：专业技能培训课程免费教授',
-    '养老服务': '如：助老服务、健康管理等支持'
+    '资金赞助': '如：某企业赞助社区活动经费5万元',
+    '物资支持': '如：提供活动奖品、矿泉水、宣传物料等物资',
+    '人力服务': '如：提供5人专业活动执行团队',
+    '专业服务': '如：律师免费为居民提供法律咨询',
+    '媒体宣传': '如：公众号10万粉丝免费宣传推广',
+    '就业岗位': '如：提供社区就业岗位若干名',
+    '志愿服务': '如：组织志愿者团队参与社区服务',
+    '场地支持': '如：免费提供会议室、活动室等场地',
+    '其他': '请描述您的其他资源类型'
   }
   return map[form.value.resource_type] || '请填写资源标题'
 })
@@ -461,27 +569,32 @@ async function submitResource() {
       // 资金赞助
       min_amount: form.value.min_amount || 0,
       max_amount: form.value.max_amount || 0,
-      fund_scenes: form.value.fundScenes || [], // 适用场景
-      // 物资捐赠
+      fund_scenes: form.value.fundScenes || [],
+      // 物资支持
       quantity: form.value.quantity || 0,
-      specs: form.value.goodsDetail || '', // 物资清单
+      specs: form.value.goodsDetail || '',
       pickup_way: form.value.pickup_way || '',
-      goods_expiry: form.value.goodsExpiry || null, // 有效期
-      // 人力支持
+      goods_expiry: form.value.goodsExpiry || null,
+      // 人力服务 / 志愿服务
       staff_count: form.value.staff_count || 0,
       work_duration: form.value.work_duration || 0,
-      // 技术支持
-      tech_types: form.value.techTypes || [],
-      tech_service_type: form.value.techServiceType || '',
+      manpower_desc: form.value.manpowerDesc || '',
       // 专业服务
       professional_type: form.value.professionalType || '',
       service_scope: form.value.serviceScope || '',
       certification: form.value.qualification || '',
       price_range: form.value.pricingType || '',
       // 媒体报道
-      media_type: '',
-      coverage: '',
       media_channels: form.value.mediaChannels || [],
+      media_desc: form.value.mediaDesc || '',
+      // 场地支持
+      space_area: form.value.spaceArea || 0,
+      capacity: form.value.capacity || 0,
+      facilities: form.value.facilities || [],
+      open_hours: form.value.openHours || '',
+      // 就业岗位
+      work_type: form.value.workType || '',
+      salary_range: form.value.salaryRange || '',
       // 其他
       valid_until: form.value.validUntil || null,
       expected_rewards: form.value.expectedRewards || [],
