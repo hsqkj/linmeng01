@@ -121,6 +121,26 @@
           <div class="stat-label">已完成</div>
         </div>
       </el-card>
+
+      <el-card class="stat-card">
+        <div class="stat-icon" style="background: #fef0f0; color: #f56c6c;">
+          <el-icon :size="24"><Document /></el-icon>
+        </div>
+        <div class="stat-info">
+          <div class="stat-value">{{ stats.totalDemands }}</div>
+          <div class="stat-label">平台总需求</div>
+        </div>
+      </el-card>
+
+      <el-card class="stat-card">
+        <div class="stat-icon" style="background: #f0f9ff; color: #909399;">
+          <el-icon :size="24"><Shop /></el-icon>
+        </div>
+        <div class="stat-info">
+          <div class="stat-value">{{ stats.totalResources }}</div>
+          <div class="stat-label">平台总资源</div>
+        </div>
+      </el-card>
     </div>
 
     <!-- 推荐社区需求 -->
@@ -172,7 +192,7 @@
           </div>
 
           <div class="demand-actions">
-            <el-button type="success" @click="contactCommunity(demand)">立即联系</el-button>
+            <el-button type="success" @click="contactCommunity(demand)">留言咨询</el-button>
             <el-button text @click="viewDemandDetail(demand)">查看详情</el-button>
           </div>
         </el-card>
@@ -221,11 +241,11 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, inject } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { requireAuth, isLoggedIn as checkLogin } from '@/utils/useAuth'
-import { getBanners, getRecommendDemands, getProfile, getMyResources, getMyIntentions, getMemberInfo, getCommunityDetail, getPublishTypes } from '@/api/merchant'
+import { getBanners, getRecommendDemands, getProfile, getMyResources, getMyIntentions, getMemberInfo, getCommunityDetail, getPublishTypes, getDemands, getResources } from '@/api/merchant'
 import { Medal, StarFilled, Goods, View, Connection, CircleCheck, User, Calendar, Loading, Edit } from '@element-plus/icons-vue'
 
 const router = useRouter()
@@ -233,10 +253,13 @@ const router = useRouter()
 // 判断是否登录
 const isLoggedIn = checkLogin('merchant')
 
+// 获取打开客服窗口的方法
+const openServiceChat = inject('openServiceChat', null)
+
 const banners = ref([])
 const matchedDemands = ref([])
 const profile = ref({})
-const stats = ref({ resources: 0, intentions: 0, completed: 0 })
+const stats = ref({ resources: 0, intentions: 0, completed: 0, totalDemands: 0, totalResources: 0 })
 const loading = ref(false)
 
 // 判断是否为专家
@@ -280,7 +303,9 @@ onMounted(async () => {
 
     const promises = [
       getBanners(),
-      getRecommendDemands()
+      getRecommendDemands(),
+      getDemands({ pageSize: 1 }),
+      getResources({ pageSize: 1 })
     ]
 
     // 只有登录后才获取个人信息
@@ -312,15 +337,25 @@ onMounted(async () => {
       matchedDemands.value = (results[1].value.data || []).slice(0, 4)
     }
 
+    // 平台总需求数
+    if (results[2].status === 'fulfilled') {
+      stats.value.totalDemands = results[2].value.data?.pagination?.total || results[2].value.data?.total || 0
+    }
+
+    // 平台总资源数
+    if (results[3].status === 'fulfilled') {
+      stats.value.totalResources = results[3].value.data?.pagination?.total || results[3].value.data?.total || 0
+    }
+
     // 只有登录后才处理个人信息
-    if (isLoggedIn && results.length > 2) {
-      if (results[2].status === 'fulfilled') {
-        profile.value = results[2].value.data || {}
+    if (isLoggedIn && results.length > 5) {
+      if (results[4].status === 'fulfilled') {
+        profile.value = results[4].value.data || {}
       }
 
       // 优先用 getMemberInfo 的数据（更准确）
-      if (results[3].status === 'fulfilled') {
-        const mdata = results[3].value.data || {}
+      if (results[5].status === 'fulfilled') {
+        const mdata = results[5].value.data || {}
         if (mdata.member_level !== undefined && mdata.member_level !== null) {
           profile.value.member_level = mdata.member_level
         }
@@ -335,12 +370,12 @@ onMounted(async () => {
         }
       }
 
-      if (results[4].status === 'fulfilled') {
-        stats.value.resources = results[4].value.data?.pagination?.total || results[4].value.data?.total || 0
+      if (results[6].status === 'fulfilled') {
+        stats.value.resources = results[6].value.data?.pagination?.total || results[6].value.data?.total || 0
       }
 
-      if (results[5].status === 'fulfilled') {
-        const list = results[5].value.data?.list || results[5].value.data || []
+      if (results[7].status === 'fulfilled') {
+        const list = results[7].value.data?.list || results[7].value.data || []
         stats.value.intentions = list.filter(i => i.status === 0).length
         stats.value.completed = list.filter(i => i.status === 1).length
       }
@@ -360,12 +395,15 @@ const contactCommunity = (demand) => {
   if (!localStorage.getItem('merchant_token')) {
     return requireAuth('merchant')
   }
-  ElMessage.success(`已向${demand.community_name}发送合作意向`)
+  // 打开客服窗口
+  if (openServiceChat) {
+    openServiceChat()
+  }
 }
 
 // 会员等级名称映射（从API动态加载）
 const memberLevelNameMapData = ref({})
-const memberLevelNameMap = computed(() => memberLevelNameMapData.value)
+const memberLevelName = computed(() => memberLevelNameMapData.value)
 const memberLevelTagType = { 0: 'info', 1: 'info', 2: '', 3: 'warning', 4: 'danger', 5: 'danger' }
 
 // 需求类型映射（从API动态加载）

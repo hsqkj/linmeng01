@@ -297,7 +297,8 @@ exports.getResourceDetail = async (req, res) => {
     const [rows] = await pool.query(
       `SELECT r.*, m.company_name, m.logo as merchant_logo, m.contact_name, m.phone as merchant_phone,
        m.star_rating, m.member_level, m.description as merchant_description, m.industry,
-       m.social_identity, m.honors, m.expert_intro, m.images as merchant_images, m.address
+       m.social_identity, m.honors, m.expert_intro, m.images as merchant_images, m.address,
+       m.lat as merchant_lat, m.lng as merchant_lng
        FROM resources r
        JOIN merchants m ON r.merchant_id = m.id
        WHERE r.id = ?`,
@@ -493,14 +494,34 @@ exports.createDemand = async (req, res) => {
   try {
     const data = req.body
     data.community_id = req.community.id
-    
+
+    // AI 审核（异步进行，不阻塞发布）
+    let auditResult = { passed: true, reason: '', level: 'low' }
+    try {
+      const aiAuditService = require('../services/aiAuditService')
+      auditResult = await aiAuditService.auditContent({
+        title: data.title || '',
+        description: data.content || '',
+        type: 'demand'
+      })
+    } catch (e) {
+      console.error('AI audit failed:', e)
+    }
+
+    // 根据审核结果设置状态
+    // level=high 直接拒绝，level=medium/low 待人工复核
+    if (auditResult.level === 'high') {
+      return error(res, `内容审核未通过：${auditResult.reason}。请修改后重新发布。`, 400)
+    }
+
     const [result] = await pool.query(
       `INSERT INTO demands (community_id, demand_type, title, activity_type, target_audience,
        start_time, end_time, location_type, location_name, expected_count, content,
        required_types, budget_min, budget_max, material_details, human_details,
        tech_details, media_details, return_ways, return_value, images, tags, deadline,
-       volunteer_points, volunteer_max_points, volunteer_count, volunteer_desc)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       volunteer_points, volunteer_max_points, volunteer_count, volunteer_desc,
+       ai_audit_level, ai_audit_reason)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [data.community_id, data.demand_type, data.title, data.activity_type,
        JSON.stringify(data.target_audience || []), data.start_time, data.end_time,
        data.location_type, data.location_name, data.expected_count, data.content,
@@ -509,15 +530,24 @@ exports.createDemand = async (req, res) => {
        JSON.stringify(data.tech_details || {}), JSON.stringify(data.media_details || {}),
        JSON.stringify(data.return_ways || []), data.return_value, JSON.stringify(data.images || []),
        JSON.stringify(data.tags || []), data.deadline,
-       data.volunteer_points || 0, data.volunteer_max_points || 0, data.volunteer_count || 0, data.volunteer_desc || null]
+       data.volunteer_points || 0, data.volunteer_max_points || 0, data.volunteer_count || 0, data.volunteer_desc || null,
+       auditResult.level, auditResult.reason || null]
     )
-    
+
     // 如果从草稿提交，删除对应草稿
     if (data.draft_id) {
       await pool.query('DELETE FROM demand_drafts WHERE id = ? AND community_id = ?', [data.draft_id, req.community.id])
     }
-    
-    success(res, { id: result.insertId }, '需求发布成功，请等待审核')
+
+    // 根据审核等级返回不同提示
+    let message = '需求发布成功，请等待审核'
+    if (auditResult.level === 'low' && auditResult.reason) {
+      message = `需求发布成功${auditResult.reason}`
+    } else if (auditResult.level === 'medium') {
+      message = `需求发布成功，需要人工复核：${auditResult.reason}`
+    }
+
+    success(res, { id: result.insertId, auditLevel: auditResult.level }, message)
   } catch (err) {
     console.error('Create demand error:', err)
     error(res, '发布需求失败')

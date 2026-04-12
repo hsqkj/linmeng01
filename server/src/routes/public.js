@@ -40,4 +40,13 @@ router.get('/banners', PublicController.getBanners)
 // 根据渠道码获取大使信息（公开接口）
 router.get('/ambassador/by-code', PublicController.getAmbassadorByCode)
 
+// 地理编码
+router.get('/geocode', PublicController.geocode)
+
+// 平台统计信息（公开接口）
+router.get('/stats', PublicController.getStats)
+
+// 类型映射数据（统一映射服务）
+router.get('/type-maps', PublicController.getTypeMaps)
+
 module.exports = router

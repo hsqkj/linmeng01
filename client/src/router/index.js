@@ -127,6 +127,7 @@ const routes = [
       { path: 'users/community', name: 'AdminCommunityUsers', component: () => import('@/views/admin/UsersCommunity.vue') },
       { path: 'users/merchant', name: 'AdminMerchantUsers', component: () => import('@/views/admin/UsersMerchant.vue') },
       { path: 'users/ambassador', name: 'AdminAmbassadorUsers', component: () => import('@/views/admin/UsersAmbassador.vue') },
+      { path: 'community/profile', name: 'AdminCommunityProfile', component: () => import('@/views/admin/CommunityProfile.vue') },
       { path: 'config/expert', name: 'AdminConfigExpert', component: () => import('@/views/admin/ConfigExpert.vue') },
       { path: 'audit/demands', name: 'AdminAuditDemands', component: () => import('@/views/admin/AuditDemands.vue') },
       { path: 'audit/resources', name: 'AdminAuditResources', component: () => import('@/views/admin/AuditResources.vue') },

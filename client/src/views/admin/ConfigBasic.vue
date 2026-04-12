@@ -223,6 +223,43 @@
             </el-table-column>
           </el-table>
         </div>
+
+        <!-- 物资类型子配置（仅当存在"物资支持"类型时显示） -->
+        <div v-if="hasResourceType('物资支持')" class="config-section" style="margin-top:20px">
+          <div class="section-header">
+            <p class="section-desc">物资类型用于商家选择"物资支持"类型时进一步细分物资类别</p>
+            <el-button type="primary" @click="openAdd('goodsTypes','物资类型')"><el-icon><Plus /></el-icon> 新增物资类型</el-button>
+          </div>
+          <el-table :data="goodsTypes" stripe border>
+            <el-table-column width="100" align="center">
+              <template #default="{ $index }">
+                <el-button text :disabled="$index === 0" @click="moveUp(goodsTypes, $index)" title="上移"><el-icon><Top /></el-icon></el-button>
+                <el-button text :disabled="$index === goodsTypes.length - 1" @click="moveDown(goodsTypes, $index)" title="下移"><el-icon><Bottom /></el-icon></el-button>
+              </template>
+            </el-table-column>
+            <el-table-column prop="name" label="物资类型名称" min-width="150">
+              <template #default="{ row }">
+                <el-input v-if="row.editing" v-model="row.name" size="small" @blur="row.editing=false; saveInlineEdit(row)" @keyup.enter="row.editing=false; saveInlineEdit(row)" />
+                <span v-else>{{ row.name }}</span>
+              </template>
+            </el-table-column>
+            <el-table-column prop="desc" label="说明" min-width="200">
+              <template #default="{ row }">
+                <el-input v-if="row.editing" v-model="row.desc" size="small" @blur="saveInlineEdit(row)" />
+                <span v-else style="color:#909399;font-size:13px">{{ row.desc }}</span>
+              </template>
+            </el-table-column>
+            <el-table-column prop="enabled" label="启用" width="80" align="center">
+              <template #default="{ row }"><el-switch v-model="row.enabled" @change="saveInlineEdit(row)" /></template>
+            </el-table-column>
+            <el-table-column label="操作" width="130" align="center">
+              <template #default="{ row }">
+                <el-button text type="primary" size="small" @click="row.editing=true">编辑</el-button>
+                <el-button text type="danger" size="small" @click="deleteItem(goodsTypes, row)">删除</el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+        </div>
       </el-tab-pane>
 
       <!-- 社区类型 -->
@@ -382,6 +419,7 @@ const industryTypes = ref([])
 const communityTypes = ref([])
 const residentTypes = ref([])
 const professionalServiceTypes = ref([]) // 专业服务子类型
+const goodsTypes = ref([]) // 物资类型
 const districtTree = ref([])
 
 // 检查是否存在指定名称的资源类型
@@ -525,6 +563,28 @@ async function loadBasicTypes() {
     } else {
       professionalServiceTypes.value = data.professionalServiceTypes.map(t => ({ ...t, enabled: t.enabled !== false, editing: false }))
     }
+
+    // 物资类型
+    const defaultGoodsTypes = [
+      { name: '图书绘本', desc: '儿童绘本、文学书籍等', enabled: true },
+      { name: '食品饮料', desc: '矿泉水、饮料、水果、零食等', enabled: true },
+      { name: '文体用品', desc: '笔、本子、文具等', enabled: true },
+      { name: '生活用品', desc: '日用品、家居用品等', enabled: true },
+      { name: '电子设备', desc: '电脑、投影仪、音响等', enabled: true },
+      { name: '活动物料', desc: '横幅、气球、彩旗等', enabled: true },
+      { name: '防疫物资', desc: '口罩、消毒液等', enabled: true },
+      { name: '服装鞋帽', desc: '服装、鞋子、帽子等', enabled: true },
+      { name: '玩具礼品', desc: '玩具、奖品、礼品等', enabled: true },
+      { name: '交通工具', desc: '车辆、电动车等', enabled: true },
+      { name: '优惠券券', desc: '优惠券、兑换券等', enabled: true },
+      { name: '其他物资', desc: '其他物资', enabled: true },
+    ].map(t => ({ ...t, editing: false }))
+
+    if (!data.goodsTypes || data.goodsTypes.length === 0) {
+      goodsTypes.value = defaultGoodsTypes
+    } else {
+      goodsTypes.value = data.goodsTypes.map(t => ({ ...t, enabled: t.enabled !== false, editing: false }))
+    }
   } catch {}
   finally { loading.value = false }
 }
@@ -538,7 +598,8 @@ async function saveTypes() {
     industryTypes: industryTypes.value.map(t => ({ name: t.name, enabled: t.enabled })),
     communityTypes: communityTypes.value.map(t => ({ name: t.name, enabled: t.enabled })),
     residentTypes: residentTypes.value.map(t => ({ name: t.name, enabled: t.enabled })),
-    professionalServiceTypes: professionalServiceTypes.value.map(t => ({ name: t.name, desc: t.desc, enabled: t.enabled }))
+    professionalServiceTypes: professionalServiceTypes.value.map(t => ({ name: t.name, desc: t.desc, enabled: t.enabled })),
+    goodsTypes: goodsTypes.value.map(t => ({ name: t.name, desc: t.desc, enabled: t.enabled }))
   })
 }
 
@@ -576,7 +637,7 @@ function openAdd(listName, title) {
 
 async function confirmAdd() {
   if (!newItemName.value.trim()) { ElMessage.warning('请输入名称'); return }
-  const lists = { activityTypes, enterpriseTypes, resourceTypes, expertTypes, industryTypes, communityTypes, residentTypes, professionalServiceTypes }
+  const lists = { activityTypes, enterpriseTypes, resourceTypes, expertTypes, industryTypes, communityTypes, residentTypes, professionalServiceTypes, goodsTypes }
   const listRef = lists[currentList.value]
   if (listRef) {
     const item = { name: newItemName.value.trim(), count: 0, enabled: true, editing: false, desc: newItemDesc.value }

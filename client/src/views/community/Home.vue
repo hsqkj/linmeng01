@@ -98,6 +98,36 @@
           <div class="stat-label">累计奖励</div>
         </div>
       </el-card>
+
+      <el-card class="stat-card">
+        <div class="stat-icon" style="background: #fef0f0; color: #f56c6c;">
+          <el-icon :size="24"><Goods /></el-icon>
+        </div>
+        <div class="stat-info">
+          <div class="stat-value">{{ stats.totalDemands }}</div>
+          <div class="stat-label">平台总需求</div>
+        </div>
+      </el-card>
+
+      <el-card class="stat-card">
+        <div class="stat-icon" style="background: #f0f9ff; color: #909399;">
+          <el-icon :size="24"><Shop /></el-icon>
+        </div>
+        <div class="stat-info">
+          <div class="stat-value">{{ stats.totalResources }}</div>
+          <div class="stat-label">平台总资源</div>
+        </div>
+      </el-card>
+
+      <el-card class="stat-card">
+        <div class="stat-icon" style="background: #fff1f0; color: #ff4d4f;">
+          <el-icon :size="24"><View /></el-icon>
+        </div>
+        <div class="stat-info">
+          <div class="stat-value">{{ stats.demandViews }}</div>
+          <div class="stat-label">我的需求浏览</div>
+        </div>
+      </el-card>
     </div>
 
     <!-- 推荐商家资源 -->
@@ -155,7 +185,7 @@
           </div>
 
           <div class="resource-actions">
-            <el-button type="primary" @click="contactMerchant(resource)">立即联系</el-button>
+            <el-button type="primary" @click="contactMerchant(resource)">留言咨询</el-button>
             <el-button text @click="router.push('/community/resources/' + resource.id)">查看详情</el-button>
           </div>
         </el-card>
@@ -165,23 +195,26 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted, inject } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { requireAuth, isLoggedIn as checkLogin } from '@/utils/useAuth'
 import { Shop, StarFilled, Document, Connection, CircleCheck, Present, Plus, View, User, Edit } from '@element-plus/icons-vue'
-import { getBanners, getRecommendResources, getProfile, getMyDemands, getMyIntentions } from '@/api/community'
+import { getBanners, getRecommendResources, getProfile, getMyDemands, getMyIntentions, getResources, getDemands } from '@/api/community'
 
 const router = useRouter()
 
 // 判断是否登录
 const isLoggedIn = checkLogin('community')
 
+// 获取打开客服窗口的方法
+const openServiceChat = inject('openServiceChat', null)
+
 const banners = ref([])
 const matchedResources = ref([])
 const activities = ref([])
 const profile = ref({})
-const stats = ref({ demands: 0, intentions: 0, completed: 0, rewards: 0 })
+const stats = ref({ demands: 0, intentions: 0, completed: 0, rewards: 0, totalDemands: 0, totalResources: 0, demandViews: 0 })
 const loading = ref(false)
 
 // 资源类型映射（从API动态加载）
@@ -241,14 +274,16 @@ onMounted(async () => {
   try {
     const promises = [
       getBanners(),
-      getRecommendResources()
+      getRecommendResources(),
+      getResources({ pageSize: 1 }),
+      getDemands({ pageSize: 1 })
     ]
 
     // 只有登录后才获取个人信息
     if (isLoggedIn) {
-      promises.push(getProfile(), getMyDemands({ pageSize: 1 }), getMyIntentions({ pageSize: 50 }))
+      promises.push(getProfile(), getMyDemands({ pageSize: 100 }), getMyIntentions({ pageSize: 50 }))
     }
-    
+
     // 加载资源类型配置
     promises.push(loadResourceTypes())
 
@@ -276,16 +311,29 @@ onMounted(async () => {
       matchedResources.value = (results[1].value.data || []).slice(0, 4)
     }
 
+    // 平台总资源数
+    if (results[2].status === 'fulfilled') {
+      stats.value.totalResources = results[2].value.data?.pagination?.total || results[2].value.data?.total || 0
+    }
+
+    // 平台总需求数
+    if (results[3].status === 'fulfilled') {
+      stats.value.totalDemands = results[3].value.data?.pagination?.total || results[3].value.data?.total || 0
+    }
+
     // 只有登录后才处理个人信息
-    if (isLoggedIn && results.length > 2) {
-      if (results[2].status === 'fulfilled') {
-        profile.value = results[2].value.data || {}
+    if (isLoggedIn && results.length > 7) {
+      if (results[5].status === 'fulfilled') {
+        profile.value = results[5].value.data || {}
       }
-      if (results[3].status === 'fulfilled') {
-        stats.value.demands = results[3].value.data?.pagination?.total || results[3].value.data?.total || 0
+      if (results[6].status === 'fulfilled') {
+        const myDemands = results[6].value.data?.list || results[6].value.data || []
+        stats.value.demands = myDemands.length
+        // 计算该社区已发布需求的总浏览量
+        stats.value.demandViews = myDemands.reduce((sum, d) => sum + (d.view_count || 0), 0)
       }
-      if (results[4].status === 'fulfilled') {
-        const list = results[4].value.data?.list || results[4].value.data || []
+      if (results[7].status === 'fulfilled') {
+        const list = results[7].value.data?.list || results[7].value.data || []
         stats.value.intentions = list.filter(i => i.status === 0).length
         stats.value.completed = list.filter(i => i.status === 1).length
       }
@@ -301,11 +349,15 @@ const contactMerchant = (resource) => {
   if (!localStorage.getItem('community_token')) {
     return requireAuth('community')
   }
-  ElMessage.success(`已向${resource.company_name}发送合作意向`)
+  // 打开客服窗口
+  if (openServiceChat) {
+    openServiceChat()
+  }
 }
 
 const viewMerchantDetail = (resource) => {
-  router.push(`/community/merchants/${resource.merchant_id}`)
+  // 跳转到该商家资源的详情页
+  router.push(`/community/resources/${resource.id}`)
 }
 
 const viewActivityDetail = (activity) => {

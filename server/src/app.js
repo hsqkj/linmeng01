@@ -13,6 +13,12 @@ const cors = require('cors')
 const app = express()
 const PORT = process.env.PORT || 3000
 
+// 初始化统一类型映射服务
+const typeMapper = require('./services/typeMapper')
+typeMapper.initialize().catch(err => {
+  console.error('[App] 类型映射服务初始化失败:', err.message)
+})
+
 // 中间件
 app.use(cors())
 app.use(express.json({ limit: '50mb' }))
@@ -30,12 +36,14 @@ const communityRoutes = require('./routes/community')
 const merchantRoutes = require('./routes/merchant')
 const ambassadorRoutes = require('./routes/ambassador')
 const publicRoutes = require('./routes/public')
+const uploadRoutes = require('./routes/upload')
 
 app.use('/api/admin', adminRoutes)
 app.use('/api/community', communityRoutes)
 app.use('/api/merchant', merchantRoutes)
 app.use('/api/ambassador', ambassadorRoutes)
 app.use('/api/public', publicRoutes)
+app.use('/api/upload', uploadRoutes)
 
 // 健康检查
 app.get('/api/health', (req, res) => {

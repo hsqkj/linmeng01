@@ -7,7 +7,7 @@
 
     <!-- 搜索与筛选 -->
     <div class="filter-bar">
-      <el-input v-model="filters.keyword" placeholder="搜索需求名称/活动描述" style="width:200px" clearable>
+      <el-input v-model="filters.keyword" placeholder="搜索需求名称/活动描述" style="width:200px" clearable @keyup.enter="doSearch">
         <template #prefix><el-icon><Search /></el-icon></template>
       </el-input>
       <el-select v-model="filters.district" placeholder="选择区" style="width:130px" clearable @change="onDistrictChange">
@@ -34,6 +34,7 @@
       <el-select v-model="filters.sortBy" placeholder="排序" style="width:130px">
         <el-option label="最新发布" value="newest" />
         <el-option label="匹配度优先" value="match" />
+        <el-option label="距离最近" value="distance" />
       </el-select>
       <el-button type="primary" @click="doSearch">搜索</el-button>
       <el-button @click="resetFilters">重置</el-button>
@@ -59,6 +60,11 @@
           <span style="cursor:pointer;color:#409EFF;text-decoration:underline" @click.stop="viewCommunity(demand)">{{ demand.community_name }}</span>
           <span class="divider">|</span>
           <span>{{ demand.district }}{{ demand.street ? ' · ' + demand.street : '' }}</span>
+          <span v-if="demand.distance_km !== undefined" class="divider">|</span>
+          <span v-if="demand.distance_km !== undefined" class="distance-tag">
+            <el-icon :size="11"><Location /></el-icon>
+            {{ demand.distance_km < 1 ? (demand.distance_km * 1000).toFixed(0) + 'm' : demand.distance_km.toFixed(1) + 'km' }}
+          </span>
           <span class="divider">|</span>
           <el-icon :size="13" style="color:#909399"><Calendar /></el-icon>
           <span>{{ demand.start_time ? demand.start_time.split('T')[0] : '-' }}</span>
@@ -141,6 +147,34 @@ import { getDemands, getCommunityDetail, toggleFavorite, getMyFavorites, getPubl
 const router = useRouter()
 
 const filters = reactive({ keyword: '', type: '', sortBy: 'newest', district: '', street: '', community: '' })
+
+// 用户当前位置（用于距离排序）
+const userLocation = ref(null)
+const locationLoading = ref(false)
+const locationError = ref('')
+
+// 获取用户当前位置
+function getUserLocation() {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) {
+      reject(new Error('浏览器不支持定位'))
+      return
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        userLocation.value = {
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude
+        }
+        resolve(userLocation.value)
+      },
+      (err) => {
+        reject(err)
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    )
+  })
+}
 // 需求类型映射（从API动态加载）
 const typeColorsMap = ref({})
 // 数字到中文映射（用于 fallback）
@@ -231,8 +265,31 @@ async function fetchDemands() {
       community: filters.community || undefined
     }
     if (filters.keyword) params.keyword = filters.keyword
+
+    // 如果选择距离排序，先获取用户位置
+    if (filters.sortBy === 'distance') {
+      if (!userLocation.value) {
+        locationLoading.value = true
+        try {
+          await getUserLocation()
+        } catch (err) {
+          locationError.value = '无法获取您的位置，请开启定位权限'
+          ElMessage.warning('无法获取您的位置，无法按距离排序')
+          filters.sortBy = 'newest'
+          params.sort = 'newest'
+        } finally {
+          locationLoading.value = false
+        }
+      }
+      if (userLocation.value) {
+        params.lat = userLocation.value.lat
+        params.lng = userLocation.value.lng
+      }
+    }
+
     const res = await getDemands(params)
     let list = res.data?.list || res.data || []
+
     // 标记收藏状态
     if (favDemandIds.value.size > 0) {
       list = list.map(d => ({ ...d, isFavorited: favDemandIds.value.has(d.id) }))
@@ -331,6 +388,15 @@ onMounted(() => {
 .demand-title { margin: 0 0 8px; font-size: 15px; font-weight: 600; }
 .demand-meta { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #606266; margin-bottom: 8px; flex-wrap: wrap; }
 .divider { color: #ddd; }
+
+.distance-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  color: #67C23A;
+  font-size: 12px;
+  font-weight: 500;
+}
 .demand-tags { margin-bottom: 8px; }
 .demand-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; }
 .sponsor-types { display: flex; align-items: center; flex-wrap: wrap; }

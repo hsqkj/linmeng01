@@ -7,6 +7,7 @@ const { success, error } = require('../utils/response')
 const multer = require('multer')
 const path = require('path')
 const fs = require('fs')
+const typeMapper = require('../services/typeMapper')
 
 // 发送验证码（模拟）
 exports.sendSms = async (req, res) => {
@@ -191,76 +192,88 @@ const upload = multer({
   }
 })
 
-// 图片上传接口
+// 图片上传接口（支持本地存储和 COS）
 exports.uploadImage = [
   upload.single('image'),
-  (req, res) => {
+  async (req, res) => {
     if (!req.file) {
       return error(res, '未选择图片')
     }
-    const url = `/uploads/${req.file.filename}`
-    success(res, { url }, '上传成功')
+
+    // 根据配置决定使用本地存储还是 COS
+    if (process.env.USE_COS === 'true') {
+      try {
+        const { uploadFile } = require('../services/cosUploadService')
+        const folder = req.body.folder || 'uploads'
+        const url = await uploadFile(req.file.buffer, req.file.originalname, folder)
+        success(res, { url }, '上传成功')
+      } catch (e) {
+        console.error('COS upload error:', e)
+        error(res, '上传失败')
+      }
+    } else {
+      const url = `/uploads/${req.file.filename}`
+      success(res, { url }, '上传成功')
+    }
   }
 ]
 
 // 获取发布页类型配置
 exports.getPublishTypes = async (req, res) => {
   try {
-    const [rows] = await pool.query("SELECT config_key, config_value FROM sys_configs WHERE config_key IN ('activity_types', 'expert_types', 'sponsor_types', 'reward_types', 'target_groups', 'community_tags', 'merchant_tags', 'basic_types', 'demand_types', 'member_levels')")
-    const result = {}
-    rows.forEach(r => {
-      try {
-        const parsed = JSON.parse(r.config_value)
-        // basic_types 包含 resourceTypes 等
-        if (r.config_key === 'basic_types') {
-          // 提取 resourceTypes
-          if (parsed.resourceTypes) {
-            result.resource_types = parsed.resourceTypes.filter(t => t.enabled !== false).map(t => t.name || t)
-          }
-          // 提取 activityTypes
-          if (parsed.activityTypes) {
-            result.activity_types = parsed.activityTypes.filter(t => t.enabled !== false).map(t => t.name || t)
-          }
-          // 提取 expertTypes
-          if (parsed.expertTypes) {
-            result.expert_types = parsed.expertTypes.filter(t => t.enabled !== false).map(t => t.name || t)
-          }
-          // 提取 enterpriseTypes
-          if (parsed.enterpriseTypes) {
-            result.enterprise_types = parsed.enterpriseTypes.filter(t => t.enabled !== false).map(t => t.name || t)
-          }
-          // 提取 communityTypes
-          if (parsed.communityTypes) {
-            result.community_types = parsed.communityTypes.filter(t => t.enabled !== false).map(t => t.name || t)
-          }
-          // 提取 residentTypes
-          if (parsed.residentTypes) {
-            result.resident_types = parsed.residentTypes.filter(t => t.enabled !== false).map(t => t.name || t)
-          }
-          // 提取 industryTypes
-          if (parsed.industryTypes) {
-            result.industry_types = parsed.industryTypes.filter(t => t.enabled !== false).map(t => t.name || t)
-          }
-          // 提取 professionalServiceTypes（专业服务子类型）
-          if (parsed.professionalServiceTypes) {
-            result.professional_service_types = parsed.professionalServiceTypes.filter(t => t.enabled !== false).map(t => t.name || t)
-          }
-        } else if (r.config_key === 'member_levels') {
-          // 提取会员等级名称（从数组中提取 name）
-          result.member_levels = parsed.map((level, index) => ({
-            level: index,
-            name: level.name || level
-          }))
-        } else {
-          result[r.config_key] = parsed
-        }
-      } catch {
-        result[r.config_key] = r.config_value
+    // 使用统一映射服务获取所有类型配置
+    const typeMaps = typeMapper.getAllTypeMaps()
+    
+    const result = {
+      // 需求类型
+      demand_types: typeMaps.demandTypes.map(t => t.name),
+      // 资源类型
+      resource_types: typeMaps.resourceTypes.map(t => t.name),
+      // 活动类型
+      activity_types: typeMaps.activityTypes.map(t => t.name),
+      // 专家类型
+      expert_types: typeMaps.expertTypes.map(t => t.name),
+      // 居民类型
+      resident_types: typeMaps.residentTypes.map(t => t.name),
+      // 社区类型
+      community_types: typeMaps.communityTypes.map(t => t.name),
+      // 企业类型
+      enterprise_types: typeMaps.enterpriseTypes.map(t => t.name),
+      // 行业分类
+      industry_types: typeMaps.industryTypes.map(t => t.name),
+      // 社区标签
+      community_tags: typeMaps.communityTags.map(t => t.name),
+      // 资源标签
+      resource_tags: typeMaps.resourceTags.map(t => t.name),
+      // 媒体类型
+      media_types: typeMaps.mediaTypes.map(t => t.name),
+      // 空间类型
+      space_types: typeMaps.spaceTypes.map(t => t.name),
+      // 合作方式
+      cooperation_types: typeMaps.cooperationTypes.map(t => t.name),
+      // 品牌展示方式
+      brand_display_types: typeMaps.brandDisplayTypes.map(t => t.name),
+      // 专业服务类型
+      professional_types: typeMaps.professionalTypes.map(t => t.name),
+      // 技术类型
+      tech_types: typeMaps.techTypes.map(t => t.name),
+    }
+    
+    // 额外从 sys_configs 获取会员等级配置
+    try {
+      const [levelRows] = await pool.query("SELECT config_value FROM sys_configs WHERE config_key = 'member_levels'")
+      if (levelRows.length > 0) {
+        const levels = JSON.parse(levelRows[0].config_value)
+        result.member_levels = levels.map((level, index) => ({
+          level: index,
+          name: level.name || level
+        }))
       }
-    })
-    // 如果数据库没有配置，返回空对象（前端应确保管理后台已配置）
+    } catch {}
+    
     success(res, result)
   } catch (err) {
+    console.error('getPublishTypes error:', err)
     error(res, '获取类型配置失败')
   }
 }
@@ -317,5 +330,148 @@ exports.getAmbassadorByCode = async (req, res) => {
   } catch (err) {
     console.error('Get ambassador by code error:', err)
     error(res, '获取大使信息失败')
+  }
+}
+
+// ====== 地理编码 ======
+// 地理编码：根据地址获取经纬度（使用 Nominatim / OpenStreetMap 免费服务）
+const https = require('https')
+
+async function geocodeAddress(address) {
+  if (!address || address.trim().length < 5) return null
+
+  // 先查缓存
+  try {
+    const [cached] = await pool.query(
+      'SELECT lat, lng FROM geocode_cache WHERE address = ? LIMIT 1',
+      [address.trim()]
+    )
+    if (cached.length > 0) {
+      return { lat: cached[0].lat, lng: cached[0].lng }
+    }
+  } catch {}
+
+  // 调用 Nominatim API（免费，需设置 User-Agent）
+  return new Promise((resolve) => {
+    const encodedAddr = encodeURIComponent(address.trim())
+    const url = `https://nominatim.openstreetmap.org/search?q=${encodedAddr}&format=json&limit=1&countrycodes=cn`
+    const options = {
+      headers: { 'User-Agent': 'LinMeng/1.0 (contact@3qall.com)' },
+      timeout: 5000
+    }
+    const req = https.get(url, options, (res) => {
+      let data = ''
+      res.on('data', chunk => { data += chunk })
+      res.on('end', async () => {
+        try {
+          const results = JSON.parse(data)
+          if (results && results.length > 0) {
+            const loc = results[0]
+            const lat = parseFloat(loc.lat)
+            const lng = parseFloat(loc.lon)
+            // 写入缓存
+            try {
+              await pool.query(
+                'INSERT IGNORE INTO geocode_cache (address, lat, lng) VALUES (?, ?, ?)',
+                [address.trim(), lat, lng]
+              )
+            } catch {}
+            resolve({ lat, lng })
+          } else {
+            resolve(null)
+          }
+        } catch {
+          resolve(null)
+        }
+      })
+    })
+    req.on('error', () => resolve(null))
+    req.on('timeout', () => { req.destroy(); resolve(null) })
+  })
+}
+
+// 地理编码接口
+exports.geocode = async (req, res) => {
+  try {
+    const { address } = req.query
+    if (!address) return error(res, '请提供地址参数', 400)
+
+    const coords = await geocodeAddress(address)
+    if (coords) {
+      success(res, coords, '地理编码成功')
+    } else {
+      error(res, '地址无法定位，请输入更详细的地址', 400)
+    }
+  } catch (err) {
+    console.error('Geocode error:', err)
+    error(res, '地理编码服务异常')
+  }
+}
+
+// 批量地理编码（管理员用）
+exports.geocodeBatch = async (req, res) => {
+  try {
+    const { type, ids } = req.body // type: 'merchant' | 'community'
+    if (!type || !ids || !Array.isArray(ids)) return error(res, '参数错误', 400)
+
+    const table = type === 'merchant' ? 'merchants' : 'communities'
+    const addrCol = 'address'
+
+    const [rows] = await pool.query(
+      `SELECT id, ${addrCol} as addr FROM ${table} WHERE id IN (?) AND (lat IS NULL OR lng IS NULL)`,
+      [ids]
+    )
+
+    const results = []
+    for (const row of rows) {
+      if (!row.addr) continue
+      const coords = await geocodeAddress(row.addr)
+      if (coords) {
+        await pool.query(
+          `UPDATE ${table} SET lat = ?, lng = ? WHERE id = ?`,
+          [coords.lat, coords.lng, row.id]
+        )
+        results.push({ id: row.id, lat: coords.lat, lng: coords.lng })
+      }
+      // Nominatim 限速：每秒1请求
+      await new Promise(r => setTimeout(r, 1100))
+    }
+
+    success(res, { count: results.length, results })
+  } catch (err) {
+    console.error('Geocode batch error:', err)
+    error(res, '批量地理编码失败')
+  }
+}
+
+// 获取平台统计信息（公开接口）
+exports.getStats = async (req, res) => {
+  try {
+    // 统计已审核的需求浏览量总和
+    const [[demandViews]] = await pool.query(
+      "SELECT COALESCE(SUM(view_count), 0) as total FROM demands WHERE status = 1"
+    )
+    // 统计已审核的资源浏览量总和
+    const [[resourceViews]] = await pool.query(
+      "SELECT COALESCE(SUM(view_count), 0) as total FROM resources WHERE status = 1"
+    )
+
+    success(res, {
+      totalViews: Number(demandViews.total) + Number(resourceViews.total)
+    })
+  } catch (err) {
+    console.error('Get stats error:', err)
+    error(res, '获取统计数据失败')
+  }
+}
+
+// 获取统一类型映射数据
+exports.getTypeMaps = async (req, res) => {
+  try {
+    const typeMaps = typeMapper.getAllTypeMaps()
+    success(res, typeMaps)
+  } catch (err) {
+    console.error('Get type maps error:', err)
+    error(res, '获取类型映射失败')
   }
 }

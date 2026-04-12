@@ -25,9 +25,10 @@
           <el-tag :type="statusTag[row.status]" size="small">{{ statusLabels[row.status] }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="200" align="center">
+      <el-table-column label="操作" width="250" align="center">
         <template #default="{ row }">
           <el-button text type="primary" size="small" @click="viewUser(row)">详情</el-button>
+          <el-button text type="warning" size="small" @click="router.push(`/admin/community/profile?id=${row.id}`)">画像</el-button>
           <el-button v-if="row.status === 0" text type="success" size="small" @click="approveUser(row)">通过</el-button>
           <el-button v-if="row.status === 1" text type="danger" size="small" @click="disableUser(row)">禁用</el-button>
           <el-button v-if="row.status === 2" text type="success" size="small" @click="enableUser(row)">恢复</el-button>
@@ -75,6 +76,8 @@
 import { ref, onMounted, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getCommunities, updateCommunityStatus, getRegions } from '@/api/admin'
+import { useRouter } from 'vue-router'
+const router = useRouter()
 
 const search = ref(''), filterDistrict = ref(''), filterStatus = ref('')
 const showDetail = ref(false), currentUser = ref(null), detailTab = ref('basic')

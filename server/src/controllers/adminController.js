@@ -98,6 +98,11 @@ exports.dashboard = async (req, res) => {
     const [[demandViews]] = await pool.query('SELECT COALESCE(SUM(view_count), 0) as total FROM demands WHERE status = 1')
     const [[resourceViews]] = await pool.query('SELECT COALESCE(SUM(view_count), 0) as total FROM resources WHERE status = 1')
 
+    // 安全检查：浏览量不应超过合理范围（每人每天最多浏览1000条内容，累计不超过100万）
+    const safeDemandViews = Math.min(Number(demandViews?.total) || 0, 1000000)
+    const safeResourceViews = Math.min(Number(resourceViews?.total) || 0, 1000000)
+    const safeTotalViews = safeDemandViews + safeResourceViews
+
     // 留言数统计（使用comments表的评论数）
     let commentsCount = 0
     try {
@@ -169,7 +174,7 @@ exports.dashboard = async (req, res) => {
         demands: demands[0].count,
         resources: resources[0].count,
         completedMatches: intentions[0].count,
-        totalViews: demandViews.total + resourceViews.total,
+        totalViews: safeTotalViews,
         comments: commentsCount
       },
       pending: {
@@ -825,7 +830,7 @@ exports.grantReward = async (req, res) => {
 
 exports.getComments = async (req, res) => {
   try {
-    const { page = 1, pageSize = 10, type, keyword, status } = req.query
+    const { page = 1, pageSize = 10, type, keyword, status, merge = 'true' } = req.query
     const offset = (parseInt(page) - 1) * parseInt(pageSize)
 
     let where = '1=1'
@@ -846,25 +851,107 @@ exports.getComments = async (req, res) => {
       queryParams.push(parseInt(status))
     }
 
+    // 获取基础留言数据
     const [rows] = await pool.query(
       `SELECT c.*,
        m.company_name as merchant_name,
-       com.community_name as community_name
+       m.logo as merchant_logo,
+       com.community_name as community_name,
+       com.logo as community_logo,
+       d.title as demand_title,
+       r.title as resource_title,
+       r.company_name as resource_merchant_name
        FROM comments c
        LEFT JOIN merchants m ON c.user_type = 2 AND c.user_id = m.id
        LEFT JOIN communities com ON c.user_type = 1 AND c.user_id = com.id
+       LEFT JOIN demands d ON c.demand_id IS NOT NULL AND c.demand_id = d.id
+       LEFT JOIN resources r ON c.resource_id IS NOT NULL AND c.resource_id = r.id
        WHERE ${where}
        ORDER BY c.created_at DESC
        LIMIT ? OFFSET ?`,
       [...queryParams, parseInt(pageSize), offset]
     )
 
-    const [[{ total }]] = await pool.query(
-      `SELECT COUNT(*) as total FROM comments c WHERE ${where}`,
-      queryParams
-    )
-    
-    pageSuccess(res, rows, total, page, pageSize)
+    // 如果需要合并多轮留言（按target_id合并同一会话的留言）
+    if (merge === 'true') {
+      const mergedMap = new Map()
+
+      for (const row of rows) {
+        // 合并标识：需求留言用 demand_id，资源留言用 resource_id + sender_id
+        const mergeKey = row.demand_id
+          ? `d_${row.demand_id}_${row.user_id}`
+          : `r_${row.resource_id}_${row.user_id}`
+
+        if (mergedMap.has(mergeKey)) {
+          // 追加到已有留言
+          mergedMap.get(mergeKey).replies.push({
+            id: row.id,
+            content: row.content,
+            sender: row.community_name || row.merchant_name || '用户',
+            user_type: row.user_type,
+            avatar: row.community_logo || row.merchant_logo || null,
+            created_at: row.created_at,
+            status: row.status
+          })
+        } else {
+          // 新建合并条目
+          mergedMap.set(mergeKey, {
+            ...row,
+            replies: row.reply_to ? [{
+              id: row.id,
+              content: row.content,
+              sender: row.community_name || row.merchant_name || '用户',
+              user_type: row.user_type,
+              avatar: row.community_logo || row.merchant_logo || null,
+              created_at: row.created_at,
+              status: row.status
+            }] : []
+          })
+          // 如果不是回复，保留原始内容
+          if (!row.reply_to) {
+            mergedMap.get(mergeKey).main_content = row.content
+            mergedMap.get(mergeKey).main_id = row.id
+            mergedMap.get(mergeKey).main_created_at = row.created_at
+            mergedMap.get(mergeKey).replies = []
+          }
+        }
+      }
+
+      const mergedList = Array.from(mergedMap.values()).map(item => ({
+        id: item.main_id || item.id,
+        demand_id: item.demand_id,
+        resource_id: item.resource_id,
+        demand_title: item.demand_title,
+        resource_title: item.resource_title,
+        resource_merchant_name: item.resource_merchant_name,
+        user_id: item.user_id,
+        user_type: item.user_type,
+        community_name: item.community_name,
+        community_logo: item.community_logo,
+        merchant_name: item.merchant_name,
+        merchant_logo: item.merchant_logo,
+        content: item.main_content || item.content,
+        status: item.status,
+        created_at: item.main_created_at || item.created_at,
+        reply_count: item.replies.length,
+        replies: item.replies
+      }))
+
+      const [[{ total }]] = await pool.query(
+        `SELECT COUNT(*) as total FROM comments c WHERE ${where}`,
+        queryParams
+      )
+
+      pageSuccess(res, mergedList, total, page, pageSize)
+    } else {
+      // 不合并，直接返回
+      const [[{ total }]] = await pool.query(
+        `SELECT COUNT(*) as total FROM comments c WHERE ${where}`,
+        queryParams
+      )
+
+      pageSuccess(res, rows, total, page, pageSize)
+    }
   } catch (err) {
     console.error('获取留言列表失败:', err)
     error(res, '获取留言列表失败')
@@ -1633,6 +1720,27 @@ exports.saveAntiFlyingConfig = async (req, res) => {
   }
 }
 
+// ====== 社区位置管理 ======
+exports.saveCommunityLocation = async (req, res) => {
+  try {
+    const { community_id, lat, lng } = req.body
+    if (!community_id || lat === null || lng === null) {
+      return error(res, '参数不完整', 400)
+    }
+    if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+      return error(res, '经纬度超出有效范围', 400)
+    }
+    await pool.query(
+      'UPDATE communities SET lat = ?, lng = ?, map_location = ST_GeomFromText(?) WHERE id = ?',
+      [lat, lng, `POINT(${lng} ${lat})`, community_id]
+    )
+    success(res, null, '社区位置已保存')
+  } catch (err) {
+    console.error('saveCommunityLocation error:', err)
+    error(res, '保存社区位置失败')
+  }
+}
+
 // ====== 内容审核配置 ======
 exports.getAuditConfig = async (req, res) => {
   try {
@@ -1883,8 +1991,13 @@ exports.createFaq = async (req, res) => {
 
     const [rows] = await pool.query("SELECT config_value FROM sys_configs WHERE config_key = 'service_faqs'")
     let faqs = []
-    if (rows.length > 0) {
-      try { faqs = JSON.parse(rows[0].config_value) } catch {}
+    if (rows.length > 0 && rows[0].config_value) {
+      try { 
+        const parsed = JSON.parse(rows[0].config_value)
+        if (Array.isArray(parsed)) {
+          faqs = parsed
+        }
+      } catch {}
     }
 
     const newFaq = {
@@ -1919,7 +2032,12 @@ exports.updateFaq = async (req, res) => {
     if (rows.length === 0) return error(res, 'FAQ不存在', 404)
 
     let faqs = []
-    try { faqs = JSON.parse(rows[0].config_value) } catch {}
+    try { 
+      const parsed = JSON.parse(rows[0].config_value)
+      if (Array.isArray(parsed)) {
+        faqs = parsed
+      }
+    } catch {}
 
     const idx = faqs.findIndex(f => f.id == id)
     if (idx === -1) return error(res, 'FAQ不存在', 404)
@@ -1949,7 +2067,12 @@ exports.deleteFaq = async (req, res) => {
     if (rows.length === 0) return error(res, 'FAQ不存在', 404)
 
     let faqs = []
-    try { faqs = JSON.parse(rows[0].config_value) } catch {}
+    try { 
+      const parsed = JSON.parse(rows[0].config_value)
+      if (Array.isArray(parsed)) {
+        faqs = parsed
+      }
+    } catch {}
 
     const idx = faqs.findIndex(f => f.id == id)
     if (idx === -1) return error(res, 'FAQ不存在', 404)
@@ -1972,16 +2095,29 @@ exports.deleteFaq = async (req, res) => {
 exports.getQuickQuestions = async (req, res) => {
   try {
     const [rows] = await pool.query("SELECT config_value FROM sys_configs WHERE config_key = 'service_quick_questions'")
-    if (rows.length > 0) {
-      success(res, JSON.parse(rows[0].config_value))
-    } else {
-      success(res, [
-        { id: 1, text: '如何发布资源？', sort: 1, enabled: true },
-        { id: 2, text: '会员等级有什么区别？', sort: 2, enabled: true },
-        { id: 3, text: '如何联系商家？', sort: 3, enabled: true },
-        { id: 4, text: '撮合奖励是什么？', sort: 4, enabled: true }
-      ])
+    
+    // 默认快捷问题
+    const defaultQuestions = [
+      { id: 1, text: '如何发布资源？', sort: 1, enabled: true },
+      { id: 2, text: '会员等级有什么区别？', sort: 2, enabled: true },
+      { id: 3, text: '如何联系商家？', sort: 3, enabled: true },
+      { id: 4, text: '撮合奖励是什么？', sort: 4, enabled: true }
+    ]
+    
+    if (rows.length > 0 && rows[0].config_value) {
+      try {
+        const parsed = JSON.parse(rows[0].config_value)
+        // 确保解析结果是数组
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return success(res, parsed)
+        }
+      } catch (e) {
+        console.error('Parse quick questions error:', e)
+      }
     }
+    
+    // 返回默认快捷问题
+    success(res, defaultQuestions)
   } catch (err) {
     console.error('Get quick questions error:', err)
     error(res, '获取快捷问题失败')
@@ -1996,8 +2132,29 @@ exports.createQuickQuestion = async (req, res) => {
 
     const [rows] = await pool.query("SELECT config_value FROM sys_configs WHERE config_key = 'service_quick_questions'")
     let questions = []
-    if (rows.length > 0) {
-      try { questions = JSON.parse(rows[0].config_value) } catch {}
+    
+    // 默认快捷问题
+    const defaultQuestions = [
+      { id: 1, text: '如何发布资源？', sort: 1, enabled: true },
+      { id: 2, text: '会员等级有什么区别？', sort: 2, enabled: true },
+      { id: 3, text: '如何联系商家？', sort: 3, enabled: true },
+      { id: 4, text: '撮合奖励是什么？', sort: 4, enabled: true }
+    ]
+    
+    if (rows.length > 0 && rows[0].config_value) {
+      try { 
+        const parsed = JSON.parse(rows[0].config_value)
+        // 确保解析结果是数组
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          questions = parsed
+        } else {
+          questions = defaultQuestions
+        }
+      } catch (e) {
+        console.error('Parse quick questions error:', e)
+        // 解析失败时使用默认数据，但不清空现有数据
+        questions = rows[0].config_value ? defaultQuestions : []
+      }
     }
 
     const newQuestion = {
@@ -2031,7 +2188,12 @@ exports.updateQuickQuestion = async (req, res) => {
     if (rows.length === 0) return error(res, '快捷问题不存在', 404)
 
     let questions = []
-    try { questions = JSON.parse(rows[0].config_value) } catch {}
+    try { 
+      const parsed = JSON.parse(rows[0].config_value)
+      if (Array.isArray(parsed)) {
+        questions = parsed
+      }
+    } catch {}
 
     const idx = questions.findIndex(q => q.id == id)
     if (idx === -1) return error(res, '快捷问题不存在', 404)
@@ -2062,7 +2224,12 @@ exports.deleteQuickQuestion = async (req, res) => {
     if (rows.length === 0) return error(res, '快捷问题不存在', 404)
 
     let questions = []
-    try { questions = JSON.parse(rows[0].config_value) } catch {}
+    try { 
+      const parsed = JSON.parse(rows[0].config_value)
+      if (Array.isArray(parsed)) {
+        questions = parsed
+      }
+    } catch {}
 
     const idx = questions.findIndex(q => q.id == id)
     if (idx === -1) return error(res, '快捷问题不存在', 404)
@@ -2078,6 +2245,192 @@ exports.deleteQuickQuestion = async (req, res) => {
   } catch (err) {
     console.error('Delete quick question error:', err)
     error(res, '删除快捷问题失败')
+  }
+}
+
+// ==================== 社区画像 ====================
+
+// 八维评分说明
+const RADAR_DIMS = [
+  { key: 'scale',       label: '社区规模',     icon: '🏢', unit: '户',  maxRaw: 2000,  desc: '基于小区户数评估' },
+  { key: 'family',      label: '家庭结构',     icon: '👨‍👩‍👧', unit: '%',   maxRaw: 100,   desc: '亲子+老年群体占比' },
+  { key: 'facility',    label: '配套设施',     icon: '🏗',  unit: '项',  maxRaw: 4,     desc: '广场/商业/学校/公园' },
+  { key: 'space',       label: '公共空间',     icon: '🏟',  unit: 'm²', maxRaw: 10000, desc: '公共活动空间面积' },
+  { key: 'activity',    label: '活跃程度',     icon: '📊',  unit: '分',  maxRaw: 100,   desc: '发布需求数与预算规模' },
+  { key: 'matching',    label: '撮合能力',     icon: '🤝',  unit: '次',  maxRaw: 20,    desc: '撮合成功意向数' },
+  { key: 'merchant',    label: '商业资源',     icon: '🏪', unit: '家',  maxRaw: 50,    desc: '周边商户/商家数量' },
+  { key: 'exposure',    label: '平台曝光',     icon: '👁',  unit: '次',  maxRaw: 2000,  desc: '总浏览量' },
+]
+
+// 计算某维度的标准化分数（0-100）
+function dimScore(raw, maxRaw) {
+  if (!raw || raw < 0) return 0
+  const s = Math.min(100, Math.round((raw / maxRaw) * 100))
+  return s
+}
+
+// 获取社区画像
+exports.getCommunityProfile = async (req, res) => {
+  try {
+    const { id } = req.params
+
+    // 1. 读取社区基本信息
+    const [commRows] = await pool.query(
+      `SELECT id, real_name, community_name, district, street, households,
+              family_ratio, elderly_ratio,
+              public_space_area, merchant_count,
+              has_outdoor_plaza, has_commercial, has_school, has_park
+       FROM communities WHERE id = ?`,
+      [id]
+    )
+
+    if (commRows.length === 0) {
+      return error(res, '社区不存在', 404)
+    }
+
+    const c = commRows[0]
+
+    // 2. 读取该社区的需求统计
+    const [demandStats] = await pool.query(
+      `SELECT COUNT(*) as total, SUM(view_count) as views,
+              SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) as published,
+              SUM(budget_max) as total_budget
+       FROM demands WHERE community_id = ?`,
+      [id]
+    )
+    const ds = demandStats[0] || {}
+
+    // 3. 读取该社区的撮合统计（意向表 intentions 中 community_id 关联）
+    const [matchStats] = await pool.query(
+      `SELECT COUNT(*) as total_intentions,
+              SUM(CASE WHEN status = 3 THEN 1 ELSE 0 END) as success_matches
+       FROM intentions WHERE community_id = ?`,
+      [id]
+    )
+    const ms = matchStats[0] || {}
+
+    // 4. 计算六维分数
+    const facilityCount = [
+      c.has_outdoor_plaza, c.has_commercial,
+      c.has_school, c.has_park
+    ].filter(Boolean).length
+
+    // 活跃度：发布需求数（权重60%）+ 预算总额标准化（权重40%）
+    const actByDemands = Math.min(100, ds.total * 15)
+    const actByBudget = Math.min(100, (ds.total_budget || 0) / 500)
+    const activityScore = Math.round(actByDemands * 0.6 + actByBudget * 0.4)
+
+    const scores = {
+      scale:    dimScore(c.households || 0,             RADAR_DIMS[0].maxRaw),
+      family:   dimScore(
+                  (parseFloat(c.family_ratio) || 0) +
+                  (parseFloat(c.elderly_ratio) || 0), RADAR_DIMS[1].maxRaw),
+      facility: dimScore(facilityCount,                 RADAR_DIMS[2].maxRaw),
+      space:    dimScore(parseFloat(c.public_space_area) || 0, RADAR_DIMS[3].maxRaw),
+      activity: activityScore,
+      matching: dimScore(ms.success_matches || 0,     RADAR_DIMS[5].maxRaw),
+      merchant: dimScore(c.merchant_count || 0,        RADAR_DIMS[6].maxRaw),
+      exposure: dimScore(ds.views || 0,                 RADAR_DIMS[7].maxRaw),
+    }
+
+    // 5. 各维度的原始数据（用于展示详情）
+    const raw = {
+      households: c.households || 0,
+      familyRatio: parseFloat(c.family_ratio) || 0,
+      elderlyRatio: parseFloat(c.elderly_ratio) || 0,
+      facilityCount,
+      publicSpaceArea: parseFloat(c.public_space_area) || 0,
+      totalDemands: ds.total || 0,
+      publishedDemands: ds.published || 0,
+      totalBudget: parseFloat(ds.total_budget) || 0,
+      totalIntentions: ms.total_intentions || 0,
+      successMatches: ms.success_matches || 0,
+      merchantCount: c.merchant_count || 0,
+      totalViews: ds.views || 0,
+    }
+
+    // 6. 计算综合评分（平均分）
+    const scoreValues = Object.values(scores)
+    const overall = Math.round(scoreValues.reduce((a, b) => a + b, 0) / scoreValues.length)
+
+    success(res, {
+      community: {
+        id: c.id,
+        name: c.real_name,
+        communityName: c.community_name,
+        district: c.district,
+        street: c.street,
+      },
+      dims: RADAR_DIMS,
+      scores,
+      raw,
+      overall,
+    })
+  } catch (err) {
+    console.error('getCommunityProfile error:', err)
+    error(res, '获取社区画像失败')
+  }
+}
+
+// 获取所有社区的评分概览（列表页用）
+exports.getCommunityScores = async (req, res) => {
+  try {
+    const [rows] = await pool.query(`
+      SELECT
+        c.id,
+        c.real_name,
+        c.community_name,
+        c.households,
+        c.family_ratio,
+        c.elderly_ratio,
+        c.public_space_area,
+        c.merchant_count,
+        c.has_outdoor_plaza,
+        c.has_commercial,
+        c.has_school,
+        c.has_park,
+        COUNT(DISTINCT d.id) AS demand_count,
+        COALESCE(SUM(d.view_count), 0) AS total_views,
+        COALESCE(SUM(d.budget_max), 0) AS total_budget,
+        COUNT(DISTINCT CASE WHEN i.status = 3 THEN i.id END) AS success_matches
+      FROM communities c
+      LEFT JOIN demands d ON d.community_id = c.id
+      LEFT JOIN intentions i ON i.community_id = c.id
+      WHERE c.status = 1
+      GROUP BY c.id
+      ORDER BY c.id
+    `)
+
+    const result = rows.map(c => {
+      const fc = [c.has_outdoor_plaza, c.has_commercial, c.has_school, c.has_park].filter(Boolean).length
+      const actByDemands = Math.min(100, c.demand_count * 15)
+      const actByBudget = Math.min(100, c.total_budget / 500)
+      const activityScore = Math.round(actByDemands * 0.6 + actByBudget * 0.4)
+      const scores = {
+        scale:    dimScore(c.households || 0, RADAR_DIMS[0].maxRaw),
+        family:   dimScore((parseFloat(c.family_ratio) || 0) + (parseFloat(c.elderly_ratio) || 0), RADAR_DIMS[1].maxRaw),
+        facility: dimScore(fc, RADAR_DIMS[2].maxRaw),
+        space:    dimScore(parseFloat(c.public_space_area) || 0, RADAR_DIMS[3].maxRaw),
+        activity: activityScore,
+        matching: dimScore(c.success_matches || 0, RADAR_DIMS[5].maxRaw),
+        merchant: dimScore(c.merchant_count || 0, RADAR_DIMS[6].maxRaw),
+        exposure: dimScore(c.total_views || 0, RADAR_DIMS[7].maxRaw),
+      }
+      const vals = Object.values(scores)
+      const overall = Math.round(vals.reduce((a, b) => a + b, 0) / vals.length)
+      return {
+        id: c.id,
+        realName: c.real_name,
+        communityName: c.community_name,
+        scores,
+        overall,
+      }
+    })
+
+    success(res, result)
+  } catch (err) {
+    console.error('getCommunityScores error:', err)
+    error(res, '获取社区评分概览失败')
   }
 }
 

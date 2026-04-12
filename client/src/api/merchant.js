@@ -70,3 +70,6 @@ export const getMyNotifications = (params) => request.get('/merchant/notificatio
 export const getUnreadCount = () => request.get('/merchant/notifications/unread-count')
 export const markNotificationsRead = () => request.post('/merchant/notifications/mark-read')
 export const markOneNotificationRead = (id) => request.put(`/merchant/notifications/${id}/read`)
+
+// ====== 位置服务 ======
+export const saveLocation = (data) => request.post('/merchant/location', data)

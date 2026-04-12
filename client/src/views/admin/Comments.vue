@@ -15,17 +15,35 @@
         </div>
         <el-table :data="demandComments" stripe border v-loading="loading">
           <el-table-column type="index" width="50" />
-          <el-table-column prop="content" label="留言内容" min-width="200" show-overflow-tooltip>
+          <el-table-column prop="demand_title" label="关联需求" min-width="180" show-overflow-tooltip>
             <template #default="{ row }">
-              <div style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ row.content }}</div>
+              <el-link type="primary" :underline="false" @click="goToDemand(row.demand_id)">
+                {{ row.demand_title || '未知需求' }}
+              </el-link>
             </template>
           </el-table-column>
-          <el-table-column label="留言者" width="150">
+          <el-table-column label="留言者" width="130">
             <template #default="{ row }">
-              <span>{{ row.community_name || row.merchant_name || '用户' }}</span>
-              <el-tag size="small" :type="row.user_type === 1 ? 'primary' : 'success'" style="margin-left:4px">
+              <div style="display:flex;align-items:center;gap:4px">
+                <el-avatar :size="20" :src="row.community_logo || row.merchant_logo">
+                  <el-icon><User /></el-icon>
+                </el-avatar>
+                <span>{{ row.community_name || row.merchant_name || '用户' }}</span>
+              </div>
+              <el-tag size="small" :type="row.user_type === 1 ? 'primary' : 'success'" style="margin-left:24px">
                 {{ row.user_type === 1 ? '社区' : '商家' }}
               </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="content" label="留言内容" min-width="200" show-overflow-tooltip>
+            <template #default="{ row }">
+              <div style="max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ row.content }}</div>
+            </template>
+          </el-table-column>
+          <el-table-column label="回复" width="80" align="center">
+            <template #default="{ row }">
+              <el-tag v-if="row.reply_count > 0" type="info" size="small">{{ row.reply_count }}条回复</el-tag>
+              <span v-else style="color:#909399;font-size:12px">-</span>
             </template>
           </el-table-column>
           <el-table-column prop="created_at" label="时间" width="160">
@@ -66,17 +84,38 @@
         </div>
         <el-table :data="resourceComments" stripe border v-loading="loading">
           <el-table-column type="index" width="50" />
-          <el-table-column prop="content" label="留言内容" min-width="200" show-overflow-tooltip>
+          <el-table-column prop="resource_title" label="关联资源" min-width="180" show-overflow-tooltip>
             <template #default="{ row }">
-              <div style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ row.content }}</div>
+              <el-link type="warning" :underline="false" @click="goToResource(row.resource_id)">
+                {{ row.resource_title || '未知资源' }}
+              </el-link>
+              <div v-if="row.resource_merchant_name" style="font-size:11px;color:#909399">
+                {{ row.resource_merchant_name }}
+              </div>
             </template>
           </el-table-column>
-          <el-table-column label="留言者" width="150">
+          <el-table-column label="留言者" width="130">
             <template #default="{ row }">
-              <span>{{ row.community_name || row.merchant_name || '用户' }}</span>
-              <el-tag size="small" :type="row.user_type === 1 ? 'primary' : 'success'" style="margin-left:4px">
+              <div style="display:flex;align-items:center;gap:4px">
+                <el-avatar :size="20" :src="row.community_logo || row.merchant_logo">
+                  <el-icon><User /></el-icon>
+                </el-avatar>
+                <span>{{ row.community_name || row.merchant_name || '用户' }}</span>
+              </div>
+              <el-tag size="small" :type="row.user_type === 1 ? 'primary' : 'success'" style="margin-left:24px">
                 {{ row.user_type === 1 ? '社区' : '商家' }}
               </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="content" label="留言内容" min-width="200" show-overflow-tooltip>
+            <template #default="{ row }">
+              <div style="max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ row.content }}</div>
+            </template>
+          </el-table-column>
+          <el-table-column label="回复" width="80" align="center">
+            <template #default="{ row }">
+              <el-tag v-if="row.reply_count > 0" type="info" size="small">{{ row.reply_count }}条回复</el-tag>
+              <span v-else style="color:#909399;font-size:12px">-</span>
             </template>
           </el-table-column>
           <el-table-column prop="created_at" label="时间" width="160">
@@ -109,10 +148,32 @@
     </el-tabs>
 
     <!-- 留言详情对话框 -->
-    <el-dialog v-model="showDetail" title="留言详情" width="600px" v-if="currentComment">
-      <el-descriptions :column="2" border>
+    <el-dialog v-model="showDetail" title="留言详情" width="650px" v-if="currentComment">
+      <!-- 关联信息 -->
+      <div class="related-info" v-if="currentComment.demand_title || currentComment.resource_title">
+        <el-alert :type="currentComment.demand_id ? 'success' : 'warning'" :closable="false" show-icon>
+          <template #title>
+            <span v-if="currentComment.demand_id">
+              <el-icon><Link /></el-icon>
+              关联需求：<el-link type="primary" @click="goToDemand(currentComment.demand_id); showDetail = false">{{ currentComment.demand_title }}</el-link>
+            </span>
+            <span v-else>
+              <el-icon><Link /></el-icon>
+              关联资源：<el-link type="warning" @click="goToResource(currentComment.resource_id); showDetail = false">{{ currentComment.resource_title }}</el-link>
+              <span v-if="currentComment.resource_merchant_name" style="color:#909399;font-size:12px"> ({{ currentComment.resource_merchant_name }})</span>
+            </span>
+          </template>
+        </el-alert>
+      </div>
+
+      <el-descriptions :column="2" border style="margin-top:12px">
         <el-descriptions-item label="留言者">
-          {{ currentComment.community_name || currentComment.merchant_name || '用户' }}
+          <div style="display:flex;align-items:center;gap:6px">
+            <el-avatar :size="24" :src="currentComment.community_logo || currentComment.merchant_logo">
+              <el-icon><User /></el-icon>
+            </el-avatar>
+            {{ currentComment.community_name || currentComment.merchant_name || '用户' }}
+          </div>
         </el-descriptions-item>
         <el-descriptions-item label="身份">
           <el-tag :type="currentComment.user_type === 1 ? 'primary' : 'success'" size="small">
@@ -128,9 +189,30 @@
           </el-tag>
         </el-descriptions-item>
         <el-descriptions-item label="留言内容" :span="2">
-          <div style="white-space:pre-wrap;line-height:1.6;max-height:200px;overflow-y:auto">{{ currentComment.content }}</div>
+          <div style="white-space:pre-wrap;line-height:1.6;max-height:150px;overflow-y:auto">{{ currentComment.content }}</div>
         </el-descriptions-item>
       </el-descriptions>
+
+      <!-- 多轮回复列表 -->
+      <div v-if="currentComment.replies && currentComment.replies.length" class="reply-list">
+        <el-divider content-position="left">
+          <span style="font-weight:600">对话记录 ({{ currentComment.replies.length }}条回复)</span>
+        </el-divider>
+        <div class="reply-item" v-for="reply in currentComment.replies" :key="reply.id">
+          <div class="reply-header">
+            <el-avatar :size="20" :src="reply.avatar">
+              <el-icon><User /></el-icon>
+            </el-avatar>
+            <span class="reply-name">{{ reply.sender }}</span>
+            <el-tag size="small" :type="reply.user_type === 1 ? 'primary' : 'success'">
+              {{ reply.user_type === 1 ? '社区' : '商家' }}
+            </el-tag>
+            <span class="reply-time">{{ formatTime(reply.created_at) }}</span>
+          </div>
+          <div class="reply-content">{{ reply.content }}</div>
+        </div>
+      </div>
+
       <template #footer>
         <el-button @click="showDetail = false">关闭</el-button>
         <el-button v-if="currentComment.status === 1" type="danger" @click="deleteComment(currentComment); showDetail = false">删除留言</el-button>
@@ -141,9 +223,12 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Warning } from '@element-plus/icons-vue'
+import { Warning, User, Link } from '@element-plus/icons-vue'
 import { getComments, deleteComment as deleteCommentApi } from '@/api/admin'
+
+const router = useRouter()
 
 const activeTab = ref('demand')
 const loading = ref(false)
@@ -256,6 +341,14 @@ function formatTime(time) {
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`
 }
 
+function goToDemand(id) {
+  if (id) router.push(`/admin/demands?highlight=${id}`)
+}
+
+function goToResource(id) {
+  if (id) router.push(`/admin/resources?highlight=${id}`)
+}
+
 onMounted(() => {
   loadDemandComments()
 })
@@ -267,6 +360,48 @@ onMounted(() => {
 .tip-banner { background: #fff8e1; border: 1px solid #ffe58f; border-radius: 8px; padding: 10px 16px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; color: #E6A23C; font-size: 13px; }
 .filter-bar { display: flex; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
 .pagination { margin-top: 16px; display: flex; justify-content: flex-end; }
+
+.related-info { margin-bottom: 0; }
+
+.reply-list {
+  margin-top: 16px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.reply-item {
+  background: #f5f7fa;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 8px;
+}
+
+.reply-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.reply-name {
+  font-weight: 600;
+  font-size: 13px;
+  color: #303133;
+}
+
+.reply-time {
+  font-size: 11px;
+  color: #909399;
+  margin-left: auto;
+}
+
+.reply-content {
+  font-size: 13px;
+  color: #606266;
+  line-height: 1.6;
+  padding-left: 26px;
+  white-space: pre-wrap;
+}
 
 @media (max-width: 768px) {
   .page {

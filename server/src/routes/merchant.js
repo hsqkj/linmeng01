@@ -76,4 +76,7 @@ router.get('/notifications/unread-count', MerchantController.getUnreadCount)
 router.post('/notifications/mark-read', MerchantController.markNotificationsRead)
 router.put('/notifications/:id/read', MerchantController.markOneNotificationRead)
 
+// 位置服务
+router.post('/location', MerchantController.saveLocation)
+
 module.exports = router

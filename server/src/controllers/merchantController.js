@@ -8,6 +8,17 @@ const { pool } = require('../config/db')
 const jwtConfig = require('../config/jwt')
 const { success, pageSuccess, error } = require('../utils/response')
 const { calculateMatchScore, getMatchHearts } = require('../utils/matching')
+const typeMapper = require('../services/typeMapper')
+
+// 使用统一映射服务映射需求数据
+function mapDemandWithTypes(demand) {
+  return typeMapper.mapDemand(demand)
+}
+
+// 使用统一映射服务映射需求列表
+function mapDemandListWithTypes(demands) {
+  return typeMapper.mapDemandList(demands)
+}
 
 // 登录
 exports.login = async (req, res) => {
@@ -187,7 +198,7 @@ exports.getConfig = async (req, res) => {
 // 推荐需求（公开接口，不需要登录）
 exports.getRecommendDemands = async (req, res) => {
   try {
-    await Promise.all([loadDemandTypes(), loadResidentTypes(), loadCommunityTags(), loadResourceTypes()])
+    // 使用统一映射服务，不需要等待加载（服务启动时已初始化）
     const [demands] = await pool.query(
       `SELECT d.*, c.community_name, c.district, c.street, c.households
        FROM demands d
@@ -197,13 +208,11 @@ exports.getRecommendDemands = async (req, res) => {
        LIMIT 20`
     )
 
-    // 公开接口统一返回中等匹配度，登录后展示个性化
+    // 使用统一映射服务处理需求数据
     const result = demands.map(d => ({
-      ...d,
-      demand_type_name: DEMAND_TYPE_MAP[d.demand_type] || '需求',
+      ...mapDemandWithTypes(d),
       matchScore: 3,
       matchHearts: 3,
-      ...mapDemandFields(d)
     }))
 
     success(res, result)
@@ -217,19 +226,60 @@ exports.getRecommendDemands = async (req, res) => {
 let DEMAND_TYPE_MAP = {}
 let demandTypeLoaded = false
 
+// 默认需求类型
+const DEFAULT_DEMAND_TYPES = [
+  '活动赞助', '专家服务', '空间运营', '物资赞助', '健康服务', '教育培训'
+]
+
 async function loadDemandTypes() {
   if (demandTypeLoaded) return
   try {
+    // 首先尝试从 demand_types 配置加载
     const [rows] = await pool.query("SELECT config_value FROM sys_configs WHERE config_key = 'demand_types'")
-    if (rows.length > 0) {
-      const types = JSON.parse(rows[0].config_value)
-      types.forEach((name, idx) => {
-        DEMAND_TYPE_MAP[idx] = name
-        DEMAND_TYPE_MAP[name] = name
-      })
+    if (rows.length > 0 && rows[0].config_value) {
+      try {
+        const types = JSON.parse(rows[0].config_value)
+        if (Array.isArray(types) && types.length > 0) {
+          types.forEach((name, idx) => {
+            DEMAND_TYPE_MAP[idx] = name
+            DEMAND_TYPE_MAP[name] = name
+          })
+          demandTypeLoaded = true
+          return
+        }
+      } catch (e) {
+        console.error('解析需求类型配置失败:', e.message)
+      }
     }
+    // 如果没有配置或解析失败，尝试从 basic_types 加载
+    const [basicRows] = await pool.query("SELECT config_value FROM sys_configs WHERE config_key = 'basic_types'")
+    if (basicRows.length > 0 && basicRows[0].config_value) {
+      try {
+        const config = JSON.parse(basicRows[0].config_value)
+        if (config.demandTypes && Array.isArray(config.demandTypes) && config.demandTypes.length > 0) {
+          config.demandTypes.forEach((name, idx) => {
+            DEMAND_TYPE_MAP[idx] = name
+            DEMAND_TYPE_MAP[name] = name
+          })
+          demandTypeLoaded = true
+          return
+        }
+      } catch (e) {
+        console.error('解析基础类型配置失败:', e.message)
+      }
+    }
+    // 如果都没有，使用默认类型
+    DEFAULT_DEMAND_TYPES.forEach((name, idx) => {
+      DEMAND_TYPE_MAP[idx] = name
+      DEMAND_TYPE_MAP[name] = name
+    })
   } catch (e) {
     console.error('加载需求类型失败:', e.message)
+    // 使用默认类型作为后备
+    DEFAULT_DEMAND_TYPES.forEach((name, idx) => {
+      DEMAND_TYPE_MAP[idx] = name
+      DEMAND_TYPE_MAP[name] = name
+    })
   }
   demandTypeLoaded = true
 }
@@ -283,7 +333,13 @@ async function loadResidentTypes() {
     if (rows.length > 0) {
       const config = JSON.parse(rows[0].config_value)
       if (config.residentTypes && config.residentTypes.length > 0) {
-        RESIDENT_TYPE_MAP = config.residentTypes.filter(t => t.enabled !== false).map(t => t.name || t)
+        // 兼容两种格式：字符串数组或对象数组
+        RESIDENT_TYPE_MAP = config.residentTypes
+          .filter(t => {
+            if (typeof t === 'string') return true
+            return t.enabled !== false
+          })
+          .map(t => typeof t === 'string' ? t : (t.name || t))
       }
     }
   } catch (e) {
@@ -300,19 +356,30 @@ let communityTagLoaded = false
 async function loadCommunityTags() {
   if (communityTagLoaded) return
   try {
-    const [rows] = await pool.query("SELECT config_value FROM sys_configs WHERE config_key = 'basic_types'")
+    // 从 tags 表加载社区标签（type = 'community'）
+    const [rows] = await pool.query("SELECT id, name FROM tags WHERE type = 'community' AND status = 1 ORDER BY id")
     if (rows.length > 0) {
-      const config = JSON.parse(rows[0].config_value)
-      if (config.communityTags && config.communityTags.length > 0) {
-        const map = {}
-        config.communityTags.filter(t => t.enabled !== false).forEach((t, idx) => {
-          map[idx + 1] = t.name || t
-        })
-        COMMUNITY_TAG_MAP = map
+      const map = {}
+      rows.forEach((t) => {
+        map[t.id] = t.name
+      })
+      COMMUNITY_TAG_MAP = map
+    } else {
+      // 如果标签表为空，使用默认标签（用于开发环境）
+      COMMUNITY_TAG_MAP = {
+        1: '传统文化', 2: '体育健身', 3: '教育培训', 4: '健康养生',
+        5: '亲子活动', 6: '志愿服务', 7: '节庆活动', 8: '便民服务',
+        9: '社区治理', 10: '环境保护'
       }
     }
   } catch (e) {
     console.error('加载社区标签失败:', e.message)
+    // 使用默认标签作为后备
+    COMMUNITY_TAG_MAP = {
+      1: '传统文化', 2: '体育健身', 3: '教育培训', 4: '健康养生',
+      5: '亲子活动', 6: '志愿服务', 7: '节庆活动', 8: '便民服务',
+      9: '社区治理', 10: '环境保护'
+    }
   }
   communityTagLoaded = true
 }
@@ -373,8 +440,8 @@ function mapDemandFields(d) {
 
 exports.getDemands = async (req, res) => {
   try {
-    await Promise.all([loadDemandTypes(), loadResidentTypes(), loadCommunityTags(), loadResourceTypes()])
-    const { page = 1, pageSize = 10, type, district, street, community, sort, keyword } = req.query
+    // 使用统一映射服务，不需要等待加载
+    const { page = 1, pageSize = 10, type, district, street, community, sort, keyword, lat, lng } = req.query
     const offset = (page - 1) * pageSize
 
     let where = 'd.status = 1 AND c.status = 1'
@@ -395,31 +462,37 @@ exports.getDemands = async (req, res) => {
         }
       }
     }
-    
+
     if (district) {
       where += ' AND c.district LIKE ?'
       params.push(`%${district}%`)
     }
-    
+
     if (street) {
       where += ' AND c.street LIKE ?'
       params.push(`%${street}%`)
     }
-    
+
     if (community) {
       where += ' AND c.community_name LIKE ?'
       params.push(`%${community}%`)
     }
-    
+
     if (keyword) {
-      where += ' AND (d.title LIKE ? OR d.content LIKE ?)'
-      params.push(`%${keyword}%`, `%${keyword}%`)
+      where += ' AND (d.title LIKE ? OR d.content LIKE ? OR c.community_name LIKE ? OR c.district LIKE ? OR c.street LIKE ?)'
+      params.push(`%${keyword}%`, `%${keyword}%`, `%${keyword}%`, `%${keyword}%`, `%${keyword}%`)
     }
-    
-    const orderBy = 'd.created_at DESC'
-    
+
+    // 判断是否需要按距离排序
+    const hasLocation = lat && lng && !isNaN(parseFloat(lat)) && !isNaN(parseFloat(lng))
+    let orderBy = 'd.created_at DESC'
+
+    if (hasLocation && sort === 'distance') {
+      orderBy = `(6371 * 2 * ASIN(SQRT(POWER(SIN((${parseFloat(lat)} - c.lat) * PI() / 180 / 2), 2) + COS(${parseFloat(lat)} * PI() / 180) * COS(c.lat * PI() / 180) * POWER(SIN((${parseFloat(lng)} - c.lng) * PI() / 180 / 2), 2)))) ASC`
+    }
+
     const [rows] = await pool.query(
-      `SELECT d.*, c.community_name, c.district, c.street, c.households
+      `SELECT d.*, c.community_name, c.district, c.street, c.households, c.lat, c.lng
        FROM demands d
        JOIN communities c ON d.community_id = c.id
        WHERE ${where}
@@ -427,20 +500,30 @@ exports.getDemands = async (req, res) => {
        LIMIT ? OFFSET ?`,
       [...params, parseInt(pageSize), parseInt(offset)]
     )
-    
+
     const [[{ total }]] = await pool.query(
       `SELECT COUNT(*) as total FROM demands d JOIN communities c ON d.community_id = c.id WHERE ${where}`,
       params
     )
 
-    const result = rows.map(d => ({
-      ...d,
-      demand_type_name: DEMAND_TYPE_MAP[d.demand_type] || '需求',
-      matchScore: 3,
-      matchHearts: 3,
-      ...mapDemandFields(d)
-    }))
-    
+    // 使用统一映射服务处理需求数据，并计算距离
+    const userLat = parseFloat(lat)
+    const userLng = parseFloat(lng)
+
+    const result = rows.map(d => {
+      const mapped = mapDemandWithTypes(d)
+      // 如果有用户坐标且社区有坐标，计算距离
+      if (hasLocation && d.lat && d.lng) {
+        const distance = calculateDistance(userLat, userLng, d.lat, d.lng)
+        mapped.distance_km = distance
+      }
+      return {
+        ...mapped,
+        matchScore: 3,
+        matchHearts: 3,
+      }
+    })
+
     pageSuccess(res, result, total, page, pageSize)
   } catch (err) {
     console.error('getDemands error:', err)
@@ -448,10 +531,23 @@ exports.getDemands = async (req, res) => {
   }
 }
 
+// 计算两点之间的距离（km）- Haversine公式
+function calculateDistance(lat1, lng1, lat2, lng2) {
+  const R = 6371 // 地球半径（km）
+  const dLat = (lat2 - lat1) * Math.PI / 180
+  const dLng = (lng2 - lng1) * Math.PI / 180
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLng / 2) * Math.sin(dLng / 2)
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+  return R * c
+}
+
 // 需求详情（公开接口，联系方式根据会员等级决定）
 exports.getDemandDetail = async (req, res) => {
   try {
-    await Promise.all([loadDemandTypes(), loadResidentTypes(), loadCommunityTags(), loadResourceTypes()])
+    // 使用统一映射服务，不需要等待加载
     const { id } = req.params
 
     const [rows] = await pool.query(
@@ -469,14 +565,13 @@ exports.getDemandDetail = async (req, res) => {
     await pool.query('UPDATE demands SET view_count = view_count + 1 WHERE id = ?', [id])
     
     const row = rows[0]
-    row.demand_type_name = DEMAND_TYPE_MAP[row.demand_type] || '需求'
+
+    // 使用统一映射服务处理需求数据
+    const mapped = mapDemandWithTypes(row)
 
     // 添加匹配度信息
-    row.matchScore = 3
-    row.matchHearts = 3
-
-    // 映射数组字段
-    const mapped = mapDemandFields(row)
+    mapped.matchScore = 3
+    mapped.matchHearts = 3
 
     // 联系方式：仅金牌会员（Lv3）及以上可见
     let canViewContact = false
@@ -572,7 +667,12 @@ exports.getResourceDetail = async (req, res) => {
   try {
     const { id } = req.params
     
-    const [rows] = await pool.query('SELECT * FROM resources WHERE id = ?', [id])
+    const [rows] = await pool.query(`
+      SELECT r.*, m.lat, m.lng, m.address as merchant_address
+      FROM resources r
+      JOIN merchants m ON r.merchant_id = m.id
+      WHERE r.id = ?
+    `, [id])
     
     if (rows.length === 0) {
       return error(res, '资源不存在', 404)
@@ -674,16 +774,37 @@ exports.createResource = async (req, res) => {
     } else if (typeof resourceType === 'string' && typeMap[resourceType] !== undefined) {
       resourceType = typeMap[resourceType]
     }
-    
+
+    // AI 审核（异步进行，不阻塞发布）
+    let auditResult = { passed: true, reason: '', level: 'low' }
+    try {
+      const aiAuditService = require('../services/aiAuditService')
+      auditResult = await aiAuditService.auditContent({
+        title: data.title || '',
+        description: data.content || '',
+        type: 'resource'
+      })
+    } catch (e) {
+      console.error('AI audit failed:', e)
+    }
+
+    // 根据审核结果设置状态
+    // level=high 直接拒绝，level=medium 待人工复核（status=0），level=low 通过（status=0待人工）
+    let initialStatus = 0 // 默认待审核
+    if (auditResult.level === 'high') {
+      return error(res, `内容审核未通过：${auditResult.reason}。请修改后重新发布。`, 400)
+    }
+
     const [result] = await pool.query(
       `INSERT INTO resources (merchant_id, resource_type, title, content, images, tags,
        min_amount, max_amount, quantity, specs, pickup_way, staff_count,
        work_duration, manpower_desc, service_scope, certification,
        price_range, professional_type, media_channels, media_desc,
-       goods_expiry, fund_scenes, space_area, capacity, facilities, open_hours,
+       goods_expiry, goods_items, fund_scenes, space_area, capacity, facilities, open_hours,
        work_type, salary_range,
-       valid_until, expected_rewards, expected_reward_desc, status)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       valid_until, expected_rewards, expected_reward_desc, status,
+       ai_audit_level, ai_audit_reason)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [data.merchant_id, resourceType, data.title, data.content,
        JSON.stringify(data.images || []), JSON.stringify(data.tags || []),
        data.min_amount || 0, data.max_amount || 0, data.quantity || 0, data.specs || '', data.pickup_way || '',
@@ -691,14 +812,23 @@ exports.createResource = async (req, res) => {
        data.service_scope || '', data.certification || '', data.price_range || '',
        data.professional_type || '',
        JSON.stringify(data.media_channels || []), data.media_desc || '',
-       data.goods_expiry || null, JSON.stringify(data.fund_scenes || []),
+       data.goods_expiry || null, JSON.stringify(data.goods_items || []), JSON.stringify(data.fund_scenes || []),
        data.space_area || 0, data.capacity || 0, JSON.stringify(data.facilities || []), data.open_hours || '',
        data.work_type || '', data.salary_range || '',
        data.valid_until || null,
-       JSON.stringify(data.expected_rewards || []), data.expected_reward_desc || '', 0]
+       JSON.stringify(data.expected_rewards || []), data.expected_reward_desc || '', initialStatus,
+       auditResult.level, auditResult.reason || null]
     )
-    
-    success(res, { id: result.insertId }, '资源发布成功，请等待审核')
+
+    // 根据审核等级返回不同提示
+    let message = '资源发布成功，请等待审核'
+    if (auditResult.level === 'low' && auditResult.reason) {
+      message = `资源发布成功${auditResult.reason}`
+    } else if (auditResult.level === 'medium') {
+      message = `资源发布成功，需要人工复核：${auditResult.reason}`
+    }
+
+    success(res, { id: result.insertId, auditLevel: auditResult.level }, message)
   } catch (err) {
     console.error('Create resource error:', err.message, err.stack)
     error(res, '发布资源失败: ' + err.message)
@@ -1330,6 +1460,54 @@ exports.markNotificationsRead = async (req, res) => {
   } catch (err) {
     console.error('markNotificationsRead error:', err)
     error(res, '标记已读失败')
+  }
+}
+
+// 保存商家坐标
+exports.saveLocation = async (req, res) => {
+  try {
+    const { lat, lng } = req.body
+    const merchantId = req.merchant.id
+
+    if (lat === null || lng === null || isNaN(lat) || isNaN(lng)) {
+      return error(res, '经纬度参数无效', 400)
+    }
+
+    if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+      return error(res, '经纬度超出有效范围', 400)
+    }
+
+    // 同时更新 POINT 字段（MySQL spatial）
+    await pool.query(
+      'UPDATE merchants SET lat = ?, lng = ?, map_location = ST_GeomFromText(?) WHERE id = ?',
+      [lat, lng, `POINT(${lng} ${lat})`, merchantId]
+    )
+
+    success(res, null, '位置信息已保存')
+  } catch (err) {
+    console.error('saveLocation error:', err)
+    error(res, '保存位置失败')
+  }
+}
+
+// 保存社区坐标（管理员代为保存）
+exports.saveCommunityLocation = async (req, res) => {
+  try {
+    const { community_id, lat, lng } = req.body
+
+    if (!community_id || lat === null || lng === null) {
+      return error(res, '参数不完整', 400)
+    }
+
+    await pool.query(
+      'UPDATE communities SET lat = ?, lng = ?, map_location = ST_GeomFromText(?) WHERE id = ?',
+      [lat, lng, `POINT(${lng} ${lat})`, community_id]
+    )
+
+    success(res, null, '社区位置已保存')
+  } catch (err) {
+    console.error('saveCommunityLocation error:', err)
+    error(res, '保存社区位置失败')
   }
 }
 

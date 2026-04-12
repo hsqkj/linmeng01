@@ -69,15 +69,59 @@
 
         <!-- 物资支持 -->
         <template v-if="form.resource_type === '物资支持'">
-          <el-form-item label="物资清单" required>
-            <el-input v-model="form.goodsDetail" type="textarea" :rows="5"
-              placeholder="请详细列出可提供的物资，如：
-- 矿泉水 500ml，可提供500瓶
-- 礼品袋 可提供200个，规格：28×35cm
-- 车辆租赁：可提供几台、何种车型
-- 优惠券：面值多少、数量多少
-每种物资单独列出，包含数量和规格，便于社区快速判断" />
+          <el-form-item label="物资类型（可多选）" required>
+            <div class="tag-selector">
+              <el-check-tag v-for="t in goodsTypes" :key="t" :checked="form.goodsItems.some(g => g.name === t)" @change="toggleGoodsType(t)" class="selector-tag">{{ t }}</el-check-tag>
+            </div>
           </el-form-item>
+
+          <!-- 物资清单详情 -->
+          <div v-if="form.goodsItems.length > 0" class="goods-list">
+            <h4>物资清单详情</h4>
+            <el-form-item v-for="(item, index) in form.goodsItems" :key="index" :label="'物资' + (index + 1) + '：' + item.name">
+              <el-card shadow="never" class="goods-item-card">
+                <el-row :gutter="12">
+                  <el-col :span="8">
+                    <el-form-item label="数量">
+                      <el-input-number v-model="item.quantity" :min="1" placeholder="数量" style="width:100%" />
+                    </el-form-item>
+                  </el-col>
+                  <el-col :span="8">
+                    <el-form-item label="单位">
+                      <el-select v-model="item.unit" placeholder="选择单位" style="width:100%" allow-create filterable allow-create-default-input>
+                        <el-option label="个" value="个" />
+                        <el-option label="本" value="本" />
+                        <el-option label="箱" value="箱" />
+                        <el-option label="瓶" value="瓶" />
+                        <el-option label="盒" value="盒" />
+                        <el-option label="袋" value="袋" />
+                        <el-option label="件" value="件" />
+                        <el-option label="台" value="台" />
+                        <el-option label="套" value="套" />
+                        <el-option label="张" value="张" />
+                        <el-option label="份" value="份" />
+                      </el-select>
+                    </el-form-item>
+                  </el-col>
+                  <el-col :span="8">
+                    <el-form-item label="规格/说明">
+                      <el-input v-model="item.spec" placeholder="如：500ml、儿童绘本" />
+                    </el-form-item>
+                  </el-col>
+                </el-row>
+                <el-button type="danger" plain size="small" @click="removeGoodsItem(index)">移除</el-button>
+              </el-card>
+            </el-form-item>
+          </div>
+
+          <!-- 添加自定义物资 -->
+          <el-form-item label="添加自定义物资">
+            <div class="add-custom-goods">
+              <el-input v-model="customGoodsName" placeholder="输入自定义物资名称" style="width:200px" />
+              <el-button @click="addCustomGoods" :disabled="!customGoodsName.trim()">添加</el-button>
+            </div>
+          </el-form-item>
+
           <el-row :gutter="16">
             <el-col :span="12">
               <el-form-item label="有效期至（可选）">
@@ -368,6 +412,8 @@ const typeConfig = {
 }
 
 const professionalTypes = ref([])
+const goodsTypes = ref([]) // 物资类型（从API加载）
+const customGoodsName = ref('') // 自定义物资名称
 const merchantTagOptions = ref(['连锁品牌', '本地企业', '上市公司', '高端品牌', '大众品牌', '公益导向', '长期合作', '亲子品牌', '老年服务', '全国服务', '精准获客', '社会责任'])
 const communityTypeOptions = ref([])
 const expectedRewardOptions = ref(['活动冠名权', '现场展台', '社区公众号宣传', '业主群推送', '荣誉证书', '现场横幅', '宣传栏展示', '主持人口播', '媒体报道', '感谢状'])
@@ -391,6 +437,10 @@ async function loadPublishTypes() {
     if (data.professional_service_types && data.professional_service_types.length > 0) {
       professionalTypes.value = data.professional_service_types
     }
+    // 加载物资类型
+    if (data.goods_types && data.goods_types.length > 0) {
+      goodsTypes.value = data.goods_types
+    }
     // 加载社区类型配置
     if (data.community_types && data.community_types.length > 0) {
       communityTypeOptions.value = data.community_types
@@ -407,7 +457,7 @@ onMounted(() => {
 const form = ref({
   resource_type: '', title: '', content: '', tags: [], resourceImages: [],
   min_amount: 0, max_amount: 50000, fundScenes: [],
-  goodsDetail: '', goodsExpiry: '', pickup_way: 'both', goodsImages: [],
+  goodsItems: [], goodsExpiry: '', pickup_way: 'both', goodsImages: [], // goodsItems: [{name, quantity, unit, spec}]
   staff_count: 1, work_duration: 4, manpowerDesc: '',
   professionalType: '', qualification: '', serviceScope: 'city', pricingType: 'free',
   mediaChannels: [], coverage: '', mediaDesc: '',
@@ -459,6 +509,33 @@ function addCustomTag() {
   }
   form.value.tags.push(tag)
   customTag.value = ''
+}
+
+// 物资类型切换
+function toggleGoodsType(name) {
+  const idx = form.value.goodsItems.findIndex(g => g.name === name)
+  if (idx >= 0) {
+    form.value.goodsItems.splice(idx, 1)
+  } else {
+    form.value.goodsItems.push({ name, quantity: 1, unit: '个', spec: '' })
+  }
+}
+
+// 移除物资项目
+function removeGoodsItem(index) {
+  form.value.goodsItems.splice(index, 1)
+}
+
+// 添加自定义物资
+function addCustomGoods() {
+  const name = customGoodsName.value.trim()
+  if (!name) return
+  if (form.value.goodsItems.some(g => g.name === name)) {
+    ElMessage.warning('该物资已添加')
+    return
+  }
+  form.value.goodsItems.push({ name, quantity: 1, unit: '个', spec: '' })
+  customGoodsName.value = ''
 }
 
 function nextStep() {
@@ -572,6 +649,10 @@ h3 { font-size: 18px; margin-bottom: 20px; color: #303133; }
 .preview-item .label { color: #909399; margin-right: 8px; }
 .tip-box { color: #E6A23C; font-size: 13px; display: flex; align-items: center; gap: 6px; }
 .step-actions { display: flex; justify-content: center; gap: 16px; margin-top: 32px; padding-bottom: 40px; }
+.goods-list { background: #f8f9fa; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+.goods-list h4 { margin: 0 0 12px 0; color: #303133; font-size: 14px; }
+.goods-item-card { margin-bottom: 12px; }
+.add-custom-goods { display: flex; align-items: center; gap: 12px; }
 
 @media (max-width: 768px) {
   .type-cards { grid-template-columns: 1fr 1fr; }

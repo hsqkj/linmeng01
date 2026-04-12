@@ -14,6 +14,8 @@ export const getDashboard = (params) => request.get('/admin/dashboard', { params
 export const getCommunities = (params) => request.get('/admin/users/communities', { params })
 export const getCommunityDetail = (id) => request.get(`/admin/users/communities/${id}`)
 export const updateCommunityStatus = (id, data) => request.put(`/admin/users/communities/${id}/status`, data)
+export const getCommunityProfile = (id) => request.get(`/admin/community/profile/${id}`)
+export const getCommunityScores = () => request.get('/admin/community/scores')
 
 // ====== 商家管理 ======
 export const getMerchants = (params) => request.get('/admin/users/merchants', { params })
@@ -151,3 +153,6 @@ export const getQuickQuestions = () => request.get('/admin/config/quick-question
 export const createQuickQuestion = (data) => request.post('/admin/config/quick-questions', data)
 export const updateQuickQuestion = (id, data) => request.put(`/admin/config/quick-questions/${id}`, data)
 export const deleteQuickQuestion = (id) => request.delete(`/admin/config/quick-questions/${id}`)
+
+// ====== 社区位置管理 ======
+export const saveCommunityLocation = (data) => request.post('/admin/community/location', data)

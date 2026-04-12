@@ -49,6 +49,14 @@
 3. 本地 `npm run dev` 预览（连接服务器数据库，数据完整）
 4. 确认无误后上传到服务器
 
+### 🔴 修改代码后必做（2026-04-12）
+**每次修改完代码后，必须立即：**
+1. 检查服务状态：`Get-NetTCPConnection -LocalPort 3000,5173`
+2. 如有服务未启动，启动：
+   - 后端：`Start-Process powershell -ArgumentList "-NoExit","-Command","cd 'D:\WorkBuddy\20260331205655\server'; node src/app.js" -WindowStyle Normal`
+   - 前端：`Start-Process powershell -ArgumentList "-NoExit","-Command","cd 'D:\WorkBuddy\20260331205655\client'; npm run dev" -WindowStyle Normal`
+3. 用 `preview_url` 打开预览让用户验证
+
 ### 数据库配置（sys_configs）
 | 配置键 | 说明 |
 |--------|------|
@@ -157,6 +165,22 @@
 | 场地支持 | 🏠 | 会议室、活动室、运动场等场地空间资源支持 |
 | 其他 | 📋 | 其他类型的资源支持 |
 
+### 物资类型（goodsTypes）配置（12种，2026-04-12更新）
+| 类型 | 说明 |
+|------|------|
+| 图书绘本 | 儿童绘本、文学书籍等 |
+| 食品饮料 | 矿泉水、饮料、水果、零食等 |
+| 文体用品 | 笔、本子、文具等 |
+| 生活用品 | 日用品、家居用品等 |
+| 电子设备 | 电脑、投影仪、音响等 |
+| 活动物料 | 横幅、气球、彩旗等 |
+| 防疫物资 | 口罩、消毒液等 |
+| 服装鞋帽 | 服装、鞋子、帽子等 |
+| 玩具礼品 | 玩具、奖品、礼品等 |
+| 交通工具 | 车辆、电动车等 |
+| 优惠券券 | 优惠券、兑换券等 |
+| 其他物资 | 其他物资 |
+
 ### 目标对象（target_audience）数字→中文
 | 数字 | 中文 |
 |------|------|
@@ -240,3 +264,133 @@
    - admin/Resources.vue：资源类型从数字显示改为映射中文
    - server/communityController.js：getDemands 的 type 参数加 parseInt() 强制转整数
    - 新增映射函数：getServiceScopeLabel、getPricingTypeLabel、getTechTypeLabel、getTechServiceTypeLabel、getMediaChannelLabel
+
+### 社区画像与雷达图（2026-04-12）
+
+**后端新增 API**：
+- `GET /admin/community/profile/:id` - 获取单个社区八维评分详情
+- `GET /admin/community/scores` - 获取所有社区评分概览（列表用）
+
+**八维评价体系**：
+| 维度 | 指标 | 计算方式 |
+|------|------|---------|
+| 社区规模 | households（户数） | min(100, 户数/2000×100) |
+| 家庭结构 | family_ratio + elderly_ratio | min(100, 占比/100×100) |
+| 配套设施 | 广场/商业/学校/公园 | min(100, 设施数/4×100) |
+| 公共空间 | public_space_area（m²） | min(100, 面积/10000×100) |
+| 活跃程度 | 发布需求数+预算规模 | 发布数×15×60% + 预算/500×40% |
+| 撮合能力 | intentions表 success_matches | min(100, 成功撮合数/20×100) |
+| 商业资源 | merchant_count（商户数） | min(100, 商户数/50×100) |
+| 平台曝光 | 总浏览量 | min(100, 浏览量/2000×100) |
+
+**前端页面**：`client/src/views/admin/CommunityProfile.vue`
+- SVG 雷达图（6轴），无外部依赖
+- 雷达图颜色：绿(≥80)/黄(≥50)/红(<50)
+- 维度详情卡片展示原始数据
+- 综合评分 = 六维平均分
+
+**访问入口**：
+- 侧边栏：用户管理 → 社区画像（独立菜单）
+- 社区列表：操作列 → 「画像」按钮
+
+### 云存储接入（2026-04-12）
+- **存储桶**：hsqkj-1304867442（上海 ap-shanghai）
+- **密钥**：已配置在 `server/.env.local`（已加入 .gitignore 保护）
+- **SDK**：`cos-nodejs-sdk-v5` 已安装
+- **配置开关**：`USE_COS=true` 启用云存储，`false` 回退本地存储
+- **已修改文件**：
+  - `server/src/config/cos.js` - COS 配置
+  - `server/src/services/cosUploadService.js` - 上传服务
+  - `server/src/routes/upload.js` - 上传路由
+  - `server/src/controllers/publicController.js` - 图片上传接口
+  - `server/src/app.js` - 注册 upload 路由
+
+### 商家端需求广场/首页修复（2026-04-12 22:30）
+**问题**：1) 搜索框没有绑定回车搜索；2) 需求类型/标签显示为数字或占位符
+
+**修复内容**：
+1. **搜索框回车事件**：`client/src/views/merchant/Demands.vue` 添加 `@keyup.enter="doSearch"`
+2. **需求类型映射**：`server/src/controllers/merchantController.js` 的 `loadDemandTypes()` 函数添加默认值（活动赞助、专家服务、空间运营、物资赞助、健康服务、教育培训）
+3. **居民类型映射**：`loadResidentTypes()` 函数修复兼容字符串/对象两种数组格式
+4. **社区标签映射**：`loadCommunityTags()` 函数从 `tags` 表加载（type='community'），表为空时使用默认标签（传统文化、体育健身、教育培训、健康养生、亲子活动、志愿服务、节庆活动、便民服务、社区治理、环境保护）
+5. **publish-types API**：`publicController.js` 添加 `communityTags` 提取
+
+**API 返回示例**：
+- `demand_type_name`: "专家服务" ✅
+- `target_audience_names`: ["中老年"] ✅
+- `tags_names`: ["传统文化","教育培训"] ✅
+
+### 统一类型映射系统（2026-04-12 23:00）
+
+**问题根因**：
+- 映射数据分散在多个地方（sys_configs表、tags表、hardcode函数）
+- 映射时机不确定，导致有时显示数字有时显示中文
+- 返回格式不一致（数字、字符串、对象数组）
+
+**解决方案**：
+1. **统一映射服务** `server/src/services/typeMapper.js`：
+   - 启动时一次性加载所有映射数据到内存
+   - 提供 `mapDemand()` / `mapResource()` 自动映射函数
+   - 兼容多种数据格式（字符串数组、对象数组、无id字段格式）
+   - 包含默认值保障
+
+2. **新 API 接口**：
+   - `GET /api/public/type-maps` - 获取所有类型映射数据
+
+3. **已修改文件**：
+   - `server/src/services/typeMapper.js` - 新建统一映射服务
+   - `server/src/app.js` - 启动时初始化映射服务
+   - `server/src/controllers/merchantController.js` - 使用统一映射
+   - `server/src/controllers/publicController.js` - 使用统一映射
+   - `server/src/routes/public.js` - 添加 type-maps 路由
+
+**映射类型支持**：
+- demandTypes, resourceTypes, activityTypes, expertTypes
+- residentTypes, communityTypes, enterpriseTypes, industryTypes
+- communityTags, resourceTags, mediaTypes, spaceTypes
+- cooperationTypes, brandDisplayTypes, professionalTypes, techTypes
+
+### 功能更新（2026-04-12 23:00）
+
+#### 1. 智能客服增强
+- **快捷问题分类**：平台服务、会员相关、合作问题、常见问题 四个分类
+- **常见FAQ列表**：5条折叠显示的FAQ，可点击查看详情
+- **关键词匹配**：支持多种问法匹配（如"密码"→"忘记密码怎么办？"）
+- **修改文件**：`client/src/components/ServiceChat.vue`
+
+#### 2. 管理后台留言管理增强
+- **关联信息显示**：留言列表显示关联的需求/资源标题
+- **多轮留言合并**：同一需求/资源的对话合并显示
+- **留言详情增强**：显示关联信息、头像、对话记录
+- **后端API**：`adminController.js` getComments 接口新增 merge 参数
+- **修改文件**：
+  - `server/src/controllers/adminController.js`
+  - `client/src/views/admin/Comments.vue`
+
+#### 3. 商家需求广场按距离排序
+- **新增排序选项**：筛选栏添加"距离最近"选项
+- **定位获取**：选择距离排序时自动获取用户位置
+- **距离显示**：需求卡片显示距离（米/km）
+- **后端距离计算**：使用 Haversine 公式计算地球表面距离
+- **修改文件**：
+  - `client/src/views/merchant/Demands.vue`
+  - `server/src/controllers/merchantController.js`
+
+### 功能更新记录（2026-04-12 21:30）
+1. **资源广场页优化**（client/src/views/community/Resources.vue）：
+   - 资源类型从下拉菜单改为标签形式展示
+   - 点击标签可直接筛选对应类型
+   - 灰色标签背景，蓝色为选中状态
+
+2. **社区首页增强**（client/src/views/community/Home.vue）：
+   - 新增"平台总浏览"统计卡片
+   - 新增 `getPlatformStats` API 调用
+   - 推荐资源卡片"立即联系"改为"留言咨询"
+
+3. **商家端首页增强**（client/src/views/merchant/Home.vue）：
+   - 新增"平台总需求"和"平台总资源"统计卡片
+
+4. **管理后台浏览量保护**（server/src/controllers/adminController.js）：
+   - dashboard API 添加浏览量安全检查
+   - 单表浏览量上限 100 万，防止异常值显示
+   - 新增 `/api/public/stats` 公开接口获取平台浏览量

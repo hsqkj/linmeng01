@@ -18,6 +18,10 @@ router.get('/users/communities', authAdmin, AdminController.getCommunities)
 router.get('/users/communities/:id', authAdmin, AdminController.getCommunityDetail)
 router.put('/users/communities/:id/status', authAdmin, AdminController.updateCommunityStatus)
 
+// 社区画像
+router.get('/community/profile/:id', authAdmin, AdminController.getCommunityProfile)
+router.get('/community/scores', authAdmin, AdminController.getCommunityScores)
+
 router.get('/users/merchants', authAdmin, AdminController.getMerchants)
 router.get('/users/merchants/:id', authAdmin, AdminController.getMerchantDetail)
 router.put('/users/merchants/:id/status', authAdmin, AdminController.updateMerchantStatus)
@@ -112,6 +116,9 @@ router.put('/config/anti-flying', authAdmin, AdminController.saveAntiFlyingConfi
 // 内容审核配置
 router.get('/config/audit', authAdmin, AdminController.getAuditConfig)
 router.put('/config/audit', authAdmin, AdminController.saveAuditConfig)
+
+// 社区位置管理
+router.post('/community/location', authAdmin, AdminController.saveCommunityLocation)
 
 // 专家类型配置
 router.get('/config/expert-types', authAdmin, AdminController.getExpertTypesConfig)

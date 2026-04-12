@@ -10,10 +10,10 @@
         <div class="resource-card">
           <div class="resource-header">
             <div class="resource-meta">
-              <el-tag :type="resourceTypeTag.value[currentResource.resource_type]" size="large" effect="dark">
+              <el-tag :type="resourceTypeTag.value?.[currentResource.resource_type] || ''" size="large" effect="dark">
                 {{ getResourceTypeName(currentResource.resource_type) }}
               </el-tag>
-              <el-tag :type="statusTypeTag[currentResource.status]" size="small" style="margin-left:8px">
+              <el-tag :type="statusTypeTag?.[currentResource.status] || 'info'" size="small" style="margin-left:8px">
                 {{ statusName[currentResource.status] }}
               </el-tag>
               <span class="match-hearts">{{ '❤️'.repeat(currentResource.match_hearts || 0) }}{{ '🤍'.repeat(5 - (currentResource.match_hearts || 0)) }}</span>
@@ -169,6 +169,17 @@
             <p class="description">{{ currentResource.valid_until }}</p>
           </div>
 
+          <!-- 商家位置地图 -->
+          <div class="section" v-if="hasLocation">
+            <h3>📍 商家位置</h3>
+            <MapDisplay
+              :lat="merchantLat"
+              :lng="merchantLng"
+              :height="260"
+              empty-text="商家尚未设置位置信息"
+            />
+          </div>
+
           <!-- 图片展示 -->
           <div class="section" v-if="currentResource.images && currentResource.images.length">
             <h3>📷 资源图片</h3>
@@ -230,7 +241,7 @@
           <el-button type="primary" style="width:100%;margin-bottom:8px" @click="$router.push('/merchant/resources')">
             返回资源列表
           </el-button>
-          <el-button style="width:100%" @click="$router.push('/merchant/profile')">
+          <el-button style="width:100%" @click="$router.push('/merchant/resources/edit/' + route.params.id)">
             编辑资源信息
           </el-button>
         </div>
@@ -240,12 +251,13 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { ArrowLeft } from '@element-plus/icons-vue'
 import { getResourceComments, getResourceDetail } from '@/api/merchant'
 import { replyComment } from '@/api/merchant'
+import MapDisplay from '@/components/MapDisplay.vue'
 
 const route = useRoute()
 const currentResource = ref({})
@@ -281,6 +293,20 @@ function getResourceTypeName(type) {
 function getCurrentResourceType() {
   return getResourceTypeName(currentResource.value?.resource_type)
 }
+
+// 商家坐标（来自关联的商家表）
+const merchantLat = computed(() => {
+  const v = currentResource.value?.lat
+  return (v !== null && v !== undefined) ? parseFloat(v) : null
+})
+const merchantLng = computed(() => {
+  const v = currentResource.value?.lng
+  return (v !== null && v !== undefined) ? parseFloat(v) : null
+})
+const hasLocation = computed(() =>
+  merchantLat.value !== null && merchantLng.value !== null &&
+  !isNaN(merchantLat.value) && !isNaN(merchantLng.value)
+)
 
 // 加载资源类型配置
 async function loadResourceTypes() {

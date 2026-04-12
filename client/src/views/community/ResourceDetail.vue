@@ -217,6 +217,17 @@
                 <span class="info-value">{{ resource.address }}</span>
               </div>
             </div>
+
+            <!-- 地图展示 -->
+            <div class="section" v-if="hasLocation">
+              <h3>📍 商家位置</h3>
+              <MapDisplay
+                :lat="merchantLat"
+                :lng="merchantLng"
+                :height="260"
+                empty-text="商家尚未设置位置信息"
+              />
+            </div>
           </div>
 
           <!-- 可提供内容 -->
@@ -454,6 +465,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { ArrowLeft } from '@element-plus/icons-vue'
 import { getResourceDetail, getResourceComments, createResourceComment, getMerchantDetail, getConfig } from '@/api/community'
+import MapDisplay from '@/components/MapDisplay.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -702,6 +714,20 @@ const memberLevelTagTypeMap = { 0: 'info', 1: '', 2: 'warning', 3: 'danger', 4: 
 
 const memberLevelName = computed(() => memberLevelNameData.value[resource.value?.member_level] || '普通会员')
 const memberLevelTagType = computed(() => memberLevelTagTypeMap[resource.value?.member_level] || 'info')
+
+// 商家坐标
+const merchantLat = computed(() => {
+  const v = resource.value?.merchant_lat
+  return (v !== null && v !== undefined) ? parseFloat(v) : null
+})
+const merchantLng = computed(() => {
+  const v = resource.value?.merchant_lng
+  return (v !== null && v !== undefined) ? parseFloat(v) : null
+})
+const hasLocation = computed(() =>
+  merchantLat.value !== null && merchantLng.value !== null &&
+  !isNaN(merchantLat.value) && !isNaN(merchantLng.value)
+)
 
 // 标签列表
 const resourceTagList = computed(() => {

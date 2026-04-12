@@ -74,3 +74,6 @@ export const markOneNotificationRead = (id) => request.put(`/community/notificat
 
 // ====== 公共配置 ======
 export const getPublishTypes = () => request.get('/public/publish-types')
+
+// ====== 平台统计 ======
+export const getPlatformStats = () => request.get('/public/stats')

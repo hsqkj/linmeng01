@@ -5,15 +5,25 @@
       <span style="color:#909399;font-size:13px">为您智能推荐最匹配的商家资源</span>
     </div>
 
+    <!-- 资源类型标签筛选 -->
+    <div class="type-tags-bar">
+      <el-tag
+        v-for="(t, idx) in resourceTypes"
+        :key="idx"
+        :type="filters.type === idx.toString() ? 'primary' : 'info'"
+        :effect="filters.type === idx.toString() ? 'dark' : 'light'"
+        class="type-tag-btn"
+        @click="selectType(idx.toString())"
+      >
+        {{ t }}
+      </el-tag>
+    </div>
+
     <!-- 搜索与筛选 -->
     <div class="filter-bar">
-      <el-input v-model="filters.keyword" placeholder="搜索资源名称/商家名称" style="width:240px" clearable>
+      <el-input v-model="filters.keyword" placeholder="搜索资源名称/商家名称" style="width:240px" clearable @keyup.enter="doSearch">
         <template #prefix><el-icon><Search /></el-icon></template>
       </el-input>
-      <el-select v-model="filters.type" placeholder="资源类型" style="width:140px" clearable>
-        <el-option label="全部类型" value="" />
-        <el-option v-for="t in resourceTypes" :key="t" :label="t" :value="t" />
-      </el-select>
       <el-select v-model="filters.rating" placeholder="评价等级" style="width:120px" clearable>
         <el-option label="全部等级" value="" />
         <el-option label="五星商家" value="5" />
@@ -146,6 +156,12 @@ const favoritedIds = ref(new Set())
 const filters = reactive({ keyword: '', type: '', rating: '', distance: '', matchOrder: 'match' })
 const resourceTypes = ref([])
 const resourceTypeMap = ref({})
+
+// 选择资源类型标签
+function selectType(typeIdx) {
+  filters.type = filters.type === typeIdx ? '' : typeIdx
+  doSearch()
+}
 
 // 会员等级名称映射（从API动态加载）
 const memberLevelName = ref({})
@@ -298,6 +314,26 @@ onMounted(() => {
 .page { max-width: 1200px; margin: 0 auto; }
 .page-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 16px; }
 .page-header h2 { margin: 0; font-size: 22px; font-weight: 700; }
+/* 资源类型标签栏 */
+.type-tags-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  background: #f5f7fa;
+  border-radius: 10px;
+}
+.type-tag-btn {
+  cursor: pointer;
+  transition: all 0.2s;
+  font-weight: 500;
+}
+.type-tag-btn:hover {
+  transform: scale(1.05);
+}
+
+/* 筛选栏 */
 .filter-bar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; align-items: center; }
 .resource-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
 .resource-card { cursor: pointer; transition: transform 0.2s; }
