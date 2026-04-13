@@ -42,6 +42,45 @@
         </div>
       </el-tab-pane>
 
+      <!-- 需求类型 -->
+      <el-tab-pane label="需求类型" name="demand">
+        <div class="config-section">
+          <div class="section-header">
+            <p class="section-desc">需求类型用于社区发布需求时选择，影响需求广场筛选和智能匹配</p>
+            <el-button type="primary" @click="openAdd('demandTypes','需求类型')"><el-icon><Plus /></el-icon> 新增</el-button>
+          </div>
+          <el-table :data="demandTypes" stripe border>
+            <el-table-column width="100" align="center">
+              <template #default="{ $index }">
+                <el-button text :disabled="$index === 0" @click="moveUp(demandTypes, $index)" title="上移"><el-icon><Top /></el-icon></el-button>
+                <el-button text :disabled="$index === demandTypes.length - 1" @click="moveDown(demandTypes, $index)" title="下移"><el-icon><Bottom /></el-icon></el-button>
+              </template>
+            </el-table-column>
+            <el-table-column prop="name" label="类型名称" min-width="150">
+              <template #default="{ row }">
+                <el-input v-if="row.editing" v-model="row.name" size="small" @blur="row.editing=false; saveInlineEdit(row)" @keyup.enter="row.editing=false; saveInlineEdit(row)" />
+                <span v-else>{{ row.name }}</span>
+              </template>
+            </el-table-column>
+            <el-table-column prop="desc" label="说明" min-width="200">
+              <template #default="{ row }">
+                <el-input v-if="row.editing" v-model="row.desc" size="small" @blur="saveInlineEdit(row)" />
+                <span v-else style="color:#909399;font-size:13px">{{ row.desc }}</span>
+              </template>
+            </el-table-column>
+            <el-table-column prop="enabled" label="启用" width="80" align="center">
+              <template #default="{ row }"><el-switch v-model="row.enabled" @change="saveInlineEdit(row)" /></template>
+            </el-table-column>
+            <el-table-column label="操作" width="130" align="center">
+              <template #default="{ row }">
+                <el-button text type="primary" size="small" @click="row.editing=true">编辑</el-button>
+                <el-button text type="danger" size="small" @click="deleteItem(demandTypes, row)">删除</el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+        </div>
+      </el-tab-pane>
+
       <!-- 专家类型 -->
       <el-tab-pane label="专家类型" name="expert">
         <div class="config-section">
@@ -412,6 +451,7 @@ const levelName = (data, parentId) => {
 }
 
 const activityTypes = ref([])
+const demandTypes = ref([])
 const enterpriseTypes = ref([])
 const resourceTypes = ref([])
 const expertTypes = ref([])
@@ -480,6 +520,25 @@ async function loadBasicTypes() {
       activityTypes.value = defaultActivityTypes.map(t => ({ ...t, editing: false }))
     } else {
       activityTypes.value = data.activityTypes.map(t => ({ ...t, count: t.count || 0, enabled: t.enabled !== false, editing: false }))
+    }
+
+    // 需求类型（9种）
+    const defaultDemandTypes = [
+      { name: '活动赞助', desc: '需要资金、物资、人力等赞助支持', count: 0, enabled: true },
+      { name: '专家服务', desc: '需要法律、心理、医疗等专业咨询', count: 0, enabled: true },
+      { name: '空间运营', desc: '需要场地、活动室等空间资源', count: 0, enabled: true },
+      { name: '物资赞助', desc: '需要图书、设备、食品等物资支持', count: 0, enabled: true },
+      { name: '健康服务', desc: '需要健康讲座、义诊等服务', count: 0, enabled: true },
+      { name: '教育培训', desc: '需要课程、培训、托管等服务', count: 0, enabled: true },
+      { name: '志愿服务', desc: '需要志愿者、活动协助等支持', count: 0, enabled: true },
+      { name: '文化活动', desc: '需要文艺演出、节庆活动等支持', count: 0, enabled: true },
+      { name: '技术咨询', desc: '需要软件开发、系统维护等技术支持', count: 0, enabled: true },
+    ].map(t => ({ ...t, editing: false }))
+
+    if (!data.demandTypes || data.demandTypes.length === 0) {
+      demandTypes.value = defaultDemandTypes
+    } else {
+      demandTypes.value = data.demandTypes.map(t => ({ ...t, count: t.count || 0, enabled: t.enabled !== false, editing: false }))
     }
 
     if (!data.expertTypes || data.expertTypes.length === 0) {
@@ -592,6 +651,7 @@ async function loadBasicTypes() {
 async function saveTypes() {
   await saveBasicTypesConfig({
     activityTypes: activityTypes.value.map(t => ({ name: t.name, desc: t.desc, enabled: t.enabled })),
+    demandTypes: demandTypes.value.map(t => ({ name: t.name, desc: t.desc, enabled: t.enabled })),
     enterpriseTypes: enterpriseTypes.value.map(t => ({ name: t.name, enabled: t.enabled })),
     resourceTypes: resourceTypes.value.map(t => ({ name: t.name, desc: t.desc, enabled: t.enabled })),
     expertTypes: expertTypes.value.map(t => ({ name: t.name, desc: t.desc, enabled: t.enabled })),
@@ -637,7 +697,7 @@ function openAdd(listName, title) {
 
 async function confirmAdd() {
   if (!newItemName.value.trim()) { ElMessage.warning('请输入名称'); return }
-  const lists = { activityTypes, enterpriseTypes, resourceTypes, expertTypes, industryTypes, communityTypes, residentTypes, professionalServiceTypes, goodsTypes }
+  const lists = { activityTypes, demandTypes, enterpriseTypes, resourceTypes, expertTypes, industryTypes, communityTypes, residentTypes, professionalServiceTypes, goodsTypes }
   const listRef = lists[currentList.value]
   if (listRef) {
     const item = { name: newItemName.value.trim(), count: 0, enabled: true, editing: false, desc: newItemDesc.value }

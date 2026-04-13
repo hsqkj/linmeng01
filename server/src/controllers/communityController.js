@@ -963,7 +963,7 @@ exports.replyComment = async (req, res) => {
 exports.getProfile = async (req, res) => {
   try {
     const [rows] = await pool.query(
-      `SELECT id, username, real_name, community, community_name, position, households,
+      `SELECT id, username, phone, real_name, community, community_name, position, households,
        family_ratio, elderly_ratio, public_space_area, has_outdoor_plaza, has_commercial,
        has_school, has_park, merchant_count, logo, description, images, address, tags, status,
        ST_X(map_location) as longitude, ST_Y(map_location) as latitude
@@ -1031,6 +1031,49 @@ exports.updateProfile = async (req, res) => {
 }
 
 // 奖励明细
+
+// 修改密码
+exports.updatePassword = async (req, res) => {
+  try {
+    const { oldPassword, newPassword } = req.body
+
+    if (!oldPassword || !newPassword) {
+      return error(res, '请填写旧密码和新密码', 400)
+    }
+
+    if (newPassword.length < 6) {
+      return error(res, '新密码长度不能少于6位', 400)
+    }
+
+    // 获取当前用户密码
+    const [rows] = await pool.query(
+      'SELECT password FROM communities WHERE id = ?',
+      [req.community.id]
+    )
+
+    if (rows.length === 0) {
+      return error(res, '用户不存在', 404)
+    }
+
+    // 验证旧密码
+    const isMatch = await bcrypt.compare(oldPassword, rows[0].password)
+    if (!isMatch) {
+      return error(res, '旧密码错误', 400)
+    }
+
+    // 更新新密码
+    const hashedPassword = await bcrypt.hash(newPassword, 10)
+    await pool.query(
+      'UPDATE communities SET password = ? WHERE id = ?',
+      [hashedPassword, req.community.id]
+    )
+
+    success(res, null, '密码修改成功')
+  } catch (err) {
+    console.error('updatePassword error:', err)
+    error(res, '修改密码失败')
+  }
+}
 
 // 奖励明细
 exports.getRewards = async (req, res) => {

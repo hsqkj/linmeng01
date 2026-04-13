@@ -55,12 +55,18 @@ body {
   margin-bottom: 20px;
 }
 
-/* ========== 统计卡片 ========== */
+/* ========== 统计卡片响应式 ========== */
 .lm-stat-cards {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 16px;
   margin-bottom: 24px;
+}
+@media (max-width: 1024px) {
+  .lm-stat-cards { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 768px) {
+  .lm-stat-cards { grid-template-columns: repeat(2, 1fr) !important; gap: 12px !important; margin-bottom: 16px; }
 }
 .lm-stat-card {
   background: #fff;
@@ -71,6 +77,12 @@ body {
   align-items: center;
   gap: 16px;
   transition: all .2s;
+}
+@media (max-width: 768px) {
+  .lm-stat-card { padding: 14px 16px !important; }
+  .lm-stat-icon { width: 40px !important; height: 40px !important; font-size: 18px !important; border-radius: 10px !important; }
+  .lm-stat-num { font-size: 24px !important; }
+  .lm-stat-label { font-size: 12px !important; }
 }
 .lm-stat-card:hover {
   transform: translateY(-2px);
@@ -251,10 +263,86 @@ body {
   :deep(.el-button) {
     font-size: 13px;
     padding: 8px 12px;
+    min-height: 36px;
   }
   :deep(.el-button--small) {
     font-size: 12px;
     padding: 6px 10px;
+    min-height: 32px;
+  }
+  :deep(.el-button--large) {
+    font-size: 15px;
+    padding: 10px 20px;
+    min-height: 44px;
+  }
+
+  /* 轮播图手机端优化 */
+  :deep(.el-carousel) {
+    height: 160px !important;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  :deep(.el-carousel__item) {
+    height: 160px !important;
+  }
+  :deep(.el-carousel__item h3) {
+    font-size: 16px;
+  }
+  :deep(.el-carousel__item p) {
+    font-size: 12px;
+  }
+
+  /* 卡片手机端优化 */
+  :deep(.el-card) {
+    font-size: 14px;
+    border-radius: 12px;
+  }
+  :deep(.el-card__header) {
+    padding: 12px 14px;
+    font-size: 14px;
+  }
+  :deep(.el-card__body) {
+    padding: 12px 14px;
+  }
+
+  /* 页面边距手机端优化 */
+  .lm-card {
+    padding: 16px;
+    border-radius: 12px;
+    margin-bottom: 14px;
+  }
+  .lm-section {
+    margin-bottom: 16px;
+  }
+  .lm-section-header {
+    margin-bottom: 12px;
+  }
+  .lm-section-header h2 {
+    font-size: 16px;
+  }
+
+  /* 标签页手机端优化 */
+  :deep(.el-tabs__header) {
+    margin-bottom: 12px;
+  }
+  :deep(.el-tabs__nav-wrap::after) {
+    height: 1px;
+  }
+  :deep(.el-tabs__item) {
+    font-size: 13px;
+    padding: 0 12px;
+  }
+
+  /* 搜索框手机端优化 */
+  .search-bar {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  :deep(.el-select) {
+    width: 100% !important;
+  }
+  :deep(.el-date-editor) {
+    width: 100% !important;
   }
 
   /* 分页手机端居中 */

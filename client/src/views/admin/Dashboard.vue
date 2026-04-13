@@ -47,6 +47,10 @@
         <div class="stat-label">留言数</div>
       </el-card>
       <el-card class="stat-card">
+        <div class="stat-number" style="color:#ff7875">{{ stats.total?.experts || 0 }}</div>
+        <div class="stat-label">专家数量</div>
+      </el-card>
+      <el-card class="stat-card">
         <div class="stat-number" style="color:#909399">{{ pendingTotal }}</div>
         <div class="stat-label">待审核</div>
         <el-button type="warning" size="small" style="margin-top:8px" @click="router.push('/admin/audit/demands')">去审核</el-button>
@@ -418,15 +422,57 @@ onMounted(() => {
 }
 
 @media (max-width: 768px) {
-  .dashboard-header { flex-direction: column; align-items: flex-start; }
+  .dashboard-header { flex-direction: column; align-items: flex-start; gap: 12px; }
   .dashboard-header h2 { font-size: 18px; }
   .stats-row {
     grid-template-columns: repeat(2, 1fr);
     gap: 10px;
     margin-bottom: 14px;
   }
-  .stat-number { font-size: 22px; }
-  .stat-label { font-size: 12px; }
-  .pending-items { grid-template-columns: 1fr; }
+  .stat-card {
+    padding: 14px 12px !important;
+  }
+  .stat-number { font-size: 20px; }
+  .stat-label { font-size: 11px; }
+
+  .pending-items {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .pending-item {
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+
+  .ranking-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .ranking-section h4 {
+    font-size: 14px;
+  }
+
+  .lists-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  /* 表格横向滚动 */
+  :deep(.el-table) {
+    font-size: 12px;
+  }
+  :deep(.el-table__body-wrapper) {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  :deep(.el-table__header th) {
+    padding: 8px 0;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  :deep(.el-table__body td) {
+    padding: 8px 4px;
+    white-space: nowrap;
+  }
 }
 </style>

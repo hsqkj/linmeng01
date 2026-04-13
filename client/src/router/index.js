@@ -109,7 +109,8 @@ const routes = [
       { path: 'records', name: 'AmbassadorRecords', component: () => import('@/views/ambassador/Records.vue') },
       { path: 'commission', name: 'AmbassadorCommission', component: () => import('@/views/ambassador/Commission.vue') },
       { path: 'withdraw', name: 'AmbassadorWithdraw', component: () => import('@/views/ambassador/Withdraw.vue') },
-      { path: 'notifications', name: 'AmbassadorNotifications', component: () => import('@/views/ambassador/Notifications.vue') }
+      { path: 'notifications', name: 'AmbassadorNotifications', component: () => import('@/views/ambassador/Notifications.vue') },
+      { path: 'profile', name: 'AmbassadorProfile', component: () => import('@/views/ambassador/Profile.vue') }
     ]
   },
   // 管理后台

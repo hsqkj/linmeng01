@@ -258,9 +258,36 @@ router.afterEach((to) => {
 .mobile-nav-item.active { color: #26a269; }
 
 @media (max-width: 768px) {
-  .header { padding: 0 16px; height: 54px; }
-  .logo-text { font-size: 16px; }
-  .header-right { gap: 10px; }
-  .main-content { padding: 16px; padding-bottom: 72px; }
+  .header { padding: 0 12px; height: 50px; }
+  .logo-icon { width: 34px; height: 34px; }
+  .logo-emoji { font-size: 18px; }
+  .logo-text { font-size: 15px; }
+  .logo-sub { font-size: 10px; }
+  .header-right { gap: 8px; }
+  .user-info { padding: 4px 8px; }
+  .main-content { padding: 12px; padding-bottom: 70px; }
+
+  /* 底部导航优化 */
+  .mobile-nav {
+    padding: 6px 0;
+    height: 60px;
+  }
+  .mobile-nav-item {
+    padding: 4px 12px;
+    font-size: 10px;
+  }
+  .mobile-nav-item .el-icon {
+    font-size: 22px;
+  }
+
+  /* 浮动客服按钮位置调整 */
+  :deep(.service-float-btn) {
+    right: 12px;
+    bottom: 70px;
+  }
+  :deep(.float-icon) {
+    width: 44px;
+    height: 44px;
+  }
 }
 </style>

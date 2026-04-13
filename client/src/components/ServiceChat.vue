@@ -59,9 +59,9 @@
               <el-icon :class="{ 'faq-arrow': true, 'expanded': showFaq }"><ArrowRight /></el-icon>
             </div>
             <div v-if="showFaq" class="faq-list">
-              <div v-for="(faq, idx) in faqs" :key="idx" class="faq-item" @click="sendQuickQuestion(faq.q)">
-                <div class="faq-q">{{ idx + 1 }}. {{ faq.q }}</div>
-                <div class="faq-a">{{ faq.a }}</div>
+              <div v-for="(faq, idx) in faqs" :key="idx" class="faq-item" @click="sendQuickQuestion(faq.question)">
+                <div class="faq-q">{{ idx + 1 }}. {{ faq.question }}</div>
+                <div class="faq-a">{{ faq.answer }}</div>
               </div>
             </div>
           </div>
@@ -117,9 +117,9 @@
 </template>
 
 <script setup>
-import { ref, nextTick, onMounted } from 'vue'
+import { ref, computed, nextTick, onMounted } from 'vue'
 import { ChatDotRound, Service, Close, User, Promotion, MagicStick, ArrowRight } from '@element-plus/icons-vue'
-import { getServiceConfig, getFaqList } from '@/api/admin'
+import { getServiceConfig, getFaqList, getQuickQuestions } from '@/api/public'
 
 const visible = ref(false)
 const loading = ref(false)
@@ -142,27 +142,18 @@ const serviceConfig = ref({
 
 // 快捷问题分类（默认）
 const defaultCategories = [
-  {
-    label: '平台服务',
-    questions: ['平台是什么？', '如何发布需求？', '如何发布资源？', '撮合奖励是什么？', '会员权益有哪些？']
-  },
-  {
-    label: '会员相关',
-    questions: ['如何成为金牌会员？', '会员权益有哪些？', '如何升级会员？', '会员到期怎么办？']
-  },
-  {
-    label: '合作问题',
-    questions: ['如何联系商家/社区？', '撮合成功的标准？', '招商大使是什么？', '如何成为大使？']
-  },
-  {
-    label: '常见问题',
-    questions: ['忘记密码怎么办？', '如何修改个人信息？', '如何取消会员？', '联系方式是多少？']
-  }
+  { key: 'platform', label: '平台服务', questions: ['平台是什么？', '如何发布需求？', '如何发布资源？', '撮合奖励是什么？', '会员权益有哪些？'] },
+  { key: 'member', label: '会员相关', questions: ['如何成为金牌会员？', '会员权益有哪些？', '如何升级会员？', '会员到期怎么办？'] },
+  { key: 'cooperation', label: '合作问题', questions: ['如何联系商家/社区？', '撮合成功的标准？', '招商大使是什么？', '如何成为大使？'] },
+  { key: 'common', label: '常见问题', questions: ['忘记密码怎么办？', '如何修改个人信息？', '如何取消会员？', '联系方式是多少？'] }
 ]
 
 const quickCategories = ref(defaultCategories)
 const expandedCategory = ref(0)
-const quickQuestions = ref(quickCategories.value[0].questions)
+const quickQuestions = computed(() => {
+  const cat = quickCategories.value[expandedCategory.value]
+  return cat ? cat.questions : []
+})
 
 // 常见FAQ列表（默认）
 const defaultFaqs = [
@@ -197,10 +188,31 @@ const defaultAiReplies = {
 // AI回复（动态）
 const aiReplies = ref({ ...defaultAiReplies })
 
+// 动态关键词映射表（从FAQ的keywords字段生成）
+const keywordMap = ref({
+  // 默认关键词映射
+  '金牌': '如何成为金牌会员？',
+  '忘记密码': '忘记密码怎么办？',
+  '密码': '忘记密码怎么办？',
+  '找回密码': '忘记密码怎么办？',
+  '取消会员': '如何取消会员？',
+  '退订': '如何取消会员？',
+  '升级': '如何升级会员？',
+  '续费': '会员到期怎么办？',
+  '到期': '会员到期怎么办？',
+  '联系': '如何联系商家/社区？',
+  '联系方式': '联系方式是多少？',
+  '电话': '联系方式是多少？',
+  '热线': '联系方式是多少？',
+  '投诉': '联系方式是多少？',
+  '反馈': '联系方式是多少？',
+  '投诉建议': '联系方式是多少？'
+})
+
 // 从API加载配置
 async function loadServiceConfig() {
   try {
-    // 并行加载设置和FAQ
+    // 并行加载设置、FAQ和快捷问题
     const [configRes, faqRes] = await Promise.all([
       getServiceConfig(),
       getFaqList()
@@ -218,27 +230,48 @@ async function loadServiceConfig() {
     
     // 加载FAQ
     if (faqRes?.data?.length) {
-      faqs.value = faqRes.data
+      faqs.value = faqRes.data.slice(0, 5) // 只显示前5条常见FAQ
+      
       // 从FAQ生成快捷问题和回复
-      const newQuestions = []
-      faqRes.data.forEach((faq, idx) => {
+      faqRes.data.forEach((faq) => {
         if (faq.enabled !== false) {
-          newQuestions.push(faq.question)
           // 动态添加FAQ的回复
           aiReplies.value[faq.question] = faq.answer
+          
+          // 处理关键词匹配（支持多种问法）
+          if (faq.keywords) {
+            const keywords = faq.keywords.split(/[,，;；]/).map(k => k.trim()).filter(k => k)
+            keywords.forEach(keyword => {
+              // 关键词映射到问题
+              keywordMap.value[keyword.toLowerCase()] = faq.question
+            })
+          }
         }
       })
-      if (newQuestions.length > 0) {
-        // 按分类重组
-        const catCount = Math.ceil(newQuestions.length / 4)
-        quickCategories.value = [
-          { label: '常见问题', questions: newQuestions.slice(0, catCount) },
-          { label: '使用帮助', questions: newQuestions.slice(catCount, catCount * 2) },
-          { label: '会员相关', questions: newQuestions.slice(catCount * 2, catCount * 3) },
-          { label: '其他问题', questions: newQuestions.slice(catCount * 3) }
-        ].filter(c => c.questions.length > 0)
-        quickQuestions.value = quickCategories.value[0]?.questions || []
+    }
+    
+    // 加载快捷问题（带分类和回答）
+    try {
+      const quickRes = await getQuickQuestions()
+      if (quickRes.data?.questions && quickRes.data.questions.length > 0) {
+        const cats = quickRes.data.categories || defaultCategories.map(c => ({ key: c.key, label: c.label }))
+        quickCategories.value = quickRes.data.questions.map((cat, idx) => ({
+          key: cat.category,
+          label: cats.find(c => c.key === cat.category)?.label || cats[idx]?.label || '其他',
+          questions: (cat.questions || []).filter(q => q.enabled).map(q => q.text)
+        })).filter(c => c.questions.length > 0)
+        
+        // 同时用快捷问题的回答填充 aiReplies
+        quickRes.data.questions.forEach(cat => {
+          (cat.questions || []).forEach(q => {
+            if (q.enabled && q.text && q.answer) {
+              aiReplies.value[q.text] = q.answer
+            }
+          })
+        })
       }
+    } catch (e) {
+      console.warn('加载快捷问题失败，使用默认配置:', e)
     }
   } catch (err) {
     console.warn('加载客服配置失败，使用默认配置:', err)
@@ -260,70 +293,23 @@ function switchCategory(idx) {
   quickQuestions.value = quickCategories.value[idx].questions
 }
 
-// 常见FAQ列表（折叠显示）
-const faqs = ref([
-  { q: '社区发布需求需要什么条件？', a: '社区账号完成认证后即可免费发布需求。建议详细填写需求类型、活动内容、目标人群等信息，便于精准匹配。' },
-  { q: '商家入驻需要哪些资料？', a: '商家入驻需要提供营业执照、法人信息、商家简介等资料。审核通过后即可发布资源。' },
-  { q: '撮合成功后奖励如何发放？', a: '当社区与商家双方确认合作意向后，平台将自动记录撮合信息。奖励以物资形式发放给社区。' },
-  { q: '金牌会员有什么特权？', a: '金牌会员可查看商家详细联系方式、参与撮合奖励计划、获得优先匹配推荐等。' },
-  { q: '资源发布后多久能收到反馈？', a: '资源发布后会即时进入匹配系统。建议完善资源描述和目标人群，可提高匹配效率和曝光度。' }
-])
+// 组件挂载时加载配置
+onMounted(() => {
+  loadServiceConfig()
+})
 
-// 模拟AI回复（支持多种问法）
-const aiReplies = {
-  // 平台服务类
-  '平台是什么？': '邻盟是一个社区资源智能匹配平台，致力于连接社区与商家，帮助社区获取更多资源支持，助商家精准触达目标社区。我们提供智能匹配、在线对接、撮合奖励等一站式服务。',
-  '如何发布需求？': '登录社区端后，点击首页「发布新需求」按钮，填写：需求标题、需求类型、详细描述、目标人群、期望回报等信息。填写越详细，匹配越精准！',
-  '如何发布资源？': '登录商家端后，点击「发布赞助资源」按钮，填写：资源类型、内容描述、赞助方式、目标人群、合作要求等信息。优质资源将获得更多曝光机会。',
-  '撮合奖励是什么？': '当您发布的社区需求与商家资源成功撮合（双方确认合作意向）后，平台将给予物资奖励！这是邻盟为支持社区发展提供的特别福利。',
-  '会员权益有哪些？': '邻盟会员分为五个等级：\n• 普通会员：免费，基本功能\n• 银牌会员：¥999/年，基础权益\n• 金牌会员：¥2999/年，查看联系方式+撮合奖励\n• 铂金会员：¥5999/年，优先推荐+更多权益\n• 钻石会员：¥12000/年，全功能+专属服务',
-
-  // 会员相关类
-  '如何成为金牌会员？': '金牌会员需缴纳年费2999元/年。登录后进入「会员中心」即可升级。金牌会员权益包括：查看商家详细联系方式、优先匹配推荐、参与撮合奖励计划等。',
-  '如何升级会员？': '登录后进入「会员中心」，选择您想要的会员等级并完成支付即可升级。支持支付宝、微信支付。',
-  '会员到期怎么办？': '会员到期前7天系统会发送提醒短信。到期后会自动降级为普通会员，功能权益会有所限制。您可以随时续费恢复原有权益。',
-  '如何取消会员？': '取消会员请致客服热线 400-888-8888。取消后当月权益仍可使用，次月1日起按普通会员标准计费。',
-
-  // 合作问题类
-  '如何联系商家/社区？': '您可以在资源广场/需求广场浏览并点击「立即联系」提交合作意向。商家审核通过后，双方即可通过平台内留言功能沟通。金牌及以上会员可直接查看对方联系方式。',
-  '撮合成功的标准？': '当社区与商家双方确认合作意向，且意向状态变为"已接受/已合作"时，即视为撮合成功。届时平台会记录并发放相应奖励。',
-  '招商大使是什么？': '招商大使是邻盟的合作伙伴，负责推广平台、招募社区和商家入驻。成功介绍可获得提成：首次介绍20%提成，续费10%提成。成为大使请联系平台客服。',
-  '如何成为大使？': '成为招商大使非常简单！联系平台客服或前往「招商大使」页面申请即可。无需缴纳费用，成功推荐商家/社区入驻即可获得奖励。',
-
-  // 常见问题类
-  '忘记密码怎么办？': '在登录页面点击「忘记密码」，输入注册手机号，系统会发送验证码到您的手机，验证后即可设置新密码。',
-  '如何修改个人信息？': '登录后进入「个人中心」-「编辑资料」，可以修改头像、昵称、联系方式等信息。商家用户还可以修改公司介绍。',
-  '联系方式是多少？': '客服热线：400-888-8888（工作日 9:00-18:00）\n邮箱：12494789@qq.com\n微信：搜索公众号「邻盟平台」'
-}
-
-// 关键词匹配函数
+// 关键词匹配函数（使用动态关键词映射表）
 function findBestMatch(input) {
   const lower = input.toLowerCase()
 
   // 精确匹配
-  if (aiReplies[input]) return aiReplies[input]
+  if (aiReplies.value[input]) return aiReplies.value[input]
 
-  // 关键词匹配
-  const keywords = {
-    '金牌': '如何成为金牌会员？',
-    '忘记密码': '忘记密码怎么办？',
-    '密码': '忘记密码怎么办？',
-    '取消会员': '如何取消会员？',
-    '退订': '如何取消会员？',
-    '升级': '如何升级会员？',
-    '续费': '会员到期怎么办？',
-    '到期': '会员到期怎么办？',
-    '联系': '如何联系商家/社区？',
-    '联系方式': '联系方式是多少？',
-    '电话': '联系方式是多少？',
-    '热线': '联系方式是多少？',
-    '投诉': '联系方式是多少？',
-    '反馈': '联系方式是多少？'
-  }
-
-  for (const [key, question] of Object.entries(keywords)) {
-    if (lower.includes(key)) {
-      return aiReplies[question]
+  // 遍历关键词映射表进行匹配
+  for (const [keyword, question] of Object.entries(keywordMap.value)) {
+    if (lower.includes(keyword.toLowerCase())) {
+      const reply = aiReplies.value[question]
+      if (reply) return reply
     }
   }
 

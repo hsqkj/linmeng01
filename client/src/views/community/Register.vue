@@ -252,12 +252,10 @@ async function sendCode() {
   try {
     await sendSms({ phone: form.phone, type: 'register' })
     ElMessage.success('验证码已发送')
-  } catch (e) {
-    // 降级：使用默认验证码
+  } catch {
+    ElMessage.error('发送验证码失败，请稍后重试')
+    return
   }
-  // 自动填入测试验证码
-  form.code = '123456'
-  ElMessage.info('测试验证码：123456')
   counting.value = true
   countdown.value = 60
 

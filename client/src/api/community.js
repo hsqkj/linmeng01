@@ -54,6 +54,7 @@ export const replyComment = (id, data) => request.post(`/community/comments/${id
 // ====== 个人中心 ======
 export const getProfile = () => request.get('/community/profile')
 export const updateProfile = (data) => request.put('/community/profile', data)
+export const updatePassword = (data) => request.put('/community/password', data)
 
 // ====== 奖励明细 ======
 export const getRewards = (params) => request.get('/community/rewards', { params })

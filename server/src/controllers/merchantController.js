@@ -101,11 +101,12 @@ exports.register = async (req, res) => {
     
     await pool.query(
       `INSERT INTO merchants (username, password, company_name, credit_code, business_license,
-       logo, description, company_type, industry, resource_types, contact_name, phone,
-       address, tags, ambassador_id, member_level, status)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0)`,
+       logo, description, company_type, industry, scale, district, street, community,
+       resource_types, contact_name, phone, address, tags, ambassador_id, member_level, status)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0)`,
       [username, hashedPassword, data.company_name, data.credit_code, data.business_license,
-       data.logo, data.description, data.company_type || 'merchant', data.industry,
+       data.logo, data.description, data.company_type || 'merchant', data.industry, data.scale || '',
+       data.district || '', data.street || '', data.community || '',
        JSON.stringify(data.resource_types || []), data.contact_name, data.phone,
        data.address, JSON.stringify(data.tags || []), data.ambassador_id || null]
     )
@@ -1249,6 +1250,49 @@ exports.updateProfile = async (req, res) => {
     success(res, null, '更新成功')
   } catch (err) {
     error(res, '更新失败')
+  }
+}
+
+// 修改密码
+exports.updatePassword = async (req, res) => {
+  try {
+    const { oldPassword, newPassword } = req.body
+
+    if (!oldPassword || !newPassword) {
+      return error(res, '请填写旧密码和新密码', 400)
+    }
+
+    if (newPassword.length < 6) {
+      return error(res, '新密码长度不能少于6位', 400)
+    }
+
+    // 获取当前用户密码
+    const [rows] = await pool.query(
+      'SELECT password FROM merchants WHERE id = ?',
+      [req.merchant.id]
+    )
+
+    if (rows.length === 0) {
+      return error(res, '用户不存在', 404)
+    }
+
+    // 验证旧密码
+    const isMatch = await bcrypt.compare(oldPassword, rows[0].password)
+    if (!isMatch) {
+      return error(res, '旧密码错误', 400)
+    }
+
+    // 更新新密码
+    const hashedPassword = await bcrypt.hash(newPassword, 10)
+    await pool.query(
+      'UPDATE merchants SET password = ? WHERE id = ?',
+      [hashedPassword, req.merchant.id]
+    )
+
+    success(res, null, '密码修改成功')
+  } catch (err) {
+    console.error('updatePassword error:', err)
+    error(res, '修改密码失败')
   }
 }
 

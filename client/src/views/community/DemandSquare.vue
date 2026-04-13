@@ -12,12 +12,7 @@
       </el-input>
       <el-select v-model="filters.type" placeholder="需求类型" style="width:130px" clearable>
         <el-option label="全部类型" value="" />
-        <el-option label="活动赞助" :value="0" />
-        <el-option label="专家服务" :value="1" />
-        <el-option label="空间运营" :value="2" />
-        <el-option label="物资赞助" :value="3" />
-        <el-option label="健康服务" :value="4" />
-        <el-option label="教育培训" :value="5" />
+        <el-option v-for="(typeName, idx) in demandTypesList" :key="idx" :label="typeName" :value="idx" />
       </el-select>
       <el-select v-model="filters.district" placeholder="区" style="width:100px" clearable>
         <el-option label="全部区" value="" />
@@ -121,6 +116,7 @@ const filters = reactive({ keyword: '', type: '', district: '', sortBy: 'newest'
 
 // 需求类型映射（从API动态加载）
 const demandTypeMap = ref({})
+const demandTypesList = ref([]) // 需求类型列表（用于筛选下拉框）
 const typeColorsMap = ref({})
 const typeColorsList = ['primary', 'success', 'warning', 'danger', 'info', '']
 function getTypeColor(idx) {
@@ -132,6 +128,7 @@ async function loadDemandTypes() {
     const res = await getPublishTypes()
     if (res.data?.demand_types?.length) {
       const map = {}
+      demandTypesList.value = res.data.demand_types // 保存类型列表用于筛选
       res.data.demand_types.forEach((name, idx) => {
         map[idx] = name
         map[name] = name

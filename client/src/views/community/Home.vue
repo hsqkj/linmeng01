@@ -3,16 +3,20 @@
     <!-- 欢迎横幅 -->
     <div class="welcome-banner" :class="{ 'not-logged-in': !isLoggedIn }">
       <div class="welcome-content">
-        <template v-if="isLoggedIn">
-          <h1>欢迎回来，{{ profile.real_name || profile.community_name || '社区用户' }}！</h1>
-          <p>{{ profile.community_name || '阳光花园社区' }} 今日有 <strong>{{ matchedResources.length }}</strong> 个新商家资源与您匹配</p>
+        <template v-if="isLoggedIn && profile.community_name">
+          <h1>欢迎回来，{{ profile.real_name || '社区用户' }}！</h1>
+          <p>{{ profile.community_name }} 今日有 <strong>{{ matchedResources.length || matchedCount }}</strong> 个新商家资源与您匹配</p>
+        </template>
+        <template v-else-if="isLoggedIn">
+          <h1>欢迎回来！</h1>
+          <p>今日有 <strong>{{ matchedResources.length || matchedCount }}</strong> 个新商家资源与您匹配</p>
         </template>
         <template v-else>
           <h1>欢迎来到邻盟平台！</h1>
           <p>连接社区与商家，精准匹配资源，共创美好生活</p>
         </template>
       </div>
-      <el-button v-if="isLoggedIn" type="primary" size="large" @click="$router.push('/community/demands/publish')">
+      <el-button v-if="isLoggedIn" type="primary" size="large" @click="goToPublish">
         <el-icon><Plus /></el-icon>
         发布新需求
       </el-button>
@@ -212,10 +216,20 @@ const openServiceChat = inject('openServiceChat', null)
 
 const banners = ref([])
 const matchedResources = ref([])
+const matchedCount = ref(0)
 const activities = ref([])
 const profile = ref({})
 const stats = ref({ demands: 0, intentions: 0, completed: 0, rewards: 0, totalDemands: 0, totalResources: 0, demandViews: 0 })
 const loading = ref(false)
+
+// 跳转到发布需求页面
+const goToPublish = () => {
+  if (!isLoggedIn) {
+    router.push('/login/community')
+  } else {
+    router.push('/community/demands/publish')
+  }
+}
 
 // 资源类型映射（从API动态加载）
 const resourceTypeNumMap = ref({})
@@ -308,7 +322,9 @@ onMounted(async () => {
 
     // 推荐资源
     if (results[1].status === 'fulfilled') {
-      matchedResources.value = (results[1].value.data || []).slice(0, 4)
+      const allResources = results[1].value.data || []
+      matchedCount.value = allResources.length
+      matchedResources.value = allResources.slice(0, 4)
     }
 
     // 平台总资源数
@@ -324,7 +340,12 @@ onMounted(async () => {
     // 只有登录后才处理个人信息
     if (isLoggedIn && results.length > 7) {
       if (results[5].status === 'fulfilled') {
-        profile.value = results[5].value.data || {}
+        const data = results[5].value.data || {}
+        profile.value = data
+        // 如果没有community_name，尝试从其他字段获取
+        if (!data.community_name && data.name) {
+          profile.value.community_name = data.name
+        }
       }
       if (results[6].status === 'fulfilled') {
         const myDemands = results[6].value.data?.list || results[6].value.data || []
@@ -396,6 +417,9 @@ const viewActivityDetail = (activity) => {
 .welcome-content { position: relative; z-index: 1; }
 .welcome-content h1 { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
 .welcome-content p { opacity: 0.9; font-size: 14px; }
+.welcome-banner :deep(.el-button) {
+  position: relative; z-index: 10;
+}
 .welcome-banner :deep(.el-button:not(.el-button--primary)) {
   background: rgba(255,255,255,.15) !important;
   border-color: rgba(255,255,255,.4) !important;
@@ -403,7 +427,6 @@ const viewActivityDetail = (activity) => {
   border-radius: 20px !important;
   font-weight: 600;
   backdrop-filter: blur(4px);
-  position: relative; z-index: 1;
 }
 .welcome-banner :deep(.el-button:hover:not(.el-button--primary)) {
   background: rgba(255,255,255,.28) !important;
@@ -524,10 +547,53 @@ const viewActivityDetail = (activity) => {
 @media (max-width: 768px) {
   .welcome-banner { flex-direction: column; text-align: center; gap: 14px; padding: 20px 16px; }
   .welcome-content h1 { font-size: 18px; }
-  .stats-row { grid-template-columns: repeat(2, 1fr); gap: 10px; }
-  .stat-icon { width: 40px; height: 40px; border-radius: 10px; }
-  .stat-value { font-size: 22px; }
-  .banner-item { padding: 0 20px; }
+  .stats-row { grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 14px; }
+  .stat-card { padding: 14px 12px !important; gap: 10px; }
+  .stat-icon { width: 40px; height: 40px; border-radius: 10px; font-size: 18px !important; }
+  .stat-value { font-size: 20px; }
+  .stat-label { font-size: 11px; }
+  .banner-item { padding: 0 16px; }
   .banner-content h3 { font-size: 16px; }
+  .banner-content p { font-size: 12px; }
+
+  /* 资源卡片移动端优化 */
+  .resource-list { grid-template-columns: 1fr; gap: 12px; }
+  .resource-card { margin-bottom: 0; }
+  .resource-header { padding-right: 0; }
+  .merchant-info h4 { font-size: 14px; }
+  .resource-actions { flex-direction: column; gap: 6px; }
+  .resource-actions .el-button { width: 100%; }
+
+  /* 章节标题 */
+  .section { margin-bottom: 20px; }
+  .section-header h2 { font-size: 16px; }
+
+  /* 轮播图 */
+  .banner-section :deep(.el-carousel) { border-radius: 12px; }
+  .banner-section :deep(.el-carousel__container) { height: 140px !important; }
+  .banner-section :deep(.el-carousel__item) { height: 140px !important; }
+
+  /* 表格容器 */
+  :deep(.el-table) { font-size: 12px; }
+  :deep(.el-table__header th) { padding: 8px 0; font-size: 12px; }
+  :deep(.el-table__body td) { padding: 8px 4px; }
+
+  /* 搜索栏 */
+  .search-bar { flex-wrap: wrap; gap: 8px; }
+  .search-bar :deep(.el-select) { width: 100% !important; }
+  .search-bar :deep(.el-date-editor) { width: 100% !important; }
+
+  /* 表单 */
+  :deep(.el-form-item) { margin-bottom: 12px; }
+  :deep(.el-form-item__label) { font-size: 13px; }
+
+  /* 按钮 */
+  :deep(.el-button) { font-size: 14px; min-height: 36px; }
+}
+
+@media (max-width: 480px) {
+  .stats-row { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .stat-card { padding: 12px 10px !important; }
+  .stat-value { font-size: 18px; }
 }
 </style>

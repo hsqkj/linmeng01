@@ -67,6 +67,7 @@ router.post('/comments/:id/reply', CommunityController.replyComment)
 // 个人中心
 router.get('/profile', CommunityController.getProfile)
 router.put('/profile', CommunityController.updateProfile)
+router.put('/password', CommunityController.updatePassword)
 
 // 奖励明细
 router.get('/rewards', CommunityController.getRewards)

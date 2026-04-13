@@ -52,6 +52,7 @@ export const getCommentReplies = (id) => request.get(`/merchant/comments/${id}/r
 // ====== 个人中心 ======
 export const getProfile = () => request.get('/merchant/profile')
 export const updateProfile = (data) => request.put('/merchant/profile', data)
+export const updatePassword = (data) => request.put('/merchant/password', data)
 
 // ====== 会员中心 ======
 export const getMemberInfo = () => request.get('/merchant/member')

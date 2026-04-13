@@ -119,19 +119,13 @@ async function sendCode() {
   if (!loginForm.value.phone) { ElMessage.warning('请先输入手机号'); return }
   if (!isValidPhone(loginForm.value.phone)) { ElMessage.warning('请输入正确的手机号（11位，以1开头）'); return }
   try {
-    const res = await sendSms({ phone: loginForm.value.phone, type: 'login' })
-    loginForm.value.code = res.data?.code || '123456'
+    await sendSms({ phone: loginForm.value.phone, type: 'login' })
+    ElMessage.success('验证码已发送')
     showAutoFill.value = true
     countdown.value = 60
-    ElMessage.success('验证码已发送（测试版）')
     const t = setInterval(() => { countdown.value--; if (countdown.value <= 0) clearInterval(t) }, 1000)
   } catch {
-    // 降级：使用默认验证码
-    loginForm.value.code = '123456'
-    showAutoFill.value = true
-    countdown.value = 60
-    ElMessage.success('验证码已发送（测试版）')
-    const t = setInterval(() => { countdown.value--; if (countdown.value <= 0) clearInterval(t) }, 1000)
+    ElMessage.error('发送验证码失败，请稍后重试')
   }
 }
 

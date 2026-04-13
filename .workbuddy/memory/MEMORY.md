@@ -237,6 +237,61 @@
    - 按资源类型显示相关字段（金额范围、物资数量、领取方式、派遣人数、服务时长、服务范围、资质证明、收费标准、媒体类型、覆盖范围）
    - 新增商家信息展示：地址(merchant_address)、Logo(merchant_logo)、资源图片(images)、商家图文(merchant_images)
    - 新增商家介绍字段：社会身份(social_identity)、资质荣誉(honors)、专家介绍(expert_intro)
+
+## 功能更新记录（2026-04-13）
+
+### 智能客服增强
+1. **快捷问题分类管理**：
+   - 管理后台快捷问题支持4个分类：平台服务、会员相关、合作问题、常见问题
+   - 后端API `getQuickQuestions` 返回分类结构数据
+   - 管理后台 `ConfigService.vue` 显示按分类分组的快捷问题列表
+
+2. **FAQ关键词匹配**：
+   - FAQ支持keywords字段（如："发布需求,发布,发布需求条件"）
+   - 用户提问时，关键词自动匹配到对应的FAQ问题
+   - 前端 `ServiceChat.vue` 从FAQ的keywords字段动态生成关键词映射表
+
+3. **常见FAQ折叠显示**：
+   - 前端智能客服显示5条常见FAQ
+   - 点击FAQ可自动发送问题并获取回复
+   - FAQ折叠/展开设计，节省界面空间
+
+4. **公开API**：
+   - `/api/public/service/config` - 获取客服基本设置
+   - `/api/public/service/faqs` - 获取FAQ列表
+   - `/api/public/service/quick-questions` - 获取分类快捷问题
+   - 这些API无需登录即可访问
+
+5. **数据库配置**：
+   - `sys_configs.service_config` - 客服基本设置
+   - `sys_configs.service_faqs` - FAQ列表（支持keywords）
+   - `sys_configs.service_quick_questions` - 分类快捷问题
+
+### 修改文件清单
+- 后端：`server/src/controllers/adminController.js` - 快捷问题分类API
+- 后端：`server/src/routes/public.js` - 添加客服公开API路由
+- 前端：`client/src/views/admin/ConfigService.vue` - 分类快捷问题管理
+- 前端：`client/src/components/ServiceChat.vue` - 分类快捷问题+关键词动态匹配
+- API：`client/src/api/public.js` - 添加客服公开API函数
+
+### 用户密码安全机制（2026-04-13）
+1. **密码加密存储**：使用 bcryptjs 加盐哈希（10轮），密码不以明文存储
+2. **修改密码API**：
+   - 社区端：`PUT /community/password` - `CommunityController.updatePassword`
+   - 商家端：`PUT /merchant/password` - `MerchantController.updatePassword`
+   - 招商大使端：`PUT /ambassador/password` - `AmbassadorController.updatePassword`
+3. **个人中心修改密码功能**：
+   - 社区端 Profile.vue 新增"修改密码"标签页
+   - 商家端 Profile.vue 新增"修改密码"标签页
+   - 招商大使端 Profile.vue 新增"修改密码"标签页（2026-04-13 新增）
+   - 验证旧密码、确认新密码、两次密码一致性校验
+4. **密码安全要求**：新密码长度不少于6位
+
+### 智能客服数据同步检查（2026-04-13）
+1. **管理后台**：`ConfigService.vue` 显示FAQ列表和快捷问题
+2. **前端组件**：`ServiceChat.vue` 从API动态加载客服配置
+3. **数据一致性**：前端从 `/api/public/service/config`、`/api/public/service/faqs`、`/api/public/service/quick-questions` 加载数据
+4. **行政区划**：前端 `Register.vue` 从 `/public/regions` API 加载，无硬编码
    - 移除不存在的字段：provide_content、expected_return（数据库中不存在）
 
 6. **商家资源期望回报功能（2026-04-11 04:00）**：
@@ -387,6 +442,29 @@
    - 新增 `getPlatformStats` API 调用
    - 推荐资源卡片"立即联系"改为"留言咨询"
 
+### 功能更新（2026-04-13 00:00）
+
+#### 1. 智能客服配置从API加载
+- **问题**：前端硬编码客服配置，更改后需要修改代码
+- **修复**：ServiceChat.vue 从 API 加载配置（欢迎语、FAQ、快捷问题、联系方式）
+- **API接口**：`getServiceConfig`, `getFaqList`
+- **默认值保障**：API失败时使用硬编码默认值
+- **修改文件**：`client/src/components/ServiceChat.vue`
+
+#### 2. 商家端首页需求卡片样式统一
+- **问题**：首页需求卡片布局与需求广场不一致
+- **修复**：Home.vue 需求卡片采用与 Demands.vue 相同的布局
+- **统一内容**：卡片头部（类型标签+收藏）、元信息（社区+地址+距离+日期）、标签、底部（所需类型+浏览数+详情按钮）
+- **修改文件**：`client/src/views/merchant/Home.vue`
+
+#### 3. 前端硬编码检查与修复
+- **问题**：多处需求类型筛选下拉框硬编码
+- **修复**：以下页面从API动态加载需求类型：
+  - `client/src/views/merchant/Demands.vue` - 添加 `demandTypesList`
+  - `client/src/views/community/DemandSquare.vue` - 添加 `demandTypesList`
+  - `client/src/views/admin/AuditDemands.vue` - 从 `getBasicTypesConfig` API 加载
+- **保留硬编码**：地区/街道数据（因行政区划稳定）
+
 3. **商家端首页增强**（client/src/views/merchant/Home.vue）：
    - 新增"平台总需求"和"平台总资源"统计卡片
 
@@ -394,3 +472,107 @@
    - dashboard API 添加浏览量安全检查
    - 单表浏览量上限 100 万，防止异常值显示
    - 新增 `/api/public/stats` 公开接口获取平台浏览量
+
+### 功能更新（2026-04-13 00:20）
+
+#### 1. 招商大使页面左侧增加个人中心入口
+- **修改文件**：`client/src/layouts/AmbassadorLayout.vue`
+- **功能**：在侧边栏和手机端抽屉菜单添加「个人中心」菜单项
+- **路由**：`/ambassador/profile`
+
+#### 2. 智能客服快捷问题回答显示修复
+- **问题**：前端 ServiceChat.vue 加载快捷问题时未使用 answer 字段
+- **修复**：在加载快捷问题时，同时用快捷问题的 answer 填充 aiReplies
+- **修改文件**：`client/src/components/ServiceChat.vue`
+
+#### 3. 商家注册添加区街社区选择
+- **修改文件**：
+  - `client/src/views/merchant/Register.vue` - 添加区街社区选择器
+  - `server/src/controllers/merchantController.js` - 注册接口添加 district/street/community 字段
+- **数据库**：`merchants` 表新增 district, street, community 字段
+- **功能**：商家注册第二步必须选择区街社区
+
+#### 4. 商家管理页面增加区街社区筛选
+- **修改文件**：
+  - `client/src/views/admin/UsersMerchant.vue` - 添加区街社区筛选器
+  - `server/src/controllers/adminController.js` - getMerchants 接口支持 district/street/community 筛选参数
+- **功能**：管理后台商家列表可按区/街道/社区筛选
+
+### Bug修复（2026-04-13 01:20）
+
+1. **社区端个人中心手机号显示**：
+   - 问题：显示的是 `username`（用户名如"jiangan_shequ"）而不是手机号
+   - 修复：`client/src/views/community/Profile.vue` 第53行改为 `{{ profile.phone || profile.username }}`
+   - 后端：`server/src/controllers/communityController.js` getProfile SELECT 增加 `phone` 字段
+
+2. **大使个人中心渠道码与账号状态数据不对**：
+   - 问题：后端 `getProfile` 只返回部分字段，缺少 `avatar`, `qr_code`, `status`
+   - 修复：`server/src/controllers/ambassadorController.js` SELECT 增加这三个字段
+
+3. **智能客服快捷问题默认回答**：
+   - 问题：数据库中快捷问题没有回答内容
+   - 修复：服务器 `sys_configs.service_quick_questions` 已配置16个快捷问题的完整回答
+   - 前端正确从 API 加载 `answer` 字段
+
+4. **需求类型配置（9种，服务器确认）**：
+   - 活动赞助、专家服务、空间运营、物资赞助、健康服务、教育培训、志愿服务、文化活动、技术咨询
+
+### Bug修复（2026-04-13 00:40）
+
+1. **商家注册页 `computed is not defined` 错误**：
+   - `Register.vue` 脚本缺少 `computed` 导入，已添加
+2. **大使个人中心500错误**：
+   - `ambassadors` 表缺少列，已 ALTER TABLE 添加 avatar/account_type/account_name/account_number
+   - SELECT 查询精简为只查存在的列
+3. **商家端首页"查看权益"按钮**：已从 `Home.vue` 移除
+4. **需求类型筛选不一致**：
+   - 管理后台 `admin/Demands.vue` 类型筛选改为从 `getPublishTypes()` API 加载，使用数字索引
+   - 后端 `adminController.js` 的 `getDemandList` 新增 `type` 参数
+   - 管理后台 `ConfigBasic.vue` 新增"需求类型"配置标签页
+   - 后端 `saveBasicTypesConfig` 保存后调用 `typeMapper.refresh()` 刷新缓存
+
+### 部署记录（2026-04-13 01:19）
+- 本地备份：`D:\WorkBuddy\backups\linmeng_backup_2026-04-13_01-19-07.zip` (264.21 MB)
+- 前端已部署到服务器：`/var/www/linmeng/client/`
+- 服务器后端已重启：`pm2 restart linmeng-server`
+- 服务器网站：http://150.158.12.243 ✅
+
+### 部署记录（2026-04-13 02:18）
+- 本地备份：`D:\WorkBuddy\backups\linmeng_backup_2026-04-13_02-15-00.zip`
+- 新增功能：
+  - 管理后台大屏增加"专家数量"统计
+  - basic_types/resourceTypes 增加"场地运营"资源类型
+  - expert_types 专家类型完整同步（29种）
+- 数据库同步：basic_types, expert_types 已同步到服务器
+- 修复：留言列表商家名称JOIN merchants表
+- 修复：商家详情页调用正确API
+- 修复：resource_favorite.create_time 字段
+
+### 移动端UI优化（2026-04-13 03:00）
+- **全局样式增强**（App.vue）：
+  - 统计卡片网格：768px以下改为2列，1024px以下改为2列
+  - 轮播图高度：移动端调整为160px
+  - 按钮最小高度：36px
+  - 表单间距优化
+  - 搜索栏换行适配
+- **社区端优化**（Home.vue）：
+  - 统计卡片2列网格，图标字号缩小
+  - 资源卡片单列布局
+  - 轮播图140px高度
+- **商家端优化**（Home.vue）：
+  - 会员卡片精简布局
+  - 轮播图140px高度
+  - 需求卡片单列布局
+- **底部Tab导航优化**（CommunityLayout.vue, MerchantLayout.vue）：
+  - 高度调整为60px
+  - 图标22px，字号10px
+  - 浮动客服按钮位置调整
+- **管理后台优化**（Dashboard.vue）：
+  - 统计卡片2列布局
+  - 表格横向滚动
+  - 响应式间距优化
+
+
+
+
+

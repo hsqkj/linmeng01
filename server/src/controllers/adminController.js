@@ -7,6 +7,7 @@ const jwt = require('jsonwebtoken')
 const { pool } = require('../config/db')
 const jwtConfig = require('../config/jwt')
 const { success, pageSuccess, error } = require('../utils/response')
+const typeMapper = require('../services/typeMapper')
 
 // 登录
 exports.login = async (req, res) => {
@@ -93,6 +94,14 @@ exports.dashboard = async (req, res) => {
     const [demands] = await pool.query('SELECT COUNT(*) as count FROM demands WHERE status = 1' + dateFilter)
     const [resources] = await pool.query('SELECT COUNT(*) as count FROM resources WHERE status = 1' + dateFilter)
     const [intentions] = await pool.query('SELECT COUNT(*) as count FROM intentions WHERE status = 3')
+    // 专家数量
+    let expertsCount = 0
+    try {
+      const [[expertsResult]] = await pool.query('SELECT COUNT(*) as count FROM experts WHERE status = 1')
+      expertsCount = expertsResult ? expertsResult.count : 0
+    } catch (e) {
+      console.log('Experts query failed, using 0')
+    }
 
     // 总浏览量（需求+资源的浏览量总和，status=1的记录）
     const [[demandViews]] = await pool.query('SELECT COALESCE(SUM(view_count), 0) as total FROM demands WHERE status = 1')
@@ -175,7 +184,8 @@ exports.dashboard = async (req, res) => {
         resources: resources[0].count,
         completedMatches: intentions[0].count,
         totalViews: safeTotalViews,
-        comments: commentsCount
+        comments: commentsCount,
+        experts: expertsCount
       },
       pending: {
         communities: pendingCommunities[0].count,
@@ -302,7 +312,7 @@ exports.updateCommunityStatus = async (req, res) => {
 // 获取商家列表
 exports.getMerchants = async (req, res) => {
   try {
-    const { page = 1, pageSize = 10, status, level, keyword, industry } = req.query
+    const { page = 1, pageSize = 10, status, level, keyword, industry, district, street, community } = req.query
     const offset = (page - 1) * pageSize
     
     let where = '1=1'
@@ -323,13 +333,28 @@ exports.getMerchants = async (req, res) => {
       params.push(industry)
     }
 
+    if (district) {
+      where += ' AND district = ?'
+      params.push(district)
+    }
+
+    if (street) {
+      where += ' AND street = ?'
+      params.push(street)
+    }
+
+    if (community) {
+      where += ' AND community = ?'
+      params.push(community)
+    }
+
     if (keyword) {
       where += ' AND (company_name LIKE ? OR contact_name LIKE ? OR phone LIKE ?)'
       params.push(`%${keyword}%`, `%${keyword}%`, `%${keyword}%`)
     }
     
     const [rows] = await pool.query(
-      `SELECT id, username, company_name, contact_name, phone, industry, member_level, star_rating, status, company_type, created_at
+      `SELECT id, username, company_name, contact_name, phone, industry, member_level, star_rating, status, company_type, district, street, community, created_at
        FROM merchants WHERE ${where} ORDER BY created_at DESC LIMIT ? OFFSET ?`,
       [...params, parseInt(pageSize), offset]
     )
@@ -855,17 +880,18 @@ exports.getComments = async (req, res) => {
     const [rows] = await pool.query(
       `SELECT c.*,
        m.company_name as merchant_name,
-       m.logo as merchant_logo,
-       com.community_name as community_name,
-       com.logo as community_logo,
-       d.title as demand_title,
-       r.title as resource_title,
-       r.company_name as resource_merchant_name
-       FROM comments c
-       LEFT JOIN merchants m ON c.user_type = 2 AND c.user_id = m.id
-       LEFT JOIN communities com ON c.user_type = 1 AND c.user_id = com.id
-       LEFT JOIN demands d ON c.demand_id IS NOT NULL AND c.demand_id = d.id
-       LEFT JOIN resources r ON c.resource_id IS NOT NULL AND c.resource_id = r.id
+      m.logo as merchant_logo,
+      com.community_name as community_name,
+      com.logo as community_logo,
+      d.title as demand_title,
+      r.title as resource_title,
+      res_m.company_name as resource_merchant_name
+      FROM comments c
+      LEFT JOIN merchants m ON c.user_type = 2 AND c.user_id = m.id
+      LEFT JOIN communities com ON c.user_type = 1 AND c.user_id = com.id
+      LEFT JOIN demands d ON c.demand_id IS NOT NULL AND c.demand_id = d.id
+      LEFT JOIN resources r ON c.resource_id IS NOT NULL AND c.resource_id = r.id
+      LEFT JOIN merchants res_m ON r.merchant_id = res_m.id
        WHERE ${where}
        ORDER BY c.created_at DESC
        LIMIT ? OFFSET ?`,
@@ -1032,6 +1058,10 @@ exports.saveBasicTypesConfig = async (req, res) => {
       "INSERT INTO sys_configs (config_key, config_value, config_type, description) VALUES ('basic_types', ?, 'basic', '基础数据类型配置') ON DUPLICATE KEY UPDATE config_value = ?",
       [JSON.stringify(config), JSON.stringify(config)]
     )
+    // 刷新类型映射缓存
+    if (typeMapper.refresh) {
+      await typeMapper.refresh()
+    }
     success(res, null, '保存成功')
   } catch (err) {
     error(res, '保存失败')
@@ -1830,11 +1860,16 @@ exports.saveExpertTypesConfig = async (req, res) => {
 // 获取需求列表（所有状态）
 exports.getDemandList = async (req, res) => {
   try {
-    const { page = 1, pageSize = 10, status, keyword, period = 'all' } = req.query
+    const { page = 1, pageSize = 10, status, type, keyword, period = 'all' } = req.query
     const offset = (page - 1) * pageSize
 
     let where = '1=1'
     let params = []
+
+    if (type !== undefined && type !== '' && type !== null) {
+      where += ' AND d.demand_type = ?'
+      params.push(parseInt(type))
+    }
 
     if (status !== undefined && status !== '' && status !== null) {
       where += ' AND d.status = ?'
@@ -1973,7 +2008,13 @@ exports.getFaqList = async (req, res) => {
   try {
     const [rows] = await pool.query("SELECT config_value FROM sys_configs WHERE config_key = 'service_faqs'")
     if (rows.length > 0) {
-      success(res, JSON.parse(rows[0].config_value))
+      const faqs = JSON.parse(rows[0].config_value)
+      // 转换为ID->FAQ映射，方便快捷问题关联
+      const faqMap = {}
+      if (Array.isArray(faqs)) {
+        faqs.forEach(f => { faqMap[f.id] = f })
+      }
+      success(res, faqs)
     } else {
       success(res, [])
     }
@@ -2091,80 +2132,162 @@ exports.deleteFaq = async (req, res) => {
   }
 }
 
-// 获取快捷问题列表
-exports.getQuickQuestions = async (req, res) => {
-  try {
-    const [rows] = await pool.query("SELECT config_value FROM sys_configs WHERE config_key = 'service_quick_questions'")
-    
-    // 默认快捷问题
-    const defaultQuestions = [
-      { id: 1, text: '如何发布资源？', sort: 1, enabled: true },
-      { id: 2, text: '会员等级有什么区别？', sort: 2, enabled: true },
-      { id: 3, text: '如何联系商家？', sort: 3, enabled: true },
+// 快捷问题分类配置
+const QUICK_QUESTION_CATEGORIES = [
+  { key: 'platform', label: '平台服务', sort: 1 },
+  { key: 'member', label: '会员相关', sort: 2 },
+  { key: 'cooperation', label: '合作问题', sort: 3 },
+  { key: 'common', label: '常见问题', sort: 4 }
+]
+
+// 默认分类快捷问题
+const DEFAULT_CATEGORIZED_QUESTIONS = [
+  { 
+    category: 'platform', 
+    questions: [
+      { id: 1, text: '平台是什么？', sort: 1, enabled: true },
+      { id: 2, text: '如何发布需求？', sort: 2, enabled: true },
+      { id: 3, text: '如何发布资源？', sort: 3, enabled: true },
       { id: 4, text: '撮合奖励是什么？', sort: 4, enabled: true }
     ]
+  },
+  { 
+    category: 'member', 
+    questions: [
+      { id: 5, text: '如何成为金牌会员？', sort: 1, enabled: true },
+      { id: 6, text: '会员权益有哪些？', sort: 2, enabled: true },
+      { id: 7, text: '如何升级会员？', sort: 3, enabled: true },
+      { id: 8, text: '会员到期怎么办？', sort: 4, enabled: true }
+    ]
+  },
+  { 
+    category: 'cooperation', 
+    questions: [
+      { id: 9, text: '如何联系商家/社区？', sort: 1, enabled: true },
+      { id: 10, text: '撮合成功的标准？', sort: 2, enabled: true },
+      { id: 11, text: '招商大使是什么？', sort: 3, enabled: true },
+      { id: 12, text: '如何成为大使？', sort: 4, enabled: true }
+    ]
+  },
+  { 
+    category: 'common', 
+    questions: [
+      { id: 13, text: '忘记密码怎么办？', sort: 1, enabled: true },
+      { id: 14, text: '如何修改个人信息？', sort: 2, enabled: true },
+      { id: 15, text: '如何取消会员？', sort: 3, enabled: true },
+      { id: 16, text: '联系方式是多少？', sort: 4, enabled: true }
+    ]
+  }
+]
+
+// 获取快捷问题列表（带分类和FAQ回答）
+exports.getQuickQuestions = async (req, res) => {
+  try {
+    // 先获取FAQ列表用于匹配
+    const [faqRows] = await pool.query("SELECT config_value FROM sys_configs WHERE config_key = 'service_faqs'")
+    let faqMap = {}
+    if (faqRows.length > 0 && faqRows[0].config_value) {
+      try {
+        const faqs = JSON.parse(faqRows[0].config_value)
+        if (Array.isArray(faqs)) {
+          faqs.forEach(f => { faqMap[f.id] = f })
+        }
+      } catch {}
+    }
+    
+    const [rows] = await pool.query("SELECT config_value FROM sys_configs WHERE config_key = 'service_quick_questions'")
     
     if (rows.length > 0 && rows[0].config_value) {
       try {
         const parsed = JSON.parse(rows[0].config_value)
-        // 确保解析结果是数组
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return success(res, parsed)
+          // 为每个快捷问题匹配FAQ回答
+          const processedQuestions = parsed.map(cat => ({
+            ...cat,
+            questions: cat.questions.map(q => ({
+              ...q,
+              // 如果快捷问题关联了FAQ，附带回答
+              answer: q.faq_id && faqMap[q.faq_id] ? faqMap[q.faq_id].answer : (q.answer || '')
+            }))
+          }))
+          return success(res, {
+            categories: QUICK_QUESTION_CATEGORIES,
+            questions: processedQuestions,
+            faqs: faqMap  // 同时返回FAQ映射，供前端使用
+          })
         }
       } catch (e) {
         console.error('Parse quick questions error:', e)
       }
     }
     
-    // 返回默认快捷问题
-    success(res, defaultQuestions)
+    // 返回默认分类快捷问题
+    success(res, {
+      categories: QUICK_QUESTION_CATEGORIES,
+      questions: DEFAULT_CATEGORIZED_QUESTIONS,
+      faqs: faqMap
+    })
   } catch (err) {
     console.error('Get quick questions error:', err)
     error(res, '获取快捷问题失败')
   }
 }
 
-// 创建快捷问题
+// 创建快捷问题（支持分类和FAQ关联）
 exports.createQuickQuestion = async (req, res) => {
   try {
-    const { text, sort = 1 } = req.body
+    const { text, sort = 1, category = 'common', enabled = true, faq_id, answer = '' } = req.body
     if (!text) return error(res, '问题文本不能为空', 400)
 
+    // 如果指定了faq_id，获取对应的回答
+    let finalAnswer = answer
+    if (faq_id && !answer) {
+      const [faqRows] = await pool.query("SELECT config_value FROM sys_configs WHERE config_key = 'service_faqs'")
+      if (faqRows.length > 0 && faqRows[0].config_value) {
+        try {
+          const faqs = JSON.parse(faqRows[0].config_value)
+          const faq = faqs.find(f => f.id == faq_id)
+          if (faq) finalAnswer = faq.answer
+        } catch {}
+      }
+    }
+
     const [rows] = await pool.query("SELECT config_value FROM sys_configs WHERE config_key = 'service_quick_questions'")
-    let questions = []
-    
-    // 默认快捷问题
-    const defaultQuestions = [
-      { id: 1, text: '如何发布资源？', sort: 1, enabled: true },
-      { id: 2, text: '会员等级有什么区别？', sort: 2, enabled: true },
-      { id: 3, text: '如何联系商家？', sort: 3, enabled: true },
-      { id: 4, text: '撮合奖励是什么？', sort: 4, enabled: true }
-    ]
+    let questions = DEFAULT_CATEGORIZED_QUESTIONS
     
     if (rows.length > 0 && rows[0].config_value) {
       try { 
         const parsed = JSON.parse(rows[0].config_value)
-        // 确保解析结果是数组
         if (Array.isArray(parsed) && parsed.length > 0) {
           questions = parsed
-        } else {
-          questions = defaultQuestions
         }
       } catch (e) {
         console.error('Parse quick questions error:', e)
-        // 解析失败时使用默认数据，但不清空现有数据
-        questions = rows[0].config_value ? defaultQuestions : []
       }
+    }
+
+    // 找到对应分类
+    let categoryObj = questions.find(c => c.category === category)
+    if (!categoryObj) {
+      // 如果分类不存在，创建新的
+      categoryObj = { category, questions: [] }
+      questions.push(categoryObj)
     }
 
     const newQuestion = {
       id: Date.now(),
       text,
       sort,
-      enabled: true
+      enabled,
+      faq_id: faq_id || null,
+      answer: finalAnswer
     }
-    questions.push(newQuestion)
-    questions.sort((a, b) => a.sort - b.sort)
+    categoryObj.questions.push(newQuestion)
+    
+    // 按排序重新排列
+    questions.forEach(cat => {
+      cat.questions.sort((a, b) => a.sort - b.sort)
+    })
 
     await pool.query(
       "INSERT INTO sys_configs (config_key, config_value, config_type, description) VALUES ('service_quick_questions', ?, 'service', '智能客服快捷问题') ON DUPLICATE KEY UPDATE config_value = ?",
@@ -2178,11 +2301,11 @@ exports.createQuickQuestion = async (req, res) => {
   }
 }
 
-// 更新快捷问题
+// 更新快捷问题（支持分类和FAQ关联）
 exports.updateQuickQuestion = async (req, res) => {
   try {
     const { id } = req.params
-    const { text, sort, enabled } = req.body
+    const { text, sort, enabled, category, faq_id, answer } = req.body
 
     const [rows] = await pool.query("SELECT config_value FROM sys_configs WHERE config_key = 'service_quick_questions'")
     if (rows.length === 0) return error(res, '快捷问题不存在', 404)
@@ -2195,13 +2318,66 @@ exports.updateQuickQuestion = async (req, res) => {
       }
     } catch {}
 
-    const idx = questions.findIndex(q => q.id == id)
-    if (idx === -1) return error(res, '快捷问题不存在', 404)
+    // 在所有分类中查找问题
+    let foundQuestion = null
+    let foundCategoryIdx = -1
+    let foundQuestionIdx = -1
+    
+    for (let i = 0; i < questions.length; i++) {
+      const idx = questions[i].questions?.findIndex(q => q.id == id)
+      if (idx !== undefined && idx !== -1) {
+        foundQuestion = questions[i].questions[idx]
+        foundCategoryIdx = i
+        foundQuestionIdx = idx
+        break
+      }
+    }
+    
+    if (!foundQuestion) return error(res, '快捷问题不存在', 404)
 
-    if (text) questions[idx].text = text
-    if (sort !== undefined) questions[idx].sort = sort
-    if (enabled !== undefined) questions[idx].enabled = enabled
-    questions.sort((a, b) => a.sort - b.sort)
+    // 处理FAQ关联
+    if (faq_id !== undefined) {
+      foundQuestion.faq_id = faq_id || null
+      // 如果指定了faq_id且没有自定义回答，从FAQ获取
+      if (faq_id && (answer === undefined || answer === '')) {
+        const [faqRows] = await pool.query("SELECT config_value FROM sys_configs WHERE config_key = 'service_faqs'")
+        if (faqRows.length > 0 && faqRows[0].config_value) {
+          try {
+            const faqs = JSON.parse(faqRows[0].config_value)
+            const faq = faqs.find(f => f.id == faq_id)
+            if (faq) foundQuestion.answer = faq.answer
+          } catch {}
+        }
+      }
+    }
+    
+    // 处理自定义回答
+    if (answer !== undefined) {
+      foundQuestion.answer = answer
+    }
+    
+    if (text) foundQuestion.text = text
+    if (sort !== undefined) foundQuestion.sort = sort
+    if (enabled !== undefined) foundQuestion.enabled = enabled
+
+    // 如果更换了分类
+    if (category && category !== questions[foundCategoryIdx].category) {
+      // 从原分类移除
+      questions[foundCategoryIdx].questions.splice(foundQuestionIdx, 1)
+      
+      // 添加到新分类
+      let targetCategory = questions.find(c => c.category === category)
+      if (!targetCategory) {
+        targetCategory = { category, questions: [] }
+        questions.push(targetCategory)
+      }
+      targetCategory.questions.push(foundQuestion)
+    }
+
+    // 按排序重新排列
+    questions.forEach(cat => {
+      cat.questions.sort((a, b) => a.sort - b.sort)
+    })
 
     await pool.query(
       "INSERT INTO sys_configs (config_key, config_value, config_type, description) VALUES ('service_quick_questions', ?, 'service', '智能客服快捷问题') ON DUPLICATE KEY UPDATE config_value = ?",
@@ -2215,7 +2391,7 @@ exports.updateQuickQuestion = async (req, res) => {
   }
 }
 
-// 删除快捷问题
+// 删除快捷问题（支持分类）
 exports.deleteQuickQuestion = async (req, res) => {
   try {
     const { id } = req.params
@@ -2231,10 +2407,22 @@ exports.deleteQuickQuestion = async (req, res) => {
       }
     } catch {}
 
-    const idx = questions.findIndex(q => q.id == id)
-    if (idx === -1) return error(res, '快捷问题不存在', 404)
-
-    questions.splice(idx, 1)
+    // 在所有分类中查找并删除问题
+    let found = false
+    for (let i = 0; i < questions.length; i++) {
+      const idx = questions[i].questions?.findIndex(q => q.id == id)
+      if (idx !== undefined && idx !== -1) {
+        questions[i].questions.splice(idx, 1)
+        // 如果分类为空，删除整个分类
+        if (questions[i].questions.length === 0) {
+          questions.splice(i, 1)
+        }
+        found = true
+        break
+      }
+    }
+    
+    if (!found) return error(res, '快捷问题不存在', 404)
 
     await pool.query(
       "INSERT INTO sys_configs (config_key, config_value, config_type, description) VALUES ('service_quick_questions', ?, 'service', '智能客服快捷问题') ON DUPLICATE KEY UPDATE config_value = ?",

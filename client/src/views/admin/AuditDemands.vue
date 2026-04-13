@@ -115,6 +115,7 @@ import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Warning } from '@element-plus/icons-vue'
 import { getDemandAuditList, passDemand, rejectDemand } from '@/api/admin'
+import { getBasicTypesConfig } from '@/api/admin'
 
 const filterType = ref(''), filterStatus = ref(0), searchKey = ref('')
 const selectedRows = ref([]), showDetail = ref(false), showRejectDialog = ref(false)
@@ -126,16 +127,27 @@ const pendingCount = ref(0)
 const page = ref(1)
 const pageSize = 10
 
-const typeLabels = {
-  0: '活动赞助', 1: '专家服务', 2: '空间运营',
-  3: '物资赞助', 4: '健康服务', 5: '教育培训'
-}
-const typeColors = {
-  0: 'primary', 1: 'success', 2: 'warning',
-  3: 'danger', 4: 'info', 5: 'warning'
-}
+// 需求类型（从API动态加载）
+const typeLabels = ref({ 0: '活动赞助', 1: '专家服务', 2: '空间运营', 3: '物资赞助', 4: '健康服务', 5: '教育培训' })
+const typeColors = ref({ 0: 'primary', 1: 'success', 2: 'warning', 3: 'danger', 4: 'info', 5: 'warning' })
 const statusLabels = { 0: '待审核', 1: '已通过', 2: '已驳回' }
 const statusColors = { 0: 'warning', 1: 'success', 2: 'danger' }
+
+// 加载需求类型配置
+async function loadTypes() {
+  try {
+    const res = await getBasicTypesConfig()
+    if (res.data?.demandTypes?.length) {
+      const labels = {}
+      const colors = ['primary', 'success', 'warning', 'danger', 'info', '']
+      res.data.demandTypes.forEach((name, idx) => {
+        labels[idx] = name
+        typeColors.value[idx] = colors[idx % colors.length]
+      })
+      typeLabels.value = labels
+    }
+  } catch {}
+}
 
 async function loadDemands() {
   loading.value = true
@@ -149,7 +161,7 @@ async function loadDemands() {
   finally { loading.value = false }
 }
 
-onMounted(() => { loadDemands() })
+onMounted(() => { loadTypes(); loadDemands() })
 
 function viewDetail(row) { currentRow.value = row; showDetail.value = true }
 

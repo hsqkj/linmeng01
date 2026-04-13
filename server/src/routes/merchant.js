@@ -59,6 +59,7 @@ router.get('/comments/:id/replies', MerchantController.getCommentReplies)
 // 个人中心
 router.get('/profile', MerchantController.getProfile)
 router.put('/profile', MerchantController.updateProfile)
+router.put('/password', MerchantController.updatePassword)
 
 // 收藏需求
 router.post('/favorites/toggle', MerchantController.toggleFavorite)

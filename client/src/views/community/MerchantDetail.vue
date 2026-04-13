@@ -282,7 +282,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { ArrowLeft } from '@element-plus/icons-vue'
-import { getResourceDetail, getResourceComments, createResourceComment } from '@/api/community'
+import { getResourceDetail, getResourceComments, createResourceComment, getMerchantDetail } from '@/api/community'
 
 const route = useRoute()
 const router = useRouter()
@@ -439,8 +439,10 @@ function formatDate(dateStr) {
 async function loadResource() {
   loading.value = true
   try {
-    const res = await getResourceDetail(route.params.id)
-    resource.value = res.data
+    const merchantId = route.params.id
+    // 获取商家详情
+    const merchantRes = await getMerchantDetail(merchantId)
+    resource.value = merchantRes.data
   } catch (e) {
     resource.value = null
   } finally {
@@ -449,32 +451,13 @@ async function loadResource() {
 }
 
 async function loadComments() {
-  try {
-    const res = await getResourceComments(route.params.id)
-    comments.value = (res.data || []).map(c => ({
-      id: c.id,
-      name: c.user_name || '社区用户',
-      avatar: c.user_logo || `https://ui-avatars.com/api/?name=${encodeURIComponent(c.user_name || '社区')}&background=4A90D9&color=fff`,
-      time: new Date(c.created_at).toLocaleString('zh-CN'),
-      text: c.content,
-      replies: []
-    }))
-  } catch (e) {
-    comments.value = []
-  }
+  // 商家详情页不加载资源留言
+  comments.value = []
 }
 
 function submitComment() {
-  if (!commentText.value.trim()) return
-  commentLoading.value = true
-  createResourceComment(route.params.id, { content: commentText.value })
-    .then(() => {
-      ElMessage.success('留言已发送')
-      commentText.value = ''
-      loadComments()
-    })
-    .catch(() => ElMessage.error('留言失败，请重试'))
-    .finally(() => { commentLoading.value = false })
+  // 商家详情页不支持留言
+  ElMessage.info('商家详情页暂不支持留言功能')
 }
 
 function leaveMessage() {

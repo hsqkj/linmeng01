@@ -5,6 +5,7 @@
 const express = require('express')
 const router = express.Router()
 const PublicController = require('../controllers/publicController')
+const AdminController = require('../controllers/adminController')
 
 // 获取验证码
 router.post('/sms/send', PublicController.sendSms)
@@ -48,5 +49,16 @@ router.get('/stats', PublicController.getStats)
 
 // 类型映射数据（统一映射服务）
 router.get('/type-maps', PublicController.getTypeMaps)
+
+// ========== 智能客服公开接口 ==========
+
+// 获取客服基本设置（公开）
+router.get('/service/config', AdminController.getServiceConfig)
+
+// 获取FAQ列表（公开）
+router.get('/service/faqs', AdminController.getFaqList)
+
+// 获取快捷问题列表（公开）
+router.get('/service/quick-questions', AdminController.getQuickQuestions)
 
 module.exports = router

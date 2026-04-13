@@ -29,3 +29,14 @@ export const uploadImage = (file) => {
     headers: { 'Content-Type': 'multipart/form-data' }
   })
 }
+
+// ========== 智能客服公开接口 ==========
+
+// 获取客服基本设置
+export const getServiceConfig = () => request.get('/public/service/config')
+
+// 获取FAQ列表
+export const getFaqList = () => request.get('/public/service/faqs')
+
+// 获取快捷问题列表
+export const getQuickQuestions = () => request.get('/public/service/quick-questions')

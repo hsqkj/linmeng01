@@ -40,6 +40,9 @@
             <span style="display:flex;align-items:center"><el-icon><Message /></el-icon>我的消息</span>
           </el-badge>
         </el-menu-item>
+        <el-menu-item index="/ambassador/profile">
+          <el-icon><User /></el-icon><template #title>个人中心</template>
+        </el-menu-item>
       </el-menu>
 
       <div class="sidebar-footer" v-if="!sidebarCollapsed">
@@ -90,6 +93,9 @@
             <span style="display:flex;align-items:center;gap:8px"><el-icon><Message /></el-icon>我的消息</span>
           </el-badge>
         </el-menu-item>
+        <el-menu-item index="/ambassador/profile">
+          <el-icon><User /></el-icon><span>个人中心</span>
+        </el-menu-item>
       </el-menu>
       <div class="drawer-footer">
         <el-button type="warning" plain style="width:100%" @click="handleLogout(); mobileDrawerVisible = false">
@@ -127,7 +133,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { House, Grid, List, Money, Wallet, Bell, Fold, Expand, SwitchButton, Menu, Message } from '@element-plus/icons-vue'
+import { House, Grid, List, Money, Wallet, Bell, Fold, Expand, SwitchButton, Menu, Message, User } from '@element-plus/icons-vue'
 import { getAmbassadorNotifications, markNotificationRead } from '@/api/ambassador'
 
 const route = useRoute()
@@ -141,7 +147,8 @@ const pageTitles = {
   '/ambassador/records': '发展记录',
   '/ambassador/commission': '提成明细',
   '/ambassador/withdraw': '提现管理',
-  '/ambassador/notifications': '我的消息'
+  '/ambassador/notifications': '我的消息',
+  '/ambassador/profile': '个人中心'
 }
 const pageTitle = computed(() => pageTitles[route.path] || '招商大使中心')
 
@@ -287,6 +294,13 @@ const goToNotifications = () => {
   .mobile-only { display: flex !important; }
   .content-area { padding: 12px; padding-bottom: 70px; flex: 1; width: 100%; }
 
+  /* 手机端顶部栏优化 */
+  .mobile-header {
+    padding: 0 12px;
+    height: 50px;
+  }
+  .mobile-title { font-size: 14px; }
+
   /* 抽屉深色背景 */
   :deep(.el-drawer__body) {
     background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%) !important;
@@ -295,12 +309,21 @@ const goToNotifications = () => {
     padding: 0 !important;
     overflow: hidden;
   }
+  .drawer-header { padding: 16px; }
+  .drawer-avatar { width: 44px; height: 44px; }
   .drawer-menu { padding: 8px 0; }
   .drawer-menu::-webkit-scrollbar { width: 4px; }
   .drawer-menu::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 2px; }
   .drawer-footer {
     flex-shrink: 0;
     position: static;
+    padding: 12px 16px;
+  }
+
+  /* 浮动客服按钮位置调整 */
+  :deep(.service-float-btn) {
+    right: 12px;
+    bottom: 70px;
   }
 }
 

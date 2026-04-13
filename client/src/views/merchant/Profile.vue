@@ -62,6 +62,29 @@
               </el-descriptions>
             </el-tab-pane>
 
+            <!-- 修改密码Tab -->
+            <el-tab-pane label="修改密码" name="password">
+              <div class="password-form">
+                <el-alert type="info" :closable="false" style="margin-bottom: 16px">
+                  为保障账号安全，请定期更换密码。新密码长度不能少于6位。
+                </el-alert>
+                <el-form :model="passwordForm" :rules="passwordRules" ref="passwordFormRef" label-width="100px" style="max-width: 400px">
+                  <el-form-item label="旧密码" prop="oldPassword">
+                    <el-input v-model="passwordForm.oldPassword" type="password" placeholder="请输入当前密码" show-password />
+                  </el-form-item>
+                  <el-form-item label="新密码" prop="newPassword">
+                    <el-input v-model="passwordForm.newPassword" type="password" placeholder="请输入新密码（至少6位）" show-password />
+                  </el-form-item>
+                  <el-form-item label="确认密码" prop="confirmPassword">
+                    <el-input v-model="passwordForm.confirmPassword" type="password" placeholder="请再次输入新密码" show-password />
+                  </el-form-item>
+                  <el-form-item>
+                    <el-button type="primary" @click="handleChangePassword" :loading="passwordLoading">确认修改</el-button>
+                  </el-form-item>
+                </el-form>
+              </div>
+            </el-tab-pane>
+
             <!-- 专家照片Tab（仅专家） -->
             <el-tab-pane v-if="isExpert" label="照片资料" name="photos">
               <div style="display:flex;gap:24px;flex-wrap:wrap;margin-top:12px">
@@ -339,13 +362,40 @@ import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Shop, Edit, Star, Plus, Delete } from '@element-plus/icons-vue'
-import { getProfile, updateProfile, getMyResources, toggleFavorite, getMyFavorites, getExpertTypes, getPublishTypes } from '@/api/merchant'
+import { getProfile, updateProfile, updatePassword, getMyResources, toggleFavorite, getMyFavorites, getExpertTypes, getPublishTypes } from '@/api/merchant'
 
 const router = useRouter()
 const loading = ref(true)
 const saving = ref(false)
 const editing = ref(false)
 const infoTab = ref('basic')
+const passwordLoading = ref(false)
+const passwordFormRef = ref(null)
+const passwordForm = ref({
+  oldPassword: '',
+  newPassword: '',
+  confirmPassword: ''
+})
+const passwordRules = {
+  oldPassword: [{ required: true, message: '请输入旧密码', trigger: 'blur' }],
+  newPassword: [
+    { required: true, message: '请输入新密码', trigger: 'blur' },
+    { min: 6, message: '新密码长度不能少于6位', trigger: 'blur' }
+  ],
+  confirmPassword: [
+    { required: true, message: '请再次输入新密码', trigger: 'blur' },
+    {
+      validator: (rule, value, callback) => {
+        if (value !== passwordForm.value.newPassword) {
+          callback(new Error('两次输入的密码不一致'))
+        } else {
+          callback()
+        }
+      },
+      trigger: 'blur'
+    }
+  ]
+}
 const profile = ref({ company_type: '' })
 const stats = ref({ resourceCount: 0, matchings: 0 })
 const favorites = ref([])
@@ -472,6 +522,28 @@ async function loadProfile() {
     ElMessage.error('加载资料失败')
   } finally {
     loading.value = false
+  }
+}
+
+// 修改密码
+async function handleChangePassword() {
+  try {
+    await passwordFormRef.value.validate()
+  } catch {
+    return
+  }
+  passwordLoading.value = true
+  try {
+    await updatePassword({
+      oldPassword: passwordForm.value.oldPassword,
+      newPassword: passwordForm.value.newPassword
+    })
+    ElMessage.success('密码修改成功')
+    passwordForm.value = { oldPassword: '', newPassword: '', confirmPassword: '' }
+  } catch (err) {
+    ElMessage.error(err.message || '修改失败')
+  } finally {
+    passwordLoading.value = false
   }
 }
 
@@ -695,6 +767,7 @@ watch(infoTab, (newTab) => {
 .heart.filled { color: #f56c6c; }
 .fav-star { font-size: 18px; color: #f56c6c; }
 .fav-star.active { color: #f56c6c; }
+.password-form { padding: 10px 0; }
 .fav-desc { font-size: 13px; color: #606266; margin: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .upload-placeholder { width: 80px; height: 80px; border: 1px dashed #dcdfe6; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #909399; cursor: pointer; font-size: 12px; gap: 4px; transition: border-color 0.2s; }
 .upload-placeholder:hover { border-color: #409EFF; color: #409EFF; }

@@ -38,4 +38,10 @@ router.get('/notifications', AmbassadorController.getNotifications)
 router.put('/notifications/:id/read', AmbassadorController.markNotificationRead)
 router.get('/notifications/unread-count', AmbassadorController.getUnreadCount)
 
+// 个人资料
+router.get('/profile', AmbassadorController.getProfile)
+
+// 修改密码
+router.put('/password', AmbassadorController.updatePassword)
+
 module.exports = router

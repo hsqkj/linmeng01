@@ -120,7 +120,8 @@ function fmtDeadline(t) {
 
 const demandTypeName = {
   0: '活动赞助', 1: '专家服务', 2: '空间运营',
-  3: '物资赞助', 4: '健康服务', 5: '教育培训'
+  3: '物资赞助', 4: '健康服务', 5: '教育培训',
+  6: '志愿服务', 7: '文化活动', 8: '技术咨询'
 }
 
 async function loadDemands() {

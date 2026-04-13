@@ -8,23 +8,73 @@ const multer = require('multer')
 const path = require('path')
 const fs = require('fs')
 const typeMapper = require('../services/typeMapper')
+const { sendVerifyCode } = require('../services/smsService')
 
-// 发送验证码（模拟）
+// 验证码有效期（分钟）
+const CODE_EXPIRE_MINUTES = 5
+// 同一手机号发送间隔（秒）
+const SEND_INTERVAL = 60
+// 内存缓存：{ phone: { code, time } }
+const codeCache = new Map()
+
+// 发送验证码（真实短信 + 容联云）
 exports.sendSms = async (req, res) => {
   try {
     const { phone, type } = req.body
-    
+
     if (!phone) return error(res, '请输入手机号', 400)
-    
-    // 实际项目中应该调用短信服务API
-    // 测试版：固定验证码 123456
-    const code = '123456'
-    
+
+    // 手机号格式校验
+    if (!/^1[3-9]\d{9}$/.test(phone)) {
+      return error(res, '手机号格式不正确', 400)
+    }
+
+    // 发送频率限制（同一手机号60秒内只能发一次）
+    const cached = codeCache.get(phone)
+    if (cached) {
+      const elapsed = (Date.now() - cached.time) / 1000
+      if (elapsed < SEND_INTERVAL) {
+        const remaining = Math.ceil(SEND_INTERVAL - elapsed)
+        return error(res, `请 ${remaining} 秒后再试`, 429)
+      }
+    }
+
+    // 生成6位随机验证码
+    const code = Math.floor(100000 + Math.random() * 900000).toString()
+
+    // 调用容联云发送真实短信
+    let smsResult
+    try {
+      smsResult = await sendVerifyCode(phone, code)
+    } catch (e) {
+      console.error('[SMS] 容联云调用异常:', e.message)
+      // 网络异常时降级：跳过真实发送，只返回验证码供测试
+      codeCache.set(phone, { code, time: Date.now() })
+      console.log(`[SMS] 容联云异常降级，向 ${phone} 返回验证码: ${code}`)
+      return success(res, { code }, '验证码已发送（短信服务暂时不可用）')
+    }
+
+    if (!smsResult.success) {
+      // 网络超时/不可达时降级，返回验证码给前端（仅开发/调试用）
+      const msg = (smsResult.message || '').toLowerCase()
+      if (msg.includes('etimedout') || msg.includes('econnrefused') || msg.includes('enotfound') || msg.includes('请求超时')) {
+        codeCache.set(phone, { code, time: Date.now() })
+        console.log(`[SMS] 容联云不可达降级，向 ${phone} 返回验证码: ${code}`)
+        return success(res, { code }, '验证码已发送（短信服务暂时不可用）')
+      }
+      console.error('[SMS] 容联云返回失败:', smsResult.message)
+      return error(res, '短信发送失败：' + smsResult.message, 500)
+    }
+
+    // 写入内存缓存（生产环境建议用 Redis）
+    codeCache.set(phone, { code, time: Date.now() })
+
     console.log(`[SMS] 向 ${phone} 发送验证码: ${code} (类型: ${type})`)
-    
+
     success(res, { code }, '验证码已发送')
   } catch (err) {
-    error(res, '发送失败')
+    console.error('[SMS] sendSms error:', err)
+    error(res, '发送失败：' + err.message)
   }
 }
 
@@ -264,8 +314,8 @@ exports.getPublishTypes = async (req, res) => {
       const [levelRows] = await pool.query("SELECT config_value FROM sys_configs WHERE config_key = 'member_levels'")
       if (levelRows.length > 0) {
         const levels = JSON.parse(levelRows[0].config_value)
-        result.member_levels = levels.map((level, index) => ({
-          level: index,
+        result.member_levels = levels.map(level => ({
+          level: level.level ?? 0,
           name: level.name || level
         }))
       }

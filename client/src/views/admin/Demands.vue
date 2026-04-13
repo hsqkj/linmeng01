@@ -4,9 +4,7 @@
     <div class="filter-bar">
       <el-select v-model="filterType" placeholder="需求类型" style="width:130px" clearable>
         <el-option label="全部" value="" />
-        <el-option label="活动赞助" value="活动赞助" />
-        <el-option label="专家服务" value="专家服务" />
-        <el-option label="空间运营" value="空间运营" />
+        <el-option v-for="(name, idx) in typeLabels" :key="idx" :label="name" :value="idx" />
       </el-select>
       <el-select v-model="filterStatus" placeholder="状态" style="width:130px" clearable>
         <el-option label="全部" value="" />
@@ -80,16 +78,25 @@ const filterStatus = ref('')
 const showDetail = ref(false)
 const currentRow = ref(null)
 
-const typeLabels = {
-  0: '活动赞助', 1: '专家服务', 2: '空间运营',
-  3: '物资赞助', 4: '健康服务', 5: '教育培训'
-}
-const typeColors = {
-  0: 'primary', 1: 'success', 2: 'warning',
-  3: 'danger', 4: 'info', 5: 'warning'
-}
+// 需求类型配置（从 API 加载，与商家端同步）
+const demandTypes = ref([])
+const typeLabels = ref({})
+const typeColors = { 0: 'primary', 1: 'success', 2: 'warning', 3: 'danger', 4: 'info', 5: 'warning', 6: 'primary', 7: 'success', 8: 'warning', 9: 'danger' }
 const statusColors = { 0: 'info', 1: 'success', 2: 'danger' }
 const statusLabels = { 0: '待审核', 1: '已通过', 2: '已驳回' }
+
+async function loadDemandTypes() {
+  try {
+    const res = await request.get('/public/publish-types')
+    if (res.data?.demand_types?.length) {
+      const list = res.data.demand_types
+      demandTypes.value = list
+      const labels = {}
+      list.forEach((name, idx) => { labels[idx] = name })
+      typeLabels.value = labels
+    }
+  } catch {}
+}
 
 function fmtTime(t) {
   if (!t) return '—'
@@ -103,7 +110,7 @@ async function loadData() {
   try {
     const params = { page: page.value, pageSize: pageSize.value }
     if (searchKey.value) params.keyword = searchKey.value
-    if (filterType.value) params.type = filterType.value
+    if (filterType.value !== '') params.type = filterType.value
     if (filterStatus.value !== '') params.status = filterStatus.value
     const res = await request.get('/admin/demands', { params })
     demands.value = res.data?.list || res.data || []
@@ -125,7 +132,10 @@ function viewDetail(row) {
   showDetail.value = true
 }
 
-onMounted(() => { loadData() })
+onMounted(async () => {
+  await loadDemandTypes()
+  loadData()
+})
 </script>
 
 <style scoped>

@@ -8,6 +8,18 @@
         <el-option label="商家" value="merchant" />
         <el-option label="专家" value="expert" />
       </el-select>
+      <el-select v-model="filterDistrict" placeholder="所在区" style="width:130px" clearable @change="onDistrictChange">
+        <el-option label="全部" value="" />
+        <el-option v-for="d in districts" :key="d" :label="d" :value="d" />
+      </el-select>
+      <el-select v-model="filterStreet" placeholder="街道" style="width:130px" clearable :disabled="!filterDistrict" @change="onStreetChange">
+        <el-option label="全部" value="" />
+        <el-option v-for="s in filteredStreets" :key="s.value" :label="s.label" :value="s.value" />
+      </el-select>
+      <el-select v-model="filterCommunity" placeholder="社区" style="width:130px" clearable :disabled="!filterStreet">
+        <el-option label="全部" value="" />
+        <el-option v-for="c in filteredCommunities" :key="c.value" :label="c.label" :value="c.value" />
+      </el-select>
       <el-select v-model="filterEnterprise" placeholder="企业类型" style="width:130px" clearable>
         <el-option label="全部" value="" />
         <el-option v-for="t in enterpriseOptions" :key="t" :label="t" :value="t" />
@@ -227,9 +239,69 @@
 import { ref, onMounted, computed, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getMerchants, updateMerchantStatus, updateMerchantLevel, updateMerchantRating, getBasicTypesConfig, getMemberConfig } from '@/api/admin'
+import { getRegions } from '@/api/public'
 
 const search = ref(''), filterEnterprise = ref(''), filterIndustry = ref(''), filterLevel = ref(''), filterStatus = ref('')
 const filterUserType = ref('')
+
+// 区街社区筛选
+const filterDistrict = ref('')
+const filterStreet = ref('')
+const filterCommunity = ref('')
+
+// 行政区划数据
+const allRegions = ref([])
+
+// 行政区列表
+const districts = computed(() => {
+  const topLevel = allRegions.value.filter(r => !r.parent_id || r.parent_id === 0 || r.parent_id === '0')
+  if (topLevel.length === 1 && (topLevel[0].name === '武汉市' || topLevel[0].region_name === '武汉市')) {
+    return allRegions.value
+      .filter(r => r.parent_id === topLevel[0].id)
+      .map(r => r.name || r.region_name)
+      .filter(Boolean)
+  }
+  return topLevel.map(r => r.name || r.region_name).filter(Boolean)
+})
+
+// 根据选择的区获取街道列表
+const filteredStreets = computed(() => {
+  if (!filterDistrict.value) return []
+  const district = allRegions.value.find(r => (r.name || r.region_name) === filterDistrict.value)
+  if (!district) return []
+  return allRegions.value
+    .filter(r => r.parent_id === district.id)
+    .map(r => ({ label: r.name || r.region_name, value: r.name || r.region_name }))
+})
+
+// 根据选择的街道获取社区列表
+const filteredCommunities = computed(() => {
+  if (!filterStreet.value) return []
+  const street = allRegions.value.find(r => (r.name || r.region_name) === filterStreet.value)
+  if (!street) return []
+  return allRegions.value
+    .filter(r => r.parent_id === street.id)
+    .map(r => ({ label: r.name || r.region_name, value: r.name || r.region_name }))
+})
+
+function onDistrictChange() {
+  filterStreet.value = ''
+  filterCommunity.value = ''
+}
+
+function onStreetChange() {
+  filterCommunity.value = ''
+}
+
+// 加载行政区划数据
+async function loadRegions() {
+  try {
+    const res = await getRegions()
+    allRegions.value = res.data || []
+  } catch {
+    allRegions.value = []
+  }
+}
 const showDetail = ref(false), showLevelDialog = ref(false), showRatingDialog = ref(false)
 const currentMerchant = ref(null), detailTab = ref('basic')
 const newLevel = ref(0), levelReason = ref('')
@@ -292,11 +364,19 @@ async function loadMerchants() {
     if (filterLevel.value) params.level = filterLevel.value
     if (filterIndustry.value) params.industry = filterIndustry.value
     if (search.value) params.keyword = search.value
+    // 区街社区筛选（客户端过滤）
+    if (filterDistrict.value) params.district = filterDistrict.value
+    if (filterStreet.value) params.street = filterStreet.value
+    if (filterCommunity.value) params.community = filterCommunity.value
     const res = await getMerchants(params)
     // 用户类型过滤（客户端过滤）
     let list = res.data?.list || res.data || []
     if (filterEnterprise.value) list = list.filter(m => m.enterprise_type === filterEnterprise.value)
     if (filterUserType.value) list = list.filter(m => m.company_type === filterUserType.value)
+    // 区街社区客户端过滤
+    if (filterDistrict.value) list = list.filter(m => m.district === filterDistrict.value)
+    if (filterStreet.value) list = list.filter(m => m.street === filterStreet.value)
+    if (filterCommunity.value) list = list.filter(m => m.community === filterCommunity.value)
     merchants.value = list
     total.value = res.data?.pagination?.total || res.data?.total || list.length
   } catch { merchants.value = [] }
@@ -329,9 +409,9 @@ async function loadFilterOptions() {
   } catch {}
 }
 
-onMounted(() => { loadFilterOptions(); loadMerchants() })
+onMounted(() => { loadFilterOptions(); loadMerchants(); loadRegions() })
 
-watch([filterStatus, filterLevel, filterIndustry, filterEnterprise, filterUserType], () => { page.value = 1; loadMerchants() })
+watch([filterStatus, filterLevel, filterIndustry, filterEnterprise, filterUserType, filterDistrict, filterStreet, filterCommunity], () => { page.value = 1; loadMerchants() })
 watch(search, () => { page.value = 1; loadMerchants() })
 
 async function viewMerchant(row) {

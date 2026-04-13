@@ -104,7 +104,7 @@
           </el-form-item>
         </el-form>
 
-        <!-- 第二步：企业规模、企业地址、营业执照、Logo、企业简介 -->
+        <!-- 第二步：企业规模、区街社区、企业地址、营业执照、Logo、企业简介 -->
         <el-form v-show="merchantStep === 2" :model="form" ref="merchantStep2Ref" class="register-form" label-position="top">
           <el-form-item label="企业规模">
             <el-select v-model="form.scale" placeholder="请选择企业规模" size="large" style="width: 100%">
@@ -116,7 +116,21 @@
             </el-select>
           </el-form-item>
 
-          <el-form-item label="企业地址">
+          <el-form-item label="所在行政区划" required>
+            <div class="region-select-group">
+              <el-select v-model="form.district" placeholder="区/开发区" size="large" @change="onDistrictChange" style="flex:1">
+                <el-option v-for="d in districts" :key="d" :label="d" :value="d" />
+              </el-select>
+              <el-select v-model="form.street" placeholder="街道/镇" size="large" :disabled="!form.district" @change="onStreetChange" style="flex:1">
+                <el-option v-for="s in filteredStreets" :key="s.value" :label="s.label" :value="s.value" />
+              </el-select>
+              <el-select v-model="form.community" placeholder="社区" size="large" :disabled="!form.street" style="flex:1">
+                <el-option v-for="c in filteredCommunities" :key="c.value" :label="c.label" :value="c.value" />
+              </el-select>
+            </div>
+          </el-form-item>
+
+          <el-form-item label="企业详细地址">
             <el-input v-model="form.address" placeholder="请输入企业详细地址（选填）" size="large" />
           </el-form-item>
 
@@ -357,11 +371,11 @@
 </template>
 
 <script setup>
-import { reactive, ref, onMounted, nextTick } from 'vue'
+import { reactive, ref, computed, onMounted, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Phone, Key, User, Shop, Goods, Connection, Medal, Trophy, UserFilled, Lock, Plus } from '@element-plus/icons-vue'
-import { getIndustries, sendSms, uploadImage, checkPhone } from '@/api/public'
+import { getIndustries, sendSms, uploadImage, checkPhone, getRegions } from '@/api/public'
 import { expertRegister, merchantRegister } from '@/api/merchant'
 
 const router = useRouter()
@@ -383,9 +397,64 @@ const form = reactive({
   name: '', category: '', contact: '', phone: '', code: '',
   password: '', confirmPassword: '',
   agree: false,
-  scale: '', address: '', license: '', licenseList: [], logo: '', logoList: [], intro: '',
+  scale: '', district: '', street: '', community: '', address: '',
+  license: '', licenseList: [], logo: '', logoList: [], intro: '',
   referrer: '' // 推荐人（渠道码对应的大使姓名）
 })
+
+// 行政区划数据
+const allRegions = ref([])
+
+// 行政区列表
+const districts = computed(() => {
+  const topLevel = allRegions.value.filter(r => !r.parent_id || r.parent_id === 0 || r.parent_id === '0')
+  if (topLevel.length === 1 && (topLevel[0].name === '武汉市' || topLevel[0].region_name === '武汉市')) {
+    return allRegions.value
+      .filter(r => r.parent_id === topLevel[0].id)
+      .map(r => r.name || r.region_name)
+      .filter(Boolean)
+  }
+  return topLevel.map(r => r.name || r.region_name).filter(Boolean)
+})
+
+// 根据选择的区获取街道列表
+const filteredStreets = computed(() => {
+  if (!form.district) return []
+  const district = allRegions.value.find(r => (r.name || r.region_name) === form.district)
+  if (!district) return []
+  return allRegions.value
+    .filter(r => r.parent_id === district.id)
+    .map(r => ({ label: r.name || r.region_name, value: r.name || r.region_name }))
+})
+
+// 根据选择的街道获取社区列表
+const filteredCommunities = computed(() => {
+  if (!form.street) return []
+  const street = allRegions.value.find(r => (r.name || r.region_name) === form.street)
+  if (!street) return []
+  return allRegions.value
+    .filter(r => r.parent_id === street.id)
+    .map(r => ({ label: r.name || r.region_name, value: r.name || r.region_name }))
+})
+
+function onDistrictChange() {
+  form.street = ''
+  form.community = ''
+}
+
+function onStreetChange() {
+  form.community = ''
+}
+
+// 加载行政区划数据
+async function loadRegions() {
+  try {
+    const res = await getRegions()
+    allRegions.value = res.data || []
+  } catch {
+    allRegions.value = []
+  }
+}
 const merchantStep1Rules = {
   name: [{ required: true, message: '请输入商家/企业名称', trigger: 'blur' }],
   category: [{ required: true, message: '请选择行业分类', trigger: 'change' }],
@@ -585,7 +654,6 @@ async function sendMerchantCode() {
       return
     }
     const res = await sendSms({ phone: form.phone, type: 'register' })
-    // 测试版：自动填入验证码
     if (res.data?.code) form.code = res.data.code
     ElMessage.success('验证码已发送')
     counting.value = true; countdown.value = 60
@@ -614,7 +682,6 @@ async function sendExpertCode() {
       return
     }
     const res = await sendSms({ phone: expertForm.phone, type: 'register' })
-    // 测试版：自动填入验证码
     if (res.data?.code) expertForm.code = res.data.code
     ElMessage.success('验证码已发送')
     expertCounting.value = true; expertCountdown.value = 60
@@ -630,6 +697,11 @@ async function sendExpertCode() {
 // 商家注册
 const register = async (skipped = false) => {
   if (!form.agree) { ElMessage.warning('请先阅读并同意服务协议'); return }
+  // 验证行政区划
+  if (!form.district || !form.street || !form.community) {
+    ElMessage.warning('请选择完整的行政区划信息')
+    return
+  }
   try {
     await merchantRegister({
       username: form.contact,  // 联系人姓名作为登录名
@@ -638,8 +710,11 @@ const register = async (skipped = false) => {
       industry: form.category,
       contact_name: form.contact,
       phone: form.phone,
-      address: form.address || '',
       scale: form.scale || '',
+      district: form.district,
+      street: form.street,
+      community: form.community,
+      address: form.address || '',
       business_license: form.license || '',
       logo: form.logo || '',
       description: form.intro || '',
@@ -705,6 +780,7 @@ onMounted(() => {
   loadIndustries()
   loadExpertTypesList()
   loadDefaultTags()
+  loadRegions()  // 加载行政区划数据
   // 检查渠道码参数，自动填入推荐人
   const code = route.query.code
   if (code) {
@@ -854,6 +930,16 @@ async function fetchAmbassadorByCode(code) {
 }
 
 .upload-area { width: 100%; }
+
+.region-select-group {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+
+.region-select-group .el-select {
+  flex: 1;
+}
 
 .upload-tip {
   font-size: 12px;

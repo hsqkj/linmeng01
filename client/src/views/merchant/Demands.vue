@@ -24,12 +24,7 @@
       </el-select>
       <el-select v-model="filters.type" placeholder="需求类型" style="width:130px" clearable>
         <el-option label="全部类型" value="" />
-        <el-option label="活动赞助" :value="0" />
-        <el-option label="专家服务" :value="1" />
-        <el-option label="空间运营" :value="2" />
-        <el-option label="物资赞助" :value="3" />
-        <el-option label="健康服务" :value="4" />
-        <el-option label="教育培训" :value="5" />
+        <el-option v-for="(typeName, idx) in demandTypesList" :key="idx" :label="typeName" :value="idx" />
       </el-select>
       <el-select v-model="filters.sortBy" placeholder="排序" style="width:130px">
         <el-option label="最新发布" value="newest" />
@@ -179,6 +174,7 @@ function getUserLocation() {
 const typeColorsMap = ref({})
 // 数字到中文映射（用于 fallback）
 const demandTypeNumMap = ref({})
+const demandTypesList = ref([]) // 需求类型列表（用于筛选下拉框）
 const getTypeColor = (typeName) => typeColorsMap.value[typeName] || 'primary'
 function getDemandTypeName(type) { return demandTypeNumMap.value[type] ?? type ?? '需求' }
 // 加载需求类型配置
@@ -188,6 +184,7 @@ async function loadDemandTypes() {
     if (res.data?.demand_types?.length) {
       const map = {}
       const colors = ['primary', 'success', 'warning', 'danger', 'info', '']
+      demandTypesList.value = res.data.demand_types // 保存类型列表用于筛选
       res.data.demand_types.forEach((name, idx) => {
         map[idx] = name
         map[name] = name

@@ -50,7 +50,7 @@
                 <el-descriptions-item label="所属街道">{{ profile.street || '未填写' }}</el-descriptions-item>
                 <el-descriptions-item label="联系人职务">{{ profile.position || '未填写' }}</el-descriptions-item>
                 <el-descriptions-item label="联系人姓名">{{ profile.contact_name || '未填写' }}</el-descriptions-item>
-                <el-descriptions-item label="联系手机">{{ profile.username }}</el-descriptions-item>
+                <el-descriptions-item label="联系手机">{{ profile.phone || profile.username }}</el-descriptions-item>
                 <el-descriptions-item label="详细地址" :span="2">{{ profile.address || '未填写' }}</el-descriptions-item>
                 <el-descriptions-item label="地图定位" :span="2">
                   <template v-if="profile.latitude && profile.longitude">
@@ -67,6 +67,27 @@
                 </el-descriptions-item>
                 <el-descriptions-item label="社区简介" :span="2">{{ profile.description || '暂无简介' }}</el-descriptions-item>
               </el-descriptions>
+            </el-tab-pane>
+            <el-tab-pane label="修改密码" name="password">
+              <div class="password-form">
+                <el-alert type="info" :closable="false" style="margin-bottom: 16px">
+                  为保障账号安全，请定期更换密码。新密码长度不能少于6位。
+                </el-alert>
+                <el-form :model="passwordForm" :rules="passwordRules" ref="passwordFormRef" label-width="120px" style="max-width: 400px">
+                  <el-form-item label="旧密码" prop="oldPassword">
+                    <el-input v-model="passwordForm.oldPassword" type="password" placeholder="请输入当前密码" show-password />
+                  </el-form-item>
+                  <el-form-item label="新密码" prop="newPassword">
+                    <el-input v-model="passwordForm.newPassword" type="password" placeholder="请输入新密码（至少6位）" show-password />
+                  </el-form-item>
+                  <el-form-item label="确认密码" prop="confirmPassword">
+                    <el-input v-model="passwordForm.confirmPassword" type="password" placeholder="请再次输入新密码" show-password />
+                  </el-form-item>
+                  <el-form-item>
+                    <el-button type="primary" @click="handleChangePassword" :loading="passwordLoading">确认修改</el-button>
+                  </el-form-item>
+                </el-form>
+              </div>
             </el-tab-pane>
             <el-tab-pane label="社区画像" name="portrait">
               <el-descriptions :column="2" border>
@@ -333,7 +354,7 @@ import { ref, onMounted, watch, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { OfficeBuilding, Edit, Shop, Star, Plus } from '@element-plus/icons-vue'
-import { getProfile, updateProfile, getMyFavorites, getRewards, claimReward } from '@/api/community'
+import { getProfile, updateProfile, updatePassword, getMyFavorites, getRewards, claimReward } from '@/api/community'
 import { uploadImage } from '@/api/public'
 
 const router = useRouter()
@@ -341,6 +362,33 @@ const loading = ref(true)
 const saving = ref(false)
 const editing = ref(false)
 const infoTab = ref('basic')
+const passwordLoading = ref(false)
+const passwordFormRef = ref(null)
+const passwordForm = ref({
+  oldPassword: '',
+  newPassword: '',
+  confirmPassword: ''
+})
+const passwordRules = {
+  oldPassword: [{ required: true, message: '请输入旧密码', trigger: 'blur' }],
+  newPassword: [
+    { required: true, message: '请输入新密码', trigger: 'blur' },
+    { min: 6, message: '新密码长度不能少于6位', trigger: 'blur' }
+  ],
+  confirmPassword: [
+    { required: true, message: '请再次输入新密码', trigger: 'blur' },
+    {
+      validator: (rule, value, callback) => {
+        if (value !== passwordForm.value.newPassword) {
+          callback(new Error('两次输入的密码不一致'))
+        } else {
+          callback()
+        }
+      },
+      trigger: 'blur'
+    }
+  ]
+}
 const profile = ref({})
 const favorites = ref([])
 const favLoading = ref(false)
@@ -587,6 +635,28 @@ watch(infoTab, (newTab) => {
   }
 })
 
+// 修改密码
+async function handleChangePassword() {
+  try {
+    await passwordFormRef.value.validate()
+  } catch {
+    return
+  }
+  passwordLoading.value = true
+  try {
+    await updatePassword({
+      oldPassword: passwordForm.value.oldPassword,
+      newPassword: passwordForm.value.newPassword
+    })
+    ElMessage.success('密码修改成功')
+    passwordForm.value = { oldPassword: '', newPassword: '', confirmPassword: '' }
+  } catch (err) {
+    ElMessage.error(err.message || '修改失败')
+  } finally {
+    passwordLoading.value = false
+  }
+}
+
 // 奖励相关函数
 async function loadRewards() {
   rewardLoading.value = true
@@ -674,6 +744,7 @@ function onRewardPageChange(page) {
 .uploaded-logo { width: 78px; height: 78px; object-fit: cover; border-radius: 6px; }
 .upload-tip { font-size: 12px; color: #909399; }
 .map-location-input { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; }
+.password-form { padding: 10px 0; }
 
 @media (max-width: 768px) {
   .page { padding-bottom: 70px; }

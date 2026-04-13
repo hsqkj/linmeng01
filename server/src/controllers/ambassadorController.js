@@ -446,3 +446,65 @@ exports.getUnreadCount = async (req, res) => {
     error(res, '获取未读数量失败')
   }
 }
+
+// ============ 大使个人信息 ============
+
+// 获取个人资料
+exports.getProfile = async (req, res) => {
+  try {
+    const [[ambassador]] = await pool.query(
+      'SELECT id, username, real_name, phone, avatar, qr_code, status, id_card, created_at FROM ambassadors WHERE id = ?',
+      [req.ambassador.id]
+    )
+    if (!ambassador) {
+      return error(res, '大使信息不存在')
+    }
+    success(res, ambassador)
+  } catch (err) {
+    error(res, '获取个人资料失败')
+  }
+}
+
+// 修改密码
+exports.updatePassword = async (req, res) => {
+  try {
+    const { oldPassword, newPassword } = req.body
+    
+    if (!oldPassword || !newPassword) {
+      return error(res, '请填写完整信息', 400)
+    }
+    
+    if (newPassword.length < 6) {
+      return error(res, '新密码长度不能少于6位', 400)
+    }
+    
+    // 获取当前密码
+    const [[ambassador]] = await pool.query(
+      'SELECT password FROM ambassadors WHERE id = ?',
+      [req.ambassador.id]
+    )
+    
+    if (!ambassador) {
+      return error(res, '账号不存在')
+    }
+    
+    // 验证旧密码
+    const isMatch = await bcrypt.compare(oldPassword, ambassador.password)
+    if (!isMatch) {
+      return error(res, '旧密码错误', 400)
+    }
+    
+    // 生成新密码哈希
+    const hashedPassword = await bcrypt.hash(newPassword, 10)
+    
+    await pool.query(
+      'UPDATE ambassadors SET password = ? WHERE id = ?',
+      [hashedPassword, req.ambassador.id]
+    )
+    
+    success(res, null, '密码修改成功')
+  } catch (err) {
+    console.error('Update password error:', err)
+    error(res, '修改失败')
+  }
+}

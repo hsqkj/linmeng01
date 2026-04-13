@@ -60,7 +60,6 @@
         </div>
       </div>
       <div class="membership-actions">
-        <el-button type="warning" plain @click="$router.push('/merchant/member')">查看权益</el-button>
         <el-button type="warning" @click="$router.push('/merchant/member')">立即升级</el-button>
       </div>
     </div>
@@ -160,40 +159,49 @@
           :key="demand.id"
           class="demand-card"
           shadow="hover"
+          @click="viewDemandDetail(demand)"
         >
-          <div class="match-score">
-            <div class="hearts">
-              <el-icon v-for="n in 5" :key="n" :class="{ filled: n <= (demand.matchScore || 0) }">
-                <StarFilled />
-              </el-icon>
+          <div class="card-header">
+            <div class="match-score">
+              <span class="score-pct">匹配度</span>
+              <span v-for="n in 5" :key="n" class="heart" :class="{filled: n <= (demand.matchScore || 0)}">♥</span>
             </div>
-            <span class="score-text">{{ demand.matchScore ? demand.matchScore * 20 + '%' : '' }}匹配</span>
-          </div>
-
-          <div class="demand-header">
-            <el-avatar :size="48" :src="demand.community?.logo || `https://ui-avatars.com/api/?name=${encodeURIComponent(demand.community_name || '社')}&background=4A90D9&color=fff`" />
-            <div class="community-info">
-              <h4 style="cursor:pointer;color:#409EFF" @click.stop="viewCommunityDetail(demand)">{{ demand.community_name }}</h4>
-              <el-tag size="small" type="info">{{ demand.demand_type_name || getDemandTypeName(demand.demand_type) }}</el-tag>
+            <div class="card-actions">
+              <el-tag size="small" :type="getTypeColor(demand.demand_type_name || getDemandTypeName(demand.demand_type))">{{ demand.demand_type_name || getDemandTypeName(demand.demand_type) }}</el-tag>
+              <el-icon class="fav-btn" :class="{favorited: demand.isFavorited}" @click.stop="toggleFav(demand)" :title="demand.isFavorited ? '取消收藏' : '收藏'"><Star /></el-icon>
             </div>
           </div>
 
           <h4 class="demand-title">{{ demand.title }}</h4>
 
-          <div class="demand-tags">
-            <el-tag v-for="tag in (demand.tags_names || [])" :key="tag" size="small" effect="plain">
-              {{ tag }}
-            </el-tag>
-          </div>
-
           <div class="demand-meta">
-            <span><el-icon><User /></el-icon> {{ demand.households || 0 }}户</span>
-            <span><el-icon><Calendar /></el-icon> {{ fmtDeadline(demand.deadline) }}截止</span>
+            <el-icon :size="13" style="color:#909399"><Location /></el-icon>
+            <span style="cursor:pointer;color:#409EFF;text-decoration:underline" @click.stop="viewCommunityDetail(demand)">{{ demand.community_name }}</span>
+            <span class="divider">|</span>
+            <span>{{ demand.district }}{{ demand.street ? ' · ' + demand.street : '' }}</span>
+            <span v-if="demand.distance_km !== undefined" class="divider">|</span>
+            <span v-if="demand.distance_km !== undefined" class="distance-tag">
+              <el-icon :size="11"><Location /></el-icon>
+              {{ demand.distance_km < 1 ? (demand.distance_km * 1000).toFixed(0) + 'm' : demand.distance_km.toFixed(1) + 'km' }}
+            </span>
+            <span class="divider">|</span>
+            <el-icon :size="13" style="color:#909399"><Calendar /></el-icon>
+            <span>{{ demand.start_time ? demand.start_time.split('T')[0] : '-' }}</span>
           </div>
 
-          <div class="demand-actions">
-            <el-button type="success" @click="contactCommunity(demand)">留言咨询</el-button>
-            <el-button text @click="viewDemandDetail(demand)">查看详情</el-button>
+          <div class="demand-tags">
+            <el-tag v-for="g in (demand.target_audience_names || [])" :key="g" size="small" type="info" style="margin:2px">{{ g }}</el-tag>
+          </div>
+
+          <div class="demand-footer">
+            <div class="sponsor-types">
+              <span style="font-size:12px;color:#909399">所需：</span>
+              <el-tag v-for="s in (demand.required_types_names || [])" :key="s" size="small" style="margin:2px">{{ s }}</el-tag>
+            </div>
+            <div class="footer-right">
+              <span class="view-count"><el-icon :size="12"><View /></el-icon> {{ demand.view_count || 0 }}</span>
+              <el-button type="primary" size="small" @click.stop="viewDemandDetail(demand)">查看详情</el-button>
+            </div>
           </div>
         </el-card>
       </div>
@@ -245,8 +253,8 @@ import { ref, onMounted, computed, inject } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { requireAuth, isLoggedIn as checkLogin } from '@/utils/useAuth'
-import { getBanners, getRecommendDemands, getProfile, getMyResources, getMyIntentions, getMemberInfo, getCommunityDetail, getPublishTypes, getDemands, getResources } from '@/api/merchant'
-import { Medal, StarFilled, Goods, View, Connection, CircleCheck, User, Calendar, Loading, Edit } from '@element-plus/icons-vue'
+import { getBanners, getRecommendDemands, getProfile, getMyResources, getMyIntentions, getMemberInfo, getCommunityDetail, getPublishTypes, getDemands, getResources, toggleFavorite, getMyFavorites } from '@/api/merchant'
+import { Medal, StarFilled, Star, Goods, View, Connection, CircleCheck, User, Calendar, Loading, Edit, Location } from '@element-plus/icons-vue'
 
 const router = useRouter()
 
@@ -298,8 +306,9 @@ const bannerColors = [
 onMounted(async () => {
   loading.value = true
   try {
-    // 并行加载需求类型和初始数据
+    // 并行加载需求类型、收藏状态和初始数据
     loadDemandTypes()
+    loadFavorites()
 
     const promises = [
       getBanners(),
@@ -334,7 +343,12 @@ onMounted(async () => {
 
     // 推荐需求
     if (results[1].status === 'fulfilled') {
-      matchedDemands.value = (results[1].value.data || []).slice(0, 4)
+      let list = (results[1].value.data || []).slice(0, 4)
+      // 标记收藏状态
+      if (favDemandIds.value.size > 0) {
+        list = list.map(d => ({ ...d, isFavorited: favDemandIds.value.has(d.id) }))
+      }
+      matchedDemands.value = list
     }
 
     // 平台总需求数
@@ -408,8 +422,36 @@ const memberLevelTagType = { 0: 'info', 1: 'info', 2: '', 3: 'warning', 4: 'dang
 
 // 需求类型映射（从API动态加载）
 const demandTypeMap = ref({})
+const typeColorsMap = ref({})
 function getDemandTypeName(type) {
   return demandTypeMap.value[type] ?? type ?? '需求'
+}
+function getTypeColor(typeName) {
+  return typeColorsMap.value[typeName] || 'primary'
+}
+
+// 收藏状态
+const favDemandIds = ref(new Set())
+
+async function loadFavorites() {
+  try {
+    const res = await getMyFavorites({ page: 1, pageSize: 200 })
+    const list = res.data?.list || res.data || []
+    favDemandIds.value = new Set(list.map(d => d.demand_id))
+  } catch {}
+}
+
+async function toggleFav(demand) {
+  if (!localStorage.getItem('merchant_token')) {
+    return requireAuth('merchant')
+  }
+  demand.isFavorited = !demand.isFavorited
+  try {
+    await toggleFavorite({ demand_id: demand.id })
+  } catch {
+    demand.isFavorited = !demand.isFavorited
+    ElMessage.error('操作失败')
+  }
 }
 // 加载需求类型和会员等级配置
 async function loadDemandTypes() {
@@ -418,9 +460,11 @@ async function loadDemandTypes() {
     // 加载需求类型
     if (res.data?.demand_types?.length) {
       const map = {}
+      const colors = ['primary', 'success', 'warning', 'danger', 'info', '']
       res.data.demand_types.forEach((name, idx) => {
         map[idx] = name
         map[name] = name
+        typeColorsMap.value[name] = colors[idx % colors.length]
       })
       demandTypeMap.value = map
     }
@@ -612,115 +656,184 @@ async function loadDemandTypes() {
 
 .demand-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 16px;
 }
 
 .demand-card {
-  position: relative;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.demand-card:hover {
+  transform: translateY(-2px);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.card-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .match-score {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  text-align: right;
-}
-
-.hearts {
   display: flex;
+  align-items: center;
   gap: 2px;
-  color: #dcdfe6;
-  margin-bottom: 4px;
 }
 
-.hearts .el-icon {
+.heart {
+  color: #ddd;
   font-size: 14px;
 }
 
-.hearts .el-icon.filled {
+.heart.filled {
   color: #f56c6c;
 }
 
-.score-text {
+.score-pct {
   font-size: 12px;
-  color: #f56c6c;
-  font-weight: bold;
+  color: #606266;
+  font-weight: 500;
+  margin-right: 2px;
 }
 
-.demand-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 12px;
-  padding-right: 80px;
+.fav-btn {
+  font-size: 16px;
+  cursor: pointer;
+  color: #c0c4cc;
+  transition: color 0.2s;
 }
 
-.community-info h4 {
-  margin-bottom: 4px;
+.fav-btn:hover, .fav-btn.favorited {
+  color: #f5a623;
+}
+
+.fav-btn.favorited {
+  color: #f5a623;
 }
 
 .demand-title {
-  font-size: 16px;
-  margin-bottom: 12px;
-  color: #303133;
-}
-
-.demand-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 12px;
+  margin: 0 0 8px;
+  font-size: 15px;
+  font-weight: 600;
 }
 
 .demand-meta {
   display: flex;
-  gap: 16px;
-  color: #909399;
+  align-items: center;
+  gap: 6px;
   font-size: 13px;
-  margin-bottom: 16px;
+  color: #606266;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
 }
 
-.demand-meta span {
+.divider {
+  color: #ddd;
+}
+
+.distance-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  color: #67C23A;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.demand-tags {
+  margin-bottom: 8px;
+}
+
+.demand-footer {
   display: flex;
   align-items: center;
-  gap: 4px;
+  justify-content: space-between;
+  margin-top: 8px;
 }
 
-.demand-actions {
+.sponsor-types {
   display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.footer-right {
+  display: flex;
+  align-items: center;
   gap: 8px;
+}
+
+.view-count {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 12px;
+  color: #909399;
 }
 
 @media (max-width: 768px) {
   .membership-card {
-    flex-direction: column;
-    gap: 16px;
-    padding: 16px;
-    border-radius: 8px;
+    flex-direction: row;
+    gap: 12px;
+    padding: 14px;
+    border-radius: 12px;
+    margin-bottom: 16px;
   }
 
   .membership-info {
-    flex-direction: column;
+    flex: 1;
+    flex-direction: row;
+    align-items: center;
     gap: 12px;
   }
 
   .level-badge {
-    padding: 12px;
+    padding: 10px;
+    border-radius: 10px;
+    min-width: 56px;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .level-badge .el-icon {
+    width: 28px !important;
+    height: 28px !important;
+  }
+
+  .level-badge span {
+    font-size: 11px !important;
+  }
+
+  .membership-details {
+    flex: 1;
   }
 
   .membership-details h3 {
-    font-size: 15px;
-    text-align: center;
+    font-size: 14px;
+    margin-bottom: 4px;
+    text-align: left;
+  }
+
+  .membership-details p {
+    font-size: 11px;
+    color: rgba(255,255,255,0.8);
   }
 
   .membership-actions {
-    width: 100%;
-    flex-direction: column;
+    flex-shrink: 0;
   }
 
   .membership-actions .el-button {
-    width: 100%;
+    padding: 8px 12px;
+    font-size: 12px;
   }
 
   .banner-item {
@@ -732,7 +845,18 @@ async function loadDemandTypes() {
   }
 
   .banner-content p {
-    font-size: 13px;
+    font-size: 12px;
+  }
+
+  /* 轮播图手机端优化 */
+  .banner-section :deep(.el-carousel) {
+    border-radius: 12px;
+  }
+  .banner-section :deep(.el-carousel__container) {
+    height: 140px !important;
+  }
+  .banner-section :deep(.el-carousel__item) {
+    height: 140px !important;
   }
 
   .stats-row {
@@ -751,6 +875,7 @@ async function loadDemandTypes() {
     height: 38px;
     border-radius: 8px;
     flex-shrink: 0;
+    font-size: 16px !important;
   }
 
   .stat-value {
@@ -780,7 +905,7 @@ async function loadDemandTypes() {
 
   .demand-header {
     gap: 8px;
-    padding-right: 70px;
+    padding-right: 0;
   }
 
   .demand-actions {
@@ -789,6 +914,40 @@ async function loadDemandTypes() {
 
   .demand-actions .el-button {
     width: 100%;
+  }
+
+  /* 社区详情弹窗手机端 */
+  :deep(.el-dialog) {
+    width: 95% !important;
+    margin: 12px auto !important;
+  }
+
+  /* 表格容器手机端 */
+  :deep(.el-table) {
+    font-size: 12px;
+  }
+
+  /* 搜索栏手机端 */
+  .search-bar {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .search-bar :deep(.el-select) {
+    width: 100% !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-row {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .stat-card :deep(.el-card__body) {
+    padding: 10px;
+    gap: 8px;
+  }
+  .stat-value {
+    font-size: 16px;
   }
 }
 </style>
