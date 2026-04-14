@@ -616,12 +616,20 @@
             <template #extra>
               <div class="preview-card">
                 <div class="preview-item"><span class="label">需求类型：</span>{{ typeLabels[form.type] }}</div>
-                <div class="preview-item"><span class="label">需求名称：</span>{{ form.activityName || form.expertType || form.spaceName }}</div>
-                <div class="preview-item" v-if="form.startTime"><span class="label">时间：</span>{{ form.startTime }} ~ {{ form.endTime }}</div>
-                <div class="preview-item" v-if="form.venue"><span class="label">地点：</span>{{ venueTypeLabel }} · {{ form.venue }}</div>
+                <div class="preview-item"><span class="label">需求名称：</span>{{ form.activityName || form.spaceName || form.expertType }}</div>
+                <div class="preview-item" v-if="form.activityType"><span class="label">活动类型：</span>{{ form.activityType }}</div>
+                <div class="preview-item" v-if="form.targetGroups.length > 0"><span class="label">目标对象：</span>{{ form.targetGroups.join('、') }}</div>
+                <div class="preview-item" v-if="form.startTime"><span class="label">活动时间：</span>{{ form.startTime }} ~ {{ form.endTime }}</div>
+                <div class="preview-item" v-if="form.venue"><span class="label">活动地点：</span>{{ venueTypeLabel }} · {{ form.venue }}</div>
+                <div class="preview-item" v-if="form.expectedAttendees"><span class="label">预计人数：</span>{{ form.expectedAttendees }}人</div>
+                <div class="preview-item" v-if="form.description"><span class="label">需求描述：</span>{{ form.description.slice(0, 100) }}{{ form.description.length > 100 ? '...' : '' }}</div>
                 <div class="preview-item" v-if="form.sponsorTypes.length > 0"><span class="label">赞助类型：</span>{{ form.sponsorTypes.map(s => sponsorTypeLabels[s]).join('、') }}</div>
+                <div class="preview-item" v-if="form.fundMin > 0 || form.fundMax > 0"><span class="label">资金需求：</span>¥{{ form.fundMin }} ~ ¥{{ form.fundMax }}</div>
+                <div class="preview-item" v-if="form.goodsList"><span class="label">物资需求：</span>{{ form.goodsList }}</div>
+                <div class="preview-item" v-if="form.manpowerCount > 0"><span class="label">人力需求：</span>{{ form.manpowerCount }}人，{{ form.manpowerHours }}小时</div>
                 <div class="preview-item" v-if="form.rewards.length > 0"><span class="label">商家回报：</span>{{ form.rewards.slice(0,3).join('、') }}{{ form.rewards.length > 3 ? '等' : '' }}</div>
                 <div class="preview-item" v-if="form.volunteerPoints > 0"><span class="label">志愿服务积分：</span>{{ form.volunteerPoints }}分{{ form.volunteerCount ? `（招募${form.volunteerCount}人）` : '' }}</div>
+                <div class="preview-item" v-if="form.deadline"><span class="label">需求截止：</span>{{ form.deadline }}</div>
                 <div class="preview-item" v-if="form.tags.length > 0">
                   <span class="label">标签：</span>
                   <el-tag v-for="t in form.tags" :key="t" size="small" type="primary" effect="light" style="margin-right:4px">{{ t }}</el-tag>
@@ -717,7 +725,9 @@ const recoverableDraftTitle = ref('')
 
 // 发布类型配置 - 从后端API加载
 const activityTypes = ref([])
+const activityTypeMap = ref({}) // id -> name 映射
 const expertTypes = ref([])
+const expertTypeMap = ref({}) // id -> name 映射
 const targetGroupOptions = ref(['青少年/儿童', '中老年', '青年', '宝妈', '退役军人', '残疾群体', '孤寡老人', '困难家庭', '全体居民'])
 const sponsorTypeOptions = ref([
   { label: '💵 资金赞助', value: 'fund' },
@@ -738,8 +748,13 @@ async function loadPublishTypes() {
     const { getPublishTypes } = await import('@/api/community')
     const res = await getPublishTypes()
     const data = res.data || {}
-    if (data.activity_types) activityTypes.value = data.activity_types
-    if (data.expert_types) expertTypes.value = data.expert_types
+    if (data.activity_types) {
+      // API返回的是字符串数组，直接赋值
+      activityTypes.value = data.activity_types
+    }
+    if (data.expert_types) {
+      expertTypes.value = data.expert_types
+    }
     if (data.target_groups) targetGroupOptions.value = data.target_groups
     if (data.sponsor_types) sponsorTypeOptions.value = data.sponsor_types
     if (data.reward_types) rewardOptions.value = data.reward_types
@@ -749,9 +764,44 @@ async function loadPublishTypes() {
   }
 }
 
+// 辅助函数：根据索引或名称获取活动类型名称
+function getActivityTypeName(val) {
+  if (!val) return ''
+  // 如果是数字索引
+  if (typeof val === 'number' || !isNaN(Number(val))) {
+    return activityTypeMap.value[Number(val)] || val
+  }
+  return val
+}
+
+// 辅助函数：根据索引或名称获取专家类型名称
+function getExpertTypeName(val) {
+  if (!val) return ''
+  // 如果是数字索引
+  if (typeof val === 'number' || !isNaN(Number(val))) {
+    return expertTypeMap.value[Number(val)] || val
+  }
+  return val
+}
+
 const typeLabels = { activity: '活动赞助', expert: '专家服务', space: '空间运营' }
 const sponsorTypeLabels = { fund: '资金赞助', goods: '物资提供', manpower: '人力支持', tech: '技术支持', media: '媒体报道' }
 const venueTypeLabel = computed(() => form.value.venueType === 'indoor' ? '室内' : '室外')
+
+// 表单验证规则 - 统一使用中文提示
+const rules = {
+  activityName: [{ required: true, message: '请填写活动名称', trigger: 'blur' }],
+  activityType: [{ required: true, message: '请选择活动类型', trigger: 'change' }],
+  startTime: [{ required: true, message: '请选择活动开始时间', trigger: 'change' }],
+  endTime: [{ required: true, message: '请选择活动结束时间', trigger: 'change' }],
+  venue: [{ required: true, message: '请填写活动地点', trigger: 'blur' }],
+  description: [{ required: true, message: '请填写活动简介', trigger: 'blur' }],
+  expectedAttendees: [{ required: true, message: '请填写预计参与人数', trigger: 'blur' }],
+  expertType: [{ required: true, message: '请选择专家类型', trigger: 'change' }],
+  spaceName: [{ required: true, message: '请填写空间名称', trigger: 'blur' }],
+  spaceArea: [{ required: true, message: '请填写空间面积', trigger: 'blur' }],
+  venue: [{ required: true, message: '请填写服务地点', trigger: 'blur' }]
+}
 
 const form = ref({
   type: '',
@@ -832,16 +882,16 @@ function prevStep() {
 // 将前端表单数据转换为后端需要的格式
 function transformFormData() {
   const f = form.value
-  const demandTypeMap = { activity: '活动赞助', expert: '专家服务', space: '空间运营' }
+  const demandTypeMap = { activity: '1', expert: '2', space: '3' }
   const data = {
-    demand_type: demandTypeMap[f.type] || f.type,
+    demand_type: demandTypeMap[f.type] || '1',
     title: f.activityName || f.spaceName || f.expertType || '未命名需求',
     activity_type: f.activityType || f.expertType || '',
     content: f.description || '',
     target_audience: f.targetGroups || [],
     start_time: f.startTime || '',
     end_time: f.endTime || '',
-    location_type: f.venueType === 'outdoor' ? '室外' : '室内',
+    location_type: f.venueType === 'outdoor' ? 2 : 1,
     location_name: f.venue || '',
     expected_count: f.expectedAttendees || 100,
     tags: f.tags || [],
@@ -863,14 +913,15 @@ function transformFormData() {
 function fillFormFromDemand(demand) {
   const f = form.value
   // 判断类型
-  const typeMap = { '活动赞助': 'activity', '专家服务': 'expert', '空间运营': 'space' }
+  const typeMap = { '活动赞助': 'activity', '专家服务': 'expert', '空间运营': 'space', '1': 'activity', '2': 'expert', '3': 'space' }
   f.type = typeMap[demand.demand_type] || 'activity'
 
   f.activityName = demand.title || ''
-  f.activityType = demand.activity_type || ''
+  // 处理活动类型和专家类型：可能是数字索引或中文名称
+  f.activityType = getActivityTypeName(demand.activity_type) || demand.expert_type || ''
   f.description = demand.content || ''
   f.venue = demand.location_name || demand.location || ''
-  f.venueType = (demand.location_type === '室外') ? 'outdoor' : 'indoor'
+  f.venueType = (demand.location_type === '室外' || demand.location_type === 2) ? 'outdoor' : 'indoor'
   f.expectedAttendees = demand.expected_count || 100
   f.deadline = demand.deadline || ''
   f.volunteerPoints = demand.volunteer_points || 0

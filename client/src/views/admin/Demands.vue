@@ -22,6 +22,12 @@
       </el-table-column>
       <el-table-column prop="community_name" label="发布社区" width="130" />
       <el-table-column prop="view_count" label="浏览量" width="80" align="center" />
+      <el-table-column prop="intention_count" label="意向" width="70" align="center">
+        <template #default="{ row }">{{ row.intention_count || 0 }}</template>
+      </el-table-column>
+      <el-table-column prop="comment_count" label="留言" width="70" align="center">
+        <template #default="{ row }">{{ row.comment_count || 0 }}</template>
+      </el-table-column>
       <el-table-column prop="created_at" label="创建时间" width="160">
         <template #default="{ row }">{{ fmtTime(row.created_at) }}</template>
       </el-table-column>

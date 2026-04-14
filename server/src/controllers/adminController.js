@@ -1892,7 +1892,9 @@ exports.getDemandList = async (req, res) => {
     }
 
     const [rows] = await pool.query(
-      `SELECT d.*, c.community_name, c.real_name as community_real_name
+      `SELECT d.*, c.community_name, c.real_name as community_real_name,
+       (SELECT COUNT(*) FROM intentions WHERE demand_id = d.id) as intention_count,
+       (SELECT COUNT(*) FROM comments WHERE demand_id = d.id AND status = 1) as comment_count
        FROM demands d
        LEFT JOIN communities c ON d.community_id = c.id
        WHERE ${where} ${dateFilter}

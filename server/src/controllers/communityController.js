@@ -8,6 +8,7 @@ const { pool } = require('../config/db')
 const jwtConfig = require('../config/jwt')
 const { success, pageSuccess, error } = require('../utils/response')
 const { calculateMatchScore, getMatchHearts } = require('../utils/matching')
+const typeMapper = require('../services/typeMapper')
 
 // 登录
 exports.login = async (req, res) => {
@@ -465,21 +466,37 @@ exports.getMyDemands = async (req, res) => {
     const { page = 1, pageSize = 10, status } = req.query
     const offset = (page - 1) * pageSize
     
-    let where = 'community_id = ?'
+    let where = 'd.community_id = ?'
     const params = [req.community.id]
     
     if (status) {
-      where += ' AND status = ?'
+      where += ' AND d.status = ?'
       params.push(status)
     }
     
     const [rows] = await pool.query(
-      `SELECT * FROM demands WHERE ${where} ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+      `SELECT d.*, 
+       (SELECT COUNT(*) FROM intentions WHERE demand_id = d.id) as intention_count,
+       (SELECT COUNT(*) FROM comments WHERE demand_id = d.id AND status = 1) as comment_count
+       FROM demands d WHERE ${where} ORDER BY d.created_at DESC LIMIT ? OFFSET ?`,
       [...params, parseInt(pageSize), offset]
     )
     
+// 解析 JSON 字段并转换为中文名称
+    // 确保 typeMapper 已初始化
+    if (typeMapper.getTypeMap('residentTypes').length === 0) {
+      try { await typeMapper.initialize() } catch {}
+    }
+    rows.forEach(row => {
+      try { row.target_audience = JSON.parse(row.target_audience || '[]') } catch { row.target_audience = [] }
+      try { row.tags = JSON.parse(row.tags || '[]') } catch { row.tags = [] }
+      // 使用 typeMapper 转换数字为中文名称
+      row.target_audience = typeMapper.getTypeNames('residentTypes', row.target_audience)
+      row.tags = typeMapper.getTypeNames('communityTags', row.tags)
+    })
+    
     const [[{ total }]] = await pool.query(
-      `SELECT COUNT(*) as total FROM demands WHERE ${where}`,
+      `SELECT COUNT(*) as total FROM demands d WHERE ${where}`,
       params
     )
     
@@ -876,15 +893,23 @@ exports.rejectIntention = async (req, res) => {
 exports.getDemandComments = async (req, res) => {
   try {
     const { id } = req.params
+    // 获取所有留言（包括回复），返回 parent_id 以便前端分组
     const [rows] = await pool.query(
-      `SELECT c.id, c.content, c.created_at, c.user_type,
+      `SELECT c.id, c.content, c.created_at, c.user_type, c.parent_id,
        (SELECT company_name FROM merchants WHERE id = c.user_id AND c.user_type = 2) as user_name,
-       (SELECT logo FROM merchants WHERE id = c.user_id AND c.user_type = 2) as user_logo
+       (SELECT logo FROM merchants WHERE id = c.user_id AND c.user_type = 2) as user_logo,
+       (SELECT name FROM communities WHERE id = c.user_id AND c.user_type = 1) as community_name
        FROM comments c
-       WHERE c.demand_id = ? AND c.status = 1 AND (c.parent_id IS NULL OR c.parent_id = 0)
-       ORDER BY c.created_at DESC`,
+       WHERE c.demand_id = ? AND c.status = 1
+       ORDER BY c.created_at ASC`,
       [id]
     )
+    // 为社区用户填充名称
+    rows.forEach(row => {
+      if (row.user_type === 1 && row.community_name) {
+        row.user_name = row.community_name
+      }
+    })
     success(res, rows)
   } catch (err) {
     error(res, '获取留言失败')

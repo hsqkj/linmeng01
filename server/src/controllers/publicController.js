@@ -276,37 +276,37 @@ exports.getPublishTypes = async (req, res) => {
     
     const result = {
       // 需求类型
-      demand_types: typeMaps.demandTypes.map(t => t.name),
+      demand_types: typeMaps.demandTypes.map(t => ({ id: t.id, name: t.name })),
       // 资源类型
-      resource_types: typeMaps.resourceTypes.map(t => t.name),
+      resource_types: typeMaps.resourceTypes.map(t => ({ id: t.id, name: t.name })),
       // 活动类型
-      activity_types: typeMaps.activityTypes.map(t => t.name),
+      activity_types: typeMaps.activityTypes.map(t => ({ id: t.id, name: t.name })),
       // 专家类型
-      expert_types: typeMaps.expertTypes.map(t => t.name),
+      expert_types: typeMaps.expertTypes.map(t => ({ id: t.id, name: t.name })),
       // 居民类型
-      resident_types: typeMaps.residentTypes.map(t => t.name),
+      resident_types: typeMaps.residentTypes.map(t => ({ id: t.id, name: t.name })),
       // 社区类型
-      community_types: typeMaps.communityTypes.map(t => t.name),
+      community_types: typeMaps.communityTypes.map(t => ({ id: t.id, name: t.name })),
       // 企业类型
-      enterprise_types: typeMaps.enterpriseTypes.map(t => t.name),
+      enterprise_types: typeMaps.enterpriseTypes.map(t => ({ id: t.id, name: t.name })),
       // 行业分类
-      industry_types: typeMaps.industryTypes.map(t => t.name),
+      industry_types: typeMaps.industryTypes.map(t => ({ id: t.id, name: t.name })),
       // 社区标签
-      community_tags: typeMaps.communityTags.map(t => t.name),
+      community_tags: typeMaps.communityTags.map(t => ({ id: t.id, name: t.name })),
       // 资源标签
-      resource_tags: typeMaps.resourceTags.map(t => t.name),
+      resource_tags: typeMaps.resourceTags.map(t => ({ id: t.id, name: t.name })),
       // 媒体类型
-      media_types: typeMaps.mediaTypes.map(t => t.name),
+      media_types: typeMaps.mediaTypes.map(t => ({ id: t.id, name: t.name })),
       // 空间类型
-      space_types: typeMaps.spaceTypes.map(t => t.name),
+      space_types: typeMaps.spaceTypes.map(t => ({ id: t.id, name: t.name })),
       // 合作方式
-      cooperation_types: typeMaps.cooperationTypes.map(t => t.name),
+      cooperation_types: typeMaps.cooperationTypes.map(t => ({ id: t.id, name: t.name })),
       // 品牌展示方式
-      brand_display_types: typeMaps.brandDisplayTypes.map(t => t.name),
+      brand_display_types: typeMaps.brandDisplayTypes.map(t => ({ id: t.id, name: t.name })),
       // 专业服务类型
-      professional_types: typeMaps.professionalTypes.map(t => t.name),
+      professional_types: typeMaps.professionalTypes.map(t => ({ id: t.id, name: t.name })),
       // 技术类型
-      tech_types: typeMaps.techTypes.map(t => t.name),
+      tech_types: typeMaps.techTypes.map(t => ({ id: t.id, name: t.name })),
     }
     
     // 额外从 sys_configs 获取会员等级配置

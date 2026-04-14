@@ -1,11 +1,58 @@
 <template>
   <div class="page" v-loading="loading">
-    <h2>招商大使提成配置</h2>
+    <h2>招商大使配置</h2>
     <div class="tip-box">💡 提成比例调整后仅对新订单生效，历史已结算订单不受影响</div>
+
+    <!-- 大使等级设置 -->
+    <div class="section-card" style="margin-bottom:16px">
+      <div class="section-title">🏆 大使等级设置</div>
+      <p style="color:#909399;font-size:13px;margin:0 0 12px">设置不同等级的大使及其提成比例。注册即为最低级，缴费升级后可获得更高提成。</p>
+      <el-table :data="ambassadorLevels" stripe border>
+        <el-table-column label="等级" width="100" align="center">
+          <template #default="{ row }">
+            <el-tag :type="row.type" size="small">{{ row.name }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="升级费用" width="130">
+          <template #default="{ row }">
+            <span v-if="row.fee === 0" style="color:#67C23A;font-weight:600">免费注册</span>
+            <template v-else>
+              <el-input-number v-model="row.fee" :min="0" :step="100" size="small" style="width:100px" />
+              <span style="font-size:12px">元</span>
+            </template>
+          </template>
+        </el-table-column>
+        <el-table-column label="提成比例" width="150">
+          <template #default="{ row }">
+            <el-input-number v-model="row.commissionRate" :min="0" :max="100" :precision="1" size="small" style="width:100px" />
+            <span style="font-size:12px">%</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="可发展下级" width="120" align="center">
+          <template #default="{ row }">
+            <el-switch v-model="row.canDevelopSub" size="small" />
+          </template>
+        </el-table-column>
+        <el-table-column label="下级提成比例" width="140" align="center">
+          <template #default="{ row }">
+            <template v-if="row.canDevelopSub">
+              <el-input-number v-model="row.subCommissionRate" :min="0" :max="50" :precision="1" size="small" style="width:90px" />
+              <span style="font-size:12px">%</span>
+            </template>
+            <span v-else style="color:#c0c4cc">—</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="权益说明">
+          <template #default="{ row }">
+            <el-input v-model="row.benefits" placeholder="如：专属培训、优先推广资源" size="small" />
+          </template>
+        </el-table-column>
+      </el-table>
+    </div>
 
     <!-- 提成比例配置 -->
     <div class="section-card">
-      <div class="section-title">提成比例设置</div>
+      <div class="section-title">💰 提成比例配置</div>
       <el-form label-width="180px" style="max-width:600px">
         <el-form-item label="首次入会提成比例">
           <el-input-number v-model="config.firstRate" :min="0" :max="50" :precision="1" style="width:130px" />
@@ -38,44 +85,9 @@
       </el-form>
     </div>
 
-    <!-- 不同会员等级的提成差异配置 -->
-    <div class="section-card" style="margin-top:20px">
-      <div class="section-title">各会员等级提成说明</div>
-      <p style="color:#909399;font-size:13px;margin:0 0 12px">可针对不同会员等级设置不同的大使提成率（如高等级商家奖励更高提成）</p>
-      <el-table :data="levelCommissions" stripe border>
-        <el-table-column prop="level" label="等级" width="60" align="center" />
-        <el-table-column prop="name" label="会员名称" width="120" />
-        <el-table-column prop="fee" label="年费" width="100">
-          <template #default="{ row }">¥{{ row.fee.toLocaleString() }}</template>
-        </el-table-column>
-        <el-table-column label="首次提成" width="130">
-          <template #default="{ row }">
-            <el-input-number v-model="row.firstRate" :min="0" :max="50" :precision="1" size="small" style="width:100px" />
-            <span style="font-size:12px">%</span>
-          </template>
-        </el-table-column>
-        <el-table-column label="首次金额（预估）" width="140" align="center">
-          <template #default="{ row }">
-            <span style="color:#E6A23C;font-weight:600">¥{{ Math.round(row.fee * row.firstRate / 100).toLocaleString() }}</span>
-          </template>
-        </el-table-column>
-        <el-table-column label="续费提成" width="130">
-          <template #default="{ row }">
-            <el-input-number v-model="row.renewRate" :min="0" :max="30" :precision="1" size="small" style="width:100px" />
-            <span style="font-size:12px">%</span>
-          </template>
-        </el-table-column>
-        <el-table-column label="续费金额（预估）" width="140" align="center">
-          <template #default="{ row }">
-            <span style="color:#67C23A;font-weight:600">¥{{ Math.round(row.fee * row.renewRate / 100).toLocaleString() }}</span>
-          </template>
-        </el-table-column>
-      </el-table>
-    </div>
-
     <!-- 结算规则 -->
-    <div class="section-card" style="margin-top:20px">
-      <div class="section-title">结算规则说明</div>
+    <div class="section-card" style="margin-top:16px">
+      <div class="section-title">📋 结算规则说明</div>
       <el-form label-width="160px" style="max-width:700px">
         <el-form-item label="单笔最高提成上限">
           <el-input-number v-model="config.maxPerOrder" :min="0" :step="500" style="width:130px" />
@@ -108,6 +120,13 @@ import { getAmbassadorConfig, saveAmbassadorConfig } from '@/api/admin'
 
 const loading = ref(false)
 
+// 大使等级配置
+const ambassadorLevels = reactive([
+  { level: 1, name: '主管级', type: 'info', fee: 0, commissionRate: 25, canDevelopSub: false, subCommissionRate: 0, benefits: '注册即为大使，获得基础提成' },
+  { level: 2, name: '经理级', type: 'warning', fee: 399, commissionRate: 30, canDevelopSub: true, subCommissionRate: 10, benefits: '可发展下级大使，获得下级提成' },
+  { level: 3, name: '总监级', type: 'danger', fee: 1999, commissionRate: 40, canDevelopSub: true, subCommissionRate: 10, benefits: '最高等级，全额提成+下级提成' }
+])
+
 const config = reactive({
   firstRate: 20,
   renewRate: 10,
@@ -118,14 +137,6 @@ const config = reactive({
   expirePolicy: 'keep_first',
   remark: '招商大使提成政策：成功邀请商家入驻并完成付费后，首次入会按年费的20%结算提成；商家每年续费后，按续费金额的10%追加提成。提成每月1日统一结算，最低提现100元，3个工作日内到账。'
 })
-
-const levelCommissions = reactive([
-  { level: 1, name: '普通会员', fee: 0, firstRate: 0, renewRate: 0 },
-  { level: 2, name: '银牌会员', fee: 999, firstRate: 20, renewRate: 10 },
-  { level: 3, name: '金牌会员', fee: 2999, firstRate: 20, renewRate: 10 },
-  { level: 4, name: '铂金会员', fee: 5999, firstRate: 20, renewRate: 10 },
-  { level: 5, name: '钻石会员', fee: 12000, firstRate: 20, renewRate: 10 }
-])
 
 async function loadConfig() {
   loading.value = true
@@ -141,10 +152,12 @@ async function loadConfig() {
     if (ac.maxPerOrder !== undefined) config.maxPerOrder = ac.maxPerOrder
     if (ac.expirePolicy) config.expirePolicy = ac.expirePolicy
     if (ac.remark) config.remark = ac.remark
-    if (ac.level_commissions && ac.level_commissions.length > 0) {
-      levelCommissions.splice(0, levelCommissions.length, ...ac.level_commissions.map(l => ({
-        level: l.level, name: l.name || levelCommissions[l.level - 1]?.name || '',
-        fee: l.fee, firstRate: l.first_rate, renewRate: l.renew_rate
+    // 加载大使等级配置
+    if (ac.ambassador_levels && ac.ambassador_levels.length > 0) {
+      ambassadorLevels.splice(0, ambassadorLevels.length, ...ac.ambassador_levels.map(l => ({
+        level: l.level, name: l.name, type: ['info', 'warning', 'danger'][l.level - 1] || 'info',
+        fee: l.fee, commissionRate: l.commissionRate, canDevelopSub: l.canDevelopSub,
+        subCommissionRate: l.subCommissionRate || 0, benefits: l.benefits || ''
       })))
     }
   } catch {}
@@ -158,22 +171,26 @@ async function saveConfig() {
       ambassador_commission: {
         ...config,
         arrivalDays: Number(config.arrivalDays),
-        level_commissions: levelCommissions.map(l => ({ level: l.level, name: l.name, fee: l.fee, first_rate: l.firstRate, renew_rate: l.renewRate }))
+        ambassador_levels: ambassadorLevels.map(l => ({
+          level: l.level, name: l.name, fee: l.fee,
+          commissionRate: l.commissionRate, canDevelopSub: l.canDevelopSub,
+          subCommissionRate: l.subCommissionRate, benefits: l.benefits
+        }))
       }
     })
-    ElMessage.success('提成配置已保存')
+    ElMessage.success('招商配置已保存')
   } catch {
     ElMessage.error('保存失败，请重试')
   } finally { loading.value = false }
 }
+
 function resetConfig() {
-  config.firstRate = 20; config.renewRate = 10; config.minWithdraw = 100; config.settlePeriod = 'monthly'; config.arrivalDays = '3'; config.maxPerOrder = 0; config.expirePolicy = 'keep_first'; config.remark = '招商大使提成政策：成功邀请商家入驻并完成付费后，首次入会按年费的20%结算提成；商家每年续费后，按续费金额的10%追加提成。提成每月1日统一结算，最低提现100元，3个工作日内到账。'
-  levelCommissions.splice(0, levelCommissions.length,
-    { level: 1, name: '普通会员', fee: 0, firstRate: 0, renewRate: 0 },
-    { level: 2, name: '银牌会员', fee: 999, firstRate: 20, renewRate: 10 },
-    { level: 3, name: '金牌会员', fee: 2999, firstRate: 20, renewRate: 10 },
-    { level: 4, name: '铂金会员', fee: 5999, firstRate: 20, renewRate: 10 },
-    { level: 5, name: '钻石会员', fee: 12000, firstRate: 20, renewRate: 10 }
+  config.firstRate = 20; config.renewRate = 10; config.minWithdraw = 100; config.settlePeriod = 'monthly'; config.arrivalDays = '3'; config.maxPerOrder = 0; config.expirePolicy = 'keep_first'
+  config.remark = '招商大使提成政策：成功邀请商家入驻并完成付费后，首次入会按年费的20%结算提成；商家每年续费后，按续费金额的10%追加提成。提成每月1日统一结算，最低提现100元，3个工作日内到账。'
+  ambassadorLevels.splice(0, ambassadorLevels.length,
+    { level: 1, name: '主管级', type: 'info', fee: 0, commissionRate: 25, canDevelopSub: false, subCommissionRate: 0, benefits: '注册即为大使，获得基础提成' },
+    { level: 2, name: '经理级', type: 'warning', fee: 399, commissionRate: 30, canDevelopSub: true, subCommissionRate: 10, benefits: '可发展下级大使，获得下级提成' },
+    { level: 3, name: '总监级', type: 'danger', fee: 1999, commissionRate: 40, canDevelopSub: true, subCommissionRate: 10, benefits: '最高等级，全额提成+下级提成' }
   )
   ElMessage.success('已重置为默认值')
 }

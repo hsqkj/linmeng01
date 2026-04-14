@@ -396,13 +396,13 @@ const viewActivityDetail = (activity) => {
 /* ===== 欢迎 Banner ===== */
 .welcome-banner {
   background: linear-gradient(135deg, #26a269, #1a7a4c);
-  border-radius: 16px;
-  padding: 32px 36px;
+  border-radius: 12px;
+  padding: 16px 20px;
   color: white;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 12px;
   position: relative;
   overflow: hidden;
 }
@@ -415,8 +415,8 @@ const viewActivityDetail = (activity) => {
   border-radius: 50%;
 }
 .welcome-content { position: relative; z-index: 1; }
-.welcome-content h1 { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
-.welcome-content p { opacity: 0.9; font-size: 14px; }
+.welcome-content h1 { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+.welcome-content p { opacity: 0.9; font-size: 13px; }
 .welcome-banner :deep(.el-button) {
   position: relative; z-index: 10;
 }
@@ -464,82 +464,83 @@ const viewActivityDetail = (activity) => {
 .stats-row {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-  margin-bottom: 20px;
+  gap: 12px;
+  margin-bottom: 16px;
 }
 .stat-card {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 20px 20px;
+  gap: 10px;
+  padding: 12px 14px;
   background: #fff;
-  border-radius: 16px;
-  box-shadow: 0 2px 12px rgba(0,0,0,.06);
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.06);
   transition: all .2s;
 }
-.stat-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,.1); }
-.stat-card :deep(.el-card__body) { display: flex; align-items: center; gap: 14px; }
+.stat-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,.1); }
+.stat-card :deep(.el-card__body) { display: flex; align-items: center; gap: 10px; }
 .stat-icon {
-  width: 52px; height: 52px;
-  border-radius: 14px;
+  width: 40px; height: 40px;
+  border-radius: 10px;
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
 }
-.stat-value { font-size: 28px; font-weight: 700; color: #1a1a1a; }
-.stat-label  { color: #888; font-size: 13px; margin-top: 3px; }
+.stat-value { font-size: 20px; font-weight: 700; color: #1a1a1a; }
+.stat-label  { color: #888; font-size: 12px; margin-top: 2px; }
 
 /* ===== 章节 ===== */
-.section { margin-bottom: 28px; }
+.section { margin-bottom: 20px; }
 .section-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 .section-header h2 {
-  display: flex; align-items: center; gap: 8px;
-  font-size: 18px; font-weight: 700; color: #1a1a1a;
+  display: flex; align-items: center; gap: 6px;
+  font-size: 16px; font-weight: 700; color: #1a1a1a;
 }
 
 /* ===== 资源卡片 ===== */
 .resource-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
 }
 .resource-card {
   position: relative;
-  border-radius: 16px !important;
+  border-radius: 12px !important;
   overflow: hidden;
   transition: all .2s !important;
 }
-.resource-card:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(0,0,0,.12) !important; }
+.resource-card:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,.1) !important; }
 
-.card-top-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.card-top-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
 .match-score { text-align: right; }
 .hearts { display: flex; gap: 2px; justify-content: flex-end; align-items: center; }
-.heart { color: #e0e0e0; font-size: 13px; }
+.heart { color: #e0e0e0; font-size: 12px; }
 .heart.filled { color: #ff4d4f; }
 .score-label { font-size: 11px; color: #888; font-weight: 500; margin-right: 3px; }
 
 .resource-header {
-  display: flex; align-items: center; gap: 12px;
-  margin-bottom: 12px; padding-right: 88px;
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 8px; padding-right: 80px;
 }
 .merchant-info { flex: 1; min-width: 0; }
-.merchant-info h4 { margin: 0 0 5px; font-size: 15px; font-weight: 700; }
-.merchant-meta-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-.star-rating-text { color: #f5a623; font-size: 12px; font-weight: 600; }
-.view-count { display: flex; align-items: center; gap: 3px; color: #999; font-size: 12px; }
+.merchant-info h4 { margin: 0 0 4px; font-size: 14px; font-weight: 700; }
+.merchant-meta-row { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.star-rating-text { color: #f5a623; font-size: 11px; font-weight: 600; }
+.view-count { display: flex; align-items: center; gap: 2px; color: #999; font-size: 11px; }
 
 .resource-desc {
-  color: #666; font-size: 13px; margin-bottom: 12px;
+  color: #666; font-size: 13px; margin-bottom: 10px;
   display: -webkit-box; -webkit-line-clamp: 2;
   -webkit-box-orient: vertical; overflow: hidden;
-  line-height: 1.6;
+  line-height: 1.5;
 }
-.resource-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+.resource-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 10px; }
 .resource-actions { display: flex; gap: 8px; }
+.resource-actions .el-button { flex: 1; padding: 8px 12px; font-size: 13px; }
 .merchant-name-link { color: #26a269; cursor: pointer; transition: color .2s; }
 .merchant-name-link:hover { color: #1a7a4c; text-decoration: underline; }
 

@@ -153,17 +153,19 @@
           <div class="action-card">
             <div class="match-score">
               <div class="hearts">{{ '❤️'.repeat(demand.matchHearts || 0) }}{{ '🤍'.repeat(5 - (demand.matchHearts || 0)) }}</div>
-              <div class="score-label">与您的匹配度 {{ (demand.matchHearts || 0) * 20 }}%</div>
+              <div class="score-label">匹配度 {{ (demand.matchHearts || 0) * 20 }}%</div>
             </div>
-            <el-button type="primary" size="large" block @click="showIntentDialog = true" style="width:100%;margin-bottom:12px">
-              🤝 我要提供赞助
-            </el-button>
-            <el-button v-if="memberLevel > 0" size="large" block style="width:100%;margin-bottom:8px" @click="scrollToComment">
-              💬 留言咨询
-            </el-button>
-            <el-button size="large" block style="width:100%" :type="isFavorited ? 'warning' : 'default'" :loading="favoriteLoading" @click="toggleFav">
-              {{ isFavorited ? '⭐ 已收藏' : '☆ 收藏需求' }}
-            </el-button>
+            <div class="action-btns-primary">
+              <el-button type="primary" @click="showIntentDialog = true" style="flex:1">
+                🤝 提供赞助
+              </el-button>
+              <el-button v-if="memberLevel > 0" @click="scrollToComment">
+                💬 咨询
+              </el-button>
+              <el-button :type="isFavorited ? 'warning' : 'default'" :loading="favoriteLoading" @click="toggleFav">
+                {{ isFavorited ? '⭐' : '☆' }}
+              </el-button>
+            </div>
             <div class="deadline-tip">
               <el-icon color="#F56C6C"><Warning /></el-icon>
               截止 {{ formatDateTime(demand.deadline) || '长期有效' }}，还有 <strong style="color:#F56C6C">{{ getDaysLeft(demand.deadline) }}天</strong>
@@ -564,11 +566,13 @@ onMounted(async () => {
 .reply-item { font-size: 13px; color: #606266; }
 .lock-notice { text-align: center; padding: 24px; color: #909399; border: 1px dashed #dcdfe6; border-radius: 8px; }
 .lock-notice p { margin: 8px 0; font-size: 14px; }
-.action-card, .community-card, .similar-card, .contact-card { background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
-.match-score { text-align: center; margin-bottom: 16px; }
-.hearts { font-size: 24px; }
-.score-label { font-size: 13px; color: #909399; margin-top: 4px; }
-.deadline-tip { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #606266; margin-top: 12px; justify-content: center; }
+.action-card, .community-card, .similar-card, .contact-card { background: #fff; border-radius: 10px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+.match-score { text-align: center; margin-bottom: 12px; }
+.hearts { font-size: 22px; }
+.score-label { font-size: 12px; color: #909399; margin-top: 4px; }
+.action-btns-primary { display: flex; gap: 8px; }
+.action-btns-primary .el-button { padding: 10px 14px; font-size: 13px; }
+.deadline-tip { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #606266; margin-top: 10px; justify-content: center; }
 .community-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
 .stat-item { text-align: center; }
 .stat-val { display: block; font-size: 18px; font-weight: 700; color: #409EFF; }
@@ -594,15 +598,17 @@ onMounted(async () => {
     padding: 12px;
     padding-bottom: 80px;
   }
-  .page-header { margin-bottom: 14px; }
-  .page-header .el-button { font-size: 13px; padding: 6px 10px; }
-  .detail-layout { grid-template-columns: 1fr !important; gap: 14px; }
-  .demand-card { padding: 16px; border-radius: 8px; }
-  .demand-title { font-size: 17px; }
+  .page-header { margin-bottom: 12px; }
+  .page-header .el-button { font-size: 12px; padding: 4px 8px; }
+  .detail-layout { grid-template-columns: 1fr !important; gap: 12px; }
+  .demand-card { padding: 14px; border-radius: 8px; }
+  .demand-title { font-size: 16px; }
   .info-grid { grid-template-columns: 1fr; }
   .reward-grid { grid-template-columns: 1fr; }
-  .action-card { position: sticky; bottom: 70px; z-index: 10; }
-  .community-card { margin-top: 0; }
+  .action-card { position: sticky; bottom: 70px; z-index: 10; padding: 12px; }
+  .action-btns-primary { flex-wrap: wrap; }
+  .action-btns-primary .el-button { flex: 1; min-width: 60px; font-size: 12px; padding: 8px 10px; }
+  .community-card { margin-top: 0; padding: 14px; }
   .comment-input textarea { font-size: 14px; }
 }
 </style>

@@ -142,14 +142,16 @@
             <div class="hearts">
               <span v-for="n in 5" :key="n" :class="['heart', { filled: n <= (resource.matchHearts || 0) }]">♥</span>
             </div>
-            <div class="score-label">与您的匹配度 {{ (resource.matchScore || 0) * 20 }}%</div>
+            <div class="score-label">匹配度 {{ (resource.matchScore || 0) * 20 }}%</div>
           </div>
-          <el-button type="primary" size="large" block @click="leaveMessage" style="width:100%;margin-bottom:12px">
-            💬 留言咨询
-          </el-button>
-          <el-button size="large" block style="width:100%" @click="showMerchantInfoDialog">
-            🏢 查看商家信息
-          </el-button>
+          <div class="action-btns">
+            <el-button type="primary" @click="leaveMessage">
+              💬 留言咨询
+            </el-button>
+            <el-button @click="showMerchantInfoDialog">
+              🏢 查看商家
+            </el-button>
+          </div>
         </div>
 
         <!-- 商家基本信息 -->
@@ -529,18 +531,22 @@ onMounted(() => {
 .comment-text { font-size: 14px; color: #303133; }
 .comment-replies { margin-top: 8px; background: #f5f7fa; border-radius: 6px; padding: 8px 12px; }
 .reply-item { font-size: 13px; color: #606266; }
-.action-card, .info-card { background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
-.match-score { text-align: center; margin-bottom: 16px; }
-.hearts { font-size: 20px; }
-.score-label { font-size: 13px; color: #909399; margin-top: 4px; }
-.info-card h4 { margin: 0 0 16px; font-size: 15px; }
+.action-card, .info-card { background: #fff; border-radius: 10px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+.match-score { text-align: center; margin-bottom: 12px; }
+.hearts { font-size: 18px; }
+.score-label { font-size: 12px; color: #909399; margin-top: 4px; }
+.action-btns { display: flex; gap: 10px; }
+.action-btns .el-button { flex: 1; padding: 10px 12px; font-size: 13px; }
+.info-card h4 { margin: 0 0 12px; font-size: 14px; }
 
 @media (max-width: 768px) {
-  .detail-layout { grid-template-columns: 1fr; }
+  .detail-layout { grid-template-columns: 1fr; gap: 12px; }
   .merchant-header { flex-direction: column; align-items: center; text-align: center; }
   .info-grid { grid-template-columns: 1fr; }
   .merchant-meta { justify-content: center; flex-wrap: wrap; }
   .match-hearts { justify-content: center; }
+  .action-btns { flex-wrap: wrap; }
+  .action-btns .el-button { flex: 1; min-width: 80px; font-size: 12px; }
 }
 .products-showcase { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
 .product-card { background: #f9f9f9; border-radius: 8px; overflow: hidden; }

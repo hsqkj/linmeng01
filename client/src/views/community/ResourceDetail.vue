@@ -326,12 +326,14 @@
             </div>
             <div class="score-label">与您的匹配度 {{ (resource.matchScore || 0) * 20 }}%</div>
           </div>
-          <el-button type="primary" size="large" block @click="leaveMessage" style="width:100%;margin-bottom:12px">
-            💬 留言咨询
-          </el-button>
-          <el-button size="large" block style="width:100%" @click="showMerchantInfoDialog">
-            🏢 查看商家信息
-          </el-button>
+          <div class="action-btns">
+            <el-button type="primary" size="default" @click="leaveMessage">
+              💬 留言咨询
+            </el-button>
+            <el-button size="default" @click="showMerchantInfoDialog">
+              🏢 查看商家
+            </el-button>
+          </div>
         </div>
 
         <!-- 商家基本信息 -->
@@ -879,66 +881,68 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.merchant-detail { max-width: 1200px; margin: 0 auto; padding: 20px; }
-.page-header { margin-bottom: 20px; }
-.detail-layout { display: grid; grid-template-columns: 1fr 340px; gap: 20px; align-items: start; }
-.main-content, .side-content { display: flex; flex-direction: column; gap: 16px; }
-.merchant-card { background: #fff; border-radius: 12px; padding: 28px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
-.merchant-header { display: flex; align-items: flex-start; gap: 20px; margin-bottom: 8px; }
+.merchant-detail { max-width: 1200px; margin: 0 auto; padding: 16px; }
+.page-header { margin-bottom: 12px; }
+.detail-layout { display: grid; grid-template-columns: 1fr 320px; gap: 16px; align-items: start; }
+.main-content, .side-content { display: flex; flex-direction: column; gap: 12px; }
+.merchant-card { background: #fff; border-radius: 10px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+.merchant-header { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 6px; }
 .merchant-logo { flex-shrink: 0; }
-.logo-img { width: 100px; height: 100px; border-radius: 12px; object-fit: cover; background: #f0f2f5; }
+.logo-img { width: 80px; height: 80px; border-radius: 10px; object-fit: cover; background: #f0f2f5; }
 .merchant-info { flex: 1; }
-.merchant-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
-.match-hearts { display: flex; align-items: center; gap: 4px; margin-top: 8px; }
-.heart { font-size: 16px; color: #dcdfe6; }
+.merchant-meta { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+.match-hearts { display: flex; align-items: center; gap: 4px; margin-top: 6px; }
+.heart { font-size: 14px; color: #dcdfe6; }
 .heart.filled { color: #f56c6c; }
-.merchant-name { font-size: 24px; font-weight: 700; color: #1a1a2e; margin: 0 0 8px; }
-.merchant-rating { display: flex; align-items: center; gap: 8px; margin: 8px 0; font-size: 14px; }
+.merchant-name { font-size: 20px; font-weight: 700; color: #1a1a2e; margin: 0 0 6px; }
+.merchant-rating { display: flex; align-items: center; gap: 6px; margin: 6px 0; font-size: 13px; }
 .rating-label { color: #909399; }
 .star-rating-text { color: #f5a623; font-weight: 600; }
-.match-text { margin-left: 8px; color: #909399; font-size: 12px; }
-.merchant-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-.section { margin-top: 24px; }
-.section h3 { font-size: 16px; font-weight: 700; color: #303133; margin-bottom: 16px; }
-.info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.info-item { display: flex; flex-direction: column; gap: 4px; }
+.match-text { margin-left: 6px; color: #909399; font-size: 12px; }
+.merchant-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+.section { margin-top: 16px; }
+.section h3 { font-size: 15px; font-weight: 700; color: #303133; margin-bottom: 12px; }
+.info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.info-item { display: flex; flex-direction: column; gap: 3px; }
 .info-label { font-size: 12px; color: #909399; }
-.info-value { font-size: 14px; color: #303133; }
-.description { color: #606266; line-height: 1.8; font-size: 14px; }
-.provide-block { background: #f0f9ff; border-radius: 8px; padding: 16px; border-left: 4px solid #409EFF; }
-.reward-section { margin-top: 16px; margin-bottom: 20px; }
-.reward-section h3 { color: #E6A23C; font-size: 18px; margin-bottom: 12px; }
+.info-value { font-size: 13px; color: #303133; }
+.description { color: #606266; line-height: 1.6; font-size: 13px; }
+.provide-block { background: #f0f9ff; border-radius: 6px; padding: 12px; border-left: 3px solid #409EFF; }
+.reward-section { margin-top: 12px; margin-bottom: 16px; }
+.reward-section h3 { color: #E6A23C; font-size: 16px; margin-bottom: 10px; }
 .reward-highlight { 
   background: linear-gradient(135deg, #fff7e6, #fffbf0); 
-  border: 3px solid #E6A23C; 
-  border-radius: 16px; 
-  padding: 24px; 
-  box-shadow: 0 4px 12px rgba(230, 162, 60, 0.3);
+  border: 2px solid #E6A23C; 
+  border-radius: 12px; 
+  padding: 16px; 
+  box-shadow: 0 3px 10px rgba(230, 162, 60, 0.25);
 }
-.reward-tags { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; justify-content: center; }
-.reward-tag { padding: 10px 20px; font-size: 16px; font-weight: 600; }
+.reward-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; justify-content: center; }
+.reward-tag { padding: 8px 16px; font-size: 14px; font-weight: 600; }
 .reward-desc { 
   background: rgba(255,255,255,0.8); 
-  border-radius: 8px; 
-  padding: 16px; 
+  border-radius: 6px; 
+  padding: 12px; 
   text-align: center;
 }
-.reward-desc p { margin: 0; color: #606266; line-height: 1.8; font-size: 15px; }
-.image-gallery { display: flex; flex-wrap: wrap; gap: 12px; }
-.gallery-image { width: 150px; height: 150px; border-radius: 8px; cursor: pointer; }
-.comment-input { margin-bottom: 20px; }
-.comment-list { display: flex; flex-direction: column; gap: 16px; }
-.comment-item { display: flex; gap: 12px; }
-.comment-avatar { width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0; }
-.comment-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
-.commenter-name { font-weight: 600; font-size: 14px; }
-.comment-time { font-size: 12px; color: #909399; }
-.comment-text { font-size: 14px; color: #303133; }
-.action-card, .info-card { background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
-.match-score { text-align: center; margin-bottom: 16px; }
-.hearts { font-size: 20px; }
-.score-label { font-size: 13px; color: #909399; margin-top: 4px; }
-.info-card h4 { margin: 0 0 16px; font-size: 15px; }
+.reward-desc p { margin: 0; color: #606266; line-height: 1.6; font-size: 14px; }
+.image-gallery { display: flex; flex-wrap: wrap; gap: 10px; }
+.gallery-image { width: 120px; height: 120px; border-radius: 6px; cursor: pointer; }
+.comment-input { margin-bottom: 16px; }
+.comment-list { display: flex; flex-direction: column; gap: 12px; }
+.comment-item { display: flex; gap: 10px; }
+.comment-avatar { width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0; }
+.comment-meta { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+.commenter-name { font-weight: 600; font-size: 13px; }
+.comment-time { font-size: 11px; color: #909399; }
+.comment-text { font-size: 13px; color: #303133; }
+.action-card, .info-card { background: #fff; border-radius: 10px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+.match-score { text-align: center; margin-bottom: 12px; }
+.hearts { font-size: 18px; }
+.score-label { font-size: 12px; color: #909399; margin-top: 4px; }
+.action-btns { display: flex; gap: 10px; }
+.action-btns .el-button { flex: 1; padding: 10px 12px; font-size: 13px; }
+.info-card h4 { margin: 0 0 12px; font-size: 14px; }
 
 /* 智能客服样式 */
 .service-dialog { min-height: 400px; display: flex; flex-direction: column; }
@@ -961,10 +965,13 @@ onMounted(() => {
 .merchant-profile-logo { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid #f0f0f0; }
 
 @media (max-width: 768px) {
-  .detail-layout { grid-template-columns: 1fr; }
+  .merchant-detail { padding: 12px; }
+  .detail-layout { grid-template-columns: 1fr; gap: 12px; }
   .merchant-header { flex-direction: column; align-items: center; text-align: center; }
   .info-grid { grid-template-columns: 1fr; }
   .merchant-meta { justify-content: center; flex-wrap: wrap; }
   .match-hearts { justify-content: center; }
+  .action-btns { flex-wrap: wrap; }
+  .action-btns .el-button { flex: 1; min-width: 80px; font-size: 12px; }
 }
 </style>

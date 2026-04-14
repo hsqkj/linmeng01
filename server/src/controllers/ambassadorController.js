@@ -328,17 +328,29 @@ exports.getCommissionConfig = async (req, res) => {
           renewRate: l.renewRate ?? l.renew_rate ?? 0
         }))
       }
+      // 确保返回大使等级配置
+      if (!config.ambassador_levels || config.ambassador_levels.length === 0) {
+        config.ambassador_levels = [
+          { level: 1, name: '主管级', fee: 0, commissionRate: 25, canDevelopSub: false, subCommissionRate: 0, benefits: '注册即为大使，获得基础提成' },
+          { level: 2, name: '经理级', fee: 399, commissionRate: 30, canDevelopSub: true, subCommissionRate: 10, benefits: '可发展下级大使，获得下级提成' },
+          { level: 3, name: '总监级', fee: 1999, commissionRate: 40, canDevelopSub: true, subCommissionRate: 10, benefits: '最高等级，全额提成+下级提成' }
+        ]
+      }
       success(res, config)
     } else {
-      // 返回空配置（管理后台应确保已配置）
+      // 返回默认配置
       success(res, {
-        firstRate: 0,
-        renewRate: 0,
-        minWithdraw: 0,
+        firstRate: 25,
+        renewRate: 25,
+        minWithdraw: 100,
         settlePeriod: 'monthly',
         arrivalDays: '3',
-        remark: '',
-        level_commissions: []
+        remark: '招商大使提成政策：成功邀请商家入驻并完成付费后，首次入会按年费的25%结算提成；商家每年续费后，按续费金额的25%追加提成。提成每月1日统一结算，最低提现100元，3个工作日内到账。',
+        ambassador_levels: [
+          { level: 1, name: '主管级', fee: 0, commissionRate: 25, canDevelopSub: false, subCommissionRate: 0, benefits: '注册即为大使，获得基础提成' },
+          { level: 2, name: '经理级', fee: 399, commissionRate: 30, canDevelopSub: true, subCommissionRate: 10, benefits: '可发展下级大使，获得下级提成' },
+          { level: 3, name: '总监级', fee: 1999, commissionRate: 40, canDevelopSub: true, subCommissionRate: 10, benefits: '最高等级，全额提成+下级提成' }
+        ]
       })
     }
   } catch (err) {

@@ -13,21 +13,21 @@
             <span class="benefit-icon">🏘️</span>
             <div>
               <div class="benefit-title">社区招商更容易</div>
-              <div class="benefit-desc">一键生成专属渠道码，快速触达目标社区</div>
+              <div class="benefit-desc">一键生成专属渠道码，快速触达目标商家</div>
             </div>
           </div>
           <div class="benefit-item">
             <span class="benefit-icon">📈</span>
             <div>
               <div class="benefit-title">管道收益更丰厚</div>
-              <div class="benefit-desc">首次20%+续费10%提成，永久绑定持续收益</div>
+              <div class="benefit-desc">高提成比例，永久绑定持续收益</div>
             </div>
           </div>
           <div class="benefit-item">
             <span class="benefit-icon">💰</span>
             <div>
-              <div class="benefit-title">月结提现</div>
-              <div class="benefit-desc">满100元即可申请提现，按月结算</div>
+              <div class="benefit-title">等级越高权益越大</div>
+              <div class="benefit-desc">等级越高，权益越高，收益越大</div>
             </div>
           </div>
         </div>

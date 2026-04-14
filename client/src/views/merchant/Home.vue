@@ -193,6 +193,25 @@
             <el-tag v-for="g in (demand.target_audience_names || [])" :key="g" size="small" type="info" style="margin:2px">{{ g }}</el-tag>
           </div>
 
+          <div class="demand-detail-summary" v-if="demand.description || demand.sponsor_content || demand.fund_amount">
+            <div v-if="demand.sponsor_content" class="detail-item">
+              <span class="detail-label">赞助内容</span>
+              <span class="detail-value">{{ demand.sponsor_content }}</span>
+            </div>
+            <div v-if="demand.fund_amount" class="detail-item">
+              <span class="detail-label">资金需求</span>
+              <span class="detail-value">¥{{ demand.fund_amount }}</span>
+            </div>
+            <div v-if="demand.goods_quantity" class="detail-item">
+              <span class="detail-label">物资数量</span>
+              <span class="detail-value">{{ demand.goods_quantity }}{{ demand.goods_unit || '份' }}</span>
+            </div>
+            <div v-if="demand.expert_count" class="detail-item">
+              <span class="detail-label">所需人数</span>
+              <span class="detail-value">{{ demand.expert_count }}人</span>
+            </div>
+          </div>
+
           <div class="demand-footer">
             <div class="sponsor-types">
               <span style="font-size:12px;color:#909399">所需：</span>
@@ -488,13 +507,13 @@ async function loadDemandTypes() {
 /* ===== 未登录欢迎横幅 ===== */
 .merchant-welcome {
   background: linear-gradient(135deg, #e66100, #b84d00);
-  border-radius: 16px;
-  padding: 32px 36px;
+  border-radius: 12px;
+  padding: 16px 20px;
   color: white;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 12px;
   position: relative;
   overflow: hidden;
 }
@@ -502,19 +521,19 @@ async function loadDemandTypes() {
   content: '';
   position: absolute;
   top: -50px; right: -30px;
-  width: 240px; height: 240px;
+  width: 180px; height: 180px;
   background: rgba(255,255,255,.07);
   border-radius: 50%;
 }
 .merchant-welcome .welcome-content { position: relative; z-index: 1; }
-.merchant-welcome .welcome-content h1 { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
-.merchant-welcome .welcome-content p { opacity: 0.9; font-size: 14px; }
+.merchant-welcome .welcome-content h1 { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+.merchant-welcome .welcome-content p { opacity: 0.9; font-size: 13px; }
 .merchant-welcome .welcome-actions { position: relative; z-index: 1; }
 .merchant-welcome :deep(.el-button:not(.el-button--primary)) {
   background: rgba(255,255,255,.15) !important;
   border-color: rgba(255,255,255,.4) !important;
   color: #fff !important;
-  border-radius: 20px !important;
+  border-radius: 16px !important;
   font-weight: 600;
 }
 .merchant-welcome :deep(.el-button:hover:not(.el-button--primary)) {
@@ -532,12 +551,12 @@ async function loadDemandTypes() {
 .membership-card {
   background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
   border-radius: 12px;
-  padding: 24px;
+  padding: 16px;
   color: white;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
+  margin-bottom: 16px;
 }
 
 .membership-info {
@@ -577,87 +596,88 @@ async function loadDemandTypes() {
 }
 
 .banner-section {
-  margin-bottom: 24px;
+  margin-bottom: 16px;
 }
 
 .banner-item {
   height: 100%;
-  border-radius: 12px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
-  padding: 0 30px;
+  padding: 0 24px;
   color: white;
   cursor: default;
   text-shadow: 0 1px 3px rgba(0,0,0,0.4);
 }
 
 .banner-content h3 {
-  font-size: 20px;
+  font-size: 16px;
   margin-bottom: 4px;
 }
 
 .banner-content p {
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   opacity: 0.9;
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .stats-row {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 16px;
-  margin-bottom: 24px;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
 }
 
 .stat-card :deep(.el-card__body) {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 10px;
+  padding: 12px;
 }
 
 .stat-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .stat-value {
-  font-size: 24px;
+  font-size: 20px;
   font-weight: bold;
   color: #303133;
 }
 
 .stat-label {
   color: #909399;
-  font-size: 14px;
+  font-size: 12px;
 }
 
 .section {
-  margin-bottom: 32px;
+  margin-bottom: 20px;
 }
 
 .section-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .section-header h2 {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 18px;
+  gap: 6px;
+  font-size: 15px;
   color: #303133;
 }
 
 .demand-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
 }
 
 .demand-card {
@@ -673,13 +693,13 @@ async function loadDemandTypes() {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .card-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .match-score {
@@ -690,7 +710,7 @@ async function loadDemandTypes() {
 
 .heart {
   color: #ddd;
-  font-size: 14px;
+  font-size: 12px;
 }
 
 .heart.filled {
@@ -698,14 +718,14 @@ async function loadDemandTypes() {
 }
 
 .score-pct {
-  font-size: 12px;
+  font-size: 11px;
   color: #606266;
   font-weight: 500;
   margin-right: 2px;
 }
 
 .fav-btn {
-  font-size: 16px;
+  font-size: 14px;
   cursor: pointer;
   color: #c0c4cc;
   transition: color 0.2s;
@@ -720,18 +740,18 @@ async function loadDemandTypes() {
 }
 
 .demand-title {
-  margin: 0 0 8px;
-  font-size: 15px;
+  margin: 0 0 6px;
+  font-size: 14px;
   font-weight: 600;
 }
 
 .demand-meta {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 13px;
+  gap: 4px;
+  font-size: 12px;
   color: #606266;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   flex-wrap: wrap;
 }
 
@@ -744,39 +764,72 @@ async function loadDemandTypes() {
   align-items: center;
   gap: 2px;
   color: #67C23A;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 500;
 }
 
 .demand-tags {
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .demand-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: 8px;
+  margin-top: 6px;
 }
 
 .sponsor-types {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
+  flex: 1;
+  min-width: 0;
 }
 
 .footer-right {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  flex-shrink: 0;
 }
 
 .view-count {
   display: flex;
   align-items: center;
-  gap: 3px;
+  gap: 2px;
   font-size: 12px;
   color: #909399;
+}
+
+.footer-right .el-button {
+  padding: 6px 12px;
+  font-size: 12px;
+}
+
+/* 需求详情摘要样式 */
+.demand-detail-summary {
+  margin-top: 8px;
+  padding: 6px 10px;
+  background: #f9f9f9;
+  border-radius: 4px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.detail-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.detail-label {
+  font-size: 11px;
+  color: #909399;
+}
+.detail-value {
+  font-size: 11px;
+  color: #606266;
+  font-weight: 500;
 }
 
 @media (max-width: 768px) {

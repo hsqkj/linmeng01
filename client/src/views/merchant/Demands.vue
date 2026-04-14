@@ -64,9 +64,29 @@
           <el-icon :size="13" style="color:#909399"><Calendar /></el-icon>
           <span>{{ demand.start_time ? demand.start_time.split('T')[0] : '-' }}</span>
         </div>
-        <div class="demand-tags">
-          <el-tag v-for="g in (demand.target_audience_names || [])" :key="g" size="small" type="info" style="margin:2px">{{ g }}</el-tag>
-        </div>
+          <div class="demand-tags">
+            <el-tag v-for="g in (demand.target_audience_names || [])" :key="g" size="small" type="info" style="margin:2px">{{ g }}</el-tag>
+          </div>
+
+          <div class="demand-detail-summary" v-if="demand.description || demand.sponsor_content || demand.fund_amount">
+            <div v-if="demand.sponsor_content" class="detail-item">
+              <span class="detail-label">赞助内容</span>
+              <span class="detail-value">{{ demand.sponsor_content }}</span>
+            </div>
+            <div v-if="demand.fund_amount" class="detail-item">
+              <span class="detail-label">资金需求</span>
+              <span class="detail-value">¥{{ demand.fund_amount }}</span>
+            </div>
+            <div v-if="demand.goods_quantity" class="detail-item">
+              <span class="detail-label">物资数量</span>
+              <span class="detail-value">{{ demand.goods_quantity }}{{ demand.goods_unit || '份' }}</span>
+            </div>
+            <div v-if="demand.expert_count" class="detail-item">
+              <span class="detail-label">所需人数</span>
+              <span class="detail-value">{{ demand.expert_count }}人</span>
+            </div>
+          </div>
+
         <div class="demand-footer">
           <div class="sponsor-types">
             <span style="font-size:12px;color:#909399">所需：</span>
@@ -399,6 +419,31 @@ onMounted(() => {
 .sponsor-types { display: flex; align-items: center; flex-wrap: wrap; }
 .footer-right { display: flex; align-items: center; gap: 8px; }
 .view-count { display: flex; align-items: center; gap: 3px; font-size: 12px; color: #909399; }
+
+/* 需求详情摘要样式 */
+.demand-detail-summary {
+  margin-top: 8px;
+  padding: 6px 10px;
+  background: #f9f9f9;
+  border-radius: 4px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.detail-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.detail-label {
+  font-size: 11px;
+  color: #909399;
+}
+.detail-value {
+  font-size: 11px;
+  color: #606266;
+  font-weight: 500;
+}
 .pagination { margin-top: 20px; display: flex; justify-content: flex-end; }
 
 @media (max-width: 768px) {
