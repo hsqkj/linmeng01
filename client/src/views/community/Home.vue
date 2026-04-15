@@ -2,34 +2,41 @@
   <div class="community-home" v-loading="loading">
     <!-- 欢迎横幅 -->
     <div class="welcome-banner" :class="{ 'not-logged-in': !isLoggedIn }">
+      <!-- 左侧欢迎内容 -->
       <div class="welcome-content">
-        <template v-if="isLoggedIn && profile.community_name">
-          <h1>欢迎回来，{{ profile.real_name || '社区用户' }}！</h1>
-          <p>{{ profile.community_name }} 今日有 <strong>{{ matchedResources.length || matchedCount }}</strong> 个新商家资源与您匹配</p>
+        <template v-if="isLoggedIn && profile">
+          <h1>欢迎回来，{{ profile.real_name || profile.name || '社区用户' }}！</h1>
+          <p v-if="profile.community_name">{{ profile.community_name }} · </p>
+          <p>今日有 <strong>{{ matchedCount || 0 }}</strong> 个新商家资源与您匹配</p>
         </template>
         <template v-else-if="isLoggedIn">
           <h1>欢迎回来！</h1>
-          <p>今日有 <strong>{{ matchedResources.length || matchedCount }}</strong> 个新商家资源与您匹配</p>
+          <p>今日有 <strong>{{ matchedCount || 0 }}</strong> 个新商家资源与您匹配</p>
         </template>
         <template v-else>
           <h1>欢迎来到邻盟平台！</h1>
           <p>连接社区与商家，精准匹配资源，共创美好生活</p>
         </template>
       </div>
-      <el-button v-if="isLoggedIn" type="primary" size="large" @click="goToPublish">
-        <el-icon><Plus /></el-icon>
-        发布新需求
-      </el-button>
-      <template v-else>
-        <el-button type="primary" size="large" @click="$router.push('/login/community')">
-          <el-icon><User /></el-icon>
-          登录
-        </el-button>
-        <el-button size="large" @click="$router.push('/register/community')" style="margin-left: 10px;">
-          <el-icon><Edit /></el-icon>
-          注册
-        </el-button>
-      </template>
+      <!-- 右侧按钮 -->
+      <div class="welcome-actions">
+        <template v-if="isLoggedIn">
+          <el-button type="primary" size="large" @click="goToPublish">
+            <el-icon><Plus /></el-icon>
+            发布新需求
+          </el-button>
+        </template>
+        <template v-else>
+          <el-button type="primary" size="large" @click="$router.push('/login/community')">
+            <el-icon><User /></el-icon>
+            登录
+          </el-button>
+          <el-button size="large" @click="$router.push('/register/community')" style="margin-left: 10px;">
+            <el-icon><Edit /></el-icon>
+            注册
+          </el-button>
+        </template>
+      </div>
     </div>
 
     <!-- 未登录提示 -->
@@ -256,11 +263,13 @@ async function loadResourceTypes() {
   try {
     const { getPublishTypes } = await import('@/api/community')
     const res = await getPublishTypes()
-    // 资源类型
+    // 资源类型（API返回 {id, name} 对象数组）
     if (res.data?.resource_types?.length) {
       const map = {}
-      res.data.resource_types.forEach((name, idx) => {
-        map[idx] = name
+      res.data.resource_types.forEach((item, idx) => {
+        const name = (typeof item === 'object' && item !== null) ? item.name : item
+        const id = (typeof item === 'object' && item !== null) ? item.id : idx
+        map[id] = name
         map[name] = name
       })
       resourceTypeNumMap.value = map
@@ -269,7 +278,9 @@ async function loadResourceTypes() {
     if (res.data?.member_levels?.length) {
       const map = {}
       res.data.member_levels.forEach(item => {
-        map[item.level] = item.name
+        const levelVal = (typeof item === 'object' && item !== null) ? item.level : item
+        const nameVal = (typeof item === 'object' && item !== null) ? item.name : item
+        map[levelVal] = nameVal
       })
       memberLevelMapData.value = map
     }
@@ -416,9 +427,10 @@ const viewActivityDetail = (activity) => {
 }
 .welcome-content { position: relative; z-index: 1; }
 .welcome-content h1 { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
-.welcome-content p { opacity: 0.9; font-size: 13px; }
+.welcome-content p { opacity: 0.9; font-size: 13px; display: inline; }
+.welcome-actions { position: relative; z-index: 10; flex-shrink: 0; }
 .welcome-banner :deep(.el-button) {
-  position: relative; z-index: 10;
+  position: relative;
 }
 .welcome-banner :deep(.el-button:not(.el-button--primary)) {
   background: rgba(255,255,255,.15) !important;
@@ -539,14 +551,25 @@ const viewActivityDetail = (activity) => {
   line-height: 1.5;
 }
 .resource-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 10px; }
-.resource-actions { display: flex; gap: 8px; }
+.resource-actions { display: flex; gap: 8px; justify-content: space-between; }
 .resource-actions .el-button { flex: 1; padding: 8px 12px; font-size: 13px; }
+.resource-actions .el-button:first-child { margin-right: 8px; }
 .merchant-name-link { color: #26a269; cursor: pointer; transition: color .2s; }
 .merchant-name-link:hover { color: #1a7a4c; text-decoration: underline; }
 
 /* ===== 响应式 ===== */
 @media (max-width: 768px) {
-  .welcome-banner { flex-direction: column; text-align: center; gap: 14px; padding: 20px 16px; }
+  .welcome-banner { 
+    flex-direction: column !important; 
+    text-align: center; 
+    gap: 14px; 
+    padding: 20px 16px; 
+    display: flex !important;
+  }
+  .welcome-actions { 
+    width: 100%; 
+    justify-content: center;
+  }
   .welcome-content h1 { font-size: 18px; }
   .stats-row { grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 14px; }
   .stat-card { padding: 14px 12px !important; gap: 10px; }
@@ -562,8 +585,14 @@ const viewActivityDetail = (activity) => {
   .resource-card { margin-bottom: 0; }
   .resource-header { padding-right: 0; }
   .merchant-info h4 { font-size: 14px; }
-  .resource-actions { flex-direction: column; gap: 6px; }
-  .resource-actions .el-button { width: 100%; }
+  .resource-actions { 
+    flex-direction: row !important; 
+    gap: 8px; 
+  }
+  .resource-actions .el-button { 
+    flex: 1; 
+    width: auto;
+  }
 
   /* 章节标题 */
   .section { margin-bottom: 20px; }
@@ -593,7 +622,7 @@ const viewActivityDetail = (activity) => {
 }
 
 @media (max-width: 480px) {
-  .stats-row { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .stats-row { grid-template-columns: repeat(2, 1fr); gap: 8px; }
   .stat-card { padding: 12px 10px !important; }
   .stat-value { font-size: 18px; }
 }

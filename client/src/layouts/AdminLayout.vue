@@ -472,7 +472,7 @@ const pageTitle = computed(() => pageTitles[route.path] || '管理后台')
 
 /* 响应式 - 手机端 */
 @media (max-width: 768px) {
-  /* 强制隐藏 PC 端侧边栏和 PC 端元素 */
+  /* 强制隐藏 PC 端侧边栏 */
   .sidebar,
   .pc-only { 
     display: none !important; 
@@ -480,6 +480,14 @@ const pageTitle = computed(() => pageTitles[route.path] || '管理后台')
     min-width: 0 !important; 
     max-width: 0 !important; 
     flex: 0 0 0 !important;
+    visibility: hidden !important;
+    overflow: hidden !important;
+  }
+
+  /* 手机端侧边栏样式 - 隐藏PC端侧边栏 */
+  .sidebar.mobile-only {
+    display: none !important;
+    visibility: hidden !important;
   }
 
   /* 手机端布局：垂直排列 */
@@ -499,7 +507,12 @@ const pageTitle = computed(() => pageTitles[route.path] || '管理后台')
     flex-direction: column;
   }
 
+  /* 手机端顶部栏显示 */
   .mobile-only { display: flex !important; }
+  .mobile-only.sidebar { 
+    display: flex !important;
+    flex-direction: column;
+  }
 
   /* 顶部栏 */
   .mobile-header {

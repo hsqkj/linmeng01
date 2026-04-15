@@ -749,11 +749,19 @@ async function loadPublishTypes() {
     const res = await getPublishTypes()
     const data = res.data || {}
     if (data.activity_types) {
-      // API返回的是字符串数组，直接赋值
-      activityTypes.value = data.activity_types
+      // API返回的是 {id, name} 对象或字符串，统一提取 name
+      activityTypes.value = data.activity_types.map(item =>
+        (typeof item === 'object' && item !== null) ? item.name : item
+      )
+      // 构建 index -> name 映射
+      const aMap = {}
+      activityTypes.value.forEach((name, idx) => { aMap[idx] = name; aMap[name] = name })
+      activityTypeMap.value = aMap
     }
     if (data.expert_types) {
-      expertTypes.value = data.expert_types
+      expertTypes.value = data.expert_types.map(item =>
+        (typeof item === 'object' && item !== null) ? item.name : item
+      )
     }
     if (data.target_groups) targetGroupOptions.value = data.target_groups
     if (data.sponsor_types) sponsorTypeOptions.value = data.sponsor_types

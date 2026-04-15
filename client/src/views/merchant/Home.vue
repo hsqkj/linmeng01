@@ -476,11 +476,14 @@ async function toggleFav(demand) {
 async function loadDemandTypes() {
   try {
     const res = await getPublishTypes()
-    // 加载需求类型
+    // 加载需求类型（兼容 {id, name} 对象或字符串）
     if (res.data?.demand_types?.length) {
       const map = {}
       const colors = ['primary', 'success', 'warning', 'danger', 'info', '']
-      res.data.demand_types.forEach((name, idx) => {
+      const nameList = res.data.demand_types.map(item =>
+        (typeof item === 'object' && item !== null) ? item.name : item
+      )
+      nameList.forEach((name, idx) => {
         map[idx] = name
         map[name] = name
         typeColorsMap.value[name] = colors[idx % colors.length]

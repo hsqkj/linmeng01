@@ -33,7 +33,7 @@
         </el-table-column>
         <el-table-column label="活动类型" width="100">
           <template #default="{ row }">
-            {{ getActivityTypeName(row.activity_type) }}
+            {{ getActivityTypeName(row) }}
           </template>
         </el-table-column>
         <el-table-column label="目标对象" min-width="120">
@@ -246,15 +246,23 @@ const demandTypeName = {
   6: '志愿服务', 7: '文化活动', 8: '技术咨询'
 }
 
+// 活动类型映射（兼容英文键、中文名、数字等多种格式）
 const activityTypeMap = {
   'cultural': '文化活动', 'sports': '体育活动', 'education': '教育培训',
   'technology': '科技活动', 'art': '艺术活动', 'festival': '节庆活动',
   'health': '健康活动', 'environmental': '环保活动', 'volunteer': '志愿活动',
-  'business': '商业活动', 'community': '社区活动', 'other': '其他活动'
+  'business': '商业活动', 'community': '社区活动', 'other': '其他活动',
+  'Community Activity': '社区活动', 'Sports': '体育运动', 'Education': '教育培训'
 }
 
-function getActivityTypeName(val) {
+function getActivityTypeName(row) {
+  // 优先用后端已映射的 activity_type_name
+  if (row.activity_type_name && row.activity_type_name !== row.activity_type) {
+    return row.activity_type_name
+  }
+  const val = row.activity_type
   if (!val) return '—'
+  // 本地再查一次
   return activityTypeMap[val] || val
 }
 

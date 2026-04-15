@@ -570,11 +570,13 @@ async function loadResourceTypes() {
   try {
     const { getPublishTypes } = await import('@/api/community')
     const res = await getPublishTypes()
-    // 资源类型
+    // 资源类型（API返回 {id, name} 对象数组）
     if (res.data?.resource_types?.length) {
       const map = {}
-      res.data.resource_types.forEach((name, idx) => {
-        map[idx] = name
+      res.data.resource_types.forEach(item => {
+        const name = typeof item === 'object' ? item.name : item
+        const id = typeof item === 'object' ? item.id : map.length
+        map[id] = name
         map[name] = name
       })
       resourceTypeMap.value = map
@@ -583,14 +585,17 @@ async function loadResourceTypes() {
     if (res.data?.member_levels?.length) {
       const map = {}
       res.data.member_levels.forEach(item => {
-        map[item.level] = item.name
+        const levelVal = typeof item === 'object' ? item.level : item
+        const nameVal = typeof item === 'object' ? item.name : item
+        map[levelVal] = nameVal
       })
       memberLevelNameData.value = map
     }
     // 媒体渠道
     if (res.data?.media_channels?.length) {
       const map = {}
-      res.data.media_channels.forEach(name => {
+      res.data.media_channels.forEach(item => {
+        const name = typeof item === 'object' ? item.name : item
         map[name] = name
       })
       mediaChannelData.value = map

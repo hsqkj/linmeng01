@@ -204,8 +204,12 @@ async function loadDemandTypes() {
     if (res.data?.demand_types?.length) {
       const map = {}
       const colors = ['primary', 'success', 'warning', 'danger', 'info', '']
-      demandTypesList.value = res.data.demand_types // 保存类型列表用于筛选
-      res.data.demand_types.forEach((name, idx) => {
+      // 兼容 {id, name} 对象或字符串
+      const nameList = res.data.demand_types.map(item =>
+        (typeof item === 'object' && item !== null) ? item.name : item
+      )
+      demandTypesList.value = nameList // 保存类型列表用于筛选
+      nameList.forEach((name, idx) => {
         map[idx] = name
         map[name] = name
         typeColorsMap.value[name] = colors[idx % colors.length]

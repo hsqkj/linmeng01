@@ -571,9 +571,12 @@ async function loadPublishTypes() {
     const res = await getPublishTypes()
     const data = res.data || {}
     
-    // 加载资源类型
+    // 加载资源类型（API 可能返回 {id, name} 对象或字符串）
     if (data.resource_types && data.resource_types.length > 0) {
-      resourceTypes.value = data.resource_types.map(name => ({
+      const nameList = data.resource_types.map(item =>
+        (typeof item === 'object' && item !== null) ? item.name : item
+      )
+      resourceTypes.value = nameList.map(name => ({
         value: name,
         label: name,
         icon: resourceTypeIcons[name]?.icon || '📋',
@@ -582,16 +585,18 @@ async function loadPublishTypes() {
       
       // 构建数字到中文的映射
       const map = {}
-      data.resource_types.forEach((name, idx) => {
+      nameList.forEach((name, idx) => {
         map[idx] = name
         map[name] = name
       })
       resourceTypeName.value = map
     }
     
-    // 加载社区类型配置
+    // 加载社区类型配置（API 可能返回 {id, name} 对象或字符串）
     if (data.community_types && data.community_types.length > 0) {
-      communityTypeOptions.value = data.community_types
+      communityTypeOptions.value = data.community_types.map(item =>
+        (typeof item === 'object' && item !== null) ? item.name : item
+      )
     }
     
     // 加载商家标签

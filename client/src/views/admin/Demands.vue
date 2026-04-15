@@ -4,7 +4,7 @@
     <div class="filter-bar">
       <el-select v-model="filterType" placeholder="需求类型" style="width:130px" clearable>
         <el-option label="全部" value="" />
-        <el-option v-for="(name, idx) in typeLabels" :key="idx" :label="name" :value="idx" />
+        <el-option v-for="t in demandTypes" :key="t.value" :label="t.label" :value="t.value" />
       </el-select>
       <el-select v-model="filterStatus" placeholder="状态" style="width:130px" clearable>
         <el-option label="全部" value="" />
@@ -96,9 +96,19 @@ async function loadDemandTypes() {
     const res = await request.get('/public/publish-types')
     if (res.data?.demand_types?.length) {
       const list = res.data.demand_types
-      demandTypes.value = list
+      // 转换为选项格式（支持 {id,name} 对象数组）
+      demandTypes.value = list.map((item, idx) => {
+        const name = (typeof item === 'object' && item !== null) ? item.name : item
+        const id = (typeof item === 'object' && item !== null) ? item.id : idx
+        return { label: name, value: id }
+      })
+      // 构建 ID→名称 映射
       const labels = {}
-      list.forEach((name, idx) => { labels[idx] = name })
+      list.forEach((item, idx) => {
+        const name = (typeof item === 'object' && item !== null) ? item.name : item
+        const id = (typeof item === 'object' && item !== null) ? item.id : idx
+        labels[id] = name
+      })
       typeLabels.value = labels
     }
   } catch {}

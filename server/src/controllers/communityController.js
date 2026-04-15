@@ -482,17 +482,47 @@ exports.getMyDemands = async (req, res) => {
       [...params, parseInt(pageSize), offset]
     )
     
-// 解析 JSON 字段并转换为中文名称
-    // 确保 typeMapper 已初始化
-    if (typeMapper.getTypeMap('residentTypes').length === 0) {
-      try { await typeMapper.initialize() } catch {}
-    }
-    rows.forEach(row => {
-      try { row.target_audience = JSON.parse(row.target_audience || '[]') } catch { row.target_audience = [] }
-      try { row.tags = JSON.parse(row.tags || '[]') } catch { row.tags = [] }
-      // 使用 typeMapper 转换数字为中文名称
-      row.target_audience = typeMapper.getTypeNames('residentTypes', row.target_audience)
-      row.tags = typeMapper.getTypeNames('communityTags', row.tags)
+    // 解析 JSON 字段并转换为中文名称
+    const mappedRows = rows.map(row => {
+      // 先解析 JSON 字段（MySQL2 可能已自动解析，也可能还是字符串）
+      function parseJsonField(val) {
+        if (!val) return []
+        if (Array.isArray(val)) return val
+        if (typeof val === 'string') {
+          try { return JSON.parse(val) } catch {}
+        }
+        return []
+      }
+      
+      const targetAudience = parseJsonField(row.target_audience)
+      const tags = parseJsonField(row.tags)
+      
+      // 转为中文名称（用数字映射查询）
+      const targetAudienceNames = typeMapper.getTypeNames('residentTypes', targetAudience)
+      const tagsNames = typeMapper.getTypeNames('communityTags', tags)
+      
+      // activity_type 转为中文（可能是英文键、数字或已是中文）
+      const activityTypeEnMap = {
+        'Sports': '体育运动', 'sports': '体育运动',
+        'Education': '教育培训', 'education': '教育培训',
+        'Culture': '文化活动', 'cultural': '文化活动',
+        'Health': '健康义诊', 'health': '健康义诊',
+        'Festival': '节庆活动', 'festival': '节庆活动',
+        'Technology': '科技活动', 'technology': '科技活动',
+        'Art': '艺术活动', 'art': '艺术活动',
+        'Community Activity': '社区活动', 'community': '社区活动',
+        'Volunteer': '志愿服务', 'volunteer': '志愿服务',
+      }
+      const activityTypeName = activityTypeEnMap[row.activity_type] 
+        || typeMapper.getTypeName('activityTypes', row.activity_type)
+        || row.activity_type || ''
+      
+      return {
+        ...row,
+        target_audience: targetAudienceNames.length > 0 ? targetAudienceNames : targetAudience,
+        tags: tagsNames.length > 0 ? tagsNames : tags,
+        activity_type_name: activityTypeName || row.activity_type || '',
+      }
     })
     
     const [[{ total }]] = await pool.query(
@@ -500,7 +530,7 @@ exports.getMyDemands = async (req, res) => {
       params
     )
     
-    pageSuccess(res, rows, total, page, pageSize)
+    pageSuccess(res, mappedRows, total, page, pageSize)
   } catch (err) {
     error(res, '获取需求列表失败')
   }

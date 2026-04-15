@@ -140,7 +140,8 @@ async function loadTypes() {
     if (res.data?.demandTypes?.length) {
       const labels = {}
       const colors = ['primary', 'success', 'warning', 'danger', 'info', '']
-      res.data.demandTypes.forEach((name, idx) => {
+      res.data.demandTypes.forEach((item, idx) => {
+        const name = (typeof item === 'object' && item !== null) ? item.name : item
         labels[idx] = name
         typeColors.value[idx] = colors[idx % colors.length]
       })

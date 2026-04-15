@@ -425,25 +425,35 @@ async function loadPublishTypes() {
     const data = res.data || {}
     if (data.merchant_tags) merchantTagOptions.value = data.merchant_tags
     // 加载资源类型配置（从管理后台获取，支持自定义配置）
+    // API 返回 {id, name} 或字符串，统一提取 name
     if (data.resource_types && data.resource_types.length > 0) {
-      resourceTypes.value = data.resource_types.map(name => ({
-        value: name,
-        label: name,
-        icon: typeConfig[name]?.icon || '📋',
-        desc: typeConfig[name]?.desc || ''
-      }))
+      resourceTypes.value = data.resource_types.map(item => {
+        const name = (typeof item === 'object' && item !== null) ? item.name : item
+        return {
+          value: name,
+          label: name,
+          icon: typeConfig[name]?.icon || '📋',
+          desc: typeConfig[name]?.desc || ''
+        }
+      })
     }
     // 加载专业服务类型
     if (data.professional_service_types && data.professional_service_types.length > 0) {
-      professionalTypes.value = data.professional_service_types
+      professionalTypes.value = data.professional_service_types.map(item =>
+        (typeof item === 'object' && item !== null) ? item.name : item
+      )
     }
     // 加载物资类型
     if (data.goods_types && data.goods_types.length > 0) {
-      goodsTypes.value = data.goods_types
+      goodsTypes.value = data.goods_types.map(item =>
+        (typeof item === 'object' && item !== null) ? item.name : item
+      )
     }
     // 加载社区类型配置
     if (data.community_types && data.community_types.length > 0) {
-      communityTypeOptions.value = data.community_types
+      communityTypeOptions.value = data.community_types.map(item =>
+        (typeof item === 'object' && item !== null) ? item.name : item
+      )
     }
   } catch {
     // 使用默认值

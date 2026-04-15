@@ -1284,6 +1284,13 @@ exports.deleteBanner = async (req, res) => {
 
 // ============ 标签配置 ============
 
+// 标签类型映射：字符串 -> 数字
+const TAG_TYPE_MAP = {
+  'community': 1,  // 社区标签
+  'merchant': 2,   // 商家标签
+  'custom': 3      // 自定义标签
+}
+
 exports.getTags = async (req, res) => {
   try {
     const { type } = req.query
@@ -1291,8 +1298,10 @@ exports.getTags = async (req, res) => {
     const params = []
     
     if (type) {
+      // 将字符串类型转换为数字
+      const typeNum = TAG_TYPE_MAP[type] || type
       where += ' AND type = ?'
-      params.push(type)
+      params.push(typeNum)
     }
     
     const [rows] = await pool.query('SELECT * FROM tags WHERE ' + where + ' ORDER BY type, id', params)
@@ -1305,7 +1314,9 @@ exports.getTags = async (req, res) => {
 exports.createTag = async (req, res) => {
   try {
     const { name, type, category } = req.body
-    await pool.query('INSERT INTO tags (name, type, category) VALUES (?, ?, ?)', [name, type, category])
+    // 将字符串类型转换为数字
+    const typeNum = TAG_TYPE_MAP[type] || type
+    await pool.query('INSERT INTO tags (name, type, category) VALUES (?, ?, ?)', [name, typeNum, category])
     success(res, null, '创建成功')
   } catch (err) {
     error(res, '创建失败')

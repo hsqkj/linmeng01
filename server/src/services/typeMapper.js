@@ -259,8 +259,10 @@ async function loadAllTypeMaps() {
       tagMap[tag.type].push({ id: tag.id, name: tag.name })
     }
     
-    typeMaps.communityTags = tagMap.community || defaultMaps.communityTags
-    typeMaps.resourceTags = tagMap.resource || []
+    // tags 表中 type 是数字：1=社区标签, 2=商家标签, 3=行业标签
+    typeMaps.communityTags = tagMap['1'] || defaultMaps.communityTags
+    typeMaps.resourceTags = tagMap['2'] || []
+    typeMaps.industryTags = tagMap['3'] || []
     
     // 如果社区标签为空，使用默认值
     if (typeMaps.communityTags.length === 0) {
