@@ -36,11 +36,27 @@ exports.login = async (req, res) => {
       return error(res, '账号已被禁用', 403)
     }
     
-    // 验证码登录（测试版：接受123456或888888）
+    // 验证码登录
     if (code !== undefined) {
-      const validCodes = ['123456', '888888']
-      if (!validCodes.includes(code)) {
-        return error(res, '验证码错误', 401)
+      // 测试账号：直接验证固定验证码（不依赖缓存，服务重启后仍可用）
+      const { getTestAccount } = require('./publicController')
+      const testAccount = getTestAccount(phone)
+      if (testAccount) {
+        if (code !== testAccount.code) {
+          return error(res, '验证码错误', 401)
+        }
+        // 测试账号验证通过，不清除缓存（方便重复使用）
+      } else {
+        // 正常账号：从缓存验证
+        const cached = require('./publicController').getCodeCache(phone)
+        if (!cached) {
+          return error(res, '验证码已过期，请重新获取', 401)
+        }
+        if (code !== cached.code) {
+          return error(res, '验证码错误', 401)
+        }
+        // 验证通过，清除缓存
+        require('./publicController').clearCodeCache(phone)
       }
     } else if (password) {
       // 密码登录
@@ -1018,7 +1034,7 @@ exports.replyComment = async (req, res) => {
 exports.getProfile = async (req, res) => {
   try {
     const [rows] = await pool.query(
-      `SELECT id, username, phone, real_name, community, community_name, position, households,
+      `SELECT id, username, phone, real_name, district, street, community, community_name, position, households,
        family_ratio, elderly_ratio, public_space_area, has_outdoor_plaza, has_commercial,
        has_school, has_park, merchant_count, logo, description, images, address, tags, status,
        ST_X(map_location) as longitude, ST_Y(map_location) as latitude
@@ -1042,8 +1058,32 @@ exports.getProfile = async (req, res) => {
     result.intentionCount = intentionCount?.cnt || 0
     result.viewCount = viewCount?.total || 0
     
+    // 获取小区列表
+    const [compounds] = await pool.query(
+      'SELECT id, name, households, sort_order FROM community_compounds WHERE community_id = ? ORDER BY sort_order, id',
+      [req.community.id]
+    )
+    result.compounds = compounds || []
+    
+    // 获取场地列表
+    const [spaces] = await pool.query(
+      'SELECT id, name, location_type, floor_number, area, capacity, facilities, custom_facilities, available_hours, images, description, sort_order, status FROM community_spaces WHERE community_id = ? ORDER BY sort_order, id',
+      [req.community.id]
+    )
+    // 解析 JSON 字段
+    spaces.forEach(s => {
+      try { s.facilities = s.facilities ? (typeof s.facilities === 'string' ? JSON.parse(s.facilities) : s.facilities) : [] } catch { s.facilities = [] }
+      try { s.images = s.images ? (typeof s.images === 'string' ? JSON.parse(s.images) : s.images) : [] } catch { s.images = [] }
+    })
+    result.spaces = spaces || []
+    
+    // 计算社区总户数
+    const [[compoundTotal]] = await pool.query('SELECT COALESCE(SUM(households), 0) as total FROM community_compounds WHERE community_id = ?', [req.community.id])
+    result.total_households = compoundTotal?.total || 0
+    
     success(res, result)
   } catch (err) {
+    console.error('getProfile error:', err)
     error(res, '获取信息失败')
   }
 }
@@ -1066,7 +1106,7 @@ exports.updateProfile = async (req, res) => {
       `UPDATE communities SET logo = ?, description = ?, images = ?, tags = ?,
        households = ?, family_ratio = ?, elderly_ratio = ?, public_space_area = ?,
        has_outdoor_plaza = ?, has_commercial = ?, has_school = ?, has_park = ?,
-       merchant_count = ?, position = ?, address = ?, contact_name = ?, community_name = ?
+       merchant_count = ?, position = ?, address = ?, real_name = ?, community = ?
        ${mapLocationQuery}
        WHERE id = ?`,
       [data.logo || null, data.description || '', data.images ? JSON.stringify(data.images) : null,
@@ -1074,7 +1114,7 @@ exports.updateProfile = async (req, res) => {
        data.households || null, data.family_ratio || null, data.elderly_ratio || null, data.public_space_area || null,
        data.has_outdoor_plaza || 0, data.has_commercial || 0, data.has_school || 0, data.has_park || 0,
        data.merchant_count || null, data.position || '', data.address || '',
-       data.contact_name || '', data.community_name || '',
+       data.real_name || '', data.community || '',
        ...mapLocationParams, req.community.id]
     )
     
@@ -1489,3 +1529,86 @@ exports.downloadTemplate = async (req, res) => {
     error(res, '下载模板失败')
   }
 }
+
+// ==================== 小区管理 ====================
+
+// 保存小区列表（批量）
+exports.saveCompounds = async (req, res) => {
+  try {
+    const { compounds } = req.body
+    const communityId = req.community.id
+    
+    // 先删除现有小区
+    await pool.query('DELETE FROM community_compounds WHERE community_id = ?', [communityId])
+    
+    // 批量插入新数据
+    if (Array.isArray(compounds) && compounds.length > 0) {
+      const placeholders = compounds.map(() => '(?, ?, ?, ?)').join(', ')
+      const values = compounds.flatMap((c, idx) => [communityId, c.name || '', c.households || 0, idx])
+      await pool.query(
+        `INSERT INTO community_compounds (community_id, name, households, sort_order) VALUES ${placeholders}`,
+        values
+      )
+    }
+    
+    // 更新社区总户数
+    const [[{ total }]] = await pool.query(
+      'SELECT COALESCE(SUM(households), 0) as total FROM community_compounds WHERE community_id = ?',
+      [communityId]
+    )
+    await pool.query(
+      'UPDATE communities SET households = ? WHERE id = ?',
+      [total || 0, communityId]
+    )
+    
+    success(res, null, '小区信息已保存')
+  } catch (err) {
+    console.error('saveCompounds error:', err)
+    error(res, '保存小区信息失败')
+  }
+}
+
+// ==================== 场地空间管理 ====================
+
+// 保存场地列表（批量）
+exports.saveSpaces = async (req, res) => {
+  try {
+    const { spaces } = req.body
+    const communityId = req.community.id
+    
+    // 先删除现有场地
+    await pool.query('DELETE FROM community_spaces WHERE community_id = ?', [communityId])
+    
+    // 批量插入新数据
+    if (Array.isArray(spaces) && spaces.length > 0) {
+      const placeholders = spaces.map(() => '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').join(', ')
+      const values = spaces.flatMap((s, idx) => [
+        communityId,
+        s.name || '',
+        s.location_type || 0,
+        s.location_type === 0 ? (s.floor_number || null) : null,
+        s.area || null,
+        s.capacity || 0,
+        JSON.stringify(s.facilities || []),
+        s.custom_facilities || '',
+        s.available_hours || '',
+        JSON.stringify(s.images || []),
+        s.description || '',
+        idx,
+        s.status !== undefined ? s.status : 1
+      ])
+      await pool.query(
+        `INSERT INTO community_spaces
+         (community_id, name, location_type, floor_number, area, capacity, facilities, custom_facilities, available_hours, images, description, sort_order, status)
+         VALUES ${placeholders}`,
+        values
+      )
+    }
+    
+    success(res, null, '场地信息已保存')
+  } catch (err) {
+    console.error('saveSpaces error:', err)
+    error(res, '保存场地信息失败')
+  }
+}
+

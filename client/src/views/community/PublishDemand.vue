@@ -77,7 +77,7 @@
 
         <el-form-item label="活动类型" prop="activityType" required>
           <el-select v-model="form.activityType" placeholder="请选择活动类型" style="width:100%">
-            <el-option v-for="t in activityTypes" :key="t" :label="t" :value="t" />
+            <el-option v-for="(t, idx) in activityTypes" :key="idx" :label="t" :value="t" />
           </el-select>
           <div class="field-tip">📋 活动类型用于精准匹配擅长该类活动的商家资源</div>
         </el-form-item>
@@ -312,7 +312,7 @@
 
         <el-form-item label="专家类型" prop="expertType" required>
           <el-select v-model="form.expertType" placeholder="请选择所需专家类型" style="width:100%">
-            <el-option v-for="t in expertTypes" :key="t" :label="t" :value="t" />
+            <el-option v-for="(t, idx) in expertTypes" :key="idx" :label="t" :value="t" />
           </el-select>
           <div class="field-tip">🎓 专家类型决定匹配方向，请选择最匹配的类型</div>
         </el-form-item>
@@ -763,10 +763,26 @@ async function loadPublishTypes() {
         (typeof item === 'object' && item !== null) ? item.name : item
       )
     }
-    if (data.target_groups) targetGroupOptions.value = data.target_groups
-    if (data.sponsor_types) sponsorTypeOptions.value = data.sponsor_types
-    if (data.reward_types) rewardOptions.value = data.reward_types
-    if (data.community_tags) communityTagOptions.value = data.community_tags
+    if (data.target_groups) {
+      targetGroupOptions.value = data.target_groups.map(item =>
+        (typeof item === 'object' && item !== null) ? item.name : item
+      )
+    }
+    if (data.sponsor_types) {
+      sponsorTypeOptions.value = data.sponsor_types.map(item =>
+        (typeof item === 'object' && item !== null) ? item.name : item
+      )
+    }
+    if (data.reward_types) {
+      rewardOptions.value = data.reward_types.map(item =>
+        (typeof item === 'object' && item !== null) ? item.name : item
+      )
+    }
+    if (data.community_tags) {
+      communityTagOptions.value = data.community_tags.map(item =>
+        (typeof item === 'object' && item !== null) ? item.name : item
+      )
+    }
   } catch {
     // 使用默认值
   }

@@ -106,7 +106,7 @@ async function loadUnreadCount() {
 function logout() {
   localStorage.removeItem('merchant_token')
   localStorage.removeItem('merchant_info')
-  router.push('/merchant')
+  window.location.href = '/merchant'
 }
 
 // 监听通知已读事件

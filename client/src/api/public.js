@@ -21,11 +21,11 @@ export const getIndustries = () => request.get('/public/industries')
 // 招商大使申请
 export const applyAmbassador = (data) => request.post('/public/ambassador/apply', data)
 
-// 图片上传（使用FormData）
+// 图片上传（使用FormData + busboy原生实现）
 export const uploadImage = (file) => {
   const formData = new FormData()
   formData.append('image', file)
-  return request.post('/public/upload/image', formData, {
+  return request.post('/public/upload-native', formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
   })
 }

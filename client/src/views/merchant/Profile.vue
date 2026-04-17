@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="page">
     <h2>{{ isExpert ? '专家中心' : '商家中心' }}</h2>
 
@@ -227,7 +227,7 @@
               <!-- 照片上传（专家有头像+身份证，商家只有Logo） -->
               <el-col v-if="isExpert" :span="24">
                 <el-form-item label="个人照片">
-                  <el-upload class="avatar-uploader" action="/api/public/upload" :show-file-list="false" :on-success="(r) => { editForm.logo = r.data?.url || r.url; }" accept="image/*" name="image">
+                  <el-upload class="avatar-uploader" action="/api/public/upload-native" :show-file-list="false" :on-success="(r) => { editForm.logo = r.data?.url || r.url; }" accept="image/*" name="image">
                     <el-avatar :size="80" :src="editForm.logo" v-if="editForm.logo" />
                     <div v-else class="upload-placeholder">
                       <el-icon :size="24"><Plus /></el-icon>
@@ -238,7 +238,7 @@
               </el-col>
               <el-col v-if="isExpert" :span="24">
                 <el-form-item label="身份证照片">
-                  <el-upload action="/api/public/upload" :show-file-list="false" :on-success="(r) => { editForm.idCardPhoto = r.data?.url || r.url; }" accept="image/*" name="image">
+                  <el-upload action="/api/public/upload-native" :show-file-list="false" :on-success="(r) => { editForm.idCardPhoto = r.data?.url || r.url; }" accept="image/*" name="image">
                     <div class="upload-placeholder" style="width:180px;height:110px">
                       <template v-if="editForm.idCardPhoto">
                         <el-image :src="editForm.idCardPhoto" style="width:100%;height:100%;border-radius:6px" fit="cover" />
@@ -253,7 +253,7 @@
               </el-col>
               <el-col v-if="!isExpert" :span="24">
                 <el-form-item label="企业Logo">
-                  <el-upload class="avatar-uploader" action="/api/public/upload" :show-file-list="false" :on-success="(r) => { editForm.logo = r.data?.url || r.url; }" accept="image/*" name="image">
+                  <el-upload class="avatar-uploader" action="/api/public/upload-native" :show-file-list="false" :on-success="(r) => { editForm.logo = r.data?.url || r.url; }" accept="image/*" name="image">
                     <el-avatar :size="80" :src="editForm.logo" v-if="editForm.logo" />
                     <div v-else class="upload-placeholder">
                       <el-icon :size="24"><Plus /></el-icon>
@@ -286,7 +286,7 @@
                         <el-input v-model="product.description" type="textarea" :rows="2" placeholder="产品/服务详细介绍（选填）" style="margin-bottom:8px" />
                         <div class="product-image-upload">
                           <el-upload
-                            action="/api/public/upload"
+                            action="/api/public/upload-native"
                             :show-file-list="false"
                             :on-success="(r) => { product.image = r.data?.url || r.url; }"
                             accept="image/*"

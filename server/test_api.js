@@ -1,41 +1,24 @@
-const mysql = require('mysql2/promise');
+// 测试服务器 API（使用 http 模块避免 shell 转义问题）
+const http = require('http')
+const path = require('path')
+const baseDir = '/var/www/linmeng/server'
+require(path.join(baseDir, 'node_modules', 'dotenv')).config({ path: path.join(baseDir, '.env') })
+require(path.join(baseDir, 'node_modules', 'dotenv')).config({ path: path.join(baseDir, '.env.local') })
 
-async function test() {
-  const pool = mysql.createPool({
-    host: 'localhost',
-    user: 'root',
-    password: 'root',
-    database: 'linmeng',
-    waitForConnections: true,
-    connectionLimit: 2
-  });
+const phone = process.argv[2] || '13986274015'
+const body = JSON.stringify({ phone, type: 'login' })
+console.log('[POST] /api/public/sms/send')
+console.log('[BODY]', body)
 
-  try {
-    // 模拟后端getProfile查询
-    const communityId = 1;  // 假设第一个社区用户的ID是1
-
-    const [rows] = await pool.query(
-      `SELECT id, username, real_name, community, community_name, position, households,
-       family_ratio, elderly_ratio, public_space_area, has_outdoor_plaza, has_commercial,
-       has_school, has_park, merchant_count, logo, description, images, address, tags, status,
-       ST_X(map_location) as longitude, ST_Y(map_location) as latitude
-       FROM communities WHERE id = ?`,
-      [communityId]
-    );
-
-    if (rows.length === 0) {
-      console.log('User not found');
-    } else {
-      console.log('Query successful, rows:', rows.length);
-      console.log('First row:', JSON.stringify(rows[0], null, 2));
-    }
-  } catch (e) {
-    console.error('Error:', e.message);
-    console.error('SQL State:', e.sqlState);
-    console.error('SQL:', e.sql);
-  } finally {
-    await pool.end();
-  }
-}
-
-test();
+const req = http.request({ hostname: '127.0.0.1', port: 3000, path: '/api/public/sms/send', method: 'POST',
+  headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) } }, r => {
+  let d = ''
+  r.on('data', c => d += c)
+  r.on('end', () => {
+    console.log('[HTTP]', r.statusCode)
+    console.log('[RESP]', d)
+  })
+})
+req.on('error', e => console.error('[ERR]', e.message))
+req.write(body)
+req.end()

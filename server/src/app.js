@@ -61,7 +61,12 @@ app.use((req, res) => {
 
 // 错误处理
 app.use((err, req, res, next) => {
-  console.error('Error:', err)
+  console.error('=== Error ===')
+  console.error('Message:', err.message)
+  console.error('Code:', err.code)
+  console.error('Type:', err.type)
+  console.error('Stack:', err.stack)
+  console.error('============')
   res.status(500).json({ code: 500, message: err.message || '服务器错误' })
 })
 

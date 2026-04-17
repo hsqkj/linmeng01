@@ -69,6 +69,12 @@ router.get('/profile', CommunityController.getProfile)
 router.put('/profile', CommunityController.updateProfile)
 router.put('/password', CommunityController.updatePassword)
 
+// 小区管理
+router.put('/compounds', CommunityController.saveCompounds)
+
+// 场地空间管理
+router.put('/spaces', CommunityController.saveSpaces)
+
 // 奖励明细
 router.get('/rewards', CommunityController.getRewards)
 router.put('/rewards/claim', CommunityController.claimReward)

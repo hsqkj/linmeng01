@@ -211,13 +211,13 @@
       </div>
 
       <!-- 社区详情弹窗 -->
-      <el-dialog v-model="showCommunityDialog" title="社区基本信息" width="520px">
+      <el-dialog v-model="showCommunityDialog" title="社区基本信息" width="680px">
         <div class="community-detail-content" v-if="communityDetail">
           <div class="detail-header">
             <img :src="communityDetail.logo || `https://ui-avatars.com/api/?name=${encodeURIComponent(communityDetail.community_name)}&background=4A90D9&color=fff`" class="detail-avatar" />
             <div class="detail-info">
               <div class="detail-name">{{ communityDetail.community_name }}</div>
-              <div class="detail-addr">{{ communityDetail.district }}</div>
+              <div class="detail-addr">{{ communityDetail.district }} {{ communityDetail.street }}</div>
             </div>
           </div>
           <el-divider />
@@ -238,6 +238,47 @@
           <div class="detail-tags" style="margin-top:16px" v-if="communityDetail.tags">
             <div style="font-weight:600;margin-bottom:8px">社区标签</div>
             <el-tag v-for="tag in (Array.isArray(communityDetail.tags) ? communityDetail.tags : communityDetail.tags.split(','))" :key="tag" size="small" type="primary" effect="light" style="margin:3px">{{ tag }}</el-tag>
+          </div>
+
+          <!-- 小区信息 -->
+          <div v-if="communityDetail.compounds && communityDetail.compounds.length > 0" style="margin-top:20px">
+            <div style="font-weight:600;margin-bottom:8px">🏠 所辖小区</div>
+            <el-table :data="communityDetail.compounds" size="small" border>
+              <el-table-column prop="name" label="小区名称" />
+              <el-table-column prop="households" label="户数" width="100" />
+            </el-table>
+          </div>
+
+          <!-- 场地空间信息 -->
+          <div v-if="communityDetail.spaces && communityDetail.spaces.length > 0" style="margin-top:20px">
+            <div style="font-weight:600;margin-bottom:8px">🏟️ 场地空间</div>
+            <div class="detail-spaces">
+              <div v-for="space in communityDetail.spaces" :key="space.id" class="detail-space-item">
+                <div class="space-title">{{ space.name }}</div>
+                <div class="space-meta">
+                  <el-tag size="small" :type="space.location_type === 0 ? 'primary' : 'success'">
+                    {{ space.location_type === 0 ? '室内' : '室外' }}
+                  </el-tag>
+                  <span v-if="space.location_type === 0 && space.floor_number">{{ space.floor_number }}层</span>
+                  <span v-if="space.area">面积：{{ space.area }}㎡</span>
+                  <span v-if="space.capacity">容纳：{{ space.capacity }}人</span>
+                </div>
+                <div v-if="space.facilities && space.facilities.length > 0" class="space-facilities">
+                  <el-tag v-for="f in space.facilities" :key="f" size="small" style="margin:2px">{{ f }}</el-tag>
+                </div>
+                <div v-if="space.available_hours" class="space-hours">可用：{{ space.available_hours }}</div>
+                <div v-if="space.images && space.images.length > 0" class="space-images">
+                  <el-image
+                    v-for="(img, idx) in space.images"
+                    :key="idx"
+                    :src="img"
+                    style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; margin-right: 6px;"
+                    :preview-src-list="space.images"
+                    fit="cover"
+                  />
+                </div>
+              </div>
+            </div>
           </div>
         </div>
         <div v-else style="text-align:center;padding:40px;color:#909399">
@@ -304,7 +345,12 @@ memberLevel.value = storedMerchant.member_level || 0
 const demandTypeMap = ref({})
 const demandTypeName = computed(() => {
   const type = demand.value?.demand_type
-  return demandTypeMap.value[type] ?? demand.value?.demand_type_name ?? '需求'
+  if (!type && type !== 0) return '需求'
+  // 后端可能返回对象数组 {id,name}，也可能返回字符串数组
+  const name = demandTypeMap.value[type]
+  if (name) return name
+  // 兜底：用 demand_type_name
+  return demand.value?.demand_type_name ?? String(type)
 })
 // 加载需求类型配置
 async function loadDemandTypes() {
@@ -312,8 +358,10 @@ async function loadDemandTypes() {
     const res = await getPublishTypes()
     if (res.data?.demand_types?.length) {
       const map = {}
-      res.data.demand_types.forEach((name, idx) => {
-        map[idx] = name
+      res.data.demand_types.forEach((item, idx) => {
+        const name = (typeof item === 'object' && item !== null) ? item.name : item
+        const id = (typeof item === 'object' && item !== null) ? item.id : idx
+        map[id] = name
         map[name] = name
       })
       demandTypeMap.value = map
@@ -592,6 +640,51 @@ onMounted(async () => {
 .detail-name { font-size: 20px; font-weight: 700; color: #1a1a2e; }
 .detail-addr { font-size: 14px; color: #909399; margin-top: 4px; }
 .detail-tags { display: flex; flex-wrap: wrap; align-items: center; }
+
+/* 社区详情弹窗中的场地空间样式 */
+.detail-spaces {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.detail-space-item {
+  background: #f5f7fa;
+  border-radius: 8px;
+  padding: 12px;
+}
+.detail-space-item .space-title {
+  font-weight: 600;
+  font-size: 14px;
+  color: #303133;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #e4e7ed;
+}
+.detail-space-item .space-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #606266;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+.detail-space-item .space-facilities {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+.detail-space-item .space-hours {
+  font-size: 12px;
+  color: #909399;
+  margin-bottom: 6px;
+}
+.detail-space-item .space-images {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
 
 @media (max-width: 768px) {
   .demand-detail {

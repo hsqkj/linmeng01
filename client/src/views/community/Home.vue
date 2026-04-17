@@ -57,7 +57,7 @@
     <div class="banner-section" v-if="banners.length">
       <el-carousel height="200px" :interval="5000" arrow="always">
         <el-carousel-item v-for="(banner, index) in banners" :key="index">
-          <div class="banner-item" :style="{ background: banner.bg }" @click="banner.link && window.open(banner.link, '_blank')" :title="banner.link ? '点击跳转' : ''">
+          <div class="banner-item" :style="{ background: banner.bg }" @click="banner.link && openLink(banner.link)" :title="banner.link ? '点击跳转' : ''">
             <div class="banner-content">
               <h3>{{ banner.title }}</h3>
               <p>{{ banner.desc }}</p>
@@ -237,6 +237,9 @@ const goToPublish = () => {
     router.push('/community/demands/publish')
   }
 }
+
+// 打开外链
+const openLink = (url) => { window.open(url, '_blank') }
 
 // 资源类型映射（从API动态加载）
 const resourceTypeNumMap = ref({})

@@ -391,8 +391,10 @@ async function loadResourceTypes() {
     // 资源类型
     if (res.data?.resource_types?.length) {
       const map = {}
-      res.data.resource_types.forEach((name, idx) => {
-        map[idx] = name
+      res.data.resource_types.forEach((item, idx) => {
+        const name = (typeof item === 'object' && item !== null) ? item.name : item
+        const id = (typeof item === 'object' && item !== null) ? item.id : idx
+        map[id] = name
         map[name] = name
       })
       resourceTypeMap.value = map

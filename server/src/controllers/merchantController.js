@@ -46,11 +46,26 @@ exports.login = async (req, res) => {
       return error(res, '账号已被禁用', 403)
     }
     
-    // 验证码登录（测试版：接受123456或888888）
+    // 验证码登录
     if (code !== undefined) {
-      const validCodes = ['123456', '888888']
-      if (!validCodes.includes(code)) {
-        return error(res, '验证码错误', 401)
+      // 测试账号：直接验证固定验证码（不依赖缓存）
+      const { getTestAccount } = require('./publicController')
+      const testAccount = getTestAccount(phone)
+      if (testAccount) {
+        if (code !== testAccount.code) {
+          return error(res, '验证码错误', 401)
+        }
+      } else {
+        // 正常账号：从缓存验证
+        const cached = require('./publicController').getCodeCache(phone)
+        if (!cached) {
+          return error(res, '验证码已过期，请重新获取', 401)
+        }
+        if (code !== cached.code) {
+          return error(res, '验证码错误', 401)
+        }
+        // 验证通过，清除缓存
+        require('./publicController').clearCodeCache(phone)
       }
     } else if (password) {
       const isMatch = await bcrypt.compare(password, merchant.password)
@@ -617,8 +632,30 @@ exports.getCommunityDetail = async (req, res) => {
       delete rows[0].address
     }
     
-    success(res, rows[0])
+    // 获取小区列表
+    const [compounds] = await pool.query(
+      'SELECT id, name, households FROM community_compounds WHERE community_id = ? ORDER BY sort_order, id',
+      [id]
+    )
+    
+    // 获取场地列表（只返回已启用的）
+    const [spaces] = await pool.query(
+      'SELECT id, name, location_type, floor_number, area, capacity, facilities, available_hours, images, description FROM community_spaces WHERE community_id = ? AND status = 1 ORDER BY sort_order, id',
+      [id]
+    )
+    // 解析 JSON 字段
+    spaces.forEach(s => {
+      try { s.facilities = s.facilities ? (typeof s.facilities === 'string' ? JSON.parse(s.facilities) : s.facilities) : [] } catch { s.facilities = [] }
+      try { s.images = s.images ? (typeof s.images === 'string' ? JSON.parse(s.images) : s.images) : [] } catch { s.images = [] }
+    })
+    
+    success(res, {
+      ...rows[0],
+      compounds,
+      spaces
+    })
   } catch (err) {
+    console.error('getCommunityDetail error:', err)
     error(res, '获取详情失败')
   }
 }

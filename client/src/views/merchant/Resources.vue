@@ -114,8 +114,10 @@ async function loadResourceTypes() {
       resourceTypes.value = res.data.resource_types
       // 构建数字到中文的映射
       const map = {}
-      res.data.resource_types.forEach((name, idx) => {
-        map[idx] = name
+      res.data.resource_types.forEach((item, idx) => {
+        const name = (typeof item === 'object' && item !== null) ? item.name : item
+        const id = (typeof item === 'object' && item !== null) ? item.id : idx
+        map[id] = name
         map[name] = name
       })
       resourceTypeName.value = map

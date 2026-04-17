@@ -109,7 +109,7 @@ async function loadUnreadCount() {
 function logout() {
   localStorage.removeItem('community_token')
   localStorage.removeItem('community_info')
-  router.push('/community')
+  window.location.href = '/community'
 }
 
 // 监听通知已读事件

@@ -280,10 +280,29 @@ exports.getCommunityDetail = async (req, res) => {
       [id]
     )
     
+    // 获取小区列表
+    const [compounds] = await pool.query(
+      'SELECT id, name, households, sort_order FROM community_compounds WHERE community_id = ? ORDER BY sort_order, id',
+      [id]
+    )
+    
+    // 获取场地列表
+    const [spaces] = await pool.query(
+      'SELECT id, name, location_type, floor_number, area, capacity, facilities, available_hours, images, description, sort_order, status FROM community_spaces WHERE community_id = ? ORDER BY sort_order, id',
+      [id]
+    )
+    // 解析 JSON 字段
+    spaces.forEach(s => {
+      try { s.facilities = s.facilities ? (typeof s.facilities === 'string' ? JSON.parse(s.facilities) : s.facilities) : [] } catch { s.facilities = [] }
+      try { s.images = s.images ? (typeof s.images === 'string' ? JSON.parse(s.images) : s.images) : [] } catch { s.images = [] }
+    })
+    
     success(res, {
       ...community,
       demands,
-      intentions
+      intentions,
+      compounds,
+      spaces
     })
   } catch (err) {
     console.error('Get community detail error:', err)
@@ -2480,7 +2499,8 @@ exports.getCommunityProfile = async (req, res) => {
       `SELECT id, real_name, community_name, district, street, households,
               family_ratio, elderly_ratio,
               public_space_area, merchant_count,
-              has_outdoor_plaza, has_commercial, has_school, has_park
+              has_outdoor_plaza, has_commercial, has_school, has_park,
+              logo, images, description, tags
        FROM communities WHERE id = ?`,
       [id]
     )
@@ -2490,6 +2510,20 @@ exports.getCommunityProfile = async (req, res) => {
     }
 
     const c = commRows[0]
+
+    // 1.1 读取小区信息
+    const [compoundsRows] = await pool.query(
+      `SELECT id, name, households FROM community_compounds WHERE community_id = ? ORDER BY id`,
+      [id]
+    )
+
+    // 1.2 读取场地空间信息
+    const [spacesRows] = await pool.query(
+      `SELECT id, name, location_type, floor_number, area, capacity,
+              facilities, custom_facilities, available_hours, images
+       FROM community_spaces WHERE community_id = ? ORDER BY id`,
+      [id]
+    )
 
     // 2. 读取该社区的需求统计
     const [demandStats] = await pool.query(
@@ -2554,6 +2588,37 @@ exports.getCommunityProfile = async (req, res) => {
     const scoreValues = Object.values(scores)
     const overall = Math.round(scoreValues.reduce((a, b) => a + b, 0) / scoreValues.length)
 
+    // 处理场地空间数据
+    const spaces = spacesRows.map(s => ({
+      ...s,
+      location_type: s.location_type,
+      facilities: s.facilities ? JSON.parse(s.facilities) : [],
+      images: s.images ? JSON.parse(s.images) : [],
+    }))
+
+    // 处理小区数据
+    const compounds = compoundsRows
+
+    // 处理社区基础信息中的 tags
+    let tags = []
+    if (c.tags) {
+      try {
+        tags = JSON.parse(c.tags)
+      } catch {
+        tags = c.tags.split(',').filter(Boolean)
+      }
+    }
+
+    // 处理社区图片
+    let images = []
+    if (c.images) {
+      try {
+        images = JSON.parse(c.images)
+      } catch {
+        images = c.images.split(',').filter(Boolean)
+      }
+    }
+
     success(res, {
       community: {
         id: c.id,
@@ -2561,7 +2626,13 @@ exports.getCommunityProfile = async (req, res) => {
         communityName: c.community_name,
         district: c.district,
         street: c.street,
+        logo: c.logo,
+        images: images,
+        description: c.description,
+        tags: tags,
       },
+      compounds: compounds,
+      spaces: spaces,
       dims: RADAR_DIMS,
       scores,
       raw,

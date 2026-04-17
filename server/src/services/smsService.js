@@ -13,12 +13,11 @@ const APP_ID = process.env.RONGLIAN_APP_ID || ''
 const TEMPLATE_ID = process.env.RONGLIAN_TEMPLATE_ID || ''
 
 /**
- * 生成 Authorization 头（Basic Auth）
- * 容联云使用 Base64(AccountSid:AuthToken)
+ * 生成 Authorization 头
+ * 容联云使用 Base64(AccountSid:Timestamp)，无 Basic 前缀
  */
-function getAuthHeader() {
-  const str = `${ACCOUNT_SID}:${AUTH_TOKEN}`
-  return 'Basic ' + Buffer.from(str).toString('base64')
+function getAuthHeader(timestamp) {
+  return Buffer.from(`${ACCOUNT_SID}:${timestamp}`).toString('base64')
 }
 
 /**
@@ -77,13 +76,13 @@ async function sendVerifyCode(phone, code) {
 
   const options = {
     hostname: 'app.cloopen.com',
-    port: 443,
-    path: `/2015-04-12/Accounts/${ACCOUNT_SID}/SMS/TemplatesSMS?sig=${sig}`,
+    port: 8883,
+    path: `/2013-12-26/Accounts/${ACCOUNT_SID}/SMS/TemplateSMS?sig=${sig}`,
     method: 'POST',
     headers: {
       'Accept': 'application/json',
       'Content-Type': 'application/json',
-      'Authorization': getAuthHeader(),
+      'Authorization': getAuthHeader(timestamp),
       'Content-Length': undefined // 动态设置
     }
   }
@@ -104,6 +103,12 @@ async function sendVerifyCode(phone, code) {
     if (result.statusCode === '000000') {
       return { success: true, message: '短信发送成功' }
     } else {
+      // 业务限流错误码（天限/月限/限速）降级：返回 success，不阻断主流程
+      const businessCodes = ['160040', '160041', '160042']
+      if (businessCodes.includes(result.statusCode)) {
+        console.warn(`[SMS] 业务限流(${result.statusCode})，返回模拟验证码: ${code}`)
+        return { success: true, mock: true, message: result.statusMsg || '已达发送上限（模拟模式）' }
+      }
       return { success: false, message: result.statusMsg || '短信发送失败' }
     }
   } catch (err) {

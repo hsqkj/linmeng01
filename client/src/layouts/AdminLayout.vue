@@ -195,7 +195,7 @@
             <div class="admin-name">超级管理员</div>
           </div>
         </div>
-        <el-button text size="small" @click="$router.push('/')">退出</el-button>
+        <el-button text size="small" @click="logout">退出</el-button>
       </div>
     </div>
 
@@ -294,7 +294,7 @@
         <el-avatar :size="36" src="https://ui-avatars.com/api/?name=超管&background=409EFF&color=fff" />
         <div class="drawer-admin-info">
           <div class="admin-name">超级管理员</div>
-          <el-button text size="small" @click="$router.push('/'); mobileDrawerVisible = false">退出登录</el-button>
+          <el-button text size="small" @click="logout(); mobileDrawerVisible = false">退出登录</el-button>
         </div>
       </div>
     </el-drawer>
@@ -351,6 +351,10 @@ async function loadPendingCount() {
   } catch {}
 }
 onMounted(() => { loadPendingCount() })
+const logout = () => {
+  localStorage.removeItem('admin_token')
+  window.location.href = '/'
+}
 const pageTitles = {
   '/admin': '数据大屏',
   '/admin/users/community': '社区工作者',

@@ -52,6 +52,12 @@
         {{ loading ? '登录中...' : '登录' }}
       </button>
 
+      <div class="test-hint">
+        <span class="test-label">测试账号</span>
+        <span class="test-phone">188 0000 0001</span>
+        <span class="test-code">验证码：123456</span>
+      </div>
+
       <div class="login-divider">
         <div class="login-tips">
           <div class="login-tip">
@@ -103,8 +109,13 @@ const loading = ref(false)
 const sendCode = () => {
   if (!form.phone) { ElMessage.warning('请先输入手机号'); return }
   if (counting.value) return
-  sendSms({ phone: form.phone, type: 'login' }).then(() => {
-    ElMessage.success('验证码已发送')
+  sendSms({ phone: form.phone, type: 'login' }).then((res) => {
+    // 模拟模式：服务端降级返回了真实验证码（开发/限流时）
+    if (res.data && res.data.code) {
+      ElMessage.success({ message: `验证码已发送（模拟模式：${res.data.code}）`, duration: 5000 })
+    } else {
+      ElMessage.success('验证码已发送')
+    }
     counting.value = true
     countdown.value = 60
     const timer = setInterval(() => {
@@ -249,6 +260,35 @@ const goBack = () => { router.push('/') }
 .login-footer { text-align: center; margin-top: 18px; font-size: 13px; color: #666; }
 .reg-link { color: #26a269; font-weight: 600; cursor: pointer; text-decoration: none; margin-left: 4px; }
 .reg-link:hover { text-decoration: underline; }
+
+.test-hint {
+  margin-top: 12px;
+  padding: 10px 14px;
+  background: #fffbe6;
+  border: 1px solid #ffe58f;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  flex-wrap: wrap;
+}
+.test-label {
+  background: #faad14;
+  color: #fff;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 12px;
+}
+.test-phone {
+  color: #333;
+  font-weight: 500;
+}
+.test-code {
+  color: #52c41a;
+  font-weight: 600;
+}
 
 @media (max-width: 480px) {
   .login-card { padding: 32px 20px; border-radius: 16px; }

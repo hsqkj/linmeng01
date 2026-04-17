@@ -56,6 +56,12 @@ export const getProfile = () => request.get('/community/profile')
 export const updateProfile = (data) => request.put('/community/profile', data)
 export const updatePassword = (data) => request.put('/community/password', data)
 
+// ====== 小区管理 ======
+export const saveCompounds = (data) => request.put('/community/compounds', data)
+
+// ====== 场地空间管理 ======
+export const saveSpaces = (data) => request.put('/community/spaces', data)
+
 // ====== 奖励明细 ======
 export const getRewards = (params) => request.get('/community/rewards', { params })
 export const claimReward = (data) => request.put('/community/rewards/claim', data)

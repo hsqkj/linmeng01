@@ -57,6 +57,64 @@
       </div>
     </div>
 
+    <!-- 小区和场地信息 -->
+    <div v-if="profile" class="info-sections">
+      <!-- 小区列表 -->
+      <el-card v-if="profile.compounds && profile.compounds.length > 0" class="section-card">
+        <template #header>
+          <span>🏠 所辖小区</span>
+        </template>
+        <el-table :data="profile.compounds" size="small" border>
+          <el-table-column prop="name" label="小区名称" />
+          <el-table-column prop="households" label="户数" width="100" />
+        </el-table>
+      </el-card>
+
+      <!-- 场地空间 -->
+      <el-card v-if="profile.spaces && profile.spaces.length > 0" class="section-card">
+        <template #header>
+          <span>🏟️ 场地空间</span>
+        </template>
+        <div class="spaces-grid">
+          <div v-for="space in profile.spaces" :key="space.id" class="space-item">
+            <div class="space-header">{{ space.name }}</div>
+            <div class="space-info">
+              <div class="space-row">
+                <span class="label">类型：</span>
+                <el-tag size="small" :type="space.location_type === 0 ? 'primary' : 'success'">
+                  {{ space.location_type === 0 ? '室内' : '室外' }}
+                </el-tag>
+                <span v-if="space.location_type === 0 && space.floor_number">{{ space.floor_number }}层</span>
+              </div>
+              <div v-if="space.area" class="space-row">
+                <span class="label">面积：</span>{{ space.area }}㎡
+              </div>
+              <div v-if="space.capacity" class="space-row">
+                <span class="label">容纳：</span>{{ space.capacity }}人
+              </div>
+              <div v-if="space.facilities && space.facilities.length > 0" class="space-row">
+                <span class="label">设施：</span>
+                <el-tag v-for="f in space.facilities" :key="f" size="small" style="margin:2px">{{ f }}</el-tag>
+              </div>
+              <div v-if="space.available_hours" class="space-row">
+                <span class="label">可用：</span>{{ space.available_hours }}
+              </div>
+            </div>
+            <div v-if="space.images && space.images.length > 0" class="space-images">
+              <el-image
+                v-for="(img, idx) in space.images"
+                :key="idx"
+                :src="img"
+                style="width: 80px; height: 80px; object-fit: cover; border-radius: 4px; margin-right: 8px;"
+                :preview-src-list="space.images"
+                fit="cover"
+              />
+            </div>
+          </div>
+        </div>
+      </el-card>
+    </div>
+
     <!-- 主体：雷达图 + 维度详情 -->
     <div v-if="profile" class="content-grid">
       <!-- 左侧：雷达图 -->
@@ -358,6 +416,48 @@ onMounted(() => {
 }
 .page-header h2 { margin: 0; font-size: 20px; }
 .selector-row { display: flex; gap: 10px; align-items: center; }
+
+/* 小区和场地信息区块 */
+.info-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.section-card { }
+.spaces-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+.space-item {
+  background: #f5f7fa;
+  border-radius: 8px;
+  padding: 12px;
+}
+.space-header {
+  font-weight: 600;
+  font-size: 15px;
+  color: #303133;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e4e7ed;
+}
+.space-info { font-size: 13px; color: #606266; }
+.space-row {
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.space-row .label { color: #909399; min-width: 50px; }
+.space-images {
+  margin-top: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
 
 /* 社区信息卡 */
 .info-card {

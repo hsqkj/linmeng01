@@ -220,32 +220,17 @@ if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true })
 }
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadDir),
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname)
-    cb(null, `${Date.now()}-${Math.random().toString(36).substr(2, 9)}${ext}`)
-  }
-})
-
-const upload = multer({
-  storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
-  fileFilter: (req, file, cb) => {
-    const allowed = ['.jpg', '.jpeg', '.png', '.gif', '.webp']
-    const ext = path.extname(file.originalname).toLowerCase()
-    if (allowed.includes(ext)) {
-      cb(null, true)
-    } else {
-      cb(new Error('只支持 JPG/PNG/GIF/WEBP 图片格式'))
-    }
-  }
-})
+// 使用最简化的 multer 配置
+const upload = multer({ dest: uploadDir })
 
 // 图片上传接口（支持本地存储和 COS）
 exports.uploadImage = [
   upload.single('image'),
   async (req, res) => {
+    console.log('=== Upload handler called ===')
+    console.log('req.file:', req.file)
+    console.log('req.body:', req.body)
+    
     if (!req.file) {
       return error(res, '未选择图片')
     }
@@ -513,6 +498,32 @@ exports.getStats = async (req, res) => {
     console.error('Get stats error:', err)
     error(res, '获取统计数据失败')
   }
+}
+
+// 验证码缓存（模块级共享）
+// codeCache 在文件顶部定义：const codeCache = new Map()
+
+// 获取缓存的验证码
+exports.getCodeCache = (phone) => {
+  return codeCache.get(phone)
+}
+
+// 清除缓存的验证码
+exports.clearCodeCache = (phone) => {
+  codeCache.delete(phone)
+}
+
+// 测试账号配置（固定验证码，方便测试）
+const TEST_ACCOUNTS = {
+  '18800000002': { code: '123456', name: '测试商家' },
+  '18800000001': { code: '123456', name: '测试社区' },
+  '18800000003': { code: '123456', name: '测试大使' },
+  '18800000010': { code: '123456', name: '测试专家' },
+}
+
+// 获取测试账号信息
+exports.getTestAccount = (phone) => {
+  return TEST_ACCOUNTS[phone] || null
 }
 
 // 获取统一类型映射数据

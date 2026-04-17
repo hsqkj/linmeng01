@@ -68,6 +68,12 @@
             <span>还不是大使？</span>
             <el-button text type="primary" @click="showApply = true">申请成为招商大使</el-button>
           </div>
+
+          <div class="test-hint">
+            <span class="test-label">测试账号</span>
+            <span class="test-phone">188 0000 0003</span>
+            <span class="test-code">验证码：123456</span>
+          </div>
           <div class="other-logins">
             <el-divider>其他登录</el-divider>
             <div class="login-role-btns">
@@ -235,5 +241,34 @@ async function submitApply() {
   .login-card h2 { font-size: 20px; margin-bottom: 18px; text-align: center; }
   .login-links { font-size: 13px; }
   .other-logins { margin-top: 6px; }
+}
+
+.test-hint {
+  margin-top: 12px;
+  padding: 10px 14px;
+  background: #fffbe6;
+  border: 1px solid #ffe58f;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  flex-wrap: wrap;
+}
+.test-label {
+  background: #faad14;
+  color: #fff;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 12px;
+}
+.test-phone {
+  color: #333;
+  font-weight: 500;
+}
+.test-code {
+  color: #52c41a;
+  font-weight: 600;
 }
 </style>

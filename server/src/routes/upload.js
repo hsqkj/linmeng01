@@ -61,7 +61,16 @@ if (USE_COS) {
   })
 } else {
   // 单文件上传 - 本地
-  router.post('/single', uploadLocal.single('file'), (req, res) => {
+  router.post('/single', uploadLocal.single('file'), (req, res, next) => {
+    console.log('=== Upload route hit ===')
+    console.log('req.file:', req.file)
+    console.log('req.body:', req.body)
+    
+    // 监听请求错误
+    req.on('error', (err) => {
+      console.error('Request error:', err)
+    })
+    
     if (!req.file) return error(res, '请选择文件', 400)
     const url = `/uploads/${req.file.filename}`
     success(res, { url })

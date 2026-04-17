@@ -30,11 +30,26 @@ exports.login = async (req, res) => {
       return error(res, '账号已被禁用', 403)
     }
     
-    // 验证码登录（测试版）
+    // 验证码登录
     if (code !== undefined) {
-      const validCodes = ['123456', '888888']
-      if (!validCodes.includes(code)) {
-        return error(res, '验证码错误', 401)
+      // 测试账号：直接验证固定验证码（不依赖缓存）
+      const { getTestAccount } = require('./publicController')
+      const testAccount = getTestAccount(phone)
+      if (testAccount) {
+        if (code !== testAccount.code) {
+          return error(res, '验证码错误', 401)
+        }
+      } else {
+        // 正常账号：从缓存验证
+        const cached = require('./publicController').getCodeCache(phone)
+        if (!cached) {
+          return error(res, '验证码已过期，请重新获取', 401)
+        }
+        if (code !== cached.code) {
+          return error(res, '验证码错误', 401)
+        }
+        // 验证通过，清除缓存
+        require('./publicController').clearCodeCache(phone)
       }
     } else if (password) {
       const isMatch = await bcrypt.compare(password, ambassador.password)

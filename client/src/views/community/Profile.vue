@@ -44,12 +44,12 @@
           <el-tabs v-model="infoTab">
             <el-tab-pane label="基本信息" name="basic">
               <el-descriptions :column="2" border>
-                <el-descriptions-item label="社区名称">{{ profile.community_name }}</el-descriptions-item>
-                <el-descriptions-item label="小区名称">{{ profile.community }}</el-descriptions-item>
+                <el-descriptions-item label="社区名称">{{ profile.community || '未填写' }}</el-descriptions-item>
+                <el-descriptions-item label="小区名称">{{ profile.address || '未填写' }}</el-descriptions-item>
                 <el-descriptions-item label="所属行政区">{{ profile.district || '未填写' }}</el-descriptions-item>
                 <el-descriptions-item label="所属街道">{{ profile.street || '未填写' }}</el-descriptions-item>
                 <el-descriptions-item label="联系人职务">{{ profile.position || '未填写' }}</el-descriptions-item>
-                <el-descriptions-item label="联系人姓名">{{ profile.contact_name || '未填写' }}</el-descriptions-item>
+                <el-descriptions-item label="联系人姓名">{{ profile.real_name || '未填写' }}</el-descriptions-item>
                 <el-descriptions-item label="联系手机">{{ profile.phone || profile.username }}</el-descriptions-item>
                 <el-descriptions-item label="详细地址" :span="2">{{ profile.address || '未填写' }}</el-descriptions-item>
                 <el-descriptions-item label="地图定位" :span="2">
@@ -91,7 +91,7 @@
             </el-tab-pane>
             <el-tab-pane label="社区画像" name="portrait">
               <el-descriptions :column="2" border>
-                <el-descriptions-item label="小区总户数">{{ profile.households || '未填写' }}户</el-descriptions-item>
+                <el-descriptions-item label="社区总户数">{{ profile.total_households || profile.households || '未填写' }}户</el-descriptions-item>
                 <el-descriptions-item label="社区商户数">{{ profile.merchant_count || 0 }}家</el-descriptions-item>
                 <el-descriptions-item label="亲子家庭占比">{{ profile.family_ratio ? profile.family_ratio + '%' : '未填写' }}</el-descriptions-item>
                 <el-descriptions-item label="老年群体占比">{{ profile.elderly_ratio ? profile.elderly_ratio + '%' : '未填写' }}</el-descriptions-item>
@@ -101,6 +101,61 @@
                 <el-descriptions-item label="学校/幼儿园">{{ profile.has_school ? '有学校/幼儿园' : '无' }}</el-descriptions-item>
                 <el-descriptions-item label="公园/体育场馆">{{ profile.has_park ? '有公园/体育设施' : '无' }}</el-descriptions-item>
               </el-descriptions>
+              
+              <!-- 小区列表展示 -->
+              <div v-if="profile.compounds && profile.compounds.length > 0" style="margin-top: 16px">
+                <div style="font-weight: 600; margin-bottom: 8px; color: #303133;">所辖小区</div>
+                <el-table :data="profile.compounds" size="small" border>
+                  <el-table-column prop="name" label="小区名称" />
+                  <el-table-column prop="households" label="户数" width="100" />
+                </el-table>
+              </div>
+              
+              <!-- 场地空间展示 -->
+              <div v-if="profile.spaces && profile.spaces.length > 0" style="margin-top: 16px">
+                <div style="font-weight: 600; margin-bottom: 8px; color: #303133;">场地空间</div>
+                <div class="space-cards">
+                  <el-card v-for="space in profile.spaces" :key="space.id" class="space-card" shadow="hover">
+                    <template #header>
+                      <div style="font-weight: 600">{{ space.name }}</div>
+                    </template>
+                    <div class="space-info">
+                      <div class="space-row">
+                        <span class="space-label">类型：</span>
+                        <el-tag size="small" :type="space.location_type === 0 ? 'primary' : 'success'">
+                          {{ space.location_type === 0 ? '室内' : '室外' }}
+                        </el-tag>
+                        <span v-if="space.location_type === 0 && space.floor_number" style="margin-left: 8px">
+                          {{ space.floor_number }}层
+                        </span>
+                      </div>
+                      <div v-if="space.area" class="space-row">
+                        <span class="space-label">面积：</span>{{ space.area }}㎡
+                      </div>
+                      <div v-if="space.capacity" class="space-row">
+                        <span class="space-label">容纳：</span>{{ space.capacity }}人
+                      </div>
+                      <div v-if="space.facilities && space.facilities.length > 0" class="space-row">
+                        <span class="space-label">设施：</span>
+                        <el-tag v-for="f in space.facilities" :key="f" size="small" style="margin: 2px">{{ f }}</el-tag>
+                      </div>
+                      <div v-if="space.available_hours" class="space-row">
+                        <span class="space-label">可用：</span>{{ space.available_hours }}
+                      </div>
+                      <div v-if="space.images && space.images.length > 0" class="space-images">
+                        <el-image 
+                          v-for="(img, idx) in space.images" 
+                          :key="idx"
+                          :src="img" 
+                          style="width: 80px; height: 80px; object-fit: cover; border-radius: 4px; margin-right: 8px;"
+                          :preview-src-list="space.images"
+                          fit="cover"
+                        />
+                      </div>
+                    </div>
+                  </el-card>
+                </div>
+              </div>
             </el-tab-pane>
             <el-tab-pane label="我的标签" name="tags">
               <p style="color:#909399;font-size:13px;margin-bottom:12px">标签越精准，智能匹配效果越好</p>
@@ -203,17 +258,17 @@
               </el-col>
               <el-col :xs="24" :sm="12">
                 <el-form-item label="社区名称">
-                  <el-input v-model="editForm.community_name" disabled />
+                  <el-input v-model="editForm.community" disabled />
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :sm="12">
                 <el-form-item label="联系手机">
-                  <el-input v-model="editForm.username" disabled />
+                  <el-input v-model="editForm.phone" disabled />
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :sm="12">
                 <el-form-item label="联系人姓名">
-                  <el-input v-model="editForm.contact_name" placeholder="请输入联系人姓名" />
+                  <el-input v-model="editForm.real_name" placeholder="请输入联系人姓名" />
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :sm="12">
@@ -252,32 +307,27 @@
                   </div>
                 </el-form-item>
               </el-col>
-              <el-col :span="24">
-                <el-form-item label="场地图片">
-                  <el-upload
-                    v-model:file-list="editForm.logoImagesList"
-                    list-type="picture-card"
-                    :auto-upload="false"
-                    :limit="9"
-                    accept="image/*"
-                  >
-                    <el-icon><Plus /></el-icon>
-                  </el-upload>
-                  <div class="upload-tip">上传场地照片，最多9张</div>
-                </el-form-item>
-              </el-col>
+
             </el-row>
 
             <el-divider content-position="left">社区画像数据</el-divider>
             <el-row :gutter="16">
               <el-col :xs="24" :sm="12">
-                <el-form-item label="小区名称">
-                  <el-input v-model="editForm.community" placeholder="请输入小区名称" />
+                <el-form-item label="社区总户数">
+                  <el-input-number v-model="editForm.households" :min="0" style="width:100%" />
                 </el-form-item>
               </el-col>
-              <el-col :xs="24" :sm="12">
-                <el-form-item label="小区总户数">
-                  <el-input-number v-model="editForm.households" :min="0" style="width:100%" />
+              <!-- 多小区编辑 -->
+              <el-col :span="24">
+                <el-form-item label="所辖小区">
+                  <div class="compounds-editor">
+                    <div v-for="(compound, index) in editForm.compounds" :key="index" class="compound-item">
+                      <el-input v-model="compound.name" placeholder="小区名称" style="width: 200px; margin-right: 8px" />
+                      <el-input-number v-model="compound.households" :min="0" placeholder="户数" style="width: 120px; margin-right: 8px" />
+                      <el-button type="danger" :icon="Delete" circle @click="removeCompound(index)" />
+                    </div>
+                    <el-button type="primary" plain :icon="Plus" @click="addCompound">添加小区</el-button>
+                  </div>
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :sm="12">
@@ -338,6 +388,92 @@
               </div>
             </el-form-item>
 
+            <!-- 场地空间录入 -->
+            <el-divider content-position="left">场地空间录入</el-divider>
+            <div class="spaces-editor">
+              <div v-for="(space, sIdx) in editForm.spaces" :key="sIdx" class="space-edit-card">
+                <div class="space-edit-header">
+                  <span style="font-weight: 600">场地 {{ sIdx + 1 }}</span>
+                  <el-button type="danger" :icon="Delete" circle @click="removeSpace(sIdx)" />
+                </div>
+                <el-row :gutter="16">
+                  <el-col :xs="24" :sm="12">
+                    <el-form-item label="场地名称" class="compact-form-item">
+                      <el-input v-model="space.name" placeholder="如：社区活动中心" />
+                    </el-form-item>
+                  </el-col>
+                  <el-col :xs="24" :sm="12">
+                    <el-form-item label="类型" class="compact-form-item">
+                      <el-radio-group v-model="space.location_type" size="small">
+                        <el-radio-button :value="0">室内</el-radio-button>
+                        <el-radio-button :value="1">室外</el-radio-button>
+                      </el-radio-group>
+                    </el-form-item>
+                  </el-col>
+                </el-row>
+                <el-row :gutter="16">
+                  <el-col :xs="24" :sm="8">
+                    <el-form-item label="面积" class="compact-form-item">
+                      <el-input-number v-model="space.area" :min="0" placeholder="㎡" style="width:100%" />
+                    </el-form-item>
+                  </el-col>
+                  <el-col :xs="24" :sm="8">
+                    <el-form-item label="容纳人数" class="compact-form-item">
+                      <el-input-number v-model="space.capacity" :min="0" placeholder="人" style="width:100%" />
+                    </el-form-item>
+                  </el-col>
+                  <el-col :xs="24" :sm="8" v-if="space.location_type === 0">
+                    <el-form-item label="楼层" class="compact-form-item">
+                      <el-input-number v-model="space.floor_number" :min="1" :max="100" placeholder="第几层" style="width:100%" />
+                    </el-form-item>
+                  </el-col>
+                </el-row>
+                <el-form-item label="场地照片" class="compact-form-item">
+                  <div class="space-images-editor">
+                    <div class="space-images-preview">
+                      <div v-for="(img, imgIdx) in space.images" :key="'exist-' + imgIdx" class="space-image-item">
+                        <el-image :src="img" fit="cover" style="width: 80px; height: 80px; border-radius: 4px;" />
+                        <el-icon class="remove-icon" @click="removeSpaceImage(sIdx, imgIdx)"><Close /></el-icon>
+                      </div>
+                      <div v-for="(file, fileIdx) in (space.newImages || [])" :key="'new-' + fileIdx" class="space-image-item">
+                        <el-image :src="file.url" fit="cover" style="width: 80px; height: 80px; border-radius: 4px;" />
+                        <el-icon class="remove-icon" @click="removeSpaceNewImage(sIdx, fileIdx)"><Close /></el-icon>
+                      </div>
+                    </div>
+                    <el-upload
+                      :show-file-list="false"
+                      accept="image/*"
+                      :before-upload="(file) => beforeSpaceImageUpload(file, sIdx)"
+                      multiple
+                    >
+                      <el-button size="small" plain :icon="Plus">上传照片</el-button>
+                    </el-upload>
+                    <div class="upload-tip">建议上传正面、侧面、内部全景等多角度照片</div>
+                  </div>
+                </el-form-item>
+                <el-form-item label="设施设备" class="compact-form-item">
+                  <div class="facility-selector">
+                    <el-check-tag
+                      v-for="facility in FACILITY_OPTIONS" :key="facility"
+                      :checked="(space.facilities || []).includes(facility)"
+                      @change="toggleSpaceFacility(sIdx, facility)"
+                      style="margin:4px"
+                    >{{ facility }}</el-check-tag>
+                    <el-input
+                      v-model="space.customFacilities"
+                      placeholder="其他设施（逗号分隔）"
+                      style="width: 200px; margin-left: 8px"
+                      size="small"
+                    />
+                  </div>
+                </el-form-item>
+                <el-form-item label="可用时间" class="compact-form-item">
+                  <el-input v-model="space.available_hours" placeholder="如：周一至周五 9:00-18:00，周六 10:00-16:00" />
+                </el-form-item>
+              </div>
+              <el-button type="primary" plain :icon="Plus" @click="addSpace" style="margin-top: 8px">添加场地</el-button>
+            </div>
+
             <div style="text-align:right;margin-top:16px">
               <el-button @click="editing=false">取消</el-button>
               <el-button type="primary" @click="saveProfile" :loading="saving">保存资料</el-button>
@@ -353,9 +489,83 @@
 import { ref, onMounted, watch, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { OfficeBuilding, Edit, Shop, Star, Plus } from '@element-plus/icons-vue'
-import { getProfile, updateProfile, updatePassword, getMyFavorites, getRewards, claimReward } from '@/api/community'
+import { OfficeBuilding, Edit, Shop, Star, Plus, Delete, Close } from '@element-plus/icons-vue'
+import { getProfile, updateProfile, updatePassword, getMyFavorites, getRewards, claimReward, saveCompounds, saveSpaces } from '@/api/community'
 import { uploadImage } from '@/api/public'
+
+// 场地设施预设选项
+const FACILITY_OPTIONS = [
+  '投影', '电子屏', '音响', '话筒', '桌椅', '白板',
+  'wifi', '空调', '窗帘', '灯光', '舞台', '讲台',
+  '饮水机', '停车场', '无障碍设施', '洗手间'
+]
+
+// ========== 小区编辑相关函数 ==========
+function addCompound() {
+  editForm.value.compounds.push({ id: null, name: '', households: null })
+}
+
+function removeCompound(index) {
+  editForm.value.compounds.splice(index, 1)
+}
+
+// ========== 场地空间编辑相关函数 ==========
+function addSpace() {
+  editForm.value.spaces.push({
+    id: null,
+    name: '',
+    location_type: 0,
+    floor_number: null,
+    area: null,
+    capacity: null,
+    facilities: [],
+    customFacilities: '',
+    available_hours: '',
+    images: [],
+    newImages: []
+  })
+}
+
+function removeSpace(index) {
+  editForm.value.spaces.splice(index, 1)
+}
+
+function toggleSpaceFacility(spaceIdx, facility) {
+  const facilities = editForm.value.spaces[spaceIdx].facilities
+  const idx = facilities.indexOf(facility)
+  if (idx >= 0) {
+    facilities.splice(idx, 1)
+  } else {
+    facilities.push(facility)
+  }
+}
+
+function beforeSpaceImageUpload(file, spaceIdx) {
+  const isImage = file.type.startsWith('image/')
+  const isLt2M = file.size / 1024 / 1024 < 2
+  if (!isImage) ElMessage.error('只能上传图片文件')
+  if (!isLt2M) ElMessage.error('图片大小不能超过2MB')
+  if (isImage && isLt2M) {
+    // 创建预览URL
+    const url = URL.createObjectURL(file)
+    if (!editForm.value.spaces[spaceIdx].newImages) {
+      editForm.value.spaces[spaceIdx].newImages = []
+    }
+    editForm.value.spaces[spaceIdx].newImages.push({ raw: file, url })
+  }
+  return false // 阻止默认上传
+}
+
+function removeSpaceImage(spaceIdx, imgIdx) {
+  editForm.value.spaces[spaceIdx].images.splice(imgIdx, 1)
+}
+
+function removeSpaceNewImage(spaceIdx, fileIdx) {
+  // 释放blob URL
+  const file = editForm.value.spaces[spaceIdx].newImages[fileIdx]
+  if (file.url) URL.revokeObjectURL(file.url)
+  editForm.value.spaces[spaceIdx].newImages.splice(fileIdx, 1)
+}
 
 const router = useRouter()
 const loading = ref(true)
@@ -425,8 +635,10 @@ async function loadResourceTypes() {
     const res = await getPublishTypes()
     if (res.data?.resource_types?.length) {
       const map = {}
-      res.data.resource_types.forEach((name, idx) => {
-        map[idx] = name
+      res.data.resource_types.forEach((item, idx) => {
+        const name = (typeof item === 'object' && item !== null) ? item.name : item
+        const id = (typeof item === 'object' && item !== null) ? item.id : idx
+        map[id] = name
         map[name] = name
       })
       resourceTypeNumMap.value = map
@@ -449,13 +661,12 @@ const allTags = [
 ]
 
 const editForm = ref({
-  community_name: '',
+  real_name: '',
   community: '',
-  contact_name: '',
   district: '',
   street: '',
   position: '',
-  username: '',
+  phone: '',
   address: '',
   latitude: '',
   longitude: '',
@@ -472,7 +683,11 @@ const editForm = ref({
   has_school: 0,
   has_park: 0,
   description: '',
-  tagsList: []
+  tagsList: [],
+  // 多小区数据
+  compounds: [],
+  // 场地空间数据
+  spaces: []
 })
 
 async function loadProfile() {
@@ -492,14 +707,35 @@ function startEdit() {
   const tagsArray = Array.isArray(tags) ? tags : (tags ? tags.split(',') : [])
   const images = profile.value.images
   const imagesArray = Array.isArray(images) ? images : (images ? images.split(',').filter(Boolean) : [])
+  // 处理小区数据
+  const compounds = profile.value.compounds && profile.value.compounds.length > 0
+    ? profile.value.compounds.map(c => ({ ...c }))
+    : []
+  // 处理场地空间数据
+  const spaces = profile.value.spaces && profile.value.spaces.length > 0
+    ? profile.value.spaces.map(s => ({
+        ...s,
+        // 如果 images 是字符串，转换为数组
+        images: Array.isArray(s.images) ? s.images : (s.images ? s.images.split(',').filter(Boolean) : []),
+        // 处理设施选项，确保是数组
+        facilities: Array.isArray(s.facilities) ? s.facilities : [],
+        // 处理自定义设施
+        customFacilities: s.custom_facilities || '',
+        // 处理可用时段
+        available_hours: s.available_hours || '',
+        // 临时存储新上传的图片
+        newImages: []
+      }))
+    : []
   editForm.value = {
-    community_name: profile.value.community_name || '',
+    real_name: profile.value.real_name || '',
     community: profile.value.community || '',
-    contact_name: profile.value.contact_name || '',
+    district: profile.value.district || '',
+    street: profile.value.street || '',
     district: profile.value.district || '',
     street: profile.value.street || '',
     position: profile.value.position || '',
-    username: profile.value.username || '',
+    phone: profile.value.phone || '',
     address: profile.value.address || '',
     latitude: profile.value.latitude || '',
     longitude: profile.value.longitude || '',
@@ -516,7 +752,9 @@ function startEdit() {
     has_school: profile.value.has_school || 0,
     has_park: profile.value.has_park || 0,
     description: profile.value.description || '',
-    tagsList: tagsArray
+    tagsList: tagsArray,
+    compounds,
+    spaces
   }
   editing.value = true
   infoTab.value = 'basic'
@@ -542,7 +780,10 @@ async function saveProfile() {
         try {
           const res = await uploadImage(file.raw)
           images.push(res.data.url)
-        } catch {}
+        } catch (err) {
+          console.error('Logo上传失败:', err)
+          ElMessage.error('Logo图片上传失败')
+        }
       }
     }
     await updateProfile({
@@ -561,12 +802,57 @@ async function saveProfile() {
       has_park: editForm.value.has_park,
       description: editForm.value.description,
       tags: editForm.value.tagsList,
-      contact_name: editForm.value.contact_name,
-      community_name: editForm.value.community_name,
+      real_name: editForm.value.real_name,
       community: editForm.value.community,
       latitude: editForm.value.latitude ? parseFloat(editForm.value.latitude) : null,
       longitude: editForm.value.longitude ? parseFloat(editForm.value.longitude) : null
     })
+    
+    // 保存小区数据
+    const compounds = editForm.value.compounds.map(c => ({
+      id: c.id || null,
+      name: c.name,
+      households: c.households
+    }))
+    await saveCompounds({ compounds })
+    
+    // 保存场地空间数据
+    const spacesData = []
+    for (const space of editForm.value.spaces) {
+      // 处理场地图片上传
+      const spaceImages = [...(space.images || [])]
+      if (space.newImages && space.newImages.length > 0) {
+        for (const file of space.newImages) {
+          if (file.raw) {
+            try {
+              const res = await uploadImage(file.raw)
+              if (res.data && res.data.url) {
+                spaceImages.push(res.data.url)
+              } else {
+                throw new Error('上传响应格式错误')
+              }
+            } catch (err) {
+              console.error('场地图片上传失败:', err)
+              ElMessage.error('场地图片上传失败，请重试')
+            }
+          }
+        }
+      }
+      spacesData.push({
+        id: space.id || null,
+        name: space.name,
+        location_type: space.location_type,
+        floor_number: space.location_type === 0 ? space.floor_number : null,
+        area: space.area,
+        capacity: space.capacity,
+        facilities: space.facilities || [],
+        custom_facilities: space.customFacilities || '',
+        available_hours: space.available_hours,
+        images: spaceImages
+      })
+    }
+    await saveSpaces({ spaces: spacesData })
+    
     await loadProfile()
     editing.value = false
     ElMessage.success('社区资料已保存')
@@ -745,6 +1031,54 @@ function onRewardPageChange(page) {
 .upload-tip { font-size: 12px; color: #909399; }
 .map-location-input { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; }
 .password-form { padding: 10px 0; }
+
+/* 场地空间样式 */
+.space-cards { display: flex; flex-wrap: wrap; gap: 12px; }
+.space-card { width: 300px; }
+.space-info { font-size: 13px; color: #606266; }
+.space-row { margin-bottom: 6px; display: flex; align-items: center; flex-wrap: wrap; gap: 4px; }
+.space-label { color: #909399; min-width: 50px; }
+.space-images { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 4px; }
+
+/* 小区编辑样式 */
+.compound-item { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; padding: 8px; background: #f5f7fa; border-radius: 4px; }
+.compound-item .el-input { flex: 1; }
+.compound-item .el-input-number { flex: 0 0 120px; }
+
+/* 场地编辑样式 */
+.space-edit-item { padding: 16px; background: #f5f7fa; border-radius: 8px; margin-bottom: 16px; }
+.space-edit-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.space-edit-row { display: flex; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
+.space-edit-row .el-form-item { margin-bottom: 0; flex: 1; min-width: 200px; }
+.facility-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+.custom-facility { display: flex; gap: 8px; margin-top: 8px; }
+.available-hours { display: flex; gap: 8px; flex-wrap: wrap; }
+.available-hours .el-select { width: 200px; }
+
+/* 场地图片上传 */
+.space-images-upload { display: flex; flex-wrap: wrap; gap: 8px; }
+.space-image-item { position: relative; width: 100px; height: 100px; }
+.space-image-item img { width: 100%; height: 100%; object-fit: cover; border-radius: 4px; }
+.space-image-delete { position: absolute; top: -8px; right: -8px; }
+
+/* 小区编辑表单样式 */
+.compounds-editor { display: flex; flex-direction: column; gap: 8px; }
+.compound-item { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; padding: 8px; background: #f5f7fa; border-radius: 4px; }
+.compound-item .el-input { flex: 1; }
+.compound-item .el-input-number { flex: 0 0 120px; }
+
+/* 场地编辑表单样式 */
+.spaces-editor { display: flex; flex-direction: column; gap: 12px; }
+.space-edit-card { background: #f5f7fa; border-radius: 8px; padding: 16px; margin-bottom: 12px; }
+.space-edit-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e4e7ed; }
+.space-images-editor { display: flex; flex-direction: column; gap: 8px; }
+.space-images-preview { display: flex; flex-wrap: wrap; gap: 8px; }
+.space-images-preview .space-image-item { position: relative; width: 80px; height: 80px; }
+.space-images-preview .space-image-item .el-image { width: 80px; height: 80px; border-radius: 4px; }
+.space-images-preview .remove-icon { position: absolute; top: -6px; right: -6px; background: #fff; border-radius: 50%; cursor: pointer; color: #f56c6c; box-shadow: 0 1px 4px rgba(0,0,0,0.2); }
+.facility-selector { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.compact-form-item { margin-bottom: 12px; }
+.compact-form-item :deep(.el-form-item__label) { font-size: 13px; }
 
 @media (max-width: 768px) {
   .page { padding-bottom: 70px; }

@@ -318,10 +318,12 @@ async function loadResourceTypes() {
       const nameMap = {}
       const tagMap = {}
       const colors = ['', 'success', 'warning', 'info', 'danger', 'primary', 'success', 'info', 'warning', 'danger', '']
-      res.data.resource_types.forEach((name, idx) => {
-        nameMap[idx] = name
+      res.data.resource_types.forEach((item, idx) => {
+        const name = (typeof item === 'object' && item !== null) ? item.name : item
+        const id = (typeof item === 'object' && item !== null) ? item.id : idx
+        nameMap[id] = name
         nameMap[name] = name
-        tagMap[idx] = colors[idx % colors.length] || ''
+        tagMap[id] = colors[idx % colors.length] || ''
         tagMap[name] = colors[idx % colors.length] || ''
       })
       resourceTypeName.value = nameMap

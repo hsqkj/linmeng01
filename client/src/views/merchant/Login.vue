@@ -50,6 +50,12 @@
         {{ loading ? '登录中...' : '登录' }}
       </button>
 
+      <div class="test-hint">
+        <span class="test-label">测试账号</span>
+        <span class="test-phone">188 0000 0002</span>
+        <span class="test-code">验证码：123456</span>
+      </div>
+
       <div class="login-divider">
         <div class="login-tips">
           <div class="login-tip">
@@ -279,5 +285,34 @@ const goBack = () => { router.push('/') }
   .login-card { padding: 24px 16px; }
   .login-brand { top: 16px; left: 16px; }
   .login-back { top: 20px; right: 16px; }
+}
+
+.test-hint {
+  margin-top: 12px;
+  padding: 10px 14px;
+  background: #fffbe6;
+  border: 1px solid #ffe58f;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  flex-wrap: wrap;
+}
+.test-label {
+  background: #faad14;
+  color: #fff;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 12px;
+}
+.test-phone {
+  color: #333;
+  font-weight: 500;
+}
+.test-code {
+  color: #52c41a;
+  font-weight: 600;
 }
 </style>

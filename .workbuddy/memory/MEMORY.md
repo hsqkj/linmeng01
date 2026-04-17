@@ -73,6 +73,16 @@
 | rating_config | 评分配置 |
 | anti_flying_level | 防飞单等级门槛 |
 
+## 容联云短信服务配置（2026-04-17 已调通）
+- **ACCOUNT_SID**：`8aaf07085581a831015582428904010d`
+- **AUTH_TOKEN**：`3478f34b326147de895c07879561e1f2`
+- **APP_ID**：`2c94811c8cd4da0a018f24f97c0875d3`（"好社区订单通知"应用，注意不是 ACCOUNT_SID！）
+- **TEMPLATE_ID**：`3088517`（验证码模板）
+- **本地测试IP白名单**：`27.19.209.77`（已加入容联云控制台）
+- **服务器IP白名单**：`150.158.12.243`（需确认已加入）
+- **API端点**：`app.cloopen.com:8883 /2013-12-26/.../SMS/TemplateSMS`
+- **Authorization格式**：`Base64(AccountSid:Timestamp)`（无 Basic 前缀）
+
 ## 测试账号（密码均为 123456）
 - 管理员：admin
 - 社区账号：liuyong, zhanghua, wangli, lisimin, chenjie

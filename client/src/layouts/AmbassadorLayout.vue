@@ -173,7 +173,7 @@ loadNotifications()
 const handleLogout = () => {
   localStorage.removeItem('ambassador_token')
   localStorage.removeItem('ambassador_info')
-  router.push('/login/ambassador')
+  window.location.href = '/login/ambassador'
 }
 // 加载大使信息
 try {
