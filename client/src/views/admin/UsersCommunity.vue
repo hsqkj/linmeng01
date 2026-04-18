@@ -14,8 +14,10 @@
     <el-table :data="users" stripe border v-loading="loading">
       <el-table-column type="index" width="50" />
       <el-table-column prop="real_name" label="姓名" width="90" />
-      <el-table-column prop="community_name" label="所属社区" min-width="150" />
-      <el-table-column prop="district" label="所属街道" width="120" />
+      <el-table-column prop="community" label="所属社区" min-width="150">
+        <template #default="{ row }">{{ row.community || row.community_name || '—' }}</template>
+      </el-table-column>
+      <el-table-column prop="street" label="所属街道" width="120" />
       <el-table-column prop="phone" label="手机号" width="130" />
       <el-table-column prop="created_at" label="注册时间" width="160">
         <template #default="{ row }">{{ fmtTime(row.created_at) }}</template>
@@ -46,8 +48,8 @@
           <el-descriptions :column="2" border>
             <el-descriptions-item label="姓名">{{ currentUser.real_name }}</el-descriptions-item>
             <el-descriptions-item label="手机号">{{ currentUser.phone }}</el-descriptions-item>
-            <el-descriptions-item label="社区名称" :span="2">{{ currentUser.community_name || '—' }}</el-descriptions-item>
-            <el-descriptions-item label="所属街道">{{ currentUser.district || '—' }}</el-descriptions-item>
+            <el-descriptions-item label="社区名称" :span="2">{{ currentUser.community || currentUser.community_name || '—' }}</el-descriptions-item>
+            <el-descriptions-item label="所属街道">{{ currentUser.street || '—' }}</el-descriptions-item>
             <el-descriptions-item label="注册时间">{{ fmtTime(currentUser.created_at) }}</el-descriptions-item>
             <el-descriptions-item label="审核状态">
               <el-tag :type="statusTag[currentUser.status]" size="small">{{ statusLabels[currentUser.status] }}</el-tag>

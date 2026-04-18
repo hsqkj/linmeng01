@@ -2494,13 +2494,13 @@ exports.getCommunityProfile = async (req, res) => {
   try {
     const { id } = req.params
 
-    // 1. 读取社区基本信息
+    // 1. 读取社区基本信息（包含所有32个字段）
     const [commRows] = await pool.query(
-      `SELECT id, real_name, community_name, district, street, households,
-              family_ratio, elderly_ratio,
-              public_space_area, merchant_count,
+      `SELECT id, username, password, real_name, phone, district, street, community, community_name,
+              position, households, family_ratio, elderly_ratio, public_space_area, merchant_count,
               has_outdoor_plaza, has_commercial, has_school, has_park,
-              logo, images, description, tags
+              logo, images, description, lat, lng, address, proof_images, tags,
+              status, reject_reason, last_login_at, created_at, updated_at
        FROM communities WHERE id = ?`,
       [id]
     )
@@ -2588,48 +2588,92 @@ exports.getCommunityProfile = async (req, res) => {
     const scoreValues = Object.values(scores)
     const overall = Math.round(scoreValues.reduce((a, b) => a + b, 0) / scoreValues.length)
 
-    // 处理场地空间数据
+    // 处理场地空间数据（字段可能是数组或JSON字符串）
     const spaces = spacesRows.map(s => ({
       ...s,
       location_type: s.location_type,
-      facilities: s.facilities ? JSON.parse(s.facilities) : [],
-      images: s.images ? JSON.parse(s.images) : [],
+      facilities: Array.isArray(s.facilities) ? s.facilities : (s.facilities ? JSON.parse(s.facilities) : []),
+      images: Array.isArray(s.images) ? s.images : (s.images ? JSON.parse(s.images) : []),
     }))
 
     // 处理小区数据
     const compounds = compoundsRows
 
-    // 处理社区基础信息中的 tags
+    // 处理社区基础信息中的 tags（可能是数组或JSON字符串）
     let tags = []
     if (c.tags) {
-      try {
-        tags = JSON.parse(c.tags)
-      } catch {
-        tags = c.tags.split(',').filter(Boolean)
+      if (Array.isArray(c.tags)) {
+        tags = c.tags
+      } else {
+        try {
+          tags = JSON.parse(c.tags)
+        } catch {
+          tags = c.tags.split(',').filter(Boolean)
+        }
       }
     }
 
-    // 处理社区图片
+    // 处理社区图片（可能是数组或JSON字符串）
     let images = []
     if (c.images) {
-      try {
-        images = JSON.parse(c.images)
-      } catch {
-        images = c.images.split(',').filter(Boolean)
+      if (Array.isArray(c.images)) {
+        images = c.images
+      } else {
+        try {
+          images = JSON.parse(c.images)
+        } catch {
+          images = c.images.split(',').filter(Boolean)
+        }
+      }
+    }
+
+    // 处理证明材料图片（可能是数组或JSON字符串）
+    let proofImages = []
+    if (c.proof_images) {
+      if (Array.isArray(c.proof_images)) {
+        proofImages = c.proof_images
+      } else {
+        try {
+          proofImages = JSON.parse(c.proof_images)
+        } catch {
+          proofImages = []
+        }
       }
     }
 
     success(res, {
       community: {
         id: c.id,
-        name: c.real_name,
-        communityName: c.community_name,
+        username: c.username,
+        realName: c.real_name,
+        name: c.community || c.real_name,
+        communityName: c.community,
         district: c.district,
         street: c.street,
+        position: c.position,
         logo: c.logo,
         images: images,
         description: c.description,
         tags: tags,
+        phone: c.phone,
+        address: c.address,
+        lat: c.lat,
+        lng: c.lng,
+        households: c.households,
+        familyRatio: parseFloat(c.family_ratio) || 0,
+        elderlyRatio: parseFloat(c.elderly_ratio) || 0,
+        publicSpaceArea: parseFloat(c.public_space_area) || 0,
+        merchantCount: c.merchant_count || 0,
+        hasOutdoorPlaza: c.has_outdoor_plaza,
+        hasCommercial: c.has_commercial,
+        hasSchool: c.has_school,
+        hasPark: c.has_park,
+        status: c.status,
+        rejectReason: c.reject_reason,
+        proofImages: proofImages,
+        createdAt: c.created_at,
+        updatedAt: c.updated_at,
+        lastLoginAt: c.last_login_at,
       },
       compounds: compounds,
       spaces: spaces,
@@ -2651,7 +2695,9 @@ exports.getCommunityScores = async (req, res) => {
       SELECT
         c.id,
         c.real_name,
-        c.community_name,
+        c.community,
+        c.district,
+        c.street,
         c.households,
         c.family_ratio,
         c.elderly_ratio,
@@ -2693,7 +2739,9 @@ exports.getCommunityScores = async (req, res) => {
       return {
         id: c.id,
         realName: c.real_name,
-        communityName: c.community_name,
+        communityName: c.community || c.community_name || c.real_name,
+        district: c.district,
+        street: c.street,
         scores,
         overall,
       }

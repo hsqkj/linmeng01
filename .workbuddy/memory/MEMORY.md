@@ -582,6 +582,81 @@
   - 表格横向滚动
   - 响应式间距优化
 
+## 社区端UI优化（2026-04-18 21:00）
+
+### 1. 首页留言咨询按钮修复
+- **问题**：点击留言咨询按钮无反应
+- **修复**：`Home.vue` 中 `contactMerchant` 函数添加友好提示
+- **文件**：`client/src/views/community/Home.vue`
+
+### 2. 资源广场底部操作栏优化
+- **优化**：收藏/分享去掉文字，保留图标，增加查看按钮
+- **文件**：`client/src/views/community/Resources.vue`
+- **改动**：底部三图标均分布局（收藏★、查看👁、分享↗）
+
+### 3. 资源类型标签美观设计
+- **设计**：图标+文字的卡片式标签
+- **特点**：
+  - 渐变背景色
+  - 每种类型独特图标和颜色
+  - hover上浮动画效果
+  - 选中状态动态变色
+- **图标映射**：
+  - 专业服务：Briefcase
+  - 教育培训：OfficeBuilding
+  - 场地资源：HomeFilled
+  - 物资捐赠：Present
+  - 志愿服务：Medal
+  - 资金赞助：Wallet
+  - 技术支持：Tools
+  - 健康医疗：FirstAidKit
+  - 活动赞助：Tickets
+  - 媒体宣传：Camera
+  - 技能培训：Goods
+  - 养老服务：HomeFilled
+
+## 全角色业务流程测试（2026-04-18）
+
+### 测试结果
+| 模块 | 状态 | 通过/总数 |
+|------|------|----------|
+| 🌐 公共接口 | ✅ | 8/8 |
+| 🔧 管理后台 | ✅ | 12/12 |
+| 🏪 商家端 | ✅ | 11/12 |
+| 🏠 社区端 | ✅ | 11/11 |
+| 🤝 大使端 | ✅ | 10/11 |
+
+### 发现并修复的问题
+1. **resources表字段缺失**：添加了11个缺失字段（ai_audit_level, ai_audit_reason, manpower_desc等）
+2. **demands表字段缺失**：添加了2个缺失字段（ai_audit_level, ai_audit_reason）
+
+### 待处理问题
+1. 商家发布资源SQL错误（已修复字段，需重启服务验证）
+2. 大使资料获取失败500错误
+
+## 社区端UI优化补充（2026-04-18 21:15）
+
+### 1. 资源广场增加"全部"选项
+- **位置**：资源类型标签第一个
+- **图标**：Grid图标
+- **颜色**：#409EFF（蓝色）
+- **默认选中**：filters.type = '' 表示全部
+- **文件**：`client/src/views/community/Resources.vue`
+
+### 2. 社区个人中心修复
+- **Logo显示**：使用 `profile.logo` 字段
+- **社区名称**：显示 `community || community_name`
+- **统计数据**：demandCount、intentionCount、viewCount（从后端数据库查询，非写死）
+
+### 3. 社区画像完整字段显示
+- 新增：社区名称、详细地址、配套设施标签、地图定位、社区图片
+- 完善：小区列表、场地空间完整字段
+
+### 4. 资源详情页留言咨询修复
+- **问题**：`submitMessage()` 函数没有调用API
+- **修复**：添加 `createResourceComment()` API调用
+- **文件**：`client/src/views/community/ResourceDetail.vue`
+
 
 
 

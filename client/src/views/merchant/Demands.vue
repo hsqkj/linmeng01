@@ -157,7 +157,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { requireAuth } from '@/utils/useAuth'
 import { Search, Location, Calendar, Loading, Star, View } from '@element-plus/icons-vue'
-import { getDemands, getCommunityDetail, toggleFavorite, getMyFavorites, getPublishTypes } from '@/api/merchant'
+import { getDemands, getCommunityDetail, toggleFavorite, getMyFavorites, getPublishTypes, getRegions } from '@/api/merchant'
 
 const router = useRouter()
 
@@ -219,50 +219,70 @@ async function loadDemandTypes() {
   } catch {}
 }
 
-// 武汉市区/街道/社区数据
-const districts = ['江岸区', '江汉区', '硚口区', '汉阳区', '武昌区', '青山区', '洪山区', '东西湖区', '汉南区', '蔡甸区', '江夏区', '黄陂区', '新洲区']
-const streetData = {
-  '江岸区': ['百步亭社区', '劳动社区', '球场社区', '西马社区', '花桥社区', '二七社区', '永清社区', '四唯社区'],
-  '江汉区': ['满春社区', '民意社区', '新华社区', '万松社区', '北湖社区', '唐家墩社区', '汉兴社区'],
-  '硚口区': ['宗关社区', '汉水桥社区', '宝丰社区', '荣华社区', '六角亭社区', '汉中社区'],
-  '汉阳区': ['建桥社区', '鹦鹉社区', '洲头社区', '五里墩社区', '江堤社区', '龙阳社区'],
-  '武昌区': ['徐家棚社区', '积玉桥社区', '中华路社区', '粮道社区', '黄鹤楼社区', '首义路社区', '水果湖社区', '中南路社区'],
-  '青山区': ['红钢城社区', '工人村社区', '青山镇社区', '武东社区', '冶金社区', '新沟桥社区'],
-  '洪山区': ['珞南社区', '关山社区', '卓刀泉社区', '梨园社区', '和平社区', '张家湾社区', '洪山社区'],
-  '东西湖区': ['吴家山社区', '长青社区', '慈惠社区', '走马岭社区', '径河社区', '金银湖社区'],
-  '汉南区': ['纱帽社区', '东荆社区', '湘口社区', '邓南社区'],
-  '蔡甸区': ['蔡甸社区', '大集社区', '奓山社区', '永安社区', '侏儒社区', '张湾社区'],
-  '江夏区': ['纸坊社区', '金口社区', '乌龙社区', '郑店社区', '五里界社区', '山坡社区'],
-  '黄陂区': ['前川社区', '横店社区', '滠口社区', '罗汉社区', '祁湾社区', '武湖社区', '天河社区'],
-  '新洲区': ['邾城社区', '阳逻社区', '仓埠社区', '汪集社区', '李集社区', '凤凰社区', '徐集社区']
-}
-const communityData = {
-  '江岸区': ['百步亭花园', '海虹景花园', '同鑫花园', '常阳永清城', '锦湖花园', '华清园', '天润花园', '新地东方华府'],
-  '江汉区': ['CBD楚世家', '葛洲坝国际', '福星华府', '盛世江城', '仁恒公园世纪', '越秀国际金融汇'],
-  '硚口区': ['融侨锦城', '同济医院小区', '营房社区', '古田四路小区', '广电江湾新城'],
-  '汉阳区': ['卧龙墨水湖', '水墨丹青', '世茂锦绣长江', '复地海上海', '龙阳1号', '恒大御景湾'],
-  '武昌区': ['金都汉宫', '锦江国际', '华润凤凰城', '百瑞景中央生活区', '水岸国际', '沙湖公馆', '东湖一号'],
-  '青山区': ['绿地香树花城', '大华锦绣时代', '中建开元公馆', '招商一江璟城'],
-  '洪山区': ['金地格林东郡', '万科金色城市', '东原湖光里', '当代国际花园', '清江锦城', '金地自在城', '爱家名校华城'],
-  '东西湖区': ['愿景时代', '常青花园', '航天彩虹苑', '银湖水榭', '美联奥园', '远洋世界'],
-  '汉南区': ['碧桂园凰城', '庭瑞君悦', '星悦湾'],
-  '蔡甸区': ['中法文产知音湾', '金地格林', '朗诗西海岸', '世茂龙湾', '海天幸福小城'],
-  '江夏区': ['金融街金悦府', '美的君兰半岛', '路劲时代城', '武汉雅居乐花园', '中建汤逊湖壹号'],
-  '黄陂区': ['天纵城', '汉北大全景', 'F水天城', '大华公园华府', '恒达盘龙湾'],
-  '新洲区': ['阳逻万达广场', '当代满庭春', '绿城桃李春风', '欣隆湖滨半岛', '孔雀城航天府']
-}
+// 行政区划数据（从API动态加载）
+const districts = ref([]) // 区列表
+const streetData = ref({}) // 街道数据 { '区名': ['街道1', '街道2', ...] }
+const communityData = ref({}) // 社区数据 { '街道名': ['社区1', '社区2', ...] }
 const filteredStreets = ref([])
 const filteredCommunities = ref([])
+
+// 从API加载行政区划数据
+async function loadRegions() {
+  try {
+    // 1. 获取所有行政区划数据
+    const allRes = await getRegions({})
+    const allRegions = allRes.data || []
+    
+    // 找到市级（level=1），如武汉市 id=1
+    const cityList = allRegions.filter(r => r.level === 1)
+    const cityIds = cityList.map(r => r.id)
+    
+    // 区级（level=2，parent_id 在 cityIds 中）
+    const districtList = allRegions.filter(r => r.level === 2 && cityIds.includes(r.parent_id))
+    districts.value = districtList.map(r => r.name)
+    
+    // 构建映射：区id → 区名，街道id → 街道名
+    const districtMap = {}  // id → name
+    const streetIdMap = {}  // id → name
+    districtList.forEach(d => { districtMap[d.id] = d.name })
+    
+    const streetsByDistrict = {}
+    const communitiesByStreet = {}
+    
+    allRegions.forEach(r => {
+      if (r.level === 3) { // 街道
+        const districtName = districtMap[r.parent_id] || ''
+        streetIdMap[r.id] = r.name
+        if (districtName) {
+          if (!streetsByDistrict[districtName]) streetsByDistrict[districtName] = []
+          streetsByDistrict[districtName].push(r.name)
+        }
+      } else if (r.level === 4) { // 社区
+        const streetName = streetIdMap[r.parent_id] || allRegions.find(p => p.id === r.parent_id)?.name || ''
+        if (streetName) {
+          if (!communitiesByStreet[streetName]) communitiesByStreet[streetName] = []
+          communitiesByStreet[streetName].push(r.name)
+        }
+      }
+    })
+    
+    streetData.value = streetsByDistrict
+    communityData.value = communitiesByStreet
+  } catch (err) {
+    console.error('加载行政区划失败:', err)
+    districts.value = []
+  }
+}
 
 function onDistrictChange() {
   filters.street = ''
   filters.community = ''
-  filteredStreets.value = streetData[filters.district] || []
+  filteredStreets.value = streetData.value[filters.district] || []
   filteredCommunities.value = []
 }
 function onStreetChange() {
   filters.community = ''
-  filteredCommunities.value = communityData[filters.street] || []
+  filteredCommunities.value = communityData.value[filters.street] || []
 }
 
 const demands = ref([])
@@ -384,6 +404,7 @@ function onPageChange(page) {
 }
 
 onMounted(() => {
+  loadRegions() // 先加载行政区划数据
   loadDemandTypes()
   loadFavorites().then(fetchDemands)
 })

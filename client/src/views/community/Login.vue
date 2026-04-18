@@ -52,12 +52,6 @@
         {{ loading ? '登录中...' : '登录' }}
       </button>
 
-      <div class="test-hint">
-        <span class="test-label">测试账号</span>
-        <span class="test-phone">188 0000 0001</span>
-        <span class="test-code">验证码：123456</span>
-      </div>
-
       <div class="login-divider">
         <div class="login-tips">
           <div class="login-tip">

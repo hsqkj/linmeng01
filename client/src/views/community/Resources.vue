@@ -7,16 +7,26 @@
 
     <!-- 资源类型标签筛选 -->
     <div class="type-tags-bar">
-      <el-tag
+      <div
+        class="type-tag-btn"
+        :class="{ active: filters.type === '' }"
+        :style="{ '--tag-color': '#409EFF' }"
+        @click="selectType('')"
+      >
+        <el-icon class="type-tag-icon"><Grid /></el-icon>
+        <span class="type-tag-text">全部</span>
+      </div>
+      <div
         v-for="(t, idx) in resourceTypes"
         :key="idx"
-        :type="filters.type === idx.toString() ? 'primary' : 'info'"
-        :effect="filters.type === idx.toString() ? 'dark' : 'light'"
         class="type-tag-btn"
+        :class="{ active: filters.type === idx.toString() }"
+        :style="{ '--tag-color': getResourceTypeColor(idx) }"
         @click="selectType(idx.toString())"
       >
-        {{ t }}
-      </el-tag>
+        <el-icon class="type-tag-icon"><component :is="getResourceTypeIcon(idx)" /></el-icon>
+        <span class="type-tag-text">{{ t }}</span>
+      </div>
     </div>
 
     <!-- 搜索与筛选 -->
@@ -85,19 +95,16 @@
           <el-tag v-for="tag in (Array.isArray(resource.tags) ? resource.tags : resource.tags.split(',')).slice(0, 5)" :key="tag" size="small" effect="plain" style="margin:2px">{{ tag }}</el-tag>
         </div>
 
-        <!-- 第五行：收藏 + 关注 + 分享 均分三等分 -->
+        <!-- 第五行：收藏 + 查看 + 分享 均分三等分 -->
         <div class="card-footer">
-          <div class="footer-item" @click.stop="handleFavorite(resource)">
+          <div class="footer-item" @click.stop="handleFavorite(resource)" :title="favoritedIds.has(resource.id) ? '已收藏' : '收藏'">
             <el-icon class="footer-icon" :class="{active: favoritedIds.has(resource.id)}"><Star /></el-icon>
-            <span class="footer-label">{{ favoritedIds.has(resource.id) ? '已收藏' : '收藏' }}</span>
           </div>
-          <div class="footer-item">
-            <el-icon class="footer-icon"><View /></el-icon>
-            <span class="footer-label">{{ resource.view_count || 0 }}</span>
+          <div class="footer-item" @click.stop="viewDetail(resource)" title="查看详情">
+            <el-icon class="footer-icon detail-icon"><View /></el-icon>
           </div>
-          <div class="footer-item" @click.stop="handleShare(resource)">
+          <div class="footer-item" @click.stop="handleShare(resource)" title="分享">
             <el-icon class="footer-icon"><Share /></el-icon>
-            <span class="footer-label">分享</span>
           </div>
         </div>
       </el-card>
@@ -144,7 +151,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { requireAuth } from '@/utils/useAuth'
-import { Search, View, Star, Shop, Share } from '@element-plus/icons-vue'
+import { Search, View, Star, Shop, Share, Briefcase, OfficeBuilding, Present, Medal, Wallet, FirstAidKit, Tickets, Camera, Tools, HomeFilled, Goods, Grid } from '@element-plus/icons-vue'
 import { getResources, toggleFavorite, getMyFavorites, getConfig } from '@/api/community'
 
 const router = useRouter()
@@ -157,9 +164,53 @@ const filters = reactive({ keyword: '', type: '', rating: '', distance: '', matc
 const resourceTypes = ref([])
 const resourceTypeMap = ref({})
 
+// 资源类型图标映射
+const resourceTypeIcons = {
+  0: Briefcase,   // 专业服务
+  1: OfficeBuilding, // 教育培训
+  2: HomeFilled,   // 场地资源
+  3: Present,      // 物资捐赠
+  4: Medal,        // 志愿服务
+  5: Wallet,       // 资金赞助
+  6: Tools,        // 技术支持
+  7: FirstAidKit,  // 健康医疗
+  8: Tickets,      // 活动赞助
+  9: Camera,       // 媒体宣传
+  10: Goods,       // 技能培训
+  11: HomeFilled,  // 养老服务
+}
+
+// 资源类型颜色映射
+const resourceTypeColors = {
+  0: '#409EFF',   // 专业服务 - 蓝色
+  1: '#E6A23C',   // 教育培训 - 橙色
+  2: '#67C23A',   // 场地资源 - 绿色
+  3: '#F56C6C',   // 物资捐赠 - 红色
+  4: '#9C27B0',   // 志愿服务 - 紫色
+  5: '#FFD700',   // 资金赞助 - 金色
+  6: '#00BCD4',   // 技术支持 - 青色
+  7: '#E91E63',   // 健康医疗 - 粉色
+  8: '#FF9800',   // 活动赞助 - 浅橙
+  9: '#795548',   // 媒体宣传 - 棕色
+  10: '#607D8B',  // 技能培训 - 灰蓝
+  11: '#8BC34A',   // 养老服务 - 浅绿
+}
+
+// 获取资源类型图标组件
+const getResourceTypeIcon = (typeIdx) => {
+  const idx = parseInt(typeIdx)
+  return resourceTypeIcons[idx] || Briefcase
+}
+
+// 获取资源类型颜色
+const getResourceTypeColor = (typeIdx) => {
+  const idx = parseInt(typeIdx)
+  return resourceTypeColors[idx] || '#409EFF'
+}
+
 // 选择资源类型标签
 function selectType(typeIdx) {
-  filters.type = filters.type === typeIdx ? '' : typeIdx
+  filters.type = typeIdx
   doSearch()
 }
 
@@ -318,19 +369,50 @@ onMounted(() => {
 .type-tags-bar {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 16px;
-  padding: 12px 16px;
-  background: #f5f7fa;
-  border-radius: 10px;
+  gap: 10px;
+  margin-bottom: 20px;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, #f8fafc 0%, #f0f7f4 100%);
+  border-radius: 12px;
+  border: 1px solid #e8f5e9;
 }
 .type-tag-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 20px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.25s ease;
   font-weight: 500;
+  font-size: 13px;
+  color: #666;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
 }
 .type-tag-btn:hover {
-  transform: scale(1.05);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  border-color: var(--tag-color);
+  color: var(--tag-color);
+}
+.type-tag-btn.active {
+  background: var(--tag-color);
+  border-color: var(--tag-color);
+  color: white;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+.type-tag-btn.active .type-tag-icon {
+  color: white;
+}
+.type-tag-icon {
+  font-size: 16px;
+  color: var(--tag-color);
+  transition: color 0.25s;
+}
+.type-tag-text {
+  white-space: nowrap;
 }
 
 /* 筛选栏 */
@@ -365,12 +447,13 @@ onMounted(() => {
 
 /* 底部三列 - 均分布局 */
 .card-footer { display: flex; align-items: center; justify-content: space-around; }
-.footer-item { display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer; padding: 4px 0; }
+.footer-item { display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 6px 12px; border-radius: 6px; transition: background 0.2s; }
+.footer-item:hover { background: #f5f7fa; }
 .footer-icon { font-size: 18px; color: #909399; transition: color 0.2s; }
 .footer-icon.active { color: #f56c6c; }
 .footer-icon:hover { color: #f56c6c; }
-.footer-label { font-size: 11px; color: #909399; }
-.footer-item:hover .footer-label { color: #606266; }
+.detail-icon:hover { color: #26a269; }
+.footer-item:hover .footer-icon { transform: scale(1.1); }
 
 .pagination { margin-top: 20px; display: flex; justify-content: flex-end; }
 
@@ -384,5 +467,17 @@ onMounted(() => {
   .filter-bar .el-button { width: calc(50% - 4px); font-size: 13px; }
   .resource-list { grid-template-columns: 1fr; gap: 12px; }
   .pagination { justify-content: center; }
+  /* 移动端资源类型标签优化 */
+  .type-tags-bar {
+    gap: 8px;
+    padding: 12px;
+  }
+  .type-tag-btn {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+  .type-tag-icon {
+    font-size: 14px;
+  }
 }
 </style>

@@ -70,7 +70,7 @@ router.post('/upload-native', (req, res) => {
     console.log('=== Busboy finished ===')
     if (fileWritten) {
       const url = `/uploads/${filename}${path.extname(filepath)}`
-      res.json({ success: true, data: { url }, message: '上传成功' })
+      res.json({ code: 200, success: true, data: { url }, message: '上传成功' })
     } else {
       res.status(500).json({ code: 500, message: '上传失败' })
     }

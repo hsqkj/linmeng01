@@ -1,24 +1,27 @@
-// 测试服务器 API（使用 http 模块避免 shell 转义问题）
-const http = require('http')
-const path = require('path')
-const baseDir = '/var/www/linmeng/server'
-require(path.join(baseDir, 'node_modules', 'dotenv')).config({ path: path.join(baseDir, '.env') })
-require(path.join(baseDir, 'node_modules', 'dotenv')).config({ path: path.join(baseDir, '.env.local') })
+const http = require('http');
 
-const phone = process.argv[2] || '13986274015'
-const body = JSON.stringify({ phone, type: 'login' })
-console.log('[POST] /api/public/sms/send')
-console.log('[BODY]', body)
+function get(url) {
+  return new Promise((resolve, reject) => {
+    http.get(url, res => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => resolve(JSON.parse(data)));
+    }).on('error', reject);
+  });
+}
 
-const req = http.request({ hostname: '127.0.0.1', port: 3000, path: '/api/public/sms/send', method: 'POST',
-  headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) } }, r => {
-  let d = ''
-  r.on('data', c => d += c)
-  r.on('end', () => {
-    console.log('[HTTP]', r.statusCode)
-    console.log('[RESP]', d)
-  })
-})
-req.on('error', e => console.error('[ERR]', e.message))
-req.write(body)
-req.end()
+async function main() {
+  console.log('=== /api/admin/community/scores ===');
+  const scores = await get('http://localhost:3000/api/admin/community/scores');
+  const changshan = scores.find(c => c.community && c.community.includes('长山'));
+  console.log('包含长山的社区:', JSON.stringify(changshan, null, 2));
+  
+  console.log('\n=== /api/admin/regions?level=1,2,3,4 ===');
+  const regions = await get('http://localhost:3000/api/admin/regions?level=1,2,3,4');
+  const guandong = regions.find(r => r.name && r.name.includes('关东') && r.level === 3);
+  const changshanRegion = regions.find(r => r.name && r.name.includes('长山'));
+  console.log('关东街道:', JSON.stringify(guandong, null, 2));
+  console.log('长山社区:', JSON.stringify(changshanRegion, null, 2));
+}
+
+main().catch(console.error);

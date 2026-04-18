@@ -223,8 +223,9 @@
           <el-divider />
           <el-descriptions :column="2" border size="small">
             <el-descriptions-item label="户数规模">{{ communityDetail.households || '未知' }} 户</el-descriptions-item>
-            <el-descriptions-item label="亲子家庭">{{ communityDetail.family_ratio || '-' }}</el-descriptions-item>
-            <el-descriptions-item label="老年群体">{{ communityDetail.elderly_ratio || '-' }}</el-descriptions-item>
+            <el-descriptions-item label="商户数量">{{ communityDetail.merchant_count || '未知' }} 家</el-descriptions-item>
+            <el-descriptions-item label="亲子家庭">{{ communityDetail.family_ratio || '-' }}%</el-descriptions-item>
+            <el-descriptions-item label="老年群体">{{ communityDetail.elderly_ratio || '-' }}%</el-descriptions-item>
             <el-descriptions-item label="公共空间">{{ communityDetail.public_space_area ? communityDetail.public_space_area + '㎡' : '-' }}</el-descriptions-item>
           </el-descriptions>
           <div class="detail-tags" style="margin-top:16px">
@@ -238,6 +239,42 @@
           <div class="detail-tags" style="margin-top:16px" v-if="communityDetail.tags">
             <div style="font-weight:600;margin-bottom:8px">社区标签</div>
             <el-tag v-for="tag in (Array.isArray(communityDetail.tags) ? communityDetail.tags : communityDetail.tags.split(','))" :key="tag" size="small" type="primary" effect="light" style="margin:3px">{{ tag }}</el-tag>
+          </div>
+          
+          <!-- 简介 -->
+          <div v-if="communityDetail.description" style="margin-top:16px">
+            <div style="font-weight:600;margin-bottom:8px">社区简介</div>
+            <div style="color:#606266;font-size:14px;line-height:1.6">{{ communityDetail.description }}</div>
+          </div>
+          
+          <!-- 证明材料图片 -->
+          <div v-if="communityDetail.proof_images && communityDetail.proof_images.length > 0" style="margin-top:16px">
+            <div style="font-weight:600;margin-bottom:8px">📄 证明材料</div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;">
+              <el-image
+                v-for="(img, idx) in (Array.isArray(communityDetail.proof_images) ? communityDetail.proof_images : JSON.parse(communityDetail.proof_images || '[]'))"
+                :key="idx"
+                :src="img"
+                style="width:80px;height:80px;object-fit:cover;border-radius:4px;"
+                :preview-src-list="(Array.isArray(communityDetail.proof_images) ? communityDetail.proof_images : JSON.parse(communityDetail.proof_images || '[]'))"
+                fit="cover"
+              />
+            </div>
+          </div>
+          
+          <!-- 社区图片 -->
+          <div v-if="communityDetail.images && communityDetail.images.length > 0" style="margin-top:16px">
+            <div style="font-weight:600;margin-bottom:8px">📷 社区图片</div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;">
+              <el-image
+                v-for="(img, idx) in (Array.isArray(communityDetail.images) ? communityDetail.images : JSON.parse(communityDetail.images || '[]'))"
+                :key="idx"
+                :src="img"
+                style="width:100px;height:100px;object-fit:cover;border-radius:4px;"
+                :preview-src-list="(Array.isArray(communityDetail.images) ? communityDetail.images : JSON.parse(communityDetail.images || '[]'))"
+                fit="cover"
+              />
+            </div>
           </div>
 
           <!-- 小区信息 -->

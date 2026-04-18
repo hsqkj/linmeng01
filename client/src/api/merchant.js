@@ -66,6 +66,9 @@ export const getPublishTypes = () => request.get('/public/publish-types')
 // ====== 专家类型（公开接口）======
 export const getExpertTypes = () => request.get('/public/expert-types')
 
+// ====== 行政区划（公开接口）======
+export const getRegions = (params) => request.get('/public/regions', { params })
+
 // ====== 系统通知 ======
 export const getMyNotifications = (params) => request.get('/merchant/notifications', { params })
 export const getUnreadCount = () => request.get('/merchant/notifications/unread-count')

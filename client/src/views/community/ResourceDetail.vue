@@ -850,13 +850,21 @@ function contactService() {
   showServiceDialog.value = true
 }
 
-function submitMessage() {
+async function submitMessage() {
   if (!messageContent.value.trim()) {
     ElMessage.warning('请填写留言内容')
     return
   }
-  showMessageDialog.value = false
-  ElMessage.success('留言已发送，平台审核后将推送给商家')
+  try {
+    await createResourceComment(route.params.id, { content: messageContent.value })
+    ElMessage.success('留言已发送，平台审核后将推送给商家')
+    showMessageDialog.value = false
+    messageContent.value = ''
+    // 刷新留言列表
+    loadComments()
+  } catch (e) {
+    ElMessage.error('留言失败，请重试')
+  }
 }
 
 function showMerchantInfoDialog() {

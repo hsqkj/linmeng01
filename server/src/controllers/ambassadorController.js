@@ -480,7 +480,7 @@ exports.getUnreadCount = async (req, res) => {
 exports.getProfile = async (req, res) => {
   try {
     const [[ambassador]] = await pool.query(
-      'SELECT id, username, real_name, phone, avatar, qr_code, status, id_card, created_at FROM ambassadors WHERE id = ?',
+      'SELECT id, username, real_name, phone, qr_code, status, id_card, created_at FROM ambassadors WHERE id = ?',
       [req.ambassador.id]
     )
     if (!ambassador) {

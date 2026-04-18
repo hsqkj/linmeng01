@@ -615,8 +615,8 @@ exports.getCommunityDetail = async (req, res) => {
     
     const [rows] = await pool.query(
       `SELECT id, community_name, district, street, address, households, family_ratio,
-       elderly_ratio, public_space_area, has_outdoor_plaza, has_commercial, has_school,
-       has_park, logo, description, tags
+       elderly_ratio, public_space_area, merchant_count, has_outdoor_plaza, has_commercial, has_school,
+       has_park, logo, description, tags, images, proof_images
        FROM communities WHERE id = ? AND status = 1`,
       [id]
     )
@@ -842,7 +842,7 @@ exports.createResource = async (req, res) => {
        work_type, salary_range,
        valid_until, expected_rewards, expected_reward_desc, status,
        ai_audit_level, ai_audit_reason)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [data.merchant_id, resourceType, data.title, data.content,
        JSON.stringify(data.images || []), JSON.stringify(data.tags || []),
        data.min_amount || 0, data.max_amount || 0, data.quantity || 0, data.specs || '', data.pickup_way || '',

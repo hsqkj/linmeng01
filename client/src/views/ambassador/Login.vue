@@ -69,11 +69,6 @@
             <el-button text type="primary" @click="showApply = true">申请成为招商大使</el-button>
           </div>
 
-          <div class="test-hint">
-            <span class="test-label">测试账号</span>
-            <span class="test-phone">188 0000 0003</span>
-            <span class="test-code">验证码：123456</span>
-          </div>
           <div class="other-logins">
             <el-divider>其他登录</el-divider>
             <div class="login-role-btns">

@@ -7,10 +7,10 @@
       <el-col :xs="24" :sm="24" :md="8">
         <div class="profile-card">
           <div class="avatar-area">
-            <el-avatar :size="80" :src="profile.logo" style="background:#1a56db">
+            <el-avatar :size="80" :src="profile.logo" style="background:#26a269">
               <el-icon :size="40"><OfficeBuilding /></el-icon>
             </el-avatar>
-            <div class="community-name">{{ profile.community_name }}</div>
+            <div class="community-name">{{ profile.community || profile.community_name || '社区' }}</div>
             <div class="district-name">{{ profile.district }} · {{ profile.street }}</div>
           </div>
           <div class="stats-row">
@@ -91,20 +91,49 @@
             </el-tab-pane>
             <el-tab-pane label="社区画像" name="portrait">
               <el-descriptions :column="2" border>
+                <el-descriptions-item label="社区名称">{{ profile.community || profile.community_name || '未填写' }}</el-descriptions-item>
+                <el-descriptions-item label="详细地址">{{ profile.address || '未填写' }}</el-descriptions-item>
                 <el-descriptions-item label="社区总户数">{{ profile.total_households || profile.households || '未填写' }}户</el-descriptions-item>
                 <el-descriptions-item label="社区商户数">{{ profile.merchant_count || 0 }}家</el-descriptions-item>
                 <el-descriptions-item label="亲子家庭占比">{{ profile.family_ratio ? profile.family_ratio + '%' : '未填写' }}</el-descriptions-item>
                 <el-descriptions-item label="老年群体占比">{{ profile.elderly_ratio ? profile.elderly_ratio + '%' : '未填写' }}</el-descriptions-item>
                 <el-descriptions-item label="公共空间面积">{{ profile.public_space_area ? profile.public_space_area + '㎡' : '未填写' }}</el-descriptions-item>
-                <el-descriptions-item label="户外广场">{{ profile.has_outdoor_plaza ? '有户外广场' : '无' }}</el-descriptions-item>
-                <el-descriptions-item label="商业体/商业街">{{ profile.has_commercial ? '有商业配套' : '无' }}</el-descriptions-item>
-                <el-descriptions-item label="学校/幼儿园">{{ profile.has_school ? '有学校/幼儿园' : '无' }}</el-descriptions-item>
-                <el-descriptions-item label="公园/体育场馆">{{ profile.has_park ? '有公园/体育设施' : '无' }}</el-descriptions-item>
+                <el-descriptions-item label="配套设施" :span="2">
+                  <el-tag v-if="profile.has_outdoor_plaza" size="small" type="success" style="margin-right: 8px">🏟️ 户外广场</el-tag>
+                  <el-tag v-if="profile.has_commercial" size="small" type="success" style="margin-right: 8px">🏪 商业配套</el-tag>
+                  <el-tag v-if="profile.has_school" size="small" type="success" style="margin-right: 8px">🏫 学校/幼儿园</el-tag>
+                  <el-tag v-if="profile.has_park" size="small" type="success" style="margin-right: 8px">🏞️ 公园/体育设施</el-tag>
+                  <span v-if="!profile.has_outdoor_plaza && !profile.has_commercial && !profile.has_school && !profile.has_park" style="color: #909399">暂无配套设施</span>
+                </el-descriptions-item>
+                <el-descriptions-item label="地图定位" :span="2">
+                  <template v-if="profile.latitude && profile.longitude">
+                    <el-link :href="'https://maps.google.com/?q=' + profile.latitude + ',' + profile.longitude" target="_blank" type="primary">
+                      📍 查看地图（{{ profile.latitude }}, {{ profile.longitude }}）
+                    </el-link>
+                  </template>
+                  <span v-else>未设置定位</span>
+                </el-descriptions-item>
+                <el-descriptions-item label="社区简介" :span="2">{{ profile.description || '暂无简介' }}</el-descriptions-item>
               </el-descriptions>
+              
+              <!-- 社区图片展示 -->
+              <div v-if="profile.images && profile.images.length > 0" style="margin-top: 16px">
+                <div style="font-weight: 600; margin-bottom: 8px; color: #303133;">社区图片</div>
+                <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                  <el-image 
+                    v-for="(img, idx) in profile.images" 
+                    :key="idx"
+                    :src="img" 
+                    style="width: 100px; height: 100px; object-fit: cover; border-radius: 8px; cursor: pointer;"
+                    :preview-src-list="profile.images"
+                    fit="cover"
+                  />
+                </div>
+              </div>
               
               <!-- 小区列表展示 -->
               <div v-if="profile.compounds && profile.compounds.length > 0" style="margin-top: 16px">
-                <div style="font-weight: 600; margin-bottom: 8px; color: #303133;">所辖小区</div>
+                <div style="font-weight: 600; margin-bottom: 8px; color: #303133;">🏠 所辖小区</div>
                 <el-table :data="profile.compounds" size="small" border>
                   <el-table-column prop="name" label="小区名称" />
                   <el-table-column prop="households" label="户数" width="100" />
@@ -113,7 +142,7 @@
               
               <!-- 场地空间展示 -->
               <div v-if="profile.spaces && profile.spaces.length > 0" style="margin-top: 16px">
-                <div style="font-weight: 600; margin-bottom: 8px; color: #303133;">场地空间</div>
+                <div style="font-weight: 600; margin-bottom: 8px; color: #303133;">🏟️ 场地空间</div>
                 <div class="space-cards">
                   <el-card v-for="space in profile.spaces" :key="space.id" class="space-card" shadow="hover">
                     <template #header>
@@ -139,8 +168,18 @@
                         <span class="space-label">设施：</span>
                         <el-tag v-for="f in space.facilities" :key="f" size="small" style="margin: 2px">{{ f }}</el-tag>
                       </div>
-                      <div v-if="space.available_hours" class="space-row">
-                        <span class="space-label">可用：</span>{{ space.available_hours }}
+                      <div class="space-row">
+                        <span class="space-label">可用：</span>
+                        <template v-if="parseAvailableHours(space.available_hours).weekday">
+                          <el-tag size="small" type="primary" style="margin-right: 8px">周一至周五 {{ parseAvailableHours(space.available_hours).weekday }}</el-tag>
+                        </template>
+                        <template v-if="parseAvailableHours(space.available_hours).weekend">
+                          <el-tag size="small" type="success">周六周日 {{ parseAvailableHours(space.available_hours).weekend }}</el-tag>
+                        </template>
+                        <span v-if="!parseAvailableHours(space.available_hours).weekday && !parseAvailableHours(space.available_hours).weekend" style="color: #909399">未设置</span>
+                      </div>
+                      <div v-if="space.description" class="space-row">
+                        <span class="space-label">说明：</span>{{ space.description }}
                       </div>
                       <div v-if="space.images && space.images.length > 0" class="space-images">
                         <el-image 
@@ -468,7 +507,50 @@
                   </div>
                 </el-form-item>
                 <el-form-item label="可用时间" class="compact-form-item">
-                  <el-input v-model="space.available_hours" placeholder="如：周一至周五 9:00-18:00，周六 10:00-16:00" />
+                  <div class="available-time-editor">
+                    <!-- 周一至周五时间段 -->
+                    <div class="time-section">
+                      <span class="time-label">周一至周五：</span>
+                      <el-time-select
+                        v-model="space.weekday_start"
+                        placeholder="开始时间"
+                        start="06:00"
+                        step="00:30"
+                        end="23:00"
+                        style="width: 120px; margin-right: 8px"
+                      />
+                      <span class="time-separator">至</span>
+                      <el-time-select
+                        v-model="space.weekday_end"
+                        placeholder="结束时间"
+                        start="06:00"
+                        step="00:30"
+                        end="23:30"
+                        style="width: 120px; margin-left: 8px"
+                      />
+                    </div>
+                    <!-- 周六周日时间段 -->
+                    <div class="time-section">
+                      <span class="time-label">周六周日：</span>
+                      <el-time-select
+                        v-model="space.weekend_start"
+                        placeholder="开始时间"
+                        start="06:00"
+                        step="00:30"
+                        end="23:00"
+                        style="width: 120px; margin-right: 8px"
+                      />
+                      <span class="time-separator">至</span>
+                      <el-time-select
+                        v-model="space.weekend_end"
+                        placeholder="结束时间"
+                        start="06:00"
+                        step="00:30"
+                        end="23:30"
+                        style="width: 120px; margin-left: 8px"
+                      />
+                    </div>
+                  </div>
                 </el-form-item>
               </div>
               <el-button type="primary" plain :icon="Plus" @click="addSpace" style="margin-top: 8px">添加场地</el-button>
@@ -520,6 +602,12 @@ function addSpace() {
     capacity: null,
     facilities: [],
     customFacilities: '',
+    // 可用时间（结构化）
+    weekday_start: '',
+    weekday_end: '',
+    weekend_start: '',
+    weekend_end: '',
+    // 兼容旧的文本格式
     available_hours: '',
     images: [],
     newImages: []
@@ -558,6 +646,23 @@ function beforeSpaceImageUpload(file, spaceIdx) {
 
 function removeSpaceImage(spaceIdx, imgIdx) {
   editForm.value.spaces[spaceIdx].images.splice(imgIdx, 1)
+}
+
+// 解析可用时间（支持JSON格式和旧文本格式）
+function parseAvailableHours(availableHours) {
+  if (!availableHours) return { weekday: '', weekend: '' }
+  // 新格式 JSON: {"weekday":"09:00-18:00","weekend":"10:00-16:00"}
+  try {
+    if (typeof availableHours === 'string' && availableHours.startsWith('{')) {
+      const obj = JSON.parse(availableHours)
+      return {
+        weekday: obj.weekday || '',
+        weekend: obj.weekend || ''
+      }
+    }
+  } catch {}
+  // 旧格式文本直接返回
+  return { weekday: availableHours, weekend: '' }
 }
 
 function removeSpaceNewImage(spaceIdx, fileIdx) {
@@ -713,19 +818,56 @@ function startEdit() {
     : []
   // 处理场地空间数据
   const spaces = profile.value.spaces && profile.value.spaces.length > 0
-    ? profile.value.spaces.map(s => ({
-        ...s,
-        // 如果 images 是字符串，转换为数组
-        images: Array.isArray(s.images) ? s.images : (s.images ? s.images.split(',').filter(Boolean) : []),
-        // 处理设施选项，确保是数组
-        facilities: Array.isArray(s.facilities) ? s.facilities : [],
-        // 处理自定义设施
-        customFacilities: s.custom_facilities || '',
-        // 处理可用时段
-        available_hours: s.available_hours || '',
-        // 临时存储新上传的图片
-        newImages: []
-      }))
+    ? profile.value.spaces.map(s => {
+        // 解析可用时间段（支持新旧两种格式）
+        let weekday_start = '', weekday_end = '', weekend_start = '', weekend_end = ''
+        if (s.available_hours) {
+          // 新格式 JSON: {"weekday":"09:00-18:00","weekend":"10:00-16:00"}
+          try {
+            const hoursObj = typeof s.available_hours === 'string' ? JSON.parse(s.available_hours) : s.available_hours
+            if (hoursObj.weekday) {
+              const [wStart, wEnd] = hoursObj.weekday.split('-')
+              weekday_start = wStart || ''
+              weekday_end = wEnd || ''
+            }
+            if (hoursObj.weekend) {
+              const [weStart, weEnd] = hoursObj.weekend.split('-')
+              weekend_start = weStart || ''
+              weekend_end = weEnd || ''
+            }
+          } catch {
+            // 旧格式文本：尝试解析 "周一至周五 9:00-18:00"
+            const weekdayMatch = s.available_hours.match(/周[一三四五]?[^周]*?(\d{1,2}:\d{2})[^周六]*?(\d{1,2}:\d{2})/)
+            const weekendMatch = s.available_hours.match(/周六?日[^至]*?至[^:]*?(\d{1,2}:\d{2})[^:]*?(\d{1,2}:\d{2})/)
+            if (weekdayMatch) {
+              weekday_start = weekdayMatch[1]
+              weekday_end = weekdayMatch[2]
+            }
+            if (weekendMatch) {
+              weekend_start = weekendMatch[1]
+              weekend_end = weekendMatch[2]
+            }
+          }
+        }
+        return {
+          ...s,
+          // 如果 images 是字符串，转换为数组
+          images: Array.isArray(s.images) ? s.images : (s.images ? s.images.split(',').filter(Boolean) : []),
+          // 处理设施选项，确保是数组
+          facilities: Array.isArray(s.facilities) ? s.facilities : [],
+          // 处理自定义设施
+          customFacilities: s.custom_facilities || '',
+          // 处理可用时段（结构化）
+          weekday_start,
+          weekday_end,
+          weekend_start,
+          weekend_end,
+          // 兼容旧的文本格式
+          available_hours: s.available_hours || '',
+          // 临时存储新上传的图片
+          newImages: []
+        }
+      })
     : []
   editForm.value = {
     real_name: profile.value.real_name || '',
@@ -838,6 +980,14 @@ async function saveProfile() {
           }
         }
       }
+      // 处理可用时间（结构化数据转为JSON）
+      let available_hours = ''
+      if (space.weekday_start || space.weekday_end || space.weekend_start || space.weekend_end) {
+        available_hours = JSON.stringify({
+          weekday: (space.weekday_start && space.weekday_end) ? `${space.weekday_start}-${space.weekday_end}` : '',
+          weekend: (space.weekend_start && space.weekend_end) ? `${space.weekend_start}-${space.weekend_end}` : ''
+        })
+      }
       spacesData.push({
         id: space.id || null,
         name: space.name,
@@ -847,7 +997,7 @@ async function saveProfile() {
         capacity: space.capacity,
         facilities: space.facilities || [],
         custom_facilities: space.customFacilities || '',
-        available_hours: space.available_hours,
+        available_hours,
         images: spaceImages
       })
     }

@@ -107,6 +107,17 @@ exports.register = async (req, res) => {
       }
     }
 
+    // 检查该社区是否已被注册（每个社区仅限一个账号）
+    if (data.district && data.street && data.community) {
+      const [communityExist] = await pool.query(
+        'SELECT id, real_name FROM communities WHERE district = ? AND street = ? AND community = ? AND status != 2 LIMIT 1',
+        [data.district, data.street, data.community]
+      )
+      if (communityExist.length > 0) {
+        return error(res, `该社区（${data.district}${data.street}${data.community}）已有账号注册，如有问题请联系管理员`, 400)
+      }
+    }
+
     // username 优先用传入的，否则回退到手机号
     const username = data.username || data.phone
     

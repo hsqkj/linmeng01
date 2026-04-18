@@ -387,6 +387,8 @@ const contactMerchant = (resource) => {
   // 打开客服窗口
   if (openServiceChat) {
     openServiceChat()
+  } else {
+    ElMessage.info('客服功能正在加载中，请稍后再试')
   }
 }
 
