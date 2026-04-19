@@ -1,0 +1,68 @@
+<!-- 商家端会员中心 -->
+<view class="member-page">
+  <!-- 加载状态 -->
+  <view class="loading-state" wx:if="{{loading}}">
+    <text>加载中...</text>
+  </view>
+
+  <!-- 当前会员卡片 -->
+  <view class="current-level-card" wx:if="{{!loading && memberLevel !== null}}">
+    <view class="level-badge" style="background: {{memberLevel >= 4 ? '#F56C6C' : memberLevel >= 3 ? '#E6A23C' : memberLevel >= 2 ? '#409EFF' : '#909399'}}">
+      Lv{{memberLevel}}
+    </view>
+    <view class="level-info">
+      <text class="level-name">{{memberLevels[currentLevelIndex].name || '普通会员'}}</text>
+      <text class="level-expire">有效期至：{{expireDate}}</text>
+    </view>
+  </view>
+
+  <!-- 会员等级列表 -->
+  <view class="section-card" wx:if="{{!loading}}">
+    <view class="section-title">会员等级</view>
+    <view class="level-compare">
+      <view class="level-col {{item.current ? 'current' : ''}}"
+            wx:for="{{memberLevels}}"
+            wx:key="level"
+            style="border-color: {{item.current ? item.color : '#e0e0e0'}}">
+        <view class="lv-header">
+          <view class="lv-badge-sm" style="background: {{item.color}}">Lv{{item.level}}</view>
+          <text class="lv-name">{{item.name}}</text>
+          <text class="lv-fee">{{item.fee > 0 ? '¥' + item.fee + '/年' : '免费'}}</text>
+        </view>
+        <view class="lv-benefits">
+          <text class="benefit-item" wx:for="{{item.benefits}}" wx:for-item="b" wx:key="*this">{{b}}</text>
+        </view>
+        <view class="level-action" wx:if="{{item.current}}">
+          <text>当前等级</text>
+        </view>
+        <view class="level-action upgrade" wx:elif="{{item.level > memberLevel}}" bindtap="upgrade">
+          <text>升级</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 缴费记录 -->
+  <view class="section-card" wx:if="{{!loading && payments.length > 0}}">
+    <view class="section-title-row">
+      <text class="section-title">缴费记录</text>
+    </view>
+    <view class="payment-list">
+      <view class="payment-item" wx:for="{{payments}}" wx:key="index">
+        <view class="payment-info">
+          <text class="payment-time">{{item.time}}</text>
+          <text class="payment-level">{{item.level}}</text>
+        </view>
+        <view class="payment-right">
+          <text class="payment-amount">¥{{item.amount}}</text>
+          <text class="payment-status {{item.status === '已支付' ? 'success' : 'pending'}}">{{item.status}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 空状态 -->
+  <view class="empty-state" wx:if="{{!loading && memberLevels.length === 0}}">
+    <text>暂无会员信息</text>
+  </view>
+</view>

@@ -1,0 +1,226 @@
+/* 商家端编辑资源页样式 */
+
+.edit-resource {
+  min-height: 100vh;
+  background: #f5f5f5;
+}
+
+.nav-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20rpx 30rpx;
+  background: #fff;
+  border-bottom: 1rpx solid #eee;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.nav-back, .nav-save {
+  font-size: 28rpx;
+  color: #409EFF;
+  padding: 10rpx 0;
+}
+
+.nav-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #333;
+}
+
+.loading {
+  padding: 100rpx;
+  text-align: center;
+  color: #999;
+  font-size: 28rpx;
+}
+
+.form-content {
+  height: calc(100vh - 100rpx);
+  padding: 20rpx;
+}
+
+.form-section {
+  background: #fff;
+  border-radius: 12rpx;
+  padding: 30rpx;
+  margin-bottom: 20rpx;
+}
+
+.section-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 16rpx;
+}
+
+.required {
+  color: #F56C6C;
+}
+
+.type-selector {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.type-name {
+  padding: 8rpx 24rpx;
+  background: #409EFF;
+  color: #fff;
+  font-size: 26rpx;
+  border-radius: 20rpx;
+}
+
+.type-tip {
+  font-size: 24rpx;
+  color: #909399;
+}
+
+.input-field {
+  width: 100%;
+  height: 80rpx;
+  padding: 0 20rpx;
+  background: #f8f8f8;
+  border-radius: 8rpx;
+  font-size: 28rpx;
+  box-sizing: border-box;
+}
+
+.char-count {
+  display: block;
+  text-align: right;
+  font-size: 24rpx;
+  color: #909399;
+  margin-top: 8rpx;
+}
+
+.textarea-field {
+  width: 100%;
+  min-height: 160rpx;
+  padding: 20rpx;
+  background: #f8f8f8;
+  border-radius: 8rpx;
+  font-size: 28rpx;
+  box-sizing: border-box;
+}
+
+.textarea-large {
+  min-height: 240rpx;
+}
+
+.amount-row {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.amount-input {
+  flex: 1;
+}
+
+.amount-sep {
+  font-size: 28rpx;
+  color: #666;
+}
+
+.amount-unit {
+  font-size: 28rpx;
+  color: #666;
+  width: 60rpx;
+}
+
+.number-row {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.number-input {
+  flex: 1;
+}
+
+.number-unit {
+  font-size: 28rpx;
+  color: #666;
+}
+
+.picker-value {
+  display: block;
+  padding: 20rpx;
+  background: #f8f8f8;
+  border-radius: 8rpx;
+  font-size: 28rpx;
+  color: #333;
+}
+
+.date-picker {
+  padding: 20rpx;
+  background: #f8f8f8;
+  border-radius: 8rpx;
+  font-size: 28rpx;
+  color: #333;
+}
+
+.form-row {
+  display: flex;
+  gap: 20rpx;
+  margin-top: 20rpx;
+}
+
+.row-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.row-label {
+  font-size: 24rpx;
+  color: #909399;
+}
+
+.tags-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+}
+
+.tag {
+  padding: 12rpx 24rpx;
+  background: #f0f0f0;
+  color: #666;
+  font-size: 26rpx;
+  border-radius: 30rpx;
+}
+
+.tag-selected {
+  background: #409EFF;
+  color: #fff;
+}
+
+.tag-warning {
+  background: #fdf6ec;
+  color: #E6A23C;
+}
+
+.tag-warning.tag-selected {
+  background: #E6A23C;
+  color: #fff;
+}
+
+.submit-section {
+  padding: 40rpx 20rpx 60rpx;
+}
+
+.btn-submit {
+  width: 100%;
+  height: 88rpx;
+  line-height: 88rpx;
+  background: #67C23A;
+  color: #fff;
+  font-size: 32rpx;
+  border-radius: 44rpx;
+  border: none;
+}

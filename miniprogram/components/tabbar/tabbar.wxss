@@ -1,0 +1,54 @@
+/* 自定义TabBar样式 */
+.tabbar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 120rpx;
+  background: #ffffff;
+  box-shadow: 0 -2rpx 10rpx rgba(0, 0, 0, 0.05);
+  z-index: 1000;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.tabbar-content {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  height: 100rpx;
+  padding-top: 10rpx;
+}
+
+.tab-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  height: 100%;
+}
+
+.tab-icon {
+  width: 48rpx;
+  height: 48rpx;
+  margin-bottom: 4rpx;
+}
+
+.tab-text {
+  font-size: 22rpx;
+  color: #999999;
+}
+
+.tab-item.active .tab-text {
+  color: #1890FF;
+}
+
+/* 商家端主题色 */
+.tabbar.merchant .tab-item.active .tab-text {
+  color: #FF6B00;
+}
+
+/* 大使端主题色 */
+.tabbar.ambassador .tab-item.active .tab-text {
+  color: #D4A017;
+}

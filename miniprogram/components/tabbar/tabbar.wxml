@@ -1,0 +1,22 @@
+<!-- 自定义TabBar组件 -->
+<view class="tabbar {{role}}" wx:if="{{show}}">
+  <view class="tabbar-content">
+    <!-- 首页 -->
+    <view class="tab-item {{active === 'index' ? 'active' : ''}}" bindtap="switchTab" data-tab="index">
+      <image class="tab-icon" src="{{active === 'index' ? '/images/icons/home.png' : '/images/icons/home-gray.png'}}" mode="aspectFit"></image>
+      <text class="tab-text">首页</text>
+    </view>
+    
+    <!-- 资源/商家/社区 -->
+    <view class="tab-item {{active === 'resources' ? 'active' : ''}}" bindtap="switchTab" data-tab="resources">
+      <image class="tab-icon" src="{{active === 'resources' ? '/images/icons/resources.png' : '/images/icons/resources-gray.png'}}" mode="aspectFit"></image>
+      <text class="tab-text">{{role === 'merchant' ? '资源' : (role === 'ambassador' ? '商家' : '资源')}}</text>
+    </view>
+    
+    <!-- 我的/订单/佣金 -->
+    <view class="tab-item {{active === 'profile' ? 'active' : ''}}" bindtap="switchTab" data-tab="profile">
+      <image class="tab-icon" src="{{active === 'profile' ? '/images/icons/profile.png' : '/images/icons/profile-gray.png'}}" mode="aspectFit"></image>
+      <text class="tab-text">{{role === 'merchant' ? '订单' : (role === 'ambassador' ? '佣金' : '我的')}}</text>
+    </view>
+  </view>
+</view>

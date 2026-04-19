@@ -1,0 +1,184 @@
+<!-- 商家端资源详情 -->
+<view class="resource-detail">
+  <!-- 顶部导航 -->
+  <view class="nav-bar">
+    <view class="nav-back" bindtap="goBack">
+      <text>← 返回</text>
+    </view>
+    <text class="nav-title">资源详情</text>
+    <view class="nav-edit" bindtap="editResource">
+      <text>编辑</text>
+    </view>
+  </view>
+
+  <!-- 加载状态 -->
+  <view class="loading" wx:if="{{loading}}">
+    <text>加载中...</text>
+  </view>
+
+  <!-- 内容区域 -->
+  <scroll-view scroll-y class="content" wx:else>
+    <!-- 资源卡片 -->
+    <view class="resource-card">
+      <!-- 顶部标签 -->
+      <view class="card-header">
+        <view class="type-tags">
+          <text class="type-tag">{{resourceTypeName}}</text>
+          <text class="status-tag status-{{resource.status}}">{{statusName}}</text>
+        </view>
+        <view class="hearts">
+          <text wx:for="{{hearts}}" wx:key="index" wx:for-item="h">{{h}}</text>
+        </view>
+      </view>
+
+      <!-- 标题 -->
+      <view class="card-title">
+        <text>{{resource.title}}</text>
+      </view>
+
+      <!-- 基本信息 -->
+      <view class="section">
+        <view class="section-title">基本信息</view>
+        <view class="info-grid">
+          <view class="info-item">
+            <text class="info-label">资源类型</text>
+            <text class="info-value">{{resourceTypeName}}</text>
+          </view>
+          <view class="info-item">
+            <text class="info-label">浏览量</text>
+            <text class="info-value">{{resource.view_count || 0}}</text>
+          </view>
+        </view>
+
+        <!-- 资金赞助 -->
+        <view class="info-grid" wx:if="{{resource.min_amount || resource.max_amount}}">
+          <view class="info-item full">
+            <text class="info-label">赞助金额范围</text>
+            <text class="info-value">{{resource.min_amount || 0}} ~ {{resource.max_amount || 0}} 元</text>
+          </view>
+        </view>
+
+        <!-- 物资数量 -->
+        <view class="info-grid" wx:if="{{resource.quantity}}">
+          <view class="info-item">
+            <text class="info-label">物资数量</text>
+            <text class="info-value">{{resource.quantity}}</text>
+          </view>
+          <view class="info-item" wx:if="{{resource.pickup_way}}">
+            <text class="info-label">领取方式</text>
+            <text class="info-value">{{pickupWayName}}</text>
+          </view>
+        </view>
+
+        <!-- 志愿服务 -->
+        <view class="info-grid" wx:if="{{resource.staff_count}}">
+          <view class="info-item">
+            <text class="info-label">可派遣人数</text>
+            <text class="info-value">{{resource.staff_count}}人</text>
+          </view>
+          <view class="info-item" wx:if="{{resource.work_duration}}">
+            <text class="info-label">单次服务时长</text>
+            <text class="info-value">{{resource.work_duration}}小时</text>
+          </view>
+        </view>
+
+        <!-- 资质证明 -->
+        <view class="info-grid" wx:if="{{resource.certification}}">
+          <view class="info-item full">
+            <text class="info-label">资质证明</text>
+            <text class="info-value">{{resource.certification}}</text>
+          </view>
+        </view>
+
+        <!-- 收费标准 -->
+        <view class="info-grid" wx:if="{{resource.price_range}}">
+          <view class="info-item">
+            <text class="info-label">收费标准</text>
+            <text class="info-value">{{priceRangeName}}</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 资源详情 -->
+      <view class="section" wx:if="{{resource.content}}">
+        <view class="section-title">资源详情</view>
+        <text class="description">{{resource.content}}</text>
+      </view>
+
+      <!-- 标签 -->
+      <view class="section" wx:if="{{tags.length > 0}}">
+        <view class="section-title">资源标签</view>
+        <view class="tags">
+          <text class="tag" wx:for="{{tags}}" wx:key="index">{{item}}</text>
+        </view>
+      </view>
+
+      <!-- 期望回报 -->
+      <view class="section" wx:if="{{expectedRewards.length > 0}}">
+        <view class="section-title">期望回报</view>
+        <view class="tags">
+          <text class="tag tag-warning" wx:for="{{expectedRewards}}" wx:key="index">{{item}}</text>
+        </view>
+        <text class="description" wx:if="{{resource.expected_reward_desc}}">{{resource.expected_reward_desc}}</text>
+      </view>
+
+      <!-- 有效期 -->
+      <view class="section" wx:if="{{resource.valid_until}}">
+        <view class="section-title">有效期至</view>
+        <text class="description">{{resource.valid_until}}</text>
+      </view>
+
+      <!-- 图片展示 -->
+      <view class="section" wx:if="{{images.length > 0}}">
+        <view class="section-title">资源图片</view>
+        <scroll-view scroll-x class="image-scroll">
+          <view class="image-list">
+            <image 
+              class="resource-image" 
+              src="{{item}}" 
+              mode="aspectFill" 
+              wx:for="{{images}}" 
+              wx:key="index"
+              bindtap="previewImage"
+              data-index="{{index}}"
+            />
+          </view>
+        </scroll-view>
+      </view>
+
+      <!-- 留言区 -->
+      <view class="section">
+        <view class="section-title">社区留言咨询（{{comments.length}}条）</view>
+        
+        <!-- 回复输入 -->
+        <view class="comment-input">
+          <input 
+            class="input-field" 
+            placeholder="有社区留言咨询时，您可以在这里回复..."
+            value="{{replyText}}"
+            bindinput="onReplyInput"
+          />
+          <button class="btn-reply" bindtap="submitReply" loading="{{replyLoading}}">回复</button>
+        </view>
+
+        <!-- 留言列表 -->
+        <view class="comment-list" wx:if="{{comments.length > 0}}">
+          <view class="comment-item" wx:for="{{comments}}" wx:key="id">
+            <image class="comment-avatar" src="{{item.avatar}}" mode="aspectFill" />
+            <view class="comment-content">
+              <view class="comment-meta">
+                <text class="commenter-name">{{item.name}}</text>
+                <text class="comment-tag">社区</text>
+                <text class="comment-time">{{item.time}}</text>
+              </view>
+              <text class="comment-text">{{item.text}}</text>
+            </view>
+          </view>
+        </view>
+        <view class="empty-comments" wx:else>
+          <text>暂无社区留言</text>
+        </view>
+      </view>
+    </view>
+  </scroll-view>
+</view>

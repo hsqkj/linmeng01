@@ -1,0 +1,40 @@
+<!-- 商家端收益管理 -->
+<view class="income-page">
+  <!-- 收益概览 -->
+  <view class="summary-card">
+    <text class="title">可提现收益</text>
+    <text class="amount">¥{{summary.withdrawable}}</text>
+    <view class="buttons">
+      <button class="btn-withdraw" bindtap="withdraw">提现</button>
+    </view>
+    <view class="other-stats">
+      <view class="stat-item">
+        <text class="stat-label">累计收益</text>
+        <text class="stat-value">¥{{summary.total}}</text>
+      </view>
+      <view class="stat-item">
+        <text class="stat-label">已提现</text>
+        <text class="stat-value">¥{{summary.withdrawn}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 收益记录 -->
+  <view class="section">
+    <text class="section-title">收益记录</text>
+    <view class="record-list">
+      <block wx:for="{{records}}" wx:key="id">
+        <view class="record-item">
+          <view class="record-info">
+            <text class="record-title">{{item.title}}</text>
+            <text class="record-time">{{item.time}}</text>
+          </view>
+          <text class="record-amount {{item.type}}">{{item.type === 'income' ? '+' : '-'}}{{item.amount}}</text>
+        </view>
+      </block>
+      <view wx:if="{{records.length === 0}}" class="empty">
+        <text>暂无收益记录</text>
+      </view>
+    </view>
+  </view>
+</view>

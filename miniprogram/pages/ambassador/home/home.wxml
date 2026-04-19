@@ -1,0 +1,147 @@
+<!-- 招商大使端首页 -->
+<view class="ambassador-home">
+  <!-- 欢迎横幅 -->
+  <view class="welcome-banner">
+    <view class="banner-left">
+      <image class="avatar" src="{{ambData.avatar || '/images/icons/ambassador.png'}}" mode="aspectFill"></image>
+      <view class="banner-info">
+        <text class="amb-name">欢迎回来，{{ambData.real_name || '招商大使'}}！</text>
+        <view class="amb-meta">
+          <text class="amb-level">{{ambassadorLevel.name || '主管级'}}</text>
+          <text class="amb-code" wx:if="{{ambData.qr_code}}">渠道码：{{ambData.qr_code}}</text>
+        </view>
+      </view>
+    </view>
+    <button class="btn-qrcode" bindtap="goQrcode" wx:if="{{ambData.status === 1}}">
+      <image src="/images/icons/qrcode.png" mode="aspectFit"></image>
+      渠道码
+    </button>
+  </view>
+
+  <!-- 核心指标 -->
+  <view class="stats-row">
+    <view class="stat-card blue">
+      <text class="stat-icon">👥</text>
+      <view class="stat-info">
+        <text class="stat-val">{{ambData.total_merchants || 0}}家</text>
+        <text class="stat-label">累计发展商家</text>
+      </view>
+    </view>
+    <view class="stat-card green">
+      <text class="stat-icon">💰</text>
+      <view class="stat-info">
+        <text class="stat-val">¥{{fmtMoney(monthCommission)}}</text>
+        <text class="stat-label">本月提成</text>
+      </view>
+    </view>
+    <view class="stat-card yellow">
+      <text class="stat-icon">📈</text>
+      <view class="stat-info">
+        <text class="stat-val">¥{{fmtMoney(ambData.pending_commission)}}</text>
+        <text class="stat-label">待结算</text>
+      </view>
+    </view>
+    <view class="stat-card orange">
+      <text class="stat-icon">⏳</text>
+      <view class="stat-info">
+        <text class="stat-val">¥{{fmtMoney(ambData.total_commission - ambData.withdraw_amount)}}</text>
+        <text class="stat-label">可提现</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 收益概况 -->
+  <view class="section-card income-card">
+    <view class="income-header">
+      <text class="income-title">💰 收益概况</text>
+    </view>
+    <view class="income-items">
+      <view class="income-item">
+        <text class="income-label">累计提成</text>
+        <text class="income-val total">¥ {{fmtMoney(ambData.total_commission)}}</text>
+      </view>
+      <view class="income-item">
+        <text class="income-label">已提现</text>
+        <text class="income-val">¥ {{fmtMoney(ambData.withdraw_amount)}}</text>
+      </view>
+      <view class="income-item">
+        <text class="income-label">账户余额</text>
+        <text class="income-val highlight">¥ {{fmtMoney(ambData.total_commission - ambData.withdraw_amount)}}</text>
+      </view>
+    </view>
+    <button class="btn-withdraw" bindtap="goWithdraw" wx:if="{{ambData.status === 1}}">
+      申请提现
+    </button>
+  </view>
+
+  <!-- 快速操作 -->
+  <view class="section-card">
+    <text class="section-title">⚡ 快速操作</text>
+    <view class="quick-actions">
+      <view class="qa-item" bindtap="goQrcode">
+        <image src="/images/icons/qrcode.png" mode="aspectFit"></image>
+        <text>分享渠道码</text>
+      </view>
+      <view class="qa-item" bindtap="goRecords">
+        <image src="/images/icons/orders.png" mode="aspectFit"></image>
+        <text>发展记录</text>
+      </view>
+      <view class="qa-item" bindtap="goCommission">
+        <image src="/images/icons/commission.png" mode="aspectFit"></image>
+        <text>提成明细</text>
+      </view>
+      <view class="qa-item" bindtap="goWithdraw">
+        <image src="/images/icons/withdraw.png" mode="aspectFit"></image>
+        <text>申请提现</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 最新发展商家 -->
+  <view class="section-card">
+    <view class="section-header">
+      <text class="section-title">👥 最新发展商家</text>
+      <view class="section-more" bindtap="goRecords">
+        <text>查看全部</text>
+        <image src="/images/icons/arrow-right.png" mode="aspectFit"></image>
+      </view>
+    </view>
+
+    <view class="merchant-list" wx:if="{{recentMerchants.length > 0}}">
+      <view class="merchant-item" wx:for="{{recentMerchants}}" wx:key="id">
+        <view class="merchant-info">
+          <text class="merchant-name">{{item.company_name}}</text>
+          <text class="merchant-level">{{item.member_level === 0 ? '免费试用' : item.member_level === 1 ? '普通' : item.member_level === 2 ? '银牌' : item.member_level === 3 ? '金牌' : '钻石'}}</text>
+        </view>
+        <text class="merchant-time">{{item.created_at}}</text>
+      </view>
+    </view>
+
+    <view class="empty-state" wx:else>
+      <text>暂无发展记录</text>
+    </view>
+  </view>
+
+  <!-- 提成政策 -->
+  <view class="section-card policy-card">
+    <text class="section-title">📋 我的等级权益</text>
+    <view class="level-badge">
+      <text class="level-name">{{ambassadorLevel.name || '主管级'}}</text>
+      <text class="level-rate">{{ambassadorLevel.commissionRate || 25}}%提成</text>
+    </view>
+    <view class="policy-info">
+      <view class="policy-row">
+        <text class="policy-label">首次入会提成</text>
+        <text class="policy-value">{{ambassadorLevel.commissionRate || 25}}%</text>
+      </view>
+      <view class="policy-row">
+        <text class="policy-label">续费提成</text>
+        <text class="policy-value">{{commissionConfig.renewRate || 25}}%</text>
+      </view>
+      <view class="policy-row">
+        <text class="policy-label">最低提现金额</text>
+        <text class="policy-value">{{commissionConfig.minWithdraw || 100}}元</text>
+      </view>
+    </view>
+  </view>
+</view>

@@ -1,0 +1,259 @@
+<!-- 商家端发布资源 -->
+<view class="publish-page">
+  <!-- 步骤条 -->
+  <view class="steps-bar">
+    <view class="step-item {{activeStep >= 0 ? 'active' : ''}} {{activeStep > 0 ? 'completed' : ''}}">
+      <view class="step-circle">{{activeStep > 0 ? '✓' : '1'}}</view>
+      <text class="step-text">选择类型</text>
+    </view>
+    <view class="step-line {{activeStep > 0 ? 'active' : ''}}"></view>
+    <view class="step-item {{activeStep >= 1 ? 'active' : ''}} {{activeStep > 1 ? 'completed' : ''}}">
+      <view class="step-circle">{{activeStep > 1 ? '✓' : '2'}}</view>
+      <text class="step-text">填写信息</text>
+    </view>
+    <view class="step-line {{activeStep > 1 ? 'active' : ''}}"></view>
+    <view class="step-item {{activeStep >= 2 ? 'active' : ''}} {{activeStep > 2 ? 'completed' : ''}}">
+      <view class="step-circle">{{activeStep > 2 ? '✓' : '3'}}</view>
+      <text class="step-text">设置回报</text>
+    </view>
+    <view class="step-line {{activeStep > 2 ? 'active' : ''}}"></view>
+    <view class="step-item {{activeStep >= 3 ? 'active' : ''}}">
+      <view class="step-circle">4</view>
+      <text class="step-text">提交审核</text>
+    </view>
+  </view>
+
+  <view class="content">
+    <!-- 步骤1：选择资源类型 -->
+    <view class="step-content" wx:if="{{activeStep === 0}}">
+      <view class="tip-box">💡 选择最符合您资源特点的类型，有助于精准匹配有需求的社区</view>
+      
+      <view class="type-cards">
+        <view 
+          class="type-card {{formData.resource_type === index ? 'active' : ''}}"
+          wx:for="{{resourceTypes}}"
+          wx:key="index"
+          bindtap="selectType"
+          data-index="{{index}}"
+          data-type="{{item.value}}"
+        >
+          <view class="type-icon">{{item.icon}}</view>
+          <text class="type-name">{{item.label}}</text>
+          <text class="type-desc">{{item.desc}}</text>
+          <view class="check-badge" wx:if="{{formData.resource_type === index}}">✓ 已选</view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 步骤2：填写资源信息 -->
+    <view class="step-content" wx:if="{{activeStep === 1}}">
+      <view class="tip-box">📋 填写越详细，社区匹配越精准！</view>
+
+      <!-- 资源标题 -->
+      <view class="form-item">
+        <text class="label">资源标题 <text class="required">*</text></text>
+        <input class="input" placeholder="{{titlePlaceholder}}" value="{{formData.title}}" bindinput="onTitleInput" maxlength="50" />
+        <text class="field-tip">一句话概括您提供的资源</text>
+      </view>
+
+      <!-- 根据类型显示不同表单 -->
+      <!-- 资金赞助 -->
+      <block wx:if="{{formData.resource_type === 5}}">
+        <view class="form-row">
+          <view class="form-item half">
+            <text class="label">可赞助最低金额</text>
+            <input class="input" type="number" placeholder="0" value="{{formData.min_amount}}" bindinput="onMinAmountInput" />
+          </view>
+          <view class="form-item half">
+            <text class="label">可赞助最高金额 <text class="required">*</text></text>
+            <input class="input" type="number" placeholder="1000" value="{{formData.max_amount}}" bindinput="onMaxAmountInput" />
+          </view>
+        </view>
+      </block>
+
+      <!-- 物资支持 -->
+      <block wx:if="{{formData.resource_type === 3}}">
+        <view class="form-item">
+          <text class="label">物资类型</text>
+          <view class="tag-selector">
+            <text 
+              class="selector-tag {{formData.goodsTypes.includes(item) ? 'active' : ''}}"
+              wx:for="{{goodsTypeOptions}}"
+              wx:key="*this"
+              bindtap="toggleGoodsType"
+              data-type="{{item}}"
+            >{{item}}</text>
+          </view>
+        </view>
+        <view class="form-item">
+          <text class="label">物资详情</text>
+          <textarea class="textarea" placeholder="如：矿泉水100箱、雨伞50把" value="{{formData.goods_list}}" bindinput="onGoodsListInput" />
+        </view>
+        <view class="form-item">
+          <text class="label">领取方式</text>
+          <view class="radio-group">
+            <radio-group bindchange="onPickupWayChange">
+              <label class="radio-item">
+                <radio value="delivery" checked="{{formData.pickup_way === 'delivery'}}" />可配送
+              </label>
+              <label class="radio-item">
+                <radio value="pickup" checked="{{formData.pickup_way === 'pickup'}}" />自取
+              </label>
+              <label class="radio-item">
+                <radio value="both" checked="{{formData.pickup_way === 'both'}}" />均可
+              </label>
+            </radio-group>
+          </view>
+        </view>
+      </block>
+
+      <!-- 人力服务 -->
+      <block wx:if="{{formData.resource_type === 4}}">
+        <view class="form-row">
+          <view class="form-item half">
+            <text class="label">可派遣人数</text>
+            <input class="input" type="number" placeholder="5" value="{{formData.staff_count}}" bindinput="onStaffCountInput" />
+          </view>
+          <view class="form-item half">
+            <text class="label">单次服务时长（小时）</text>
+            <input class="input" type="digit" placeholder="4" value="{{formData.work_duration}}" bindinput="onWorkDurationInput" />
+          </view>
+        </view>
+        <view class="form-item">
+          <text class="label">人员类型描述</text>
+          <textarea class="textarea tall" placeholder="如：5名专业活动策划人员（有500人以上活动执行经验）" value="{{formData.manpower_desc}}" bindinput="onManpowerDescInput" />
+        </view>
+      </block>
+
+      <!-- 场地支持 -->
+      <block wx:if="{{formData.resource_type === 2}}">
+        <view class="form-row">
+          <view class="form-item half">
+            <text class="label">场地面积（㎡）</text>
+            <input class="input" type="number" placeholder="200" value="{{formData.space_area}}" bindinput="onSpaceAreaInput" />
+          </view>
+          <view class="form-item half">
+            <text class="label">可容纳人数</text>
+            <input class="input" type="number" placeholder="100" value="{{formData.capacity}}" bindinput="onCapacityInput" />
+          </view>
+        </view>
+        <view class="form-item">
+          <text class="label">场地设施</text>
+          <view class="tag-selector">
+            <text 
+              class="selector-tag {{formData.facilities.includes(item) ? 'active' : ''}}"
+              wx:for="{{facilityOptions}}"
+              wx:key="*this"
+              bindtap="toggleFacility"
+              data-type="{{item}}"
+            >{{item}}</text>
+          </view>
+        </view>
+        <view class="form-item">
+          <text class="label">开放时间</text>
+          <input class="input" placeholder="如：周一至周五 9:00-18:00" value="{{formData.open_hours}}" bindinput="onOpenHoursInput" />
+        </view>
+      </block>
+
+      <!-- 详细描述 -->
+      <view class="form-item">
+        <text class="label">详细描述 <text class="required">*</text></text>
+        <textarea class="textarea tall" placeholder="详细描述您的资源内容，包括服务范围、优势等" value="{{formData.description}}" bindinput="onDescInput" />
+      </view>
+
+      <!-- 图片上传 -->
+      <view class="form-item">
+        <text class="label">资源图片</text>
+        <view class="image-list">
+          <block wx:for="{{formData.images}}" wx:key="*this">
+            <view class="image-item">
+              <image src="{{item}}" mode="aspectFill"></image>
+              <view class="remove-btn" bindtap="removeImage" data-index="{{index}}">
+                <text>×</text>
+              </view>
+            </view>
+          </block>
+          <view class="add-image" bindtap="chooseImage" wx:if="{{formData.images.length < 9}}">
+            <text class="add-icon">+</text>
+            <text class="add-text">添加图片</text>
+          </view>
+        </view>
+        <text class="field-tip">上传实物图片，让社区直观了解（最多9张）</text>
+      </view>
+    </view>
+
+    <!-- 步骤3：设置期望回报 -->
+    <view class="step-content" wx:if="{{activeStep === 2}}">
+      <view class="tip-box">🏆 设置您期望获得的回报，让社区了解赞助的价值</view>
+
+      <view class="form-item">
+        <text class="label">期望回报类型</text>
+        <view class="tag-selector">
+          <text 
+            class="selector-tag {{formData.expected_rewards.includes(item) ? 'active' : ''}}"
+            wx:for="{{rewardTypeOptions}}"
+            wx:key="*this"
+            bindtap="toggleRewardType"
+            data-type="{{item}}"
+          >{{item}}</text>
+        </view>
+      </view>
+
+      <view class="form-item">
+        <text class="label">回报说明</text>
+        <textarea class="textarea tall" placeholder="详细描述您期望获得的回报，如品牌曝光、感谢牌匾、优先合作权等" value="{{formData.expected_reward_desc}}" bindinput="onRewardDescInput" />
+      </view>
+
+      <!-- 回报示例 -->
+      <view class="reward-examples">
+        <view class="example-title">💡 常见回报形式：</view>
+        <view class="example-item">• 活动背景板Logo展示</view>
+        <view class="example-item">• 活动现场品牌曝光</view>
+        <view class="example-item">• 社区公众号/群推广</view>
+        <view class="example-item">• 合作证书/感谢牌匾</view>
+        <view class="example-item">• 优先参与社区活动权</view>
+      </view>
+    </view>
+
+    <!-- 步骤4：提交审核 -->
+    <view class="step-content" wx:if="{{activeStep === 3}}">
+      <view class="tip-box">✅ 请确认您填写的信息，信息审核通过后将展示给社区</view>
+
+      <!-- 预览卡片 -->
+      <view class="preview-card">
+        <view class="preview-header">
+          <text class="preview-type">{{resourceTypes[formData.resource_type].label}}</text>
+          <text class="preview-status">待审核</text>
+        </view>
+        <text class="preview-title">{{formData.title || '未填写标题'}}</text>
+        <text class="preview-desc">{{formData.description || '未填写描述'}}</text>
+        <view class="preview-images" wx:if="{{formData.images.length > 0}}">
+          <image wx:for="{{formData.images}}" wx:key="*this" src="{{item}}" mode="aspectFill" />
+        </view>
+      </view>
+
+      <view class="agreement-check">
+        <checkbox-group bindchange="onAgreementChange">
+          <label>
+            <checkbox value="agreed" checked="{{agreed}}" />
+            <text>我已阅读并同意</text>
+            <text class="link" bindtap="showTerms">《用户协议》</text>
+            <text>和</text>
+            <text class="link" bindtap="showPrivacy">《隐私政策》</text>
+          </label>
+        </checkbox-group>
+      </view>
+    </view>
+  </view>
+
+  <!-- 底部按钮 -->
+  <view class="bottom-bar">
+    <button class="btn-prev" wx:if="{{activeStep > 0}}" bindtap="prevStep">上一步</button>
+    <button class="btn-next {{activeStep === 0 ? 'full' : ''}}" bindtap="nextStep" wx:if="{{activeStep < 3}}">
+      {{activeStep === 2 ? '下一步' : '下一步'}}
+    </button>
+    <button class="btn-submit {{activeStep === 3 ? 'full' : ''}}" bindtap="submit" wx:if="{{activeStep === 3}}" disabled="{{!agreed}}">
+      提交发布
+    </button>
+  </view>
+</view>

@@ -1,0 +1,97 @@
+/* 商家管理样式 */
+.merchants-page {
+  min-height: 100vh;
+  background: #f5f5f5;
+  padding-bottom: 120rpx;
+}
+
+.merchant-list {
+  padding: 20rpx;
+}
+
+.merchant-item {
+  background: #fff;
+  border-radius: 16rpx;
+  padding: 30rpx;
+  margin-bottom: 20rpx;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.merchant-left {
+  display: flex;
+  gap: 20rpx;
+  flex: 1;
+}
+
+.merchant-logo {
+  width: 100rpx;
+  height: 100rpx;
+  border-radius: 12rpx;
+  background: #f5f5f5;
+  flex-shrink: 0;
+}
+
+.merchant-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+  flex: 1;
+}
+
+.merchant-name {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #333;
+}
+
+.merchant-contact {
+  font-size: 24rpx;
+  color: #666;
+}
+
+.merchant-time {
+  font-size: 22rpx;
+  color: #999;
+}
+
+.merchant-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10rpx;
+}
+
+.member-level {
+  background: #f5f5f5;
+  color: #666;
+  padding: 6rpx 20rpx;
+  border-radius: 20rpx;
+  font-size: 22rpx;
+}
+
+.member-level.gold {
+  background: #fff3e6;
+  color: #ff6b00;
+}
+
+.commission {
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #67c23a;
+}
+
+.loading-more, .no-more {
+  text-align: center;
+  padding: 30rpx;
+  color: #999;
+  font-size: 26rpx;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 100rpx 0;
+  color: #999;
+  font-size: 28rpx;
+}

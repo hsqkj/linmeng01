@@ -1,0 +1,59 @@
+<!-- 商家端 - 资源管理 -->
+<view class="resources-page">
+  <!-- 筛选 -->
+  <view class="filter-bar">
+    <picker mode="selector" range="{{statusOptions}}" bindchange="onStatusChange">
+      <view class="filter-btn">
+        <text>{{statusOptions[statusIndex]}}</text>
+        <image src="/images/icons/arrow-right.png" mode="aspectFit"></image>
+      </view>
+    </picker>
+    <button class="btn-publish" bindtap="goPublish">
+      <image src="/images/icons/publish.png" mode="aspectFit"></image>
+      发布资源
+    </button>
+  </view>
+
+  <!-- 资源列表 -->
+  <view class="resource-list">
+    <view class="resource-item" wx:for="{{resources}}" wx:key="id">
+      <image class="resource-cover" src="{{item.images ? item.images[0] : '/images/icons/resources.png'}}" mode="aspectFill"></image>
+      <view class="resource-info">
+        <text class="resource-title">{{item.title}}</text>
+        <view class="resource-meta">
+          <text class="resource-type">{{item.type_name || '资源'}}</text>
+          <text class="resource-status {{item.status === 1 ? 'active' : 'inactive'}}">
+            {{item.status === 1 ? '已发布' : item.status === 0 ? '待审核' : '已下架'}}
+          </text>
+        </view>
+        <view class="resource-stats">
+          <text>浏览 {{item.view_count || 0}}</text>
+          <text>收藏 {{item.favorite_count || 0}}</text>
+        </view>
+      </view>
+      <view class="resource-actions">
+        <text class="action-btn edit" bindtap="editResource" data-id="{{item.id}}">编辑</text>
+        <text class="action-btn delete" bindtap="deleteResource" data-id="{{item.id}}">删除</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 加载状态 -->
+  <view class="loading-more" wx:if="{{loading}}">
+    <view class="loading-icon-small"></view>
+    <text>加载中...</text>
+  </view>
+  
+  <!-- 没有更多 -->
+  <view class="no-more" wx:if="{{!hasMore && resources.length > 0}}">
+    <text>— 没有更多了 —</text>
+  </view>
+  
+  <!-- 空状态 -->
+  <view class="empty-state" wx:if="{{!loading && resources.length === 0}}">
+    <text class="empty-icon">🎁</text>
+    <text class="empty-text">暂无资源</text>
+    <text class="empty-desc">成为首批入驻商家，发布您的资源</text>
+    <button class="btn-create" bindtap="goPublish">发布第一条资源</button>
+  </view>
+</view>

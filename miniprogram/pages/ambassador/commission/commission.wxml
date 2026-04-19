@@ -1,0 +1,38 @@
+<!-- 大使端 - 佣金明细 -->
+<view class="commission-page">
+  <!-- 收益概览 -->
+  <view class="summary-card">
+    <view class="summary-item">
+      <text class="summary-label">累计提成</text>
+      <text class="summary-value primary">¥ {{summary.total_commission || 0}}</text>
+    </view>
+    <view class="summary-divider"></view>
+    <view class="summary-item">
+      <text class="summary-label">已提现</text>
+      <text class="summary-value">¥ {{summary.withdraw_amount || 0}}</text>
+    </view>
+    <view class="summary-divider"></view>
+    <view class="summary-item">
+      <text class="summary-label">待结算</text>
+      <text class="summary-value yellow">¥ {{summary.pending_commission || 0}}</text>
+    </view>
+  </view>
+
+  <!-- 佣金记录 -->
+  <view class="section">
+    <text class="section-title">佣金明细</text>
+    <view class="record-list">
+      <view class="record-item" wx:for="{{records}}" wx:key="id">
+        <view class="record-info">
+          <text class="record-type">{{item.type === 'new' ? '新商家入驻' : '商家续费'}}</text>
+          <text class="record-time">{{item.created_at}}</text>
+        </view>
+        <text class="record-amount">+¥{{item.amount || 0}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="loading-more" wx:if="{{loading}}"><text>加载中...</text></view>
+  <view class="no-more" wx:if="{{!hasMore && records.length > 0}}"><text>没有更多了</text></view>
+  <view class="empty-state" wx:if="{{!loading && records.length === 0}}"><text>暂无佣金记录</text></view>
+</view>

@@ -1,0 +1,320 @@
+/* 商家端 - 需求详情页 */
+.demand-detail-page {
+  min-height: 100vh;
+  background: #f5f5f5;
+  padding-bottom: 120rpx;
+}
+
+.loading-state {
+  text-align: center;
+  padding: 200rpx;
+  color: #999;
+}
+
+/* 头部信息 */
+.header {
+  background: #fff;
+  padding: 30rpx;
+  margin-bottom: 20rpx;
+}
+
+.type-tags {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  margin-bottom: 16rpx;
+}
+
+.type-tag {
+  display: inline-block;
+  background: linear-gradient(135deg, #ff6b00, #ff8533);
+  color: #fff;
+  padding: 8rpx 20rpx;
+  border-radius: 8rpx;
+  font-size: 24rpx;
+}
+
+.location-tag {
+  display: inline-block;
+  background: #f0f9eb;
+  color: #67C23A;
+  padding: 8rpx 16rpx;
+  border-radius: 8rpx;
+  font-size: 24rpx;
+}
+
+.title {
+  display: block;
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #333;
+  line-height: 1.5;
+  margin-bottom: 24rpx;
+}
+
+.community-mini {
+  display: flex;
+  align-items: center;
+  padding: 16rpx;
+  background: #f8f8f8;
+  border-radius: 12rpx;
+}
+
+.community-avatar {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 50%;
+  margin-right: 16rpx;
+}
+
+.community-info {
+  flex: 1;
+}
+
+.community-name {
+  display: block;
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #409EFF;
+  margin-bottom: 4rpx;
+}
+
+.community-addr {
+  font-size: 24rpx;
+  color: #999;
+}
+
+/* 区块 */
+.section {
+  background: #fff;
+  padding: 30rpx;
+  margin-bottom: 20rpx;
+}
+
+.section-title {
+  font-size: 30rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 20rpx;
+}
+
+/* 信息网格 */
+.info-grid {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.info-item {
+  width: 50%;
+  padding: 12rpx 0;
+}
+
+.label {
+  display: block;
+  font-size: 24rpx;
+  color: #999;
+  margin-bottom: 8rpx;
+}
+
+.value {
+  font-size: 28rpx;
+  color: #333;
+}
+
+.value.price {
+  color: #E6A23C;
+  font-weight: bold;
+  font-size: 32rpx;
+}
+
+.value.deadline {
+  color: #F56C6C;
+}
+
+.tags-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8rpx;
+}
+
+.mini-tag {
+  display: inline-block;
+  background: #fdf6ec;
+  color: #E6A23C;
+  padding: 4rpx 12rpx;
+  border-radius: 4rpx;
+  font-size: 22rpx;
+}
+
+/* 描述 */
+.description {
+  font-size: 28rpx;
+  color: #666;
+  line-height: 1.8;
+  white-space: pre-wrap;
+}
+
+/* 赞助区块 */
+.sponsor-blocks {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.sponsor-block {
+  display: flex;
+  padding: 20rpx;
+  background: #f8f8f8;
+  border-radius: 12rpx;
+  border-left: 6rpx solid;
+}
+
+.sponsor-block.fund {
+  border-color: #E6A23C;
+}
+
+.sponsor-block.goods {
+  border-color: #67C23A;
+}
+
+.sponsor-block.manpower {
+  border-color: #409EFF;
+}
+
+.sblock-icon {
+  font-size: 40rpx;
+  margin-right: 16rpx;
+}
+
+.sblock-content {
+  flex: 1;
+}
+
+.sblock-title {
+  display: block;
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 8rpx;
+}
+
+.sblock-desc {
+  display: block;
+  font-size: 26rpx;
+  color: #666;
+  line-height: 1.6;
+}
+
+/* 回报区块 */
+.reward-section {
+  background: linear-gradient(to bottom, #fff9f0, #fff);
+}
+
+.rewards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+}
+
+.reward-item {
+  display: inline-block;
+  background: #fff3e0;
+  color: #E6A23C;
+  padding: 12rpx 20rpx;
+  border-radius: 8rpx;
+  font-size: 26rpx;
+}
+
+.reward-detail {
+  margin-top: 20rpx;
+  padding: 16rpx;
+  background: #fff9f0;
+  border-radius: 8rpx;
+}
+
+.reward-note {
+  font-size: 26rpx;
+  color: #666;
+  line-height: 1.6;
+}
+
+/* 图片网格 */
+.image-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12rpx;
+}
+
+.image-item {
+  width: 100%;
+  height: 200rpx;
+  border-radius: 8rpx;
+}
+
+/* 标签 */
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+}
+
+.tag {
+  display: inline-block;
+  background: #ecf5ff;
+  color: #409EFF;
+  padding: 8rpx 16rpx;
+  border-radius: 8rpx;
+  font-size: 24rpx;
+}
+
+/* 底部操作栏 */
+.bottom-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  padding: 20rpx 30rpx;
+  padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
+  background: #fff;
+  box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.05);
+}
+
+.action-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-right: 40rpx;
+}
+
+.action-item image {
+  width: 44rpx;
+  height: 44rpx;
+  margin-bottom: 6rpx;
+}
+
+.action-item text {
+  font-size: 22rpx;
+  color: #666;
+}
+
+.action-btn {
+  flex: 1;
+  margin-left: auto;
+  background: linear-gradient(135deg, #ff6b00, #ff8533);
+  color: #fff;
+  text-align: center;
+  padding: 20rpx;
+  border-radius: 50rpx;
+  font-size: 30rpx;
+  font-weight: bold;
+}
+
+/* 空状态 */
+.empty-state {
+  text-align: center;
+  padding: 200rpx;
+  color: #999;
+  font-size: 28rpx;
+}

@@ -1,0 +1,56 @@
+<!-- 大使端 - 提现 -->
+<view class="withdraw-page">
+  <!-- 可提现金额 -->
+  <view class="balance-card">
+    <text class="balance-label">可提现余额</text>
+    <text class="balance-value">¥ {{balance}}</text>
+    <text class="balance-hint">提现将在1-3个工作日内到账</text>
+  </view>
+
+  <!-- 提现表单 -->
+  <view class="withdraw-form">
+    <view class="form-item">
+      <text class="form-label">提现金额</text>
+      <view class="input-wrapper">
+        <text class="input-prefix">¥</text>
+        <input class="form-input" type="digit" placeholder="请输入提现金额" value="{{amount}}" bindinput="onAmountInput" />
+      </view>
+      <view class="quick-amounts">
+        <text class="quick-btn" bindtap="onAmountInput" data-amount="100">100</text>
+        <text class="quick-btn" bindtap="onAmountInput" data-amount="500">500</text>
+        <text class="quick-btn" bindtap="onAmountInput" data-amount="1000">1000</text>
+        <text class="quick-btn" bindtap="onAmountInput" data-amount="{{balance}}">全部</text>
+      </view>
+    </view>
+
+    <view class="form-item">
+      <text class="form-label">到账账户</text>
+      <view class="account-card">
+        <text class="account-type">{{account.account_type === 'alipay' ? '支付宝' : '银行卡'}}</text>
+        <text class="account-info">{{account.account_name}} {{account.account_number}}</text>
+      </view>
+      <text class="form-hint">如需更改账户，请联系客服</text>
+    </view>
+
+    <button class="btn-submit" bindtap="submitWithdraw">申请提现</button>
+  </view>
+
+  <!-- 提现记录 -->
+  <view class="section">
+    <text class="section-title">提现记录</text>
+    <view class="history-list">
+      <view class="history-item" wx:for="{{history}}" wx:key="id">
+        <view class="history-info">
+          <text class="history-amount">¥{{item.amount}}</text>
+          <text class="history-time">{{item.created_at}}</text>
+        </view>
+        <text class="history-status" style="color: {{item.status === 1 ? '#67c23a' : item.status === 2 ? '#f56c6c' : '#e6a23c'}}">
+          {{item.status === 1 ? '已到账' : item.status === 2 ? '已拒绝' : '处理中'}}
+        </text>
+      </view>
+    </view>
+    <view class="empty-state" wx:if="{{history.length === 0}}">
+      <text>暂无提现记录</text>
+    </view>
+  </view>
+</view>

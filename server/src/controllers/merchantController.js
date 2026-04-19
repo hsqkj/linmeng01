@@ -1592,6 +1592,250 @@ exports.saveCommunityLocation = async (req, res) => {
   }
 }
 
+// ============ 商家端订单API ============
+
+// 获取订单列表
+exports.getOrders = async (req, res) => {
+  try {
+    const { page = 1, pageSize = 10, status } = req.query
+    const offset = (parseInt(page) - 1) * parseInt(pageSize)
+    const merchantId = req.merchant.id
+
+    let whereClause = 'WHERE o.merchant_id = ?'
+    const params = [merchantId]
+
+    if (status !== undefined && status !== '' && status !== null) {
+      whereClause += ' AND o.status = ?'
+      params.push(parseInt(status))
+    }
+
+    // 查询订单（使用 intentions 表作为意向订单）
+    const [rows] = await pool.query(`
+      SELECT o.id, o.demand_id, o.resource_id, o.status,
+             o.created_at as create_time, o.updated_at,
+             d.title as demand_title, d.contact_name as demand_contact, d.phone as demand_phone,
+             r.title as resource_title, r.contact_name as resource_contact,
+             c.name as community_name
+      FROM intentions o
+      LEFT JOIN demands d ON o.demand_id = d.id
+      LEFT JOIN resources r ON o.resource_id = r.id
+      LEFT JOIN communities c ON o.community_id = c.id
+      ${whereClause}
+      ORDER BY o.created_at DESC
+      LIMIT ? OFFSET ?
+    `, [...params, parseInt(pageSize), offset])
+
+    // 查询总数
+    const [[{ total }]] = await pool.query(
+      `SELECT COUNT(*) as total FROM intentions o ${whereClause}`,
+      params
+    )
+
+    // 状态映射
+    const statusMap = {
+      0: { text: '待处理', color: '#FF9800' },
+      1: { text: '已接受', color: '#4CAF50' },
+      2: { text: '已拒绝', color: '#9E9E9E' },
+      3: { text: '已完成', color: '#2196F3' }
+    }
+
+    const orders = rows.map(o => ({
+      ...o,
+      status_text: statusMap[o.status]?.text || '未知',
+      status_color: statusMap[o.status]?.color || '#999'
+    }))
+
+    pageSuccess(res, orders, total, parseInt(page), parseInt(pageSize))
+  } catch (err) {
+    console.error('getOrders error:', err)
+    error(res, '获取订单列表失败')
+  }
+}
+
+// 获取订单详情
+exports.getOrderDetail = async (req, res) => {
+  try {
+    const { id } = req.params
+    const merchantId = req.merchant.id
+
+    const [rows] = await pool.query(`
+      SELECT o.*,
+             d.title as demand_title, d.content as demand_content, d.contact_name as demand_contact, d.phone as demand_phone, d.budget as demand_budget,
+             r.title as resource_title, r.description as resource_desc, r.contact_name as resource_contact,
+             c.name as community_name, c.address as community_address
+      FROM intentions o
+      LEFT JOIN demands d ON o.demand_id = d.id
+      LEFT JOIN resources r ON o.resource_id = r.id
+      LEFT JOIN communities c ON o.community_id = c.id
+      WHERE o.id = ? AND o.merchant_id = ?
+    `, [id, merchantId])
+
+    if (rows.length === 0) {
+      return error(res, '订单不存在或无权访问', 404)
+    }
+
+    success(res, rows[0])
+  } catch (err) {
+    console.error('getOrderDetail error:', err)
+    error(res, '获取订单详情失败')
+  }
+}
+
+// 更新订单状态
+exports.updateOrderStatus = async (req, res) => {
+  try {
+    const { id } = req.params
+    const { status } = req.body
+    const merchantId = req.merchant.id
+
+    // 验证订单属于当前商家
+    const [rows] = await pool.query(
+      'SELECT * FROM intentions WHERE id = ? AND merchant_id = ?',
+      [id, merchantId]
+    )
+
+    if (rows.length === 0) {
+      return error(res, '订单不存在或无权操作', 404)
+    }
+
+    await pool.query(
+      'UPDATE intentions SET status = ?, updated_at = NOW() WHERE id = ?',
+      [status, id]
+    )
+
+    success(res, null, '状态更新成功')
+  } catch (err) {
+    console.error('updateOrderStatus error:', err)
+    error(res, '更新状态失败')
+  }
+}
+
+// ============ 商家端收益API ============
+
+// 获取收益概览
+exports.getIncome = async (req, res) => {
+  try {
+    const merchantId = req.merchant.id
+
+    // 本月收益
+    const [[{ monthIncome }]] = await pool.query(`
+      SELECT COALESCE(SUM(p.amount), 0) as monthIncome
+      FROM member_payments p
+      WHERE p.merchant_id = ? 
+        AND p.status = 1
+        AND MONTH(p.created_at) = MONTH(NOW())
+        AND YEAR(p.created_at) = YEAR(NOW())
+    `, [merchantId])
+
+    // 累计收益
+    const [[{ totalIncome }]] = await pool.query(`
+      SELECT COALESCE(SUM(p.amount), 0) as totalIncome
+      FROM member_payments p
+      WHERE p.merchant_id = ? AND p.status = 1
+    `, [merchantId])
+
+    // 本月订单数
+    const [[{ monthOrders }]] = await pool.query(`
+      SELECT COUNT(*) as monthOrders
+      FROM intentions
+      WHERE merchant_id = ?
+        AND status IN (1, 3)
+        AND MONTH(created_at) = MONTH(NOW())
+        AND YEAR(created_at) = YEAR(NOW())
+    `, [merchantId])
+
+    // 待处理订单
+    const [[{ pendingOrders }]] = await pool.query(`
+      SELECT COUNT(*) as pendingOrders
+      FROM intentions
+      WHERE merchant_id = ? AND status = 0
+    `, [merchantId])
+
+    success(res, {
+      monthIncome: parseFloat(monthIncome) || 0,
+      totalIncome: parseFloat(totalIncome) || 0,
+      monthOrders: monthOrders || 0,
+      pendingOrders: pendingOrders || 0
+    })
+  } catch (err) {
+    console.error('getIncome error:', err)
+    error(res, '获取收益信息失败')
+  }
+}
+
+// 获取收益记录
+exports.getIncomeRecords = async (req, res) => {
+  try {
+    const { page = 1, pageSize = 10, type } = req.query
+    const offset = (parseInt(page) - 1) * parseInt(pageSize)
+    const merchantId = req.merchant.id
+
+    let whereClause = 'WHERE p.merchant_id = ? AND p.status = 1'
+    const params = [merchantId]
+
+    // type: 1=首次开通, 2=续费, 3=升级
+    if (type) {
+      whereClause += ' AND p.level = ?'
+      params.push(parseInt(type))
+    }
+
+    const [rows] = await pool.query(`
+      SELECT p.*,
+             CASE 
+               WHEN p.level = 0 THEN '免费试用'
+               WHEN p.level = 1 THEN '普通会员'
+               WHEN p.level = 2 THEN '银牌会员'
+               WHEN p.level = 3 THEN '金牌会员'
+               WHEN p.level = 4 THEN '铂金会员'
+               WHEN p.level = 5 THEN '钻石会员'
+               ELSE CONCAT('等级', p.level)
+             END as level_name
+      FROM member_payments p
+      ${whereClause}
+      ORDER BY p.created_at DESC
+      LIMIT ? OFFSET ?
+    `, [...params, parseInt(pageSize), offset])
+
+    const [[{ total }]] = await pool.query(
+      `SELECT COUNT(*) as total FROM member_payments p ${whereClause}`,
+      params
+    )
+
+    pageSuccess(res, rows, total, parseInt(page), parseInt(pageSize))
+  } catch (err) {
+    console.error('getIncomeRecords error:', err)
+    error(res, '获取收益记录失败')
+  }
+}
+
+// 获取会员有效期
+exports.getMemberExpiry = async (req, res) => {
+  try {
+    const merchantId = req.merchant.id
+
+    const [[payment]] = await pool.query(`
+      SELECT end_date, member_level
+      FROM member_payments
+      WHERE merchant_id = ? AND status = 1
+      ORDER BY end_date DESC
+      LIMIT 1
+    `, [merchantId])
+
+    if (payment) {
+      success(res, {
+        memberLevel: payment.member_level,
+        endDate: payment.end_date,
+        daysLeft: Math.ceil((new Date(payment.end_date) - new Date()) / (1000 * 60 * 60 * 24))
+      })
+    } else {
+      success(res, { memberLevel: 0, endDate: null, daysLeft: 0 })
+    }
+  } catch (err) {
+    console.error('getMemberExpiry error:', err)
+    error(res, '获取会员有效期失败')
+  }
+}
+
 // 标记单条通知已读
 exports.markOneNotificationRead = async (req, res) => {
   try {
@@ -1612,5 +1856,61 @@ exports.markOneNotificationRead = async (req, res) => {
   } catch (err) {
     console.error('markOneNotificationRead error:', err)
     error(res, '标记已读失败')
+  }
+}
+
+// ============ 商家端首页API ============
+
+// 商家首页数据
+exports.getHome = async (req, res) => {
+  try {
+    const merchantId = req.merchant.id
+
+    // 获取商家信息
+    const [merchantRows] = await pool.query(
+      `SELECT m.*,
+       (SELECT MAX(end_date) FROM member_payments WHERE merchant_id = m.id AND status = 1) as member_expire_at
+       FROM merchants m WHERE m.id = ?`,
+      [merchantId]
+    )
+
+    if (merchantRows.length === 0) {
+      return error(res, '用户不存在', 404)
+    }
+
+    const merchant = merchantRows[0]
+
+    // 获取统计数据
+    const [stats] = await pool.query(
+      `SELECT
+        (SELECT COUNT(*) FROM resources WHERE merchant_id = ? AND status = 1) as resourceCount,
+        (SELECT COUNT(*) FROM intentions WHERE merchant_id = ? AND status = 1) as intentionCount,
+        (SELECT COUNT(*) FROM intentions WHERE merchant_id = ? AND status = 3) as completedCount,
+        (SELECT COUNT(*) FROM demands WHERE status = 1) as totalDemands,
+        (SELECT COUNT(*) FROM resources WHERE status = 1) as totalResources`,
+      [merchantId, merchantId, merchantId]
+    )
+
+    const stat = stats[0]
+
+    // 解析JSON字段
+    if (typeof merchant.resource_types === 'string') {
+      try { merchant.resource_types = JSON.parse(merchant.resource_types) } catch {}
+    }
+    if (typeof merchant.tags === 'string') {
+      try { merchant.tags = JSON.parse(merchant.tags) } catch {}
+    }
+
+    // 删除密码
+    delete merchant.password
+
+    success(res, {
+      ...merchant,
+      ...stat,
+      member_expire_at: stat.member_expire_at
+    })
+  } catch (err) {
+    console.error('getHome error:', err)
+    error(res, '获取首页数据失败')
   }
 }

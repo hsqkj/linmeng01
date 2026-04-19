@@ -1,0 +1,28 @@
+<!-- 大使端 - 发展记录 -->
+<view class="records-page">
+  <view class="records-list">
+    <view class="record-item" wx:for="{{records}}" wx:key="id" bindtap="viewMerchant" data-id="{{item.id}}">
+      <view class="record-left">
+        <image class="merchant-logo" src="{{item.logo || '/images/icons/merchant.png'}}" mode="aspectFill"></image>
+        <view class="merchant-info">
+          <text class="merchant-name">{{item.company_name}}</text>
+          <text class="merchant-time">{{item.created_at}}</text>
+        </view>
+      </view>
+      <view class="record-right">
+        <text class="member-level">{{item.member_level === 3 ? '金牌' : item.member_level === 2 ? '银牌' : '普通'}}</text>
+        <text class="record-commission">提成: ¥{{item.commission || 0}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="loading-more" wx:if="{{loading}}">
+    <text>加载中...</text>
+  </view>
+  <view class="no-more" wx:if="{{!hasMore && records.length > 0}}">
+    <text>没有更多了</text>
+  </view>
+  <view class="empty-state" wx:if="{{!loading && records.length === 0}}">
+    <text>暂无发展记录</text>
+  </view>
+</view>

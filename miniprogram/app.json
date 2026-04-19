@@ -1,0 +1,62 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/community/home/home",
+    "pages/community/login/login",
+    "pages/community/profile/profile",
+    "pages/community/resources/resources",
+    "pages/community/resource-detail/resource-detail",
+    "pages/merchant/home/home",
+    "pages/merchant/login/login",
+    "pages/merchant/register/register",
+    "pages/merchant/profile/profile",
+    "pages/merchant/resources/resources",
+    "pages/merchant/resource-detail/resource-detail",
+    "pages/merchant/edit-resource/edit-resource",
+    "pages/merchant/messages/messages",
+    "pages/merchant/publish/publish",
+    "pages/merchant/demands/demands",
+    "pages/merchant/demand-detail/demand-detail",
+    "pages/merchant/orders/orders",
+    "pages/merchant/income/income",
+    "pages/merchant/member/member",
+    "pages/ambassador/home/home",
+    "pages/ambassador/login/login",
+    "pages/ambassador/profile/profile",
+    "pages/ambassador/communities/communities",
+    "pages/ambassador/merchants/merchants",
+    "pages/ambassador/commission/commission",
+    "pages/ambassador/withdraw/withdraw",
+    "pages/ambassador/records/records"
+  ],
+  "window": {
+    "backgroundTextStyle": "light",
+    "navigationBarBackgroundColor": "#ffffff",
+    "navigationBarTitleText": "邻盟",
+    "navigationBarTextStyle": "black"
+  },
+  "tabBar": {
+    "custom": true,
+    "color": "#999999",
+    "selectedColor": "#1890FF",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "首页"
+      },
+      {
+        "pagePath": "pages/community/resources/resources",
+        "text": "资源"
+      },
+      {
+        "pagePath": "pages/community/profile/profile",
+        "text": "我的"
+      }
+    ]
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents"
+}

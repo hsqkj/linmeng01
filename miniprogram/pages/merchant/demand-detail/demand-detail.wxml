@@ -1,0 +1,159 @@
+<!-- 商家端 - 需求详情页 -->
+<view class="demand-detail-page">
+  <!-- 加载状态 -->
+  <view class="loading-state" wx:if="{{loading}}">
+    <text>加载中...</text>
+  </view>
+
+  <!-- 需求内容 -->
+  <view class="content" wx:elif="{{demand}}">
+    <!-- 头部信息 -->
+    <view class="header">
+      <view class="type-tags">
+        <text class="type-tag">{{demand.demand_type_name || '需求'}}</text>
+        <text class="location-tag" wx:if="{{demand.location_type}}">{{demand.location_type === '室外' ? '🌳' : '🏠'}} {{demand.location_type}}活动</text>
+      </view>
+      <text class="title">{{demand.title}}</text>
+      <view class="community-mini" bindtap="viewCommunity">
+        <image src="{{demand.community_logo || '/images/icons/community.png'}}" mode="aspectFill" class="community-avatar"/>
+        <view class="community-info">
+          <text class="community-name">{{demand.community_name}}</text>
+          <text class="community-addr">{{demand.district}}{{demand.street ? ' · ' + demand.street : ''}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 基本信息 -->
+    <view class="section">
+      <view class="section-title">📋 活动基本信息</view>
+      <view class="info-grid">
+        <view class="info-item" wx:if="{{demand.target_audience}}">
+          <text class="label">目标对象</text>
+          <view class="tags-wrap">
+            <text class="mini-tag" wx:for="{{parseTags(demand.target_audience)}}" wx:key="index">{{item}}</text>
+          </view>
+        </view>
+        <view class="info-item" wx:if="{{demand.start_time || demand.end_time}}">
+          <text class="label">活动时间</text>
+          <text class="value">{{demand.start_time}} 至 {{demand.end_time}}</text>
+        </view>
+        <view class="info-item" wx:if="{{demand.location}}">
+          <text class="label">活动地点</text>
+          <text class="value">{{demand.location}}</text>
+        </view>
+        <view class="info-item" wx:if="{{demand.expected_audience}}">
+          <text class="label">预计参与</text>
+          <text class="value">约 {{demand.expected_audience}} 人</text>
+        </view>
+        <view class="info-item" wx:if="{{demand.deadline}}">
+          <text class="label">截止日期</text>
+          <text class="value deadline">{{demand.deadline}}</text>
+        </view>
+        <view class="info-item" wx:if="{{demand.fund_amount}}">
+          <text class="label">预算金额</text>
+          <text class="value price">¥{{demand.fund_amount}}</text>
+        </view>
+        <view class="info-item" wx:if="{{demand.goods_count}}">
+          <text class="label">物资数量</text>
+          <text class="value">{{demand.goods_count}}件</text>
+        </view>
+        <view class="info-item" wx:if="{{demand.volunteer_count}}">
+          <text class="label">志愿者</text>
+          <text class="value">{{demand.volunteer_count}}人</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 活动简介 -->
+    <view class="section">
+      <view class="section-title">📝 活动简介</view>
+      <view class="description">
+        <text>{{demand.description || '暂无详细描述'}}</text>
+      </view>
+    </view>
+
+    <!-- 所需赞助 -->
+    <view class="section" wx:if="{{demand.fund_amount || demand.goods_list || demand.manpower_need}}">
+      <view class="section-title">🎯 所需赞助</view>
+      <view class="sponsor-blocks">
+        <view class="sponsor-block fund" wx:if="{{demand.fund_amount}}">
+          <view class="sblock-icon">💵</view>
+          <view class="sblock-content">
+            <text class="sblock-title">资金赞助</text>
+            <text class="sblock-desc">所需金额：¥{{demand.fund_amount}}</text>
+            <text class="sblock-desc" wx:if="{{demand.fund_usage}}">用途：{{demand.fund_usage}}</text>
+          </view>
+        </view>
+        <view class="sponsor-block goods" wx:if="{{demand.goods_list}}">
+          <view class="sblock-icon">📦</view>
+          <view class="sblock-content">
+            <text class="sblock-title">物资赞助</text>
+            <text class="sblock-desc">{{demand.goods_list}}</text>
+          </view>
+        </view>
+        <view class="sponsor-block manpower" wx:if="{{demand.manpower_need}}">
+          <view class="sblock-icon">👥</view>
+          <view class="sblock-content">
+            <text class="sblock-title">人力支持</text>
+            <text class="sblock-desc">{{demand.manpower_need}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 商家回报 -->
+    <view class="section reward-section" wx:if="{{demand.merchant_reward}}">
+      <view class="section-title">🏆 商家回报（赞助后您将获得）</view>
+      <view class="rewards">
+        <text class="reward-item" wx:for="{{parseRewards(demand.merchant_reward)}}" wx:key="index">{{item}}</text>
+      </view>
+      <view class="reward-detail" wx:if="{{demand.reward_details}}">
+        <text class="reward-note">💡 回报价值说明：{{demand.reward_details}}</text>
+      </view>
+    </view>
+
+    <!-- 附件图片 -->
+    <view class="section" wx:if="{{demand.images && demand.images.length > 0}}">
+      <view class="section-title">📷 附件图片</view>
+      <view class="image-grid">
+        <image 
+          wx:for="{{demand.images}}" 
+          wx:key="index"
+          src="{{item}}" 
+          mode="aspectFill" 
+          class="image-item"
+          bindtap="previewImage"
+          data-index="{{index}}"
+        />
+      </view>
+    </view>
+
+    <!-- 标签 -->
+    <view class="section" wx:if="{{demand.tags && demand.tags.length > 0}}">
+      <view class="section-title">🏷️ 相关标签</view>
+      <view class="tags">
+        <text class="tag" wx:for="{{demand.tags}}" wx:key="index">{{item}}</text>
+      </view>
+    </view>
+
+    <!-- 底部操作栏 -->
+    <view class="bottom-bar">
+      <view class="action-item" bindtap="toggleFavorite">
+        <image src="/images/icons/{{favorited ? 'check' : 'heart'}}.png" mode="aspectFit" />
+        <text>{{favorited ? '已收藏' : '收藏'}}</text>
+      </view>
+      <view class="action-item" bindtap="onShare">
+        <image src="/images/icons/share.png" mode="aspectFit" />
+        <text>分享</text>
+      </view>
+      <view class="action-btn" bindtap="goComment">
+        <text>💬 留言咨询</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 空状态 -->
+  <view class="empty-state" wx:elif="{{!loading}}">
+    <text>需求不存在或已被删除</text>
+  </view>
+</view>

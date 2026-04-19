@@ -1,0 +1,108 @@
+<!-- 招商大使端个人中心 -->
+<view class="ambassador-profile">
+  <!-- 用户信息卡片 -->
+  <view class="profile-header">
+    <view class="user-info">
+      <image class="avatar" src="{{userInfo.avatar || '/images/default-avatar.png'}}" mode="aspectFill"></image>
+      <view class="info">
+        <text class="nickname">{{userInfo.name || '招商大使'}}</text>
+        <text class="region">{{userInfo.region || '未设置负责区域'}}</text>
+        <text class="phone">{{userInfo.phone || ''}}</text>
+      </view>
+      <view class="edit-btn" bindtap="editProfile">
+        <text>编辑资料</text>
+      </view>
+    </view>
+
+    <!-- 大使等级信息 -->
+    <view class="level-card" wx:if="{{memberInfo}}">
+      <view class="level-left">
+        <view class="level-badge">
+          <text>{{memberInfo.levelName}}</text>
+        </view>
+        <text class="level-desc">当前等级</text>
+      </view>
+      <view class="level-right">
+        <text class="invite-count">{{memberInfo.inviteCount || 0}}</text>
+        <text class="invite-label">已邀请商家</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 我的数据 -->
+  <view class="data-section">
+    <view class="data-item" bindtap="myCommunities">
+      <text class="data-num">{{userInfo.communityCount || 0}}</text>
+      <text class="data-label">负责社区</text>
+    </view>
+    <view class="data-item" bindtap="merchantManage">
+      <text class="data-num">{{userInfo.merchantCount || 0}}</text>
+      <text class="data-label">入驻商家</text>
+    </view>
+    <view class="data-item" bindtap="myCommission">
+      <text class="data-num">{{userInfo.totalCommission || 0}}</text>
+      <text class="data-label">累计佣金</text>
+    </view>
+  </view>
+
+  <!-- 菜单列表 -->
+  <view class="menu-list">
+    <view class="menu-item" bindtap="myCommunities">
+      <view class="menu-icon">
+        <image src="/images/icons/community.png" mode="aspectFit"></image>
+      </view>
+      <text class="menu-text">我的社区</text>
+      <image class="arrow" src="/images/icons/arrow-right.png" mode="aspectFit"></image>
+    </view>
+    <view class="menu-item" bindtap="merchantManage">
+      <view class="menu-icon">
+        <image src="/images/icons/merchant.png" mode="aspectFit"></image>
+      </view>
+      <text class="menu-text">商家管理</text>
+      <image class="arrow" src="/images/icons/arrow-right.png" mode="aspectFit"></image>
+    </view>
+    <view class="menu-item" bindtap="myCommission">
+      <view class="menu-icon">
+        <image src="/images/icons/commission.png" mode="aspectFit"></image>
+      </view>
+      <text class="menu-text">我的佣金</text>
+      <image class="arrow" src="/images/icons/arrow-right.png" mode="aspectFit"></image>
+    </view>
+    <view class="menu-item" bindtap="myReport">
+      <view class="menu-icon">
+        <image src="/images/icons/report.png" mode="aspectFit"></image>
+      </view>
+      <text class="menu-text">数据报表</text>
+      <image class="arrow" src="/images/icons/arrow-right.png" mode="aspectFit"></image>
+    </view>
+  </view>
+
+  <view class="menu-list">
+    <view class="menu-item" bindtap="settings">
+      <view class="menu-icon">
+        <image src="/images/icons/settings.png" mode="aspectFit"></image>
+      </view>
+      <text class="menu-text">设置</text>
+      <image class="arrow" src="/images/icons/arrow-right.png" mode="aspectFit"></image>
+    </view>
+    <view class="menu-item" bindtap="logout">
+      <view class="menu-icon logout-icon">
+        <image src="/images/icons/logout.png" mode="aspectFit"></image>
+      </view>
+      <text class="menu-text logout-text">退出登录</text>
+      <image class="arrow" src="/images/icons/arrow-right.png" mode="aspectFit"></image>
+    </view>
+  </view>
+
+  <!-- 底部导航 -->
+  <view class="bottom-nav">
+    <view class="nav-item" bindtap="navigateTo" data-url="/pages/ambassador/home/home">
+      <image src="/images/icons/home.png" mode="aspectFit"></image>
+      <text>首页</text>
+    </view>
+    <view class="nav-item active">
+      <image src="/images/icons/user-active.png" mode="aspectFit"></image>
+      <text>我的</text>
+    </view>
+  </view>
+</view>

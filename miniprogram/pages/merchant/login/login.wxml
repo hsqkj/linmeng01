@@ -1,0 +1,73 @@
+<!-- 商家端登录 -->
+<view class="login-container">
+  <!-- 顶部 -->
+  <view class="login-header">
+    <view class="logo merchant-logo"></view>
+    <text class="app-name">商家入驻</text>
+    <text class="app-desc">共享社区资源 · 拓展商业机会</text>
+  </view>
+
+  <!-- 登录内容 -->
+  <view class="login-content">
+    <!-- 微信登录 -->
+    <view class="wechat-login">
+      <button class="btn-wechat" open-type="getPhoneNumber" bindgetphonenumber="onGetPhoneNumber">
+        <text class="wechat-icon">💬</text>
+        微信一键登录
+      </button>
+      <text class="login-hint">便捷登录，快速入驻</text>
+    </view>
+
+    <!-- 其他登录方式 -->
+    <view class="other-login">
+      <view class="divider">
+        <view class="divider-line"></view>
+        <text class="divider-text">其他方式</text>
+        <view class="divider-line"></view>
+      </view>
+      
+      <view class="login-options">
+        <view class="login-option" bindtap="showPhoneLogin">
+          <view class="option-icon">
+            <image src="/images/icons/phone.png" mode="aspectFit" style="width:40rpx;height:40rpx;"></image>
+          </view>
+          <text>手机登录</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 用户协议 -->
+    <view class="agreement">
+      <checkbox-group bindchange="onAgreementChange">
+        <label class="agreement-label">
+          <checkbox value="agree" color="#FF6B00" checked="{{agreed}}" />
+          <text class="agreement-text">登录即表示同意<text class="link" bindtap="showTerms">《用户协议》</text>和<text class="link" bindtap="showPrivacy">《隐私政策》</text></text>
+        </label>
+      </checkbox-group>
+    </view>
+  </view>
+
+  <!-- 手机号登录弹窗 -->
+  <view class="phone-modal {{showPhoneModal ? 'show' : ''}}" bindtap="closePhoneModal">
+    <view class="phone-modal-content" catchtap="stopPropagation">
+      <view class="modal-header">
+        <text class="modal-title">手机号登录</text>
+        <view bindtap="closePhoneModal">
+          <image src="/images/icons/close.png" mode="aspectFit" style="width:40rpx;height:40rpx;"></image>
+        </view>
+      </view>
+      <view class="modal-body">
+        <view class="input-group">
+          <input type="number" maxlength="11" placeholder="请输入手机号" value="{{phone}}" bindinput="onPhoneInput" />
+        </view>
+        <view class="input-group verify-group">
+          <input type="number" maxlength="6" placeholder="请输入验证码" value="{{code}}" bindinput="onCodeInput" />
+          <button class="btn-code {{countdown > 0 ? 'disabled' : ''}}" bindtap="sendCode" disabled="{{countdown > 0}}">
+            {{countdown > 0 ? countdown + 's' : '获取验证码'}}
+          </button>
+        </view>
+        <button class="btn-login" bindtap="phoneLogin">登录</button>
+      </view>
+    </view>
+  </view>
+</view>

@@ -1,0 +1,110 @@
+<!-- 资源广场 -->
+<view class="resources-container">
+  <!-- 搜索栏 -->
+  <view class="search-bar">
+    <view class="search-input">
+      <image src="/assets/icons/search.png" class="search-icon" />
+      <input 
+        type="text" 
+        placeholder="搜索资源名称" 
+        bindinput="onSearchInput"
+        value="{{keyword}}"
+      />
+    </view>
+  </view>
+
+  <!-- 分类标签 -->
+  <scroll-view scroll-x class="category-scroll">
+    <view class="category-list">
+      <view 
+        class="category-item {{currentCategory === -1 ? 'active' : ''}}"
+        bindtap="selectCategory"
+        data-id="-1"
+      >全部</view>
+      <view 
+        class="category-item {{currentCategory === index ? 'active' : ''}}"
+        wx:for="{{categories}}"
+        wx:key="index"
+        bindtap="selectCategory"
+        data-id="{{index}}"
+      >{{item}}</view>
+    </view>
+  </scroll-view>
+
+  <!-- 资源列表 -->
+  <scroll-view 
+    scroll-y 
+    class="resource-list"
+    bindscrolltolower="loadMore"
+    refresher-enabled
+    bindrefresherrefresh="onRefresh"
+  >
+    <view class="resource-card" 
+      wx:for="{{resources}}"
+      wx:key="id"
+      bindtap="goDetail"
+      data-id="{{item.id}}"
+    >
+      <view class="resource-images">
+        <swiper 
+          class="image-swiper"
+          indicator-dots="{{item.images && item.images.length > 1}}"
+          autoplay="{{false}}"
+        >
+          <swiper-item wx:for="{{item.images}}" wx:for-item="img" wx:key="*this">
+            <image src="{{img}}" class="resource-img" mode="aspectFill" />
+          </swiper-item>
+          <swiper-item wx:if="{{!item.images || item.images.length === 0}}">
+            <view class="placeholder-view">
+              <text class="placeholder-icon">🖼️</text>
+              <text class="placeholder-text">暂无图片</text>
+            </view>
+          </swiper-item>
+        </swiper>
+      </view>
+      
+      <view class="resource-content">
+        <view class="resource-header">
+          <text class="resource-title">{{item.title}}</text>
+          <view class="resource-tags">
+            <text class="tag tag-primary">{{item.typeName}}</text>
+          </view>
+        </view>
+        
+        <text class="resource-desc">{{item.content}}</text>
+        
+        <view class="resource-footer">
+          <view class="merchant-info">
+            <image src="{{item.merchant_logo || '/assets/icons/shop.png'}}" class="merchant-logo" />
+            <text class="merchant-name">{{item.company_name || item.merchant_name}}</text>
+          </view>
+          
+          <view class="resource-actions">
+            <view class="action-item" catchtap="toggleFavorite" data-id="{{item.id}}">
+              <image src="/assets/icons/{{item.isFavorited ? 'favorite-active' : 'favorite'}}.png" class="action-icon" />
+              <text>{{item.favorite_count || 0}}</text>
+            </view>
+            <view class="action-item" catchtap="shareResource" data-id="{{item.id}}">
+              <image src="/assets/icons/share.png" class="action-icon" />
+              <text>分享</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 加载状态 -->
+    <view class="load-status">
+      <view wx:if="{{loading}}" class="loading-more">
+        <view class="loading-icon-small"></view>
+        <text>加载中...</text>
+      </view>
+      <text wx:elif="{{noMore}}" class="no-more-text">— 没有更多了 —</text>
+      <view wx:elif="{{resources.length === 0}}" class="empty-state">
+        <text class="empty-icon">🎁</text>
+        <text class="empty-text">暂无资源</text>
+        <text class="empty-desc">社区资源正在整理中</text>
+      </view>
+    </view>
+  </scroll-view>
+</view>

@@ -1,0 +1,126 @@
+<!-- 商家端消息中心 -->
+<view class="messages-page">
+  <!-- 顶部导航 -->
+  <view class="nav-bar">
+    <view class="nav-back" bindtap="goBack">
+      <text>← 返回</text>
+    </view>
+    <text class="nav-title">消息中心</text>
+    <view style="width: 100rpx;"></view>
+  </view>
+
+  <!-- 标签页 -->
+  <view class="tabs">
+    <view 
+      class="tab-item {{activeTab === 'intentions' ? 'active' : ''}}" 
+      bindtap="switchTab" 
+      data-tab="intentions"
+    >
+      <text>合作意向</text>
+      <view class="tab-badge" wx:if="{{intentionUnread > 0}}">{{intentionUnread}}</view>
+    </view>
+    <view 
+      class="tab-item {{activeTab === 'comments' ? 'active' : ''}}" 
+      bindtap="switchTab" 
+      data-tab="comments"
+    >
+      <text>留言咨询</text>
+      <view class="tab-badge" wx:if="{{commentUnread > 0}}">{{commentUnread}}</view>
+    </view>
+    <view 
+      class="tab-item {{activeTab === 'system' ? 'active' : ''}}" 
+      bindtap="switchTab" 
+      data-tab="system"
+    >
+      <text>系统通知</text>
+      <view class="tab-badge" wx:if="{{systemUnread > 0}}">{{systemUnread}}</view>
+    </view>
+  </view>
+
+  <!-- 合作意向 -->
+  <scroll-view scroll-y class="message-list" wx:if="{{activeTab === 'intentions'}}">
+    <view class="empty" wx:if="{{intentions.length === 0 && !loading}}">
+      <text>暂无合作意向记录</text>
+    </view>
+    <view class="message-card" wx:for="{{intentions}}" wx:key="id" bindtap="viewDemand" data-item="{{item}}">
+      <view class="card-header">
+        <image class="avatar" src="{{item.avatar}}" mode="aspectFill" />
+        <view class="card-info">
+          <text class="name">{{item.community_name || '未知社区'}}</text>
+          <text class="type">社区</text>
+        </view>
+        <view class="status-badge status-{{item.status}}">{{statusName[item.status]}}</view>
+      </view>
+      <view class="card-content">
+        <text>{{item.intro || '暂无说明'}}</text>
+      </view>
+      <view class="card-footer">
+        <text class="time">{{item.time}}</text>
+        <text class="demand-ref" wx:if="{{item.demand_title}}">关联需求：{{item.demand_title}}</text>
+      </view>
+    </view>
+  </scroll-view>
+
+  <!-- 留言咨询 -->
+  <scroll-view scroll-y class="message-list" wx:if="{{activeTab === 'comments'}}">
+    <view class="empty" wx:if="{{comments.length === 0 && !loading}}">
+      <text>暂无留言记录</text>
+    </view>
+    <view class="message-card" wx:for="{{comments}}" wx:key="id">
+      <view class="card-header">
+        <image class="avatar" src="{{item.avatar}}" mode="aspectFill" />
+        <view class="card-info">
+          <text class="name">{{item.name}}</text>
+          <text class="type">社区 · {{item.resource_title}}</text>
+        </view>
+        <view class="status-badge comment-badge">资源留言</view>
+      </view>
+      <view class="card-content">
+        <text>{{item.text}}</text>
+      </view>
+      <!-- 回复列表 -->
+      <view class="reply-list" wx:if="{{item.replies && item.replies.length > 0}}">
+        <view class="reply-item" wx:for="{{item.replies}}" wx:for-item="rep" wx:key="id">
+          <view class="reply-meta">
+            <text class="reply-name">{{rep.name}}</text>
+            <text class="reply-tag">商家回复</text>
+            <text class="reply-time">{{rep.time}}</text>
+          </view>
+          <text class="reply-text">{{rep.text}}</text>
+        </view>
+      </view>
+      <view class="card-actions">
+        <button class="btn-reply" bindtap="replyComment" data-item="{{item}}">回复</button>
+      </view>
+    </view>
+  </scroll-view>
+
+  <!-- 系统通知 -->
+  <scroll-view scroll-y class="message-list" wx:if="{{activeTab === 'system'}}">
+    <view class="empty" wx:if="{{systemMessages.length === 0 && !loading}}">
+      <text>暂无系统通知</text>
+    </view>
+    <view 
+      class="message-card system-card {{!item.is_read ? 'unread' : ''}}" 
+      wx:for="{{systemMessages}}" 
+      wx:key="id"
+      bindtap="clickNotification" 
+      data-item="{{item}}"
+    >
+      <view class="card-header">
+        <view class="system-tag {{item.tagClass}}">{{item.tag}}</view>
+        <text class="time">{{item.time}}</text>
+        <view class="unread-dot" wx:if="{{!item.is_read}}"></view>
+      </view>
+      <view class="card-title">{{item.title}}</view>
+      <view class="card-content">
+        <text>{{item.content}}</text>
+      </view>
+    </view>
+  </scroll-view>
+
+  <!-- 加载状态 -->
+  <view class="loading-more" wx:if="{{loading}}">
+    <text>加载中...</text>
+  </view>
+</view>

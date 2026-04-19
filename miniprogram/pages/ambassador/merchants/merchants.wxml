@@ -1,0 +1,27 @@
+<!-- 大使端 - 商家管理 -->
+<view class="merchants-page">
+  <view class="merchant-list">
+    <view class="merchant-item" wx:for="{{merchants}}" wx:key="id">
+      <view class="merchant-left">
+        <image class="merchant-logo" src="{{item.logo || '/images/icons/merchant.png'}}" mode="aspectFill"></image>
+        <view class="merchant-info">
+          <text class="merchant-name">{{item.company_name}}</text>
+          <text class="merchant-contact">{{item.contact_name}} {{item.contact_phone}}</text>
+          <text class="merchant-time">入驻: {{item.created_at}}</text>
+        </view>
+      </view>
+      <view class="merchant-right">
+        <text class="member-level {{item.member_level >= 3 ? 'gold' : ''}}">
+          {{item.member_level === 0 ? '试用' : item.member_level === 1 ? '普通' : item.member_level === 2 ? '银牌' : item.member_level === 3 ? '金牌' : '钻石'}}
+        </text>
+        <text class="commission">提成: ¥{{item.commission || 0}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="loading-more" wx:if="{{loading}}"><text>加载中...</text></view>
+  <view class="no-more" wx:if="{{!hasMore && merchants.length > 0}}"><text>没有更多了</text></view>
+  <view class="empty-state" wx:if="{{!loading && merchants.length === 0}}">
+    <text>暂无发展的商家</text>
+  </view>
+</view>

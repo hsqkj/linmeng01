@@ -1,0 +1,183 @@
+/* 首页样式 */
+.index-page {
+  min-height: 100vh;
+  background: #f5f5f5;
+  padding-bottom: 140rpx;
+}
+
+/* Banner */
+.banner {
+  background: linear-gradient(135deg, #1890FF 0%, #0976E5 100%);
+  padding: 60rpx 40rpx 80rpx;
+  color: #fff;
+}
+
+.banner-content {
+  display: flex;
+  align-items: center;
+  margin-bottom: 30rpx;
+}
+
+.logo {
+  width: 100rpx;
+  height: 100rpx;
+  border-radius: 20rpx;
+  background: #fff;
+}
+
+.logo-text {
+  margin-left: 20rpx;
+}
+
+.logo-title {
+  display: block;
+  font-size: 48rpx;
+  font-weight: bold;
+}
+
+.logo-subtitle {
+  display: block;
+  font-size: 26rpx;
+  opacity: 0.9;
+  margin-top: 6rpx;
+}
+
+.banner-slogan {
+  font-size: 28rpx;
+  opacity: 0.85;
+  letter-spacing: 4rpx;
+}
+
+/* 角色选择 */
+.role-section {
+  padding: 0 30rpx;
+  margin-top: -40rpx;
+}
+
+.section-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 24rpx;
+  padding-left: 10rpx;
+}
+
+.role-list {
+  display: flex;
+  flex-direction: column;
+  gap: 24rpx;
+}
+
+.role-card {
+  background: #fff;
+  border-radius: 24rpx;
+  padding: 36rpx 30rpx;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.06);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.role-card:active {
+  transform: scale(0.98);
+  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.04);
+}
+
+/* 角色卡片主题色 */
+.role-card.community {
+  border-left: 8rpx solid #1890FF;
+}
+
+.role-card.merchant {
+  border-left: 8rpx solid #FF6B00;
+}
+
+.role-card.ambassador {
+  border-left: 8rpx solid #D4A017;
+}
+
+.role-icon {
+  width: 100rpx;
+  height: 100rpx;
+  border-radius: 24rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.role-card.community .role-icon {
+  background: rgba(24, 144, 255, 0.1);
+}
+
+.role-card.merchant .role-icon {
+  background: rgba(255, 107, 0, 0.1);
+}
+
+.role-card.ambassador .role-icon {
+  background: rgba(212, 160, 23, 0.1);
+}
+
+.role-icon image {
+  width: 56rpx;
+  height: 56rpx;
+}
+
+.role-info {
+  flex: 1;
+  margin-left: 24rpx;
+}
+
+.role-name {
+  display: block;
+  font-size: 34rpx;
+  font-weight: 600;
+  color: #333;
+}
+
+.role-desc {
+  display: block;
+  font-size: 24rpx;
+  color: #999;
+  margin-top: 8rpx;
+}
+
+.role-arrow {
+  width: 40rpx;
+  height: 40rpx;
+}
+
+.role-arrow image {
+  width: 100%;
+  height: 100%;
+}
+
+/* 平台特色 */
+.features-section {
+  padding: 50rpx 30rpx 30rpx;
+}
+
+.features-grid {
+  display: flex;
+  justify-content: space-between;
+  background: #fff;
+  border-radius: 24rpx;
+  padding: 40rpx 20rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.06);
+}
+
+.feature-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+}
+
+.feature-icon {
+  font-size: 48rpx;
+  margin-bottom: 12rpx;
+}
+
+.feature-text {
+  font-size: 24rpx;
+  color: #666;
+}

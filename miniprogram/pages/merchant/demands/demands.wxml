@@ -1,0 +1,71 @@
+<!-- 商家端 - 需求大厅 -->
+<view class="demands-page">
+  <!-- 导航栏 -->
+  <view class="nav-bar">
+    <view class="nav-back" bindtap="goBack">
+      <image src="/images/icons/back.png" mode="aspectFit" />
+    </view>
+    <text class="nav-title">需求广场</text>
+    <view class="nav-placeholder"></view>
+  </view>
+
+  <!-- 搜索栏 -->
+  <view class="search-bar">
+    <input class="search-input" placeholder="搜索需求关键词" bindinput="onSearch" value="{{searchKey}}" />
+  </view>
+
+  <!-- 筛选栏 -->
+  <view class="filter-bar">
+    <view 
+      class="filter-item {{typeIndex === index ? 'active' : ''}}" 
+      wx:for="{{types}}" 
+      wx:key="index"
+      bindtap="onTypeChange"
+      data-index="{{index}}"
+    >{{item}}</view>
+  </view>
+
+  <!-- 需求列表 -->
+  <view class="demand-list">
+    <view class="demand-card" wx:for="{{demands}}" wx:key="id" bindtap="viewDemand" data-id="{{item.id}}">
+      <view class="demand-header">
+        <text class="demand-type">{{item.demand_type_name || '需求'}}</text>
+        <text class="demand-time">{{item.created_at}}</text>
+      </view>
+      <text class="demand-title">{{item.title}}</text>
+      <text class="demand-desc">{{item.description}}</text>
+      <view class="demand-meta">
+        <view class="meta-item">
+          <image src="/images/icons/location.png" mode="aspectFit"></image>
+          <text>{{item.community_name}}</text>
+        </view>
+        <view class="meta-item">
+          <image src="/images/icons/profile.png" mode="aspectFit"></image>
+          <text>{{item.view_count || 0}}浏览</text>
+        </view>
+      </view>
+      <view class="demand-footer">
+        <text class="demand-budget" wx:if="{{item.fund_amount}}">预算：¥{{item.fund_amount}}</text>
+        <button class="btn-contact">查看详情</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 加载状态 -->
+  <view class="loading-more" wx:if="{{loading}}">
+    <view class="loading-icon-small"></view>
+    <text>加载中...</text>
+  </view>
+  
+  <!-- 没有更多 -->
+  <view class="no-more" wx:if="{{!hasMore && demands.length > 0}}">
+    <text>— 没有更多了 —</text>
+  </view>
+  
+  <!-- 空状态 -->
+  <view class="empty-state" wx:if="{{!loading && demands.length === 0}}">
+    <text class="empty-icon">📋</text>
+    <text class="empty-text">暂无需求</text>
+    <text class="empty-desc">敬请期待更多社区需求</text>
+  </view>
+</view>

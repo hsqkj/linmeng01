@@ -1,0 +1,92 @@
+<!-- 商家端个人中心 -->
+<view class="merchant-profile">
+  <!-- 用户信息卡片 -->
+  <view class="profile-header">
+    <view class="user-info">
+      <image class="avatar" src="{{userInfo.avatar || '/images/default-avatar.png'}}" mode="aspectFill"></image>
+      <view class="info">
+        <text class="nickname">{{userInfo.name || '商家用户'}}</text>
+        <text class="company">{{userInfo.company || '未填写公司名称'}}</text>
+        <text class="phone">{{userInfo.phone || ''}}</text>
+      </view>
+      <view class="edit-btn" bindtap="editProfile">
+        <text>编辑资料</text>
+      </view>
+    </view>
+
+    <!-- 会员信息 -->
+    <view class="member-card" wx:if="{{memberInfo}}">
+      <view class="member-left">
+        <text class="member-title">会员等级</text>
+        <text class="member-level">{{memberInfo.levelName}}</text>
+      </view>
+      <view class="member-right">
+        <text class="member-expire">有效期至 {{memberInfo.expireDate}}</text>
+        <view class="member-btn" bindtap="memberCenter">
+          <text>续费/升级</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 菜单列表 -->
+  <view class="menu-list">
+    <view class="menu-item" bindtap="myResources">
+      <view class="menu-icon">
+        <image src="/images/icons/resource.png" mode="aspectFit"></image>
+      </view>
+      <text class="menu-text">我的资源</text>
+      <image class="arrow" src="/images/icons/arrow-right.png" mode="aspectFit"></image>
+    </view>
+    <view class="menu-item" bindtap="myOrders">
+      <view class="menu-icon">
+        <image src="/images/icons/order.png" mode="aspectFit"></image>
+      </view>
+      <text class="menu-text">订单管理</text>
+      <image class="arrow" src="/images/icons/arrow-right.png" mode="aspectFit"></image>
+    </view>
+    <view class="menu-item" bindtap="myIncome">
+      <view class="menu-icon">
+        <image src="/images/icons/wallet.png" mode="aspectFit"></image>
+      </view>
+      <text class="menu-text">收益管理</text>
+      <image class="arrow" src="/images/icons/arrow-right.png" mode="aspectFit"></image>
+    </view>
+    <view class="menu-item" bindtap="memberCenter">
+      <view class="menu-icon">
+        <image src="/images/icons/vip.png" mode="aspectFit"></image>
+      </view>
+      <text class="menu-text">会员中心</text>
+      <image class="arrow" src="/images/icons/arrow-right.png" mode="aspectFit"></image>
+    </view>
+  </view>
+
+  <view class="menu-list">
+    <view class="menu-item" bindtap="settings">
+      <view class="menu-icon">
+        <image src="/images/icons/settings.png" mode="aspectFit"></image>
+      </view>
+      <text class="menu-text">设置</text>
+      <image class="arrow" src="/images/icons/arrow-right.png" mode="aspectFit"></image>
+    </view>
+    <view class="menu-item" bindtap="logout">
+      <view class="menu-icon logout-icon">
+        <image src="/images/icons/logout.png" mode="aspectFit"></image>
+      </view>
+      <text class="menu-text logout-text">退出登录</text>
+      <image class="arrow" src="/images/icons/arrow-right.png" mode="aspectFit"></image>
+    </view>
+  </view>
+
+  <!-- 底部导航 -->
+  <view class="bottom-nav">
+    <view class="nav-item" bindtap="navigateTo" data-url="/pages/merchant/home/home">
+      <image src="/images/icons/home.png" mode="aspectFit"></image>
+      <text>首页</text>
+    </view>
+    <view class="nav-item active">
+      <image src="/images/icons/user-active.png" mode="aspectFit"></image>
+      <text>我的</text>
+    </view>
+  </view>
+</view>

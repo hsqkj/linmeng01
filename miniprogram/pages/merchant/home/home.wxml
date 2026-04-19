@@ -1,0 +1,113 @@
+<!-- 商家端首页 -->
+<view class="merchant-home">
+  <!-- 用户信息卡片 -->
+  <view class="user-card">
+    <view class="user-info">
+      <image class="avatar" src="{{userInfo.avatar || userInfo.logo || '/images/icons/profile.png'}}" mode="aspectFill"></image>
+      <view class="user-detail">
+        <text class="company-name">{{userInfo.company_name || userInfo.name || '商家用户'}}</text>
+        <view class="member-badge">
+          <text class="member-tag">{{memberLevelName}}</text>
+          <text class="member-expire">有效期至：{{userInfo.member_expire_at || '—'}}</text>
+        </view>
+      </view>
+    </view>
+    <view class="user-actions">
+      <button class="btn-edit" bindtap="goProfile">编辑资料</button>
+    </view>
+  </view>
+
+  <!-- 数据统计 -->
+  <view class="stats-row">
+    <view class="stat-item">
+      <text class="stat-value">{{stats.resources}}</text>
+      <text class="stat-label">我的资源</text>
+    </view>
+    <view class="stat-item">
+      <text class="stat-value">{{stats.intentions}}</text>
+      <text class="stat-label">对接中</text>
+    </view>
+    <view class="stat-item">
+      <text class="stat-value">{{stats.completed}}</text>
+      <text class="stat-label">已完成</text>
+    </view>
+    <view class="stat-item">
+      <text class="stat-value">{{userInfo.view_count || 0}}</text>
+      <text class="stat-label">资源曝光</text>
+    </view>
+  </view>
+
+  <!-- 快捷操作 -->
+  <view class="quick-actions">
+    <view class="action-item" bindtap="goPublish">
+      <view class="action-icon orange">
+        <image src="/images/icons/publish.png" mode="aspectFit"></image>
+      </view>
+      <text>发布资源</text>
+    </view>
+    <view class="action-item" bindtap="goResources">
+      <view class="action-icon blue">
+        <image src="/images/icons/resources.png" mode="aspectFit"></image>
+      </view>
+      <text>资源管理</text>
+    </view>
+    <view class="action-item" bindtap="goDemands">
+      <view class="action-icon green">
+        <image src="/images/icons/orders.png" mode="aspectFit"></image>
+      </view>
+      <text>需求大厅</text>
+    </view>
+    <view class="action-item" bindtap="goMember">
+      <view class="action-icon gold">
+        <image src="/images/icons/member.png" mode="aspectFit"></image>
+      </view>
+      <text>会员中心</text>
+    </view>
+  </view>
+
+  <!-- 推荐需求 -->
+  <view class="section">
+    <view class="section-header">
+      <text class="section-title">推荐社区需求</text>
+      <view class="section-more" bindtap="goDemands">
+        <text>查看全部</text>
+        <image src="/images/icons/arrow-right.png" mode="aspectFit"></image>
+      </view>
+    </view>
+
+    <view class="demand-list" wx:if="{{demands.length > 0}}">
+      <view class="demand-card" wx:for="{{demands}}" wx:key="id" bindtap="viewDemand" data-id="{{item.id}}">
+        <view class="demand-header">
+          <text class="demand-type">{{item.demand_type_name || '需求'}}</text>
+          <text class="demand-time">{{item.created_at}}</text>
+        </view>
+        <text class="demand-title">{{item.title}}</text>
+        <view class="demand-meta">
+          <image src="/images/icons/location.png" mode="aspectFit"></image>
+          <text>{{item.community_name || item.district}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="empty-state" wx:else>
+      <text>暂无推荐需求</text>
+    </view>
+  </view>
+
+  <!-- 平台统计 -->
+  <view class="section">
+    <view class="section-header">
+      <text class="section-title">平台数据</text>
+    </view>
+    <view class="platform-stats">
+      <view class="platform-item">
+        <text class="platform-value">{{stats.totalDemands}}</text>
+        <text class="platform-label">平台总需求</text>
+      </view>
+      <view class="platform-item">
+        <text class="platform-value">{{stats.totalResources}}</text>
+        <text class="platform-label">平台总资源</text>
+      </view>
+    </view>
+  </view>
+</view>

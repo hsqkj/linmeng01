@@ -29,12 +29,12 @@ router.get('/demands/:id', MerchantController.getDemandDetail)
 router.get('/resources', MerchantController.getResources)
 router.get('/resources/:id', MerchantController.getResourceDetail)
 
-// 需要登录的路由
-router.use(authMerchant)
-
 // 留言查询（公开）
 router.get('/comments/demand/:id', MerchantController.getDemandComments)
 router.get('/comments/resource/:id', MerchantController.getResourceComments)
+
+// 商家首页（需要认证）
+router.get('/home', MerchantController.getHome)
 
 // 需要认证的路由
 router.use(authMerchant)
@@ -82,15 +82,5 @@ router.put('/notifications/:id/read', MerchantController.markOneNotificationRead
 
 // 位置服务
 router.post('/location', MerchantController.saveLocation)
-
-// 订单管理
-router.get('/orders', MerchantController.getOrders)
-router.get('/orders/:id', MerchantController.getOrderDetail)
-router.put('/orders/:id/status', MerchantController.updateOrderStatus)
-
-// 收益管理
-router.get('/income', MerchantController.getIncome)
-router.get('/income/records', MerchantController.getIncomeRecords)
-router.get('/member/expiry', MerchantController.getMemberExpiry)
 
 module.exports = router

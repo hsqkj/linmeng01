@@ -1,0 +1,88 @@
+<!-- 首页 - 角色选择 -->
+<view class="index-page">
+  <!-- 顶部Banner -->
+  <view class="banner">
+    <view class="banner-content">
+      <image class="logo" src="/images/logo.png" mode="aspectFit" wx:if="{{hasLogo}}"></image>
+      <view class="logo-text" wx:else>
+        <text class="logo-title">邻盟</text>
+        <text class="logo-subtitle">社区互助平台</text>
+      </view>
+    </view>
+    <view class="banner-slogan">连接社区 · 共享资源 · 互助共赢</view>
+  </view>
+
+  <!-- 角色选择 -->
+  <view class="role-section">
+    <view class="section-title">选择您的角色</view>
+    <view class="role-list">
+      <!-- 社区用户 -->
+      <view class="role-card community" bindtap="enterRole" data-role="community">
+        <view class="role-icon">
+          <image src="/images/icons/community.png" mode="aspectFit"></image>
+        </view>
+        <view class="role-info">
+          <text class="role-name">社区用户</text>
+          <text class="role-desc">发布需求 · 获取资源 · 参与活动</text>
+        </view>
+        <view class="role-arrow">
+          <image src="/images/icons/arrow-right.png" mode="aspectFit"></image>
+        </view>
+      </view>
+
+      <!-- 商家 -->
+      <view class="role-card merchant" bindtap="enterRole" data-role="merchant">
+        <view class="role-icon">
+          <image src="/images/icons/merchant.png" mode="aspectFit"></image>
+        </view>
+        <view class="role-info">
+          <text class="role-name">商家入驻</text>
+          <text class="role-desc">发布资源 · 接收需求 · 拓展客源</text>
+        </view>
+        <view class="role-arrow">
+          <image src="/images/icons/arrow-right.png" mode="aspectFit"></image>
+        </view>
+      </view>
+
+      <!-- 招商大使 -->
+      <view class="role-card ambassador" bindtap="enterRole" data-role="ambassador">
+        <view class="role-icon">
+          <image src="/images/icons/ambassador.png" mode="aspectFit"></image>
+        </view>
+        <view class="role-info">
+          <text class="role-name">招商大使</text>
+          <text class="role-desc">发展商家 · 赚取佣金 · 社区运营</text>
+        </view>
+        <view class="role-arrow">
+          <image src="/images/icons/arrow-right.png" mode="aspectFit"></image>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 平台优势 -->
+  <view class="features-section">
+    <view class="section-title">平台特色</view>
+    <view class="features-grid">
+      <view class="feature-item">
+        <view class="feature-icon">🏘️</view>
+        <text class="feature-text">社区覆盖</text>
+      </view>
+      <view class="feature-item">
+        <view class="feature-icon">🤝</view>
+        <text class="feature-text">资源对接</text>
+      </view>
+      <view class="feature-item">
+        <view class="feature-icon">💰</view>
+        <text class="feature-text">收益分成</text>
+      </view>
+      <view class="feature-item">
+        <view class="feature-icon">🔒</view>
+        <text class="feature-text">安全可信</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 底部TabBar -->
+  <tabbar role="{{currentRole}}" />
+</view>

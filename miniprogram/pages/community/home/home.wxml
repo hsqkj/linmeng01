@@ -1,0 +1,109 @@
+<!-- 社区端首页 -->
+<view class="community-home">
+  <!-- 顶部欢迎 -->
+  <view class="header">
+    <view class="user-info">
+      <image src="{{userInfo.avatarUrl || '/images/icons/profile.png'}}" class="avatar" />
+      <view class="user-text">
+        <text class="greeting">您好，{{userInfo.nickName || '邻居'}}</text>
+        <text class="community-name">{{communityInfo.community || '社区名称'}}</text>
+      </view>
+    </view>
+    <view class="header-stats">
+      <view class="stat-item">
+        <text class="stat-num">{{stats.demands || 0}}</text>
+        <text class="stat-label">我的需求</text>
+      </view>
+      <view class="stat-item">
+        <text class="stat-num">{{stats.matches || 0}}</text>
+        <text class="stat-label">撮合成功</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 快捷操作 -->
+  <view class="quick-actions">
+    <view class="action-card publish-demand" bindtap="goPublishDemand">
+      <view class="action-icon-wrapper">
+        <image src="/images/icons/add.png" class="action-icon" />
+      </view>
+      <text>发布需求</text>
+    </view>
+    <view class="action-card my-demand" bindtap="goMyDemands">
+      <view class="action-icon-wrapper">
+        <image src="/images/icons/resources.png" class="action-icon" />
+      </view>
+      <text>我的需求</text>
+    </view>
+    <view class="action-card resources" bindtap="goResources">
+      <view class="action-icon-wrapper">
+        <image src="/images/icons/resources-gray.png" class="action-icon" />
+      </view>
+      <text>资源广场</text>
+    </view>
+    <view class="action-card favorites" bindtap="goFavorites">
+      <view class="action-icon-wrapper">
+        <image src="/images/icons/profile.png" class="action-icon" />
+      </view>
+      <text>我的收藏</text>
+    </view>
+  </view>
+
+  <!-- 推荐资源 -->
+  <view class="section">
+    <view class="section-header">
+      <text class="section-title">为您推荐</text>
+      <text class="section-more" bindtap="goResources">更多 ></text>
+    </view>
+    
+    <scroll-view scroll-x class="resource-scroll">
+      <view class="resource-list">
+        <view 
+          class="resource-item" 
+          wx:for="{{recommendResources}}" 
+          wx:key="id"
+          bindtap="goResourceDetail"
+          data-id="{{item.id}}"
+        >
+          <image src="{{item.images[0] || '/images/icons/resources.png'}}" class="resource-img" mode="aspectFill" />
+          <view class="resource-info">
+            <text class="resource-title">{{item.title}}</text>
+            <text class="resource-type">{{item.typeName}}</text>
+            <text class="resource-merchant">{{item.merchantName}}</text>
+          </view>
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- 最新需求 -->
+  <view class="section">
+    <view class="section-header">
+      <text class="section-title">最新需求</text>
+      <text class="section-more">更多 ></text>
+    </view>
+    
+    <view class="demand-list">
+      <view 
+        class="demand-item" 
+        wx:for="{{recentDemands}}" 
+        wx:key="id"
+        bindtap="goDemandDetail"
+        data-id="{{item.id}}"
+      >
+        <view class="demand-header">
+          <text class="demand-title">{{item.title}}</text>
+          <text class="demand-tag tag-{{item.urgent ? 'danger' : 'primary'}}">{{item.urgent ? '紧急' : '普通'}}</text>
+        </view>
+        <text class="demand-content">{{item.content}}</text>
+        <view class="demand-footer">
+          <text class="demand-community">{{item.communityName}}</text>
+          <text class="demand-time">{{item.createTime}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 底部TabBar -->
+  <tabbar role="community" />
+</view>

@@ -1,0 +1,278 @@
+/* 商家端资源详情页样式 */
+
+.resource-detail {
+  min-height: 100vh;
+  background: #f5f5f5;
+}
+
+/* 顶部导航栏 */
+.nav-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20rpx 30rpx;
+  background: #fff;
+  border-bottom: 1rpx solid #eee;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.nav-back {
+  font-size: 28rpx;
+  color: #409EFF;
+  padding: 10rpx 0;
+}
+
+.nav-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #333;
+}
+
+.nav-edit {
+  font-size: 28rpx;
+  color: #409EFF;
+  padding: 10rpx 0;
+}
+
+/* 加载状态 */
+.loading {
+  padding: 100rpx;
+  text-align: center;
+  color: #999;
+  font-size: 28rpx;
+}
+
+/* 内容区域 */
+.content {
+  height: calc(100vh - 100rpx);
+}
+
+.resource-card {
+  margin: 20rpx;
+  padding: 30rpx;
+  background: #fff;
+  border-radius: 16rpx;
+}
+
+/* 卡片头部 */
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20rpx;
+}
+
+.type-tags {
+  display: flex;
+  gap: 16rpx;
+}
+
+.type-tag {
+  padding: 8rpx 20rpx;
+  background: #409EFF;
+  color: #fff;
+  font-size: 24rpx;
+  border-radius: 20rpx;
+}
+
+.status-tag {
+  padding: 8rpx 20rpx;
+  font-size: 24rpx;
+  border-radius: 20rpx;
+  color: #fff;
+}
+
+.status-0 { background: #E6A23C; }
+.status-1 { background: #67C23A; }
+.status-2 { background: #F56C6C; }
+.status-3 { background: #909399; }
+
+.hearts {
+  font-size: 28rpx;
+}
+
+/* 标题 */
+.card-title {
+  font-size: 36rpx;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin-bottom: 30rpx;
+}
+
+/* 分区 */
+.section {
+  margin-top: 40rpx;
+  padding-top: 30rpx;
+  border-top: 1rpx solid #eee;
+}
+
+.section-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 20rpx;
+}
+
+/* 信息网格 */
+.info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20rpx;
+  margin-bottom: 20rpx;
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+}
+
+.info-item.full {
+  grid-column: 1 / -1;
+}
+
+.info-label {
+  font-size: 24rpx;
+  color: #909399;
+}
+
+.info-value {
+  font-size: 28rpx;
+  color: #303133;
+}
+
+/* 描述文本 */
+.description {
+  font-size: 28rpx;
+  color: #606266;
+  line-height: 1.8;
+}
+
+/* 标签 */
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-bottom: 16rpx;
+}
+
+.tag {
+  padding: 8rpx 20rpx;
+  background: #f0f9ff;
+  color: #409EFF;
+  font-size: 24rpx;
+  border-radius: 20rpx;
+}
+
+.tag-warning {
+  background: #fdf6ec;
+  color: #E6A23C;
+}
+
+/* 图片滚动 */
+.image-scroll {
+  width: 100%;
+  white-space: nowrap;
+}
+
+.image-list {
+  display: flex;
+  gap: 16rpx;
+}
+
+.resource-image {
+  width: 200rpx;
+  height: 200rpx;
+  border-radius: 12rpx;
+  flex-shrink: 0;
+}
+
+/* 留言区 */
+.comment-input {
+  display: flex;
+  gap: 16rpx;
+  margin-bottom: 30rpx;
+}
+
+.input-field {
+  flex: 1;
+  height: 80rpx;
+  padding: 0 20rpx;
+  background: #f5f5f5;
+  border-radius: 40rpx;
+  font-size: 28rpx;
+}
+
+.btn-reply {
+  width: 160rpx;
+  height: 80rpx;
+  line-height: 80rpx;
+  background: #67C23A;
+  color: #fff;
+  font-size: 28rpx;
+  border-radius: 40rpx;
+  padding: 0;
+}
+
+.comment-list {
+  display: flex;
+  flex-direction: column;
+  gap: 30rpx;
+}
+
+.comment-item {
+  display: flex;
+  gap: 16rpx;
+}
+
+.comment-avatar {
+  width: 70rpx;
+  height: 70rpx;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.comment-content {
+  flex: 1;
+}
+
+.comment-meta {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-bottom: 8rpx;
+}
+
+.commenter-name {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #333;
+}
+
+.comment-tag {
+  padding: 4rpx 12rpx;
+  background: #409EFF;
+  color: #fff;
+  font-size: 20rpx;
+  border-radius: 10rpx;
+}
+
+.comment-time {
+  font-size: 22rpx;
+  color: #909399;
+}
+
+.comment-text {
+  font-size: 28rpx;
+  color: #606266;
+  line-height: 1.6;
+}
+
+.empty-comments {
+  text-align: center;
+  color: #909399;
+  font-size: 28rpx;
+  padding: 40rpx;
+}

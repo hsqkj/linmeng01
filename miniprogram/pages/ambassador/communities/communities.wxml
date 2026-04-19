@@ -1,0 +1,20 @@
+<!-- 大使端 - 我的社区 -->
+<view class="communities-page">
+  <view class="community-list">
+    <view class="community-item" wx:for="{{communities}}" wx:key="id">
+      <view class="community-info">
+        <text class="community-name">{{item.community_name}}</text>
+        <text class="community-address">{{item.district}} {{item.street}}</text>
+      </view>
+      <view class="community-stats">
+        <text class="stat">商家: {{item.merchant_count || 0}}</text>
+        <text class="stat">需求: {{item.demand_count || 0}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="empty-state" wx:if="{{!loading && communities.length === 0}}">
+    <text>暂无负责社区</text>
+    <button class="btn-add" bindtap="addCommunity">添加社区</button>
+  </view>
+</view>
