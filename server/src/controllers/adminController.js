@@ -1015,31 +1015,32 @@ exports.deleteComment = async (req, res) => {
 
 // ============ 配置管理 ============
 
+const DEFAULT_INDUSTRY_TYPES = [
+  '教育培训', '医院诊所', '药店', '餐饮小吃', '生鲜水果',
+  '美业', '保健养生', '体育健身', '银行保险', '电信服务',
+  '商超零售', '快递物流', '家政服务', '废旧回收', '五金建材',
+  '家居装修', '家纺布艺', '电子电器', '房产中介', '汽车服务',
+  '旅游服务', '鲜花礼品', '电影演出', '娱乐休闲', '服装服饰',
+  '酒店宾馆', '茶艺咖啡', '宠物服务', '眼镜', '酒水饮料',
+  '办公用品', '设备租赁', '社工服务', '养老服务', '新闻媒体',
+  '自媒体', 'IT互联网', '软件开发', '图文广告', '电子电器维修',
+  '家居维修', '美发', '建筑工程', '其他'
+].map(name => ({ name, enabled: true }))
+
 exports.getBasicTypesConfig = async (req, res) => {
   try {
     const [rows] = await pool.query("SELECT config_value FROM sys_configs WHERE config_key = 'basic_types'")
     const [expertRows] = await pool.query("SELECT config_value FROM sys_configs WHERE config_key = 'expert_types'")
-    const defaultIndustries = [
-      '教育培训', '医院诊所', '药店', '餐饮小吃', '生鲜水果',
-      '美业', '保健养生', '体育健身', '银行保险', '电信服务',
-      '商超零售', '快递物流', '家政服务', '废旧回收', '五金建材',
-      '家居装修', '家纺布艺', '电子电器', '房产中介', '汽车服务',
-      '旅游服务', '鲜花礼品', '电影演出', '娱乐休闲', '服装服饰',
-      '酒店宾馆', '茶艺咖啡', '宠物服务', '眼镜', '酒水饮料',
-      '办公用品', '设备租赁', '社工服务', '养老服务', '新闻媒体',
-      '自媒体', 'IT互联网', '软件开发', '图文广告', '电子电器维修',
-      '家居维修', '美发', '建筑工程', '其他'
-    ]
     if (rows.length === 0) {
       return success(res, {
         activityTypes: [], enterpriseTypes: [], resourceTypes: [], expertTypes: [],
-        industryTypes: [], communityTypes: [], residentTypes: []
+        industryTypes: DEFAULT_INDUSTRY_TYPES, communityTypes: [], residentTypes: []
       })
     }
     const data = JSON.parse(rows[0].config_value)
-    // 兼容旧数据：补充空数组
+    // 行业类型为空时自动填充默认值（而非空数组）
     if (!data.industryTypes || data.industryTypes.length === 0) {
-      data.industryTypes = []
+      data.industryTypes = DEFAULT_INDUSTRY_TYPES
     }
     // 兼容旧数据：补充空数组
     if (!data.communityTypes || data.communityTypes.length === 0) {

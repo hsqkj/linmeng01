@@ -55,6 +55,19 @@ let typeMaps = {
 // 映射索引（用于快速查找）
 let typeIndices = {}
 
+// 默认行业分类列表（兜底，与 publicController / adminController 保持一致）
+const DEFAULT_INDUSTRY_TYPES = [
+  '教育培训', '医院诊所', '药店', '餐饮小吃', '生鲜水果',
+  '美业', '保健养生', '体育健身', '银行保险', '电信服务',
+  '商超零售', '快递物流', '家政服务', '废旧回收', '五金建材',
+  '家居装修', '家纺布艺', '电子电器', '房产中介', '汽车服务',
+  '旅游服务', '鲜花礼品', '电影演出', '娱乐休闲', '服装服饰',
+  '酒店宾馆', '茶艺咖啡', '宠物服务', '眼镜', '酒水饮料',
+  '办公用品', '设备租赁', '社工服务', '养老服务', '新闻媒体',
+  '自媒体', 'IT互联网', '软件开发', '图文广告', '电子电器维修',
+  '家居维修', '美发', '建筑工程', '其他'
+].map((name, id) => ({ id, name }))
+
 // 默认值映射（当数据库没有时使用）
 const defaultMaps = {
   demandTypes: [
@@ -231,7 +244,7 @@ async function loadAllTypeMaps() {
     typeMaps.activityTypes = parseTypeArray(basicTypes.activityTypes) || defaultMaps.activityTypes
     typeMaps.residentTypes = parseTypeArray(basicTypes.residentTypes) || defaultMaps.residentTypes
     typeMaps.communityTypes = parseTypeArray(basicTypes.communityTypes) || defaultMaps.communityTypes
-    typeMaps.industryTypes = parseTypeArray(basicTypes.industryTypes) || []
+    typeMaps.industryTypes = parseTypeArray(basicTypes.industryTypes) || DEFAULT_INDUSTRY_TYPES
     typeMaps.enterpriseTypes = parseTypeArray(basicTypes.enterpriseTypes) || []
     typeMaps.mediaTypes = parseTypeArray(basicTypes.mediaTypes) || defaultMaps.mediaTypes
     typeMaps.spaceTypes = parseTypeArray(basicTypes.spaceTypes) || defaultMaps.spaceTypes

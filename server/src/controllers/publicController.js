@@ -162,24 +162,39 @@ exports.getTags = async (req, res) => {
   }
 }
 
-// 获取行业分类
+// 默认行业分类（兜底数据）
+const DEFAULT_INDUSTRY_TYPES = [
+  '教育培训', '医院诊所', '药店', '餐饮小吃', '生鲜水果',
+  '美业', '保健养生', '体育健身', '银行保险', '电信服务',
+  '商超零售', '快递物流', '家政服务', '废旧回收', '五金建材',
+  '家居装修', '家纺布艺', '电子电器', '房产中介', '汽车服务',
+  '旅游服务', '鲜花礼品', '电影演出', '娱乐休闲', '服装服饰',
+  '酒店宾馆', '茶艺咖啡', '宠物服务', '眼镜', '酒水饮料',
+  '办公用品', '设备租赁', '社工服务', '养老服务', '新闻媒体',
+  '自媒体', 'IT互联网', '软件开发', '图文广告', '电子电器维修',
+  '家居维修', '美发', '建筑工程', '其他'
+]
+
+// 获取行业分类（从管理后台 sys_configs 读取，支持动态配置）
 exports.getIndustries = async (req, res) => {
   try {
-    const industries = [
-      '教育培训', '医院诊所', '药店', '餐饮小吃', '生鲜水果',
-      '美业', '保健养生', '体育健身', '银行保险', '电信服务',
-      '商超零售', '快递物流', '家政服务', '废旧回收', '五金建材',
-      '家居装修', '家纺布艺', '电子电器', '房产中介', '汽车服务',
-      '旅游服务', '鲜花礼品', '电影演出', '娱乐休闲', '服装服饰',
-      '酒店宾馆', '茶艺咖啡', '宠物服务', '眼镜', '酒水饮料',
-      '办公用品', '设备租赁', '社工服务', '养老服务', '新闻媒体',
-      '自媒体', 'IT互联网', '软件开发', '图文广告', '电子电器维修',
-      '家居维修', '美发', '建筑工程', '其他'
-    ]
-    
-    success(res, industries)
+    const [rows] = await pool.query("SELECT config_value FROM sys_configs WHERE config_key = 'basic_types'")
+    if (rows.length > 0) {
+      const data = JSON.parse(rows[0].config_value)
+      if (data.industryTypes && data.industryTypes.length > 0) {
+        // 只返回启用的行业，格式统一为字符串数组
+        const industries = data.industryTypes
+          .filter(t => t.enabled !== false)
+          .map(t => (typeof t === 'string' ? t : t.name))
+        return success(res, industries)
+      }
+    }
+    // 数据库无配置时降级到默认值
+    success(res, DEFAULT_INDUSTRY_TYPES)
   } catch (err) {
-    error(res, '获取行业分类失败')
+    console.error('getIndustries error:', err)
+    // 异常时同样降级到默认值，保证接口可用
+    success(res, DEFAULT_INDUSTRY_TYPES)
   }
 }
 
