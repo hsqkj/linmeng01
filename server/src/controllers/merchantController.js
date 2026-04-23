@@ -705,6 +705,9 @@ exports.getResourceDetail = async (req, res) => {
   try {
     const { id } = req.params
     
+    // 先加载资源类型映射
+    await loadResourceTypes()
+    
     const [rows] = await pool.query(`
       SELECT r.*, m.lat, m.lng, m.address as merchant_address
       FROM resources r
@@ -750,6 +753,9 @@ exports.getResourceDetail = async (req, res) => {
     if (resource.media_channels) {
       try { resource.media_channels = JSON.parse(resource.media_channels) } catch { resource.media_channels = [] }
     } else { resource.media_channels = [] }
+    
+    // 添加资源类型名称（动态映射）
+    resource.resource_type_name = getResourceTypeName(resource.resource_type)
     
     success(res, resource)
   } catch (err) {

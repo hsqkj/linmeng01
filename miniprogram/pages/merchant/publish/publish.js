@@ -4,23 +4,16 @@
 const app = getApp()
 const apiBase = app.globalData.apiBase || 'http://127.0.0.1:3000/api'
 
+// 资源类型图标映射（保持UI一致性）
+const RESOURCE_TYPE_ICONS = {
+  0: '🌟', 1: '🎓', 2: '🏠', 3: '📦', 4: '👥', 5: '💵',
+  6: '💻', 7: '🏥', 8: '🎪', 9: '📰', 10: '🎯', 11: '🧓'
+}
+
 Page({
   data: {
     activeStep: 0,
-    resourceTypes: [
-      { icon: '💵', label: '资金赞助', value: 5, desc: '提供资金支持活动' },
-      { icon: '📦', label: '物资支持', value: 3, desc: '提供实物物资' },
-      { icon: '👥', label: '人力服务', value: 4, desc: '提供人员支持' },
-      { icon: '🏠', label: '场地支持', value: 2, desc: '提供活动场地' },
-      { icon: '🎓', label: '教育培训', value: 1, desc: '提供培训服务' },
-      { icon: '🏥', label: '健康医疗', value: 7, desc: '提供医疗服务' },
-      { icon: '💻', label: '技术支持', value: 6, desc: '提供技术帮助' },
-      { icon: '🎪', label: '活动赞助', value: 8, desc: '赞助活动举办' },
-      { icon: '📰', label: '媒体宣传', value: 9, desc: '提供媒体资源' },
-      { icon: '🎯', label: '技能培训', value: 10, desc: '提供技能培训' },
-      { icon: '🧓', label: '养老服务', value: 11, desc: '提供养老服务' },
-      { icon: '🌟', label: '专业服务', value: 0, desc: '提供专业咨询' }
-    ],
+    resourceTypes: [], // 从 API 动态加载
     titlePlaceholder: '一句话概括您提供的资源',
     goodsTypeOptions: ['食品饮料', '生活用品', '防疫物资', '学习用品', '体育用品', '服装鞋帽', '图书文具', '电子产品'],
     facilityOptions: ['投影仪', 'WiFi', '空调', '舞台', '音响', '停车位'],
@@ -50,10 +43,36 @@ Page({
   },
 
   onLoad(options) {
+    this.loadPublishTypes()
     if (options.id) {
       this.setData({ editingId: options.id })
       this.loadResource(options.id)
     }
+  },
+
+  // 加载发布页类型配置
+  loadPublishTypes() {
+    const token = wx.getStorageSync('token')
+    wx.request({
+      url: `${apiBase}/public/publish-types`,
+      method: 'GET',
+      header: token ? { Authorization: `Bearer ${token}` } : {},
+      success: res => {
+        if (res.data.code === 0 || res.data.code === 200) {
+          const resourceTypes = (res.data.data.resource_types || []).map(t => ({
+            icon: RESOURCE_TYPE_ICONS[t.id] || '📋',
+            label: t.name,
+            value: t.id,
+            desc: `提供${t.name}类资源`
+          }))
+          this.setData({ resourceTypes })
+        }
+      },
+      fail: () => {
+        // API 失败时使用默认配置
+        console.error('加载资源类型失败')
+      }
+    })
   },
 
   loadResource(id) {

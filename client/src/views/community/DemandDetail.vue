@@ -11,7 +11,7 @@
           <div class="demand-card">
             <div class="demand-header">
               <div class="demand-meta">
-                <el-tag type="primary" size="large" effect="dark">{{ demandTypeName[demand.demand_type] || demand.demand_type }}</el-tag>
+                <el-tag type="primary" size="large" effect="dark">{{ demand.demand_type_name || demand.demand_type }}</el-tag>
                 <el-tag type="info" size="small" style="margin-left:8px">{{ demand.location_type === '室外' ? '🌳' : '🏠' }} {{ demand.location_type }}活动</el-tag>
                 <el-tag :type="statusType[demand.status]" size="small" style="margin-left:8px">{{ statusName[demand.status] }}</el-tag>
               </div>
@@ -26,12 +26,12 @@
               <div class="info-grid">
                 <div class="info-item">
                   <span class="info-label">活动类型</span>
-                  <span class="info-value">{{ demandTypeName[demand.demand_type] || demand.demand_type }}</span>
+                  <span class="info-value">{{ demand.demand_type_name || demand.demand_type }}</span>
                 </div>
                 <div class="info-item">
                   <span class="info-label">目标对象</span>
                   <span class="info-value">
-                    <el-tag v-for="g in (demand.target_audience ? (Array.isArray(demand.target_audience) ? demand.target_audience : demand.target_audience.split(',')) : [])" :key="g" size="small" type="warning" style="margin:2px">{{ getAudienceName(g) }}</el-tag>
+                    <el-tag v-for="g in (demand.target_audience ? (Array.isArray(demand.target_audience) ? demand.target_audience : demand.target_audience.split(',')) : [])" :key="g" size="small" type="warning" style="margin:2px">{{ g }}</el-tag>
                   </span>
                 </div>
                 <div class="info-item">
@@ -171,26 +171,7 @@ const loading = ref(false)
 const demand = ref(null)
 const intentions = ref([])
 
-const demandTypeName = {
-  // 数字键（API返回）
-  0: '活动赞助', 1: '专家服务', 2: '空间运营',
-  3: '物资赞助', 4: '健康服务', 5: '教育培训',
-  // 中文键（兼容）
-  '活动赞助': '活动赞助', '专家服务': '专家服务', '空间运营': '空间运营',
-  '物资赞助': '物资赞助', '健康服务': '健康服务', '教育培训': '教育培训'
-}
-
-// 目标对象数字→中文映射
-const audienceMap = {
-  0: '老年人', 1: '儿童', 2: '青少年', 3: '家庭', 4: '退役军人',
-  5: '残障人士', 6: '新业态从业者', 7: '社区居民', 8: '其他'
-}
-
-function getAudienceName(val) {
-  const n = parseInt(val)
-  if (!isNaN(n) && audienceMap[n] !== undefined) return audienceMap[n]
-  return val
-}
+// 目标对象名称（使用后端返回的 target_audience，已是中文名称数组）
 
 const statusName = { 0: '待审核', 1: '已发布', 2: '已下架' }
 const statusType = { 0: 'warning', 1: 'success', 2: 'info' }

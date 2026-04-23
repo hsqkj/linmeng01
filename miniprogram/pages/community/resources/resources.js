@@ -6,7 +6,7 @@ const app = getApp()
 Page({
   data: {
     resources: [],
-    categories: ['专业服务', '教育培训', '场地资源', '物资捐赠', '志愿服务', '资金赞助', '技术支持', '健康医疗', '活动赞助', '媒体宣传', '技能培训', '养老服务'],
+    categories: [], // 从 API 动态加载
     currentCategory: -1,
     keyword: '',
     page: 1,
@@ -17,6 +17,8 @@ Page({
   },
 
   onLoad(options) {
+    // 加载资源类型分类
+    this.loadCategories()
     // 加载资源列表
     this.loadResources()
   },
@@ -24,6 +26,21 @@ Page({
   onShow() {
     // 刷新收藏状态
     this.refreshFavoriteStatus()
+  },
+
+  // 加载资源类型分类
+  loadCategories() {
+    app.request({
+      url: '/community/basic-info',
+      method: 'GET'
+    }).then(data => {
+      if (data.resourceTypes && data.resourceTypes.length > 0) {
+        // 资源类型数组转分类列表（保持索引对应 ID）
+        this.setData({ categories: data.resourceTypes })
+      }
+    }).catch(err => {
+      console.error('加载资源类型失败', err)
+    })
   },
 
   // 加载资源列表

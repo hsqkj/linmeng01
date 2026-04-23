@@ -31,13 +31,6 @@ Page({
     }
   },
 
-  // 资源类型映射
-  resourceTypes: [
-    '专业服务', '教育培训', '场地资源', '物资捐赠', '志愿服务',
-    '资金赞助', '技术支持', '健康医疗', '活动赞助', '媒体宣传',
-    '技能培训', '养老服务'
-  ],
-
   // 状态映射
   statusMap: { 0: '待审核', 1: '已通过', 2: '已拒绝', 3: '已下架' },
 
@@ -107,11 +100,8 @@ Page({
         }
       }
 
-      // 资源类型名称
-      const typeIndex = parseInt(data.resource_type)
-      const resourceTypeName = !isNaN(typeIndex) && typeIndex >= 0 && typeIndex < this.resourceTypes.length
-        ? this.resourceTypes[typeIndex]
-        : (this.resourceTypes[0] || '资源')
+      // 资源类型名称（优先使用后端返回的名称）
+      const resourceTypeName = data.resource_type_name || '资源'
 
       // 状态名称
       const statusName = this.statusMap[data.status] || '未知'

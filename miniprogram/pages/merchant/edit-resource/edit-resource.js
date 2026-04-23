@@ -77,12 +77,8 @@ Page({
       const res = await this.request(`/merchant/resources/${this.resourceId}`)
       const data = res.data || {}
 
-      // 资源类型名称
-      const resourceTypes = ['专业服务', '教育培训', '场地资源', '物资捐赠', '志愿服务', '资金赞助', '技术支持', '健康医疗', '活动赞助', '媒体宣传', '技能培训', '养老服务']
-      const typeIndex = parseInt(data.resource_type)
-      const resourceTypeName = !isNaN(typeIndex) && typeIndex >= 0 && typeIndex < resourceTypes.length
-        ? resourceTypes[typeIndex]
-        : '专业服务'
+      // 资源类型名称（优先使用后端返回的名称）
+      const resourceTypeName = data.resource_type_name || '专业服务'
 
       // 解析标签
       let tags = []

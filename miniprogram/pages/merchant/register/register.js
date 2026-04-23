@@ -25,7 +25,7 @@ Page({
       description: '',
       agree: false
     },
-    industries: ['教育培训', '餐饮服务', '健康医疗', '金融服务', '零售百货', '文化娱乐', '科技服务', '生活服务', '其他'],
+    industries: [], // 从 API 动态加载
     industryIndex: 0,
     scales: ['1-10人', '11-50人', '51-100人', '101-500人', '500人以上'],
     scaleIndex: 0,
@@ -39,6 +39,20 @@ Page({
     if (currentPage.options && currentPage.options.code) {
       this.setData({ 'form.referrer': currentPage.options.code })
     }
+    // 加载行业分类
+    this.loadIndustries()
+  },
+
+  // 加载行业分类
+  loadIndustries() {
+    this.request('/public/publish-types').then(res => {
+      if (res.data && res.data.industry_types) {
+        const industries = res.data.industry_types.map(t => t.name)
+        this.setData({ industries })
+      }
+    }).catch(err => {
+      console.error('加载行业分类失败', err)
+    })
   },
 
   request(url, data = {}, method = 'GET') {

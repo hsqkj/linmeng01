@@ -109,6 +109,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Search, OfficeBuilding, Calendar, Loading } from '@element-plus/icons-vue'
 import { getDemands, getPublishTypes } from '@/api/community'
+import { getRegions } from '@/api/public'
 
 const router = useRouter()
 
@@ -140,11 +141,7 @@ async function loadDemandTypes() {
     }
   } catch {}
 }
-// 目标对象数字→中文映射
-const audienceMap = {
-  0: '老年人', 1: '儿童', 2: '青少年', 3: '家庭', 4: '退役军人',
-  5: '残障人士', 6: '新业态从业者', 7: '社区居民', 8: '其他'
-}
+// 目标对象（使用后端返回的名称，已是中文）
 
 const demands = ref([])
 const total = ref(0)
@@ -152,7 +149,19 @@ const currentPage = ref(1)
 const pageSize = 9
 const loading = ref(false)
 
-const districts = ['江岸区', '江汉区', '硚口区', '汉阳区', '武昌区', '青山区', '洪山区', '东西湖区', '汉南区', '蔡甸区', '江夏区', '黄陂区', '新洲区']
+// 行政区列表（从 API 动态加载）
+const districts = ref([])
+async function loadDistricts() {
+  try {
+    const res = await getRegions({ level: 2 })
+    if (res.data?.length) {
+      // 提取区级名称（parent_id 为省级或直接的区）
+      districts.value = res.data.map(r => r.name).filter(Boolean)
+    }
+  } catch {
+    // 使用空数组降级
+  }
+}
 const showCommunityDialog = ref(false)
 const communityDetail = ref(null)
 
@@ -176,20 +185,14 @@ async function fetchDemands() {
   }
 }
 
+// 解析数组字段（后端返回的已是中文名称）
 function parseAudience(val) {
   if (!val) return []
-  let arr = []
+  if (Array.isArray(val)) return val
   if (typeof val === 'string') {
-    try { arr = JSON.parse(val) } catch { arr = val.split(',') }
-  } else {
-    arr = val
+    try { return JSON.parse(val) } catch { return val.split(',') }
   }
-  // 数字→中文映射
-  return arr.map(v => {
-    const n = parseInt(v)
-    if (!isNaN(n) && audienceMap[n] !== undefined) return audienceMap[n]
-    return v
-  })
+  return []
 }
 
 function viewDetail(demand) {
@@ -231,6 +234,7 @@ function onPageChange(page) {
 
 onMounted(() => {
   loadDemandTypes()
+  loadDistricts()
   fetchDemands()
 })
 </script>

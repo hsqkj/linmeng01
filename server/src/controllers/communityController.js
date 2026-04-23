@@ -455,7 +455,10 @@ exports.getDemands = async (req, res) => {
       params
     )
     
-    const result = rows.map(d => ({ ...d, matchScore: 3, matchHearts: 3 }))
+    const result = rows.map(d => {
+      const mapped = typeMapper.mapDemandFields(d)
+      return { ...mapped, matchScore: 3, matchHearts: 3 }
+    })
     pageSuccess(res, result, total, page, pageSize)
   } catch (err) {
     error(res, '获取需求列表失败')

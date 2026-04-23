@@ -27,13 +27,13 @@
         <el-table-column label="类型" width="100">
           <template #default="{ row }">
             <el-tag :type="typeTagMap[row.demand_type]" size="small">
-              {{ demandTypeName[row.demand_type] || row.demand_type }}
+              {{ row.demand_type_name || row.demand_type }}
             </el-tag>
           </template>
         </el-table-column>
         <el-table-column label="活动类型" width="100">
           <template #default="{ row }">
-            {{ getActivityTypeName(row) }}
+            {{ row.activity_type_name || '—' }}
           </template>
         </el-table-column>
         <el-table-column label="目标对象" min-width="120">
@@ -240,31 +240,7 @@ const typeTagMap = { 0: '', 1: 'success', 2: 'warning' }
 const intentionStatusName = { 0: '待处理', 1: '已接受', 2: '已拒绝', 3: '已完成', 4: '已取消' }
 const intentionStatusType = { 0: 'warning', 1: 'success', 2: 'info', 3: 'success', 4: 'info' }
 
-const demandTypeName = {
-  0: '活动赞助', 1: '专家服务', 2: '空间运营',
-  3: '物资赞助', 4: '健康服务', 5: '教育培训',
-  6: '志愿服务', 7: '文化活动', 8: '技术咨询'
-}
-
-// 活动类型映射（兼容英文键、中文名、数字等多种格式）
-const activityTypeMap = {
-  'cultural': '文化活动', 'sports': '体育活动', 'education': '教育培训',
-  'technology': '科技活动', 'art': '艺术活动', 'festival': '节庆活动',
-  'health': '健康活动', 'environmental': '环保活动', 'volunteer': '志愿活动',
-  'business': '商业活动', 'community': '社区活动', 'other': '其他活动',
-  'Community Activity': '社区活动', 'Sports': '体育运动', 'Education': '教育培训'
-}
-
-function getActivityTypeName(row) {
-  // 优先用后端已映射的 activity_type_name
-  if (row.activity_type_name && row.activity_type_name !== row.activity_type) {
-    return row.activity_type_name
-  }
-  const val = row.activity_type
-  if (!val) return '—'
-  // 本地再查一次
-  return activityTypeMap[val] || val
-}
+// 需求类型名称（使用后端返回的 demand_type_name）
 
 // 格式化日期
 function fmtDate(t) {

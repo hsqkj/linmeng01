@@ -1027,6 +1027,20 @@ const DEFAULT_INDUSTRY_TYPES = [
   '家居维修', '美发', '建筑工程', '其他'
 ].map(name => ({ name, enabled: true }))
 
+// 专家类型默认值（与 typeMapper.js 保持一致）
+const DEFAULT_EXPERT_TYPES = [
+  { id: 0, name: '法律专家', count: 0, enabled: true },
+  { id: 1, name: '心理咨询师', count: 0, enabled: true },
+  { id: 2, name: '健康管理师', count: 0, enabled: true },
+  { id: 3, name: '家庭教育指导师', count: 0, enabled: true },
+  { id: 4, name: '社区治理专家', count: 0, enabled: true },
+  { id: 5, name: '艺术指导师', count: 0, enabled: true },
+  { id: 6, name: '体育指导师', count: 0, enabled: true },
+  { id: 7, name: '金融理财师', count: 0, enabled: true },
+  { id: 8, name: '养老护理员', count: 0, enabled: true },
+  { id: 9, name: '其他专家', count: 0, enabled: true }
+]
+
 exports.getBasicTypesConfig = async (req, res) => {
   try {
     const [rows] = await pool.query("SELECT config_value FROM sys_configs WHERE config_key = 'basic_types'")
@@ -1061,9 +1075,9 @@ exports.getBasicTypesConfig = async (req, res) => {
         console.error('Parse expert_types error:', e)
       }
     }
-    // 如果没有获取到专家类型，使用默认5种
+    // 如果没有获取到专家类型，使用默认10种
     if (!data.expertTypes || data.expertTypes.length === 0) {
-      data.expertTypes = defaultExpertTypes
+      data.expertTypes = DEFAULT_EXPERT_TYPES
     }
     success(res, data)
   } catch (err) {
