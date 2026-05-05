@@ -37,8 +37,9 @@ const merchantRoutes = require('./routes/merchant')
 const ambassadorRoutes = require('./routes/ambassador')
 const publicRoutes = require('./routes/public')
 const uploadRoutes = require('./routes/upload')
-const wechatRoutes = require('./controllers/wechatController')
+const wechatRoutes = require('./routes/wechat')
 const wechatPayRoutes = require('./routes/wechatPay')
+const authRoutes = require('./routes/auth')
 
 app.use('/api/admin', adminRoutes)
 app.use('/api/community', communityRoutes)
@@ -48,6 +49,7 @@ app.use('/api/public', publicRoutes)
 app.use('/api/upload', uploadRoutes)
 app.use('/api/wechat', wechatRoutes)
 app.use('/api/wechat/pay', wechatPayRoutes)
+app.use('/api/auth', authRoutes)
 
 // 健康检查
 app.get('/api/health', (req, res) => {

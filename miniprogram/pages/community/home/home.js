@@ -59,21 +59,23 @@ Page({
     }).catch(() => {})
   },
 
-  // 跳转到发布需求
+  // 跳转到发布需求（H5 webview）
   goPublishDemand() {
     this.checkLogin(() => {
-      wx.navigateTo({ url: '/pages/community/publish-demand/publish-demand' })
+      const path = encodeURIComponent('/#/community/demands/publish')
+      wx.navigateTo({ url: `/pages/community/webview/webview?path=${path}&title=${encodeURIComponent('发布需求')}` })
     })
   },
 
-  // 跳转到我的需求
+  // 跳转到我的需求（H5 webview）
   goMyDemands() {
     this.checkLogin(() => {
-      wx.navigateTo({ url: '/pages/community/my-demands/my-demands' })
+      const path = encodeURIComponent('/#/community/demands')
+      wx.navigateTo({ url: `/pages/community/webview/webview?path=${path}&title=${encodeURIComponent('我的需求')}` })
     })
   },
 
-  // 跳转到资源广场
+  // 跳转到资源广场（小程序原生页面）
   goResources() {
     wx.navigateTo({ url: '/pages/community/resources/resources' })
   },
@@ -91,10 +93,11 @@ Page({
     wx.navigateTo({ url: `/pages/community/resource-detail/resource-detail?id=${id}` })
   },
 
-  // 跳转到需求详情
+  // 跳转到需求详情（H5 webview）
   goDemandDetail(e) {
     const { id } = e.currentTarget.dataset
-    wx.navigateTo({ url: `/pages/community/demand-detail/demand-detail?id=${id}` })
+    const path = encodeURIComponent(`/#/community/demands/${id}`)
+    wx.navigateTo({ url: `/pages/community/webview/webview?path=${path}&title=${encodeURIComponent('需求详情')}` })
   },
 
   // 检查登录

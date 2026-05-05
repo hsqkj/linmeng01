@@ -6,6 +6,7 @@
     "pages/community/profile/profile",
     "pages/community/resources/resources",
     "pages/community/resource-detail/resource-detail",
+    "pages/community/webview/webview",
     "pages/merchant/home/home",
     "pages/merchant/login/login",
     "pages/merchant/register/register",

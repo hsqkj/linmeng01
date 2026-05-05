@@ -113,6 +113,12 @@ const routes = [
       { path: 'profile', name: 'AmbassadorProfile', component: () => import('@/views/ambassador/Profile.vue') }
     ]
   },
+  // 微信 H5 授权登录
+  {
+    path: '/wechat-login',
+    name: 'WechatLogin',
+    component: () => import('@/views/wechat/WechatLogin.vue')
+  },
   // 管理后台
   {
     path: '/admin/login',
@@ -164,7 +170,7 @@ router.beforeEach((to, from, next) => {
   const path = to.path
 
   // 公开路由（不需要登录）
-  const publicPaths = ['/', '/login/community', '/login/merchant', '/login/ambassador', '/register/community', '/register/merchant', '/legal/terms', '/legal/privacy']
+  const publicPaths = ['/', '/wechat-login', '/login/community', '/login/merchant', '/login/ambassador', '/register/community', '/register/merchant', '/legal/terms', '/legal/privacy']
   if (publicPaths.includes(path) || path === '/admin/login') {
     return next()
   }
