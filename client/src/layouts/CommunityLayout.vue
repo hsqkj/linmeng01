@@ -109,7 +109,8 @@ async function loadUnreadCount() {
 function logout() {
   localStorage.removeItem('community_token')
   localStorage.removeItem('community_info')
-  window.location.href = '/community'
+  // 直接跳转首页，避免路由守卫拦截
+  location.href = '/#/community'
 }
 
 // 监听通知已读事件

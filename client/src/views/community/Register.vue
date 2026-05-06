@@ -85,24 +85,17 @@
           />
         </el-form-item>
 
-        <el-form-item prop="code">
-          <div class="code-input">
-            <el-input
-              v-model="form.code"
-              placeholder="请输入验证码"
-              size="large"
-              :prefix-icon="Key"
-            />
-            <el-button
-              type="primary"
-              size="large"
-              :disabled="counting"
-              @click="sendCode"
-            >
-              {{ counting ? `${countdown}s` : '获取验证码' }}
-            </el-button>
-          </div>
-        </el-form-item>
+        <SmsCodeInput
+          v-model="form.code"
+          v-model:phone="form.phone"
+          codeType="register"
+          theme="blue"
+          :showPhone="true"
+          label=""
+          codeLabel=""
+          :customSend="sendCode"
+          @enter="register"
+        />
 
         <el-form-item>
           <el-checkbox v-model="form.agree">
@@ -138,7 +131,8 @@
 import { reactive, ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Phone, Key, User, Lock, OfficeBuilding, Location, Connection, CircleCheck, Trophy } from '@element-plus/icons-vue'
+import { User, Lock, OfficeBuilding, Location, Connection, CircleCheck, Trophy } from '@element-plus/icons-vue'
+import SmsCodeInput from '@/components/SmsCodeInput.vue'
 import { getRegions, sendSms } from '@/api/public'
 import axios from 'axios'
 
@@ -238,34 +232,10 @@ function onStreetChange() {
   form.community = ''
 }
 
-const counting = ref(false)
-const countdown = ref(60)
-
-// 发送验证码
-async function sendCode() {
-  if (!form.phone) {
-    ElMessage.warning('请先输入手机号')
-    return
-  }
-  if (counting.value) return
-
-  try {
-    await sendSms({ phone: form.phone, type: 'register' })
-    ElMessage.success('验证码已发送')
-  } catch {
-    ElMessage.error('发送验证码失败，请稍后重试')
-    return
-  }
-  counting.value = true
-  countdown.value = 60
-
-  const timer = setInterval(() => {
-    countdown.value--
-    if (countdown.value <= 0) {
-      clearInterval(timer)
-      counting.value = false
-    }
-  }, 1000)
+// 发送验证码（供SmsCodeInput组件调用）
+const sendCode = async ({ phone, type }) => {
+  await sendSms({ phone, type })
+  ElMessage.success('验证码已发送')
 }
 
 const loading = ref(false)

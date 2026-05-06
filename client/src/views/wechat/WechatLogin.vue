@@ -8,7 +8,6 @@
       <div class="name">{{ userInfo.name }}</div>
       <div class="tip">已通过微信授权登录</div>
       <button class="btn-primary" @click="goHome">进入首页</button>
-      <button class="btn-link" @click="handleLogout">退出登录</button>
     </div>
 
     <!-- 登录中 -->
@@ -51,7 +50,7 @@
             class="form-input"
           />
           <button class="btn-code" :disabled="codeSending" @click="sendCode">
-            {{ codeSending ? `${codeCountdown}s` : '获取验证码' }}
+            {{ codeSending ? `${codeCountdown}s后重发` : '获取验证码' }}
           </button>
         </div>
         <button class="btn-primary" @click="handleBindPhone">绑定并登录</button>
@@ -63,16 +62,15 @@
       <div class="icon">⚠️</div>
       <div class="tip">{{ errorMsg }}</div>
       <button class="btn-primary" @click="retryAuth">重新授权</button>
-      <div class="divider"><span>或</span></div>
-      <button class="btn-secondary" @click="goSmsLogin">使用手机号登录</button>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
+
 const defaultAvatar = '/default-avatar.png'
 
 const route = useRoute()
@@ -94,8 +92,15 @@ const bindForm = ref({
 const codeSending = ref(false)
 const codeCountdown = ref(0)
 
-// API 基础地址
-const API_BASE = import.meta.env.VITE_API_BASE || '/api'
+// 监听登录状态，自动跳转首页
+watch(isLoggedIn, (newVal) => {
+  if (newVal) {
+    goHome()
+  }
+})
+
+// API 基础地址（生产环境通过 Nginx 反向代理，使用相对路径）
+const API_BASE = import.meta.env.VITE_API_BASE || ''
 
 /**
  * 初始化：判断是否在微信内，发起授权
@@ -104,14 +109,22 @@ onMounted(() => {
   // 优先检查 URL 中是否有小程序传来的 token（场景A：小程序 webview）
   const urlToken = route.query.token
   const urlUserType = route.query.userType
+  
+  // 保存 URL 参数中的 userType 到 localStorage
+  if (urlUserType) {
+    localStorage.setItem('userType', urlUserType)
+  }
+  
   if (urlToken) {
     // 小程序 webview 传过来的 token，验证后直接登录
     handleMiniProgramToken(urlToken, urlUserType)
     return
   }
 
-  // 检查本地是否有 token
-  const localToken = localStorage.getItem('token')
+  // 检查本地是否有 token（按端存储）
+  const localUserType = localStorage.getItem('userType') || 'community'
+  const tokenKey = `${localUserType}_token`
+  const localToken = localStorage.getItem(tokenKey)
   if (localToken) {
     checkLoginStatus(localToken)
     return
@@ -120,15 +133,25 @@ onMounted(() => {
   // 判断是否在微信内
   const isWechat = /MicroMessenger/i.test(navigator.userAgent)
   if (!isWechat) {
-    // 非微信内，跳转到手机号登录
     loading.value = false
     errorMsg.value = '请在微信中打开以使用微信授权登录'
     return
   }
 
-  // 检查 URL 中是否有 code（微信回调带回，场景B：微信内置浏览器）
-  const code = route.query.code
+  // 检查 URL 中是否有 code（微信回调带回）
+  // 注意：微信可能把 code 放在 # 前面或后面，需要都检查
+  let code = route.query.code
+  
+  // 如果 route.query 中没有，检查 window.location.search（# 前面的参数）
+  if (!code) {
+    const searchParams = new URLSearchParams(window.location.search)
+    code = searchParams.get('code')
+  }
+  
   if (code) {
+    // 立即清除 URL 中的 code，防止刷新时重复使用
+    const cleanUrl = window.location.pathname + window.location.hash
+    window.history.replaceState(null, '', cleanUrl)
     // 用 code 换登录信息
     handleWechatAuth(code)
   } else {
@@ -148,8 +171,9 @@ async function handleMiniProgramToken(token, userType) {
     const res = await axios.post(`${API_BASE}/auth/mini-login`, { token, userType })
     if (res.data.code === 0) {
       const data = res.data.data
-      // 保存登录信息
-      localStorage.setItem('token', data.token)
+      // 统一存储：按端存储 token
+      const tokenKey = `${data.userType}_token`
+      localStorage.setItem(tokenKey, data.token)
       localStorage.setItem('userType', data.userType)
       localStorage.setItem('userId', data.userId)
       localStorage.setItem('userName', data.userName)
@@ -173,11 +197,12 @@ async function handleMiniProgramToken(token, userType) {
 
 /**
  * 发起微信网页授权（跳转到微信授权页）
+ * 关键：让微信回调时 code 参数在 # 后面，这样 Vue Router 才能获取到
  */
 function redirectToWechatAuth() {
-  const currentUrl = window.location.href.split('#')[0]  // 去掉 hash
-  const appid = 'wxa382e1c9fb93780e'                   // 微信公众号 AppID
-  const redirectUri = encodeURIComponent(currentUrl)
+  // 用能识别 hash 的 redirect_uri，让微信把 code 放在 # 后面
+  const redirectUri = encodeURIComponent('https://www.3qall.com/#/wechat-login')
+  const appid = 'wxa382e1c9fb93780e'
   const authUrl = `https://open.weixin.qq.com/connect/oauth2/authorize?appid=${appid}&redirect_uri=${redirectUri}&response_type=code&scope=snsapi_userinfo&state=linmeng#wechat_redirect`
 
   window.location.href = authUrl
@@ -207,8 +232,9 @@ async function handleWechatAuth(code) {
         }
         loading.value = false
       } else {
-        // 已绑定，直接登录
-        localStorage.setItem('token', data.token)
+        // 已绑定，直接登录（按端存储 token）
+        const tokenKey = `${data.userType}_token`
+        localStorage.setItem(tokenKey, data.token)
         localStorage.setItem('userType', data.userType)
         localStorage.setItem('userId', data.userId)
         localStorage.setItem('userName', data.userName)
@@ -286,7 +312,9 @@ async function handleBindPhone() {
 
     if (res.data.code === 0) {
       const data = res.data.data
-      localStorage.setItem('token', data.token)
+      // 按端存储 token
+      const tokenKey = `${data.userType}_token`
+      localStorage.setItem(tokenKey, data.token)
       localStorage.setItem('userType', data.userType)
       localStorage.setItem('userId', data.userId)
       localStorage.setItem('userName', data.userName)
@@ -313,25 +341,22 @@ async function handleBindPhone() {
  */
 async function checkLoginStatus(token) {
   try {
-    // 简单判断：解码 token 是否过期（这里用简单逻辑，实际应调后端验证接口）
-    const str = atob(token)
-    const parts = str.split(':')
-    const timestamp = parseInt(parts[3])
-    if (Date.now() - timestamp > 7 * 24 * 60 * 60 * 1000) {
-      // token 过期，清除重新授权
-      localStorage.clear()
-      redirectToWechatAuth()
-      return
+    const res = await axios.get(`${API_BASE}/auth/verify`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    if (res.data.code === 0) {
+      const data = res.data.data
+      userInfo.value = {
+        name: data.userName || '用户',
+        avatar: data.avatar || defaultAvatar
+      }
+      isLoggedIn.value = true
+      loading.value = false
+    } else {
+      throw new Error('token 无效')
     }
-
-    // token 有效
-    userInfo.value = {
-      name: localStorage.getItem('userName') || '用户',
-      avatar: defaultAvatar
-    }
-    isLoggedIn.value = true
-    loading.value = false
   } catch {
+    // token 无效，清除并重新授权
     localStorage.clear()
     redirectToWechatAuth()
   }
@@ -342,23 +367,13 @@ async function checkLoginStatus(token) {
  */
 function goHome() {
   const userType = localStorage.getItem('userType') || 'community'
+  
   const routes = {
     community: '/community/home',
     merchant: '/merchant/home',
     ambassador: '/ambassador/home'
   }
-  router.push(routes[userType] || '/')
-}
-
-/**
- * 退出登录
- */
-function handleLogout() {
-  localStorage.clear()
-  isLoggedIn.value = false
-  needBindPhone.value = false
-  wechatInfo.value = {}
-  redirectToWechatAuth()
+  router.push(routes[userType] || '/community/home')
 }
 
 /**
@@ -366,13 +381,6 @@ function handleLogout() {
  */
 function retryAuth() {
   redirectToWechatAuth()
-}
-
-/**
- * 跳转到手机号登录
- */
-function goSmsLogin() {
-  router.push('/login')
 }
 </script>
 
@@ -501,46 +509,6 @@ function goSmsLogin() {
   font-weight: 500;
   cursor: pointer;
   margin-top: 8px;
-}
-
-.btn-secondary {
-  width: 100%;
-  height: 44px;
-  background: #fff;
-  color: #667eea;
-  border: 1px solid #667eea;
-  border-radius: 8px;
-  font-size: 16px;
-  cursor: pointer;
-}
-
-.btn-link {
-  background: none;
-  border: none;
-  color: #999;
-  font-size: 14px;
-  margin-top: 16px;
-  cursor: pointer;
-}
-
-.divider {
-  display: flex;
-  align-items: center;
-  margin: 24px 0;
-  color: #ccc;
-  font-size: 12px;
-}
-
-.divider::before,
-.divider::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: #eee;
-}
-
-.divider span {
-  padding: 0 12px;
 }
 
 .icon {

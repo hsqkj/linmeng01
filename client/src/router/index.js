@@ -1,19 +1,24 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 
+// 判断是否在微信内置浏览器内
+function isWechat() {
+  if (typeof navigator === 'undefined') return false
+  return /MicroMessenger/i.test(navigator.userAgent)
+}
+
+// 获取当前端对应的 token key
+function getTokenKey(path) {
+  if (path.startsWith('/community/')) return 'community_token'
+  if (path.startsWith('/merchant/')) return 'merchant_token'
+  if (path.startsWith('/ambassador/')) return 'ambassador_token'
+  if (path.startsWith('/admin/')) return 'admin_token'
+  return null
+}
+
 // 路由守卫：检查登录状态
 function checkAuth(path) {
-  if (path.startsWith('/community/')) {
-    return !!localStorage.getItem('community_token')
-  }
-  if (path.startsWith('/merchant/')) {
-    return !!localStorage.getItem('merchant_token')
-  }
-  if (path.startsWith('/ambassador/')) {
-    return !!localStorage.getItem('ambassador_token')
-  }
-  if (path.startsWith('/admin/')) {
-    return !!localStorage.getItem('admin_token')
-  }
+  const key = getTokenKey(path)
+  if (key) return !!localStorage.getItem(key)
   return true
 }
 
@@ -175,12 +180,21 @@ router.beforeEach((to, from, next) => {
     return next()
   }
 
+  // 微信内浏览器：未登录时统一跳转到微信授权登录页
+  if (isWechat() && !checkAuth(path)) {
+    // 已经在微信登录页则不重复跳转
+    if (path !== '/wechat-login') {
+      return next('/wechat-login')
+    }
+    return next()
+  }
+
   // 社区端首页和列表页允许未登录访问（但详情页需要登录）
   if (path === '/community' || path === '/merchant') {
     return next() // 首页允许未登录访问
   }
 
-  // 检查各端登录状态
+  // 检查各端登录状态（非微信环境）
   if (!checkAuth(path)) {
     // 未登录，重定向到对应登录页
     if (path.startsWith('/community/')) {

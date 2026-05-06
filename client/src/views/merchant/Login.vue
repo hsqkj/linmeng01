@@ -19,41 +19,55 @@
       <div class="login-tabs">
         <button :class="['tab-btn', loginMode === 'code' ? 'active' : '']" @click="loginMode = 'code'">验证码登录</button>
         <button :class="['tab-btn', loginMode === 'password' ? 'active' : '']" @click="loginMode = 'password'">密码登录</button>
+        <button :class="['tab-btn', loginMode === 'wechat' ? 'active' : '']" @click="loginMode = 'wechat'">微信登录</button>
       </div>
 
-      <div class="form-group">
-        <label>手机号</label>
-        <div class="input-addon">
-          <span class="addon">+86</span>
-          <input class="form-control" v-model="form.phone" placeholder="请输入手机号" type="tel" />
+      <!-- 微信登录 -->
+      <div v-if="loginMode === 'wechat'" class="wechat-login-area">
+        <div class="wechat-icon-wrap">
+          <span class="wechat-icon">💬</span>
         </div>
+        <p class="wechat-tip">点击下方按钮，使用微信授权登录</p>
+        <button class="btn-login merch" @click="wechatLogin" :disabled="loading">
+          {{ loading ? '跳转中...' : '微信授权登录' }}
+        </button>
+        <p v-if="!isWechatEnv" class="wechat-warn">⚠️ 请在微信内打开此页面以使用微信登录</p>
       </div>
 
-      <!-- 验证码模式 -->
-      <div v-if="loginMode === 'code'" class="form-group">
-        <label>验证码</label>
-        <div style="display:flex;gap:10px">
-          <input class="form-control" v-model="form.code" placeholder="请输入验证码" style="flex:1" />
-          <button class="code-btn" @click="sendCode" :disabled="counting">
-            {{ counting ? `${countdown}s` : '获取验证码' }}
-          </button>
+      <!-- 手机登录表单 -->
+      <template v-if="loginMode !== 'wechat'">
+        <SmsCodeInput
+          v-if="loginMode === 'code'"
+          v-model="form.code"
+          v-model:phone="form.phone"
+          codeType="login"
+          theme="blue"
+          :customSend="sendCode"
+          @enter="login"
+        />
+
+        <!-- 密码模式 -->
+        <div v-if="loginMode === 'password'" class="form-group">
+          <label>手机号</label>
+          <div class="input-addon">
+            <span class="addon">+86</span>
+            <input class="form-control" v-model="form.phone" placeholder="请输入手机号" type="tel" />
+          </div>
         </div>
-      </div>
+        <div v-if="loginMode === 'password'" class="form-group">
+          <label>登录密码</label>
+          <input class="form-control" v-model="form.password" type="password" placeholder="请输入登录密码" />
+        </div>
 
-      <!-- 密码模式 -->
-      <div v-else class="form-group">
-        <label>登录密码</label>
-        <input class="form-control" v-model="form.password" type="password" placeholder="请输入登录密码" />
-      </div>
-
-      <button class="btn-login merch" @click="login" :disabled="loading">
-        {{ loading ? '登录中...' : '登录' }}
-      </button>
+        <button class="btn-login merch" @click="login" :disabled="loading">
+          {{ loading ? '登录中...' : '登录' }}
+        </button>
+      </template>
 
       <div class="login-divider">
         <div class="login-tips">
           <div class="login-tip">
-            <i>📦</i><span>资源曝光</span>
+            <i>📣</i><span>资源曝光</span>
           </div>
           <div class="login-tip">
             <i>🔗</i><span>精准匹配</span>
@@ -75,11 +89,32 @@
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import SmsCodeInput from '@/components/SmsCodeInput.vue'
 import { merchantLogin } from '@/api/merchant'
+import { sendSms } from '@/api/public'
 
 const router = useRouter()
 
-const loginMode = ref('code') // 'code' | 'password'
+const loginMode = ref('code') // 'code' | 'password' | 'wechat'
+
+// 检测是否在微信环境
+const isWechatEnv = computed(() => {
+  return /MicroMessenger/i.test(navigator.userAgent)
+})
+
+// 微信授权登录
+const wechatLogin = () => {
+  if (!isWechatEnv.value) {
+    ElMessage.warning('请在微信内打开此页面')
+    return
+  }
+  loading.value = true
+  // 跳转到微信 OAuth 授权页面
+  const redirectUri = encodeURIComponent(`${location.origin}/#/wechat-login?userType=merchant`)
+  const appid = 'wxa382e1c9fb93780e' // 公众号 AppID
+  const scope = 'snsapi_userinfo' // 获取用户信息
+  location.href = `https://open.weixin.qq.com/connect/oauth2/authorize?appid=${appid}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}&state=merchant#wechat_redirect`
+}
 
 const form = reactive({
   phone: '',
@@ -88,36 +123,12 @@ const form = reactive({
   remember: false
 })
 
-import { sendSms } from '@/api/public'
-
-// 商家登录 - 验证码模式
-const counting = ref(false)
-const countdown = ref(60)
 const loading = ref(false)
 
-// 手机号格式验证
-const isValidPhone = (phone) => {
-  return /^1[3-9]\d{9}$/.test(phone)
-}
-
-const sendCode = () => {
-  if (!form.phone) { ElMessage.warning('请先输入手机号'); return }
-  if (!isValidPhone(form.phone)) { ElMessage.warning('请输入正确的手机号（11位，以1开头）'); return }
-  if (counting.value) return
-  sendSms({ phone: form.phone, type: 'login' }).then(() => {
-    ElMessage.success('验证码已发送')
-    counting.value = true
-    countdown.value = 60
-    const timer = setInterval(() => {
-      countdown.value--
-      if (countdown.value <= 0) {
-        clearInterval(timer)
-        counting.value = false
-      }
-    }, 1000)
-  }).catch(() => {
-    ElMessage.error('发送验证码失败，请稍后重试')
-  })
+// 发送验证码（供SmsCodeInput组件调用）
+const sendCode = async ({ phone, type }) => {
+  await sendSms({ phone, type: 'login' })
+  ElMessage.success('验证码已发送')
 }
 
 const login = async () => {
@@ -125,7 +136,7 @@ const login = async () => {
     ElMessage.warning('请填写手机号')
     return
   }
-  if (!isValidPhone(form.phone)) {
+  if (!/^1[3-9]\d{9}$/.test(form.phone)) {
     ElMessage.warning('请输入正确的手机号（11位，以1开头）')
     return
   }
@@ -228,6 +239,15 @@ const goBack = () => { router.push('/') }
 .login-tip span { display: block; font-size: 12px; font-weight: 600; color: #333; }
 .login-footer { text-align: center; margin-top: 18px; font-size: 13px; color: #666; }
 .reg-link { color: #e66100; font-weight: 600; cursor: pointer; text-decoration: none; margin-left: 4px; }
+.reg-link:hover { text-decoration: underline; }
+
+/* 微信登录区域 */
+.wechat-login-area { text-align: center; padding: 20px 0; }
+.wechat-icon-wrap { margin-bottom: 16px; }
+.wechat-icon { font-size: 48px; }
+.wechat-tip { color: #666; font-size: 14px; margin-bottom: 20px; }
+.wechat-warn { color: #e6a23c; font-size: 13px; margin-top: 12px; }
+
 @media (max-width: 768px) {
   .login-card {
     padding: 28px 20px;
@@ -267,10 +287,6 @@ const goBack = () => { router.push('/') }
   .login-tip span {
     font-size: 11px;
   }
-  .login-test {
-    font-size: 11px;
-    padding: 8px 10px;
-  }
   .login-footer {
     font-size: 12px;
   }
@@ -279,34 +295,5 @@ const goBack = () => { router.push('/') }
   .login-card { padding: 24px 16px; }
   .login-brand { top: 16px; left: 16px; }
   .login-back { top: 20px; right: 16px; }
-}
-
-.test-hint {
-  margin-top: 12px;
-  padding: 10px 14px;
-  background: #fffbe6;
-  border: 1px solid #ffe58f;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  flex-wrap: wrap;
-}
-.test-label {
-  background: #faad14;
-  color: #fff;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-weight: 600;
-  font-size: 12px;
-}
-.test-phone {
-  color: #333;
-  font-weight: 500;
-}
-.test-code {
-  color: #52c41a;
-  font-weight: 600;
 }
 </style>

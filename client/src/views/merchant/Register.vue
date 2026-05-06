@@ -81,12 +81,17 @@
             <el-input v-model="form.phone" placeholder="请输入手机号" size="large" :prefix-icon="Phone" />
           </el-form-item>
           <el-form-item label="验证码" prop="code">
-            <div class="code-input">
-              <el-input v-model="form.code" placeholder="请输入验证码" size="large" :prefix-icon="Key" />
-              <el-button type="success" size="large" :disabled="counting" @click="sendMerchantCode">
-                {{ counting ? `${countdown}s` : '获取验证码' }}
-              </el-button>
-            </div>
+            <SmsCodeInput
+              v-model="form.code"
+              v-model:phone="form.phone"
+              codeType="register"
+              theme="green"
+              :showPhone="false"
+              codeLabel=""
+              placeholder="请输入验证码"
+              :customSend="sendMerchantCode"
+              @enter="goMerchantStep2"
+            />
           </el-form-item>
           <el-form-item label="登录密码" prop="password">
             <el-input v-model="form.password" type="password" placeholder="设置登录密码（6-20位）" size="large" :prefix-icon="Lock" show-password />
@@ -233,12 +238,17 @@
             <el-input v-model="expertForm.phone" placeholder="请输入手机号" size="large" :prefix-icon="Phone" />
           </el-form-item>
           <el-form-item label="验证码" prop="code">
-            <div class="code-input">
-              <el-input v-model="expertForm.code" placeholder="请输入验证码" size="large" :prefix-icon="Key" />
-              <el-button type="primary" size="large" :disabled="expertCounting" @click="sendExpertCode">
-                {{ expertCounting ? `${expertCountdown}s` : '获取验证码' }}
-              </el-button>
-            </div>
+            <SmsCodeInput
+              v-model="expertForm.code"
+              v-model:phone="expertForm.phone"
+              codeType="register"
+              theme="blue"
+              :showPhone="false"
+              codeLabel=""
+              placeholder="请输入验证码"
+              :customSend="sendExpertCode"
+              @enter="goStep2"
+            />
           </el-form-item>
           <el-form-item label="登录密码" prop="password">
             <el-input v-model="expertForm.password" type="password" placeholder="设置登录密码（6-20位）" size="large" :prefix-icon="Lock" show-password />
@@ -374,7 +384,8 @@
 import { reactive, ref, computed, onMounted, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Phone, Key, User, Shop, Goods, Connection, Medal, Trophy, UserFilled, Lock, Plus } from '@element-plus/icons-vue'
+import { Phone, User, Shop, Goods, Connection, Medal, Trophy, UserFilled, Lock, Plus } from '@element-plus/icons-vue'
+import SmsCodeInput from '@/components/SmsCodeInput.vue'
 import { getIndustries, sendSms, uploadImage, checkPhone, getRegions } from '@/api/public'
 import { expertRegister, merchantRegister } from '@/api/merchant'
 
@@ -516,9 +527,20 @@ const expertStep1Rules = {
   }, trigger: 'blur' }]
 }
 
-// 商家验证码倒计时
-const counting = ref(false)
-const countdown = ref(60)
+// 发送验证码（供SmsCodeInput组件调用）
+const sendMerchantCode = async ({ phone, type }) => {
+  // 检查手机号是否已注册（商家或专家）
+  const checkRes = await checkPhone({ phone, role: 'merchant' })
+  if (checkRes.data?.exists) {
+    const existingType = checkRes.data?.existingType
+    const msg = existingType === 'expert' 
+      ? '该手机号已注册为专家，请使用其他手机号或前往专家登录' 
+      : '该手机号已注册为商家，请使用其他手机号或前往登录'
+    throw new Error(msg)
+  }
+  await sendSms({ phone, type })
+  ElMessage.success('验证码已发送')
+}
 
 // 商家图片上传处理
 async function handleMerchantFileChange(file, type) {
@@ -556,9 +578,20 @@ function skipStep2() {
   register(true)
 }
 
-// 专家验证码倒计时
-const expertCounting = ref(false)
-const expertCountdown = ref(60)
+// 发送验证码（供SmsCodeInput组件调用）
+const sendExpertCode = async ({ phone, type }) => {
+  // 检查手机号是否已注册（商家或专家）
+  const checkRes = await checkPhone({ phone, role: 'expert' })
+  if (checkRes.data?.exists) {
+    const existingType = checkRes.data?.existingType
+    const msg = existingType === 'expert' 
+      ? '该手机号已注册为专家，请使用其他手机号或前往专家登录' 
+      : '该手机号已注册为商家，请使用其他手机号或前往商家登录'
+    throw new Error(msg)
+  }
+  await sendSms({ phone, type })
+  ElMessage.success('验证码已发送')
+}
 
 // 图片上传处理（先上传到服务器，获取URL）
 async function handlePhotoChange(file, type) {
@@ -635,62 +668,6 @@ async function loadDefaultTags() {
     }
   } catch {
     defaultTags.value = ['公益导向', '长期合作', '亲子服务', '老年服务', '社区服务', '志愿服务', '专业认证', '技能培训']
-  }
-}
-
-// 商家验证码
-async function sendMerchantCode() {
-  if (!form.phone) { ElMessage.warning('请先输入手机号'); return }
-  if (counting.value) return
-  try {
-    // 检查手机号是否已注册（商家或专家）
-    const checkRes = await checkPhone({ phone: form.phone, role: 'merchant' })
-    if (checkRes.data?.exists) {
-      const existingType = checkRes.data?.existingType
-      const msg = existingType === 'expert' 
-        ? '该手机号已注册为专家，请使用其他手机号或前往专家登录' 
-        : '该手机号已注册为商家，请使用其他手机号或前往登录'
-      ElMessage.warning(msg)
-      return
-    }
-    const res = await sendSms({ phone: form.phone, type: 'register' })
-    if (res.data?.code) form.code = res.data.code
-    ElMessage.success('验证码已发送')
-    counting.value = true; countdown.value = 60
-    const timer = setInterval(() => {
-      countdown.value--
-      if (countdown.value <= 0) { clearInterval(timer); counting.value = false }
-    }, 1000)
-  } catch (e) {
-    ElMessage.error(e.message || '发送验证码失败')
-  }
-}
-
-// 专家验证码
-async function sendExpertCode() {
-  if (!expertForm.phone) { ElMessage.warning('请先输入手机号'); return }
-  if (expertCounting.value) return
-  try {
-    // 检查手机号是否已注册（商家或专家）
-    const checkRes = await checkPhone({ phone: expertForm.phone, role: 'expert' })
-    if (checkRes.data?.exists) {
-      const existingType = checkRes.data?.existingType
-      const msg = existingType === 'expert' 
-        ? '该手机号已注册为专家，请使用其他手机号或前往专家登录' 
-        : '该手机号已注册为商家，请使用其他手机号或前往商家登录'
-      ElMessage.warning(msg)
-      return
-    }
-    const res = await sendSms({ phone: expertForm.phone, type: 'register' })
-    if (res.data?.code) expertForm.code = res.data.code
-    ElMessage.success('验证码已发送')
-    expertCounting.value = true; expertCountdown.value = 60
-    const timer = setInterval(() => {
-      expertCountdown.value--
-      if (expertCountdown.value <= 0) { clearInterval(timer); expertCounting.value = false }
-    }, 1000)
-  } catch (e) {
-    ElMessage.error(e.message || '发送验证码失败')
   }
 }
 

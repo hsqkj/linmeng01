@@ -40,3 +40,6 @@ export const getFaqList = () => request.get('/public/service/faqs')
 
 // 获取快捷问题列表
 export const getQuickQuestions = () => request.get('/public/service/quick-questions')
+
+// 微信绑定登录（社区端）
+export const wechatBindLogin = (data) => request.post('/community/wechat/bind-login', data)

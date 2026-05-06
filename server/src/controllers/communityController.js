@@ -1626,3 +1626,99 @@ exports.saveSpaces = async (req, res) => {
   }
 }
 
+// ==================== 微信绑定登录 ====================
+
+// 微信绑定登录（社区端）
+exports.wechatBindLogin = async (req, res) => {
+  try {
+    const { phone, code, openid } = req.body
+
+    if (!phone || !code || !openid) {
+      return error(res, '缺少必要参数', 400)
+    }
+
+    // 验证手机号格式
+    if (!/^1[3-9]\d{9}$/.test(phone)) {
+      return error(res, '手机号格式不正确', 400)
+    }
+
+    // 验证验证码
+    const cacheKey = `sms:${phone}:login`
+    const { get: getCache, del: delCache } = require('../config/redis')
+    const cached = await getCache(cacheKey)
+
+    // 测试账号：直接验证固定验证码
+    const { getTestAccount } = require('./publicController')
+    const testAccount = getTestAccount(phone)
+    if (testAccount && code === testAccount.code) {
+      // 测试账号验证通过
+    } else if (!cached || cached !== code) {
+      return error(res, '验证码错误或已过期', 400)
+    }
+
+    // 查找已注册的用户
+    const [rows] = await pool.query(
+      'SELECT * FROM communities WHERE phone = ?',
+      [phone]
+    )
+
+    let community
+    if (rows.length > 0) {
+      community = rows[0]
+
+      // 检查账号状态
+      if (community.status === 0) {
+        return error(res, '账号审核中，请耐心等待', 401)
+      }
+      if (community.status === 2) {
+        return error(res, '账号已被禁用', 403)
+      }
+    } else {
+      // 手机号未注册，返回特殊错误码引导用户注册
+      return error(res, '该手机号尚未注册，请先注册', 401, 'NEED_REGISTER')
+    }
+
+    // 清除验证码
+    await delCache(cacheKey)
+
+    // 更新微信绑定信息到 wechat_user_bind 表
+    const [[bindRow]] = await pool.query(
+      'SELECT * FROM wechat_user_bind WHERE openid = ? AND user_type = ?',
+      [openid, 'community']
+    )
+
+    if (!bindRow) {
+      // 首次绑定：插入绑定记录
+      await pool.query(
+        `INSERT INTO wechat_user_bind (openid, user_type, user_id, phone, nickname, avatar)
+         VALUES (?, 'community', ?, ?, ?, ?)`,
+        [openid, community.id, phone, '', '']
+      )
+    } else {
+      // 更新绑定信息
+      await pool.query(
+        'UPDATE wechat_user_bind SET user_id = ?, phone = ?, updated_at = NOW() WHERE openid = ? AND user_type = ?',
+        [community.id, phone, openid, 'community']
+      )
+    }
+
+    // 生成 token
+    const token = jwt.sign(
+      { id: community.id, type: 'community' },
+      jwtConfig.secret,
+      { expiresIn: '30d' }
+    )
+
+    // 清除手机号中的无用字段
+    delete community.password
+
+    success(res, {
+      token,
+      community
+    }, '登录成功')
+  } catch (err) {
+    console.error('wechatBindLogin error:', err)
+    error(res, '登录失败')
+  }
+}
+
