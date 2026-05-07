@@ -203,6 +203,11 @@
       </div>
     </div>
   </div>
+
+  <!-- 底部备案号 -->
+  <div class="site-footer">
+    <a href="https://beian.miit.gov.cn/" target="_blank" rel="nofollow">鄂ICP备2021018843号-3</a>
+  </div>
 </template>
 
 <script setup>
@@ -409,6 +414,20 @@ const viewActivityDetail = (activity) => {
 <style scoped>
 .community-home { padding-bottom: 20px; }
 
+/* 底部备案号 */
+.site-footer {
+  text-align: center;
+  padding: 20px 0;
+  font-size: 12px;
+  color: #999;
+  border-top: 1px solid #eee;
+  margin-top: 20px;
+}
+.site-footer a {
+  color: #999;
+  text-decoration: none;
+}
+
 /* ===== 欢迎 Banner ===== */
 .welcome-banner {
   background: linear-gradient(135deg, #26a269, #1a7a4c);
@@ -576,11 +595,11 @@ const viewActivityDetail = (activity) => {
     justify-content: center;
   }
   .welcome-content h1 { font-size: 18px; }
-  .stats-row { grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 14px; }
-  .stat-card { padding: 14px 12px !important; gap: 10px; }
-  .stat-icon { width: 40px; height: 40px; border-radius: 10px; font-size: 18px !important; }
-  .stat-value { font-size: 20px; }
-  .stat-label { font-size: 11px; }
+  .stats-row { grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 14px; }
+  .stat-card { padding: 10px 6px !important; gap: 6px; }
+  .stat-icon { width: 32px; height: 32px; border-radius: 8px; font-size: 16px !important; }
+  .stat-value { font-size: 16px; }
+  .stat-label { font-size: 10px; }
   .banner-item { padding: 0 16px; }
   .banner-content h3 { font-size: 16px; }
   .banner-content p { font-size: 12px; }
@@ -627,8 +646,8 @@ const viewActivityDetail = (activity) => {
 }
 
 @media (max-width: 480px) {
-  .stats-row { grid-template-columns: repeat(2, 1fr); gap: 8px; }
-  .stat-card { padding: 12px 10px !important; }
-  .stat-value { font-size: 18px; }
+  .stats-row { grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .stat-card { padding: 8px 4px !important; }
+  .stat-value { font-size: 14px; }
 }
 </style>

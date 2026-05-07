@@ -31,7 +31,6 @@
         <button class="btn-login merch" @click="wechatLogin" :disabled="loading">
           {{ loading ? '跳转中...' : '微信授权登录' }}
         </button>
-        <p v-if="!isWechatEnv" class="wechat-warn">⚠️ 请在微信内打开此页面以使用微信登录</p>
       </div>
 
       <!-- 手机登录表单 -->
@@ -43,6 +42,7 @@
           codeType="login"
           theme="blue"
           :customSend="sendCode"
+          @phone-error="(msg) => ElMessage.warning(msg)"
           @enter="login"
         />
 
@@ -97,23 +97,9 @@ const router = useRouter()
 
 const loginMode = ref('code') // 'code' | 'password' | 'wechat'
 
-// 检测是否在微信环境
-const isWechatEnv = computed(() => {
-  return /MicroMessenger/i.test(navigator.userAgent)
-})
-
-// 微信授权登录
+// 微信授权登录 → 跳转到 WechatLogin 页面统一处理 OAuth
 const wechatLogin = () => {
-  if (!isWechatEnv.value) {
-    ElMessage.warning('请在微信内打开此页面')
-    return
-  }
-  loading.value = true
-  // 跳转到微信 OAuth 授权页面
-  const redirectUri = encodeURIComponent(`${location.origin}/#/wechat-login?userType=merchant`)
-  const appid = 'wxa382e1c9fb93780e' // 公众号 AppID
-  const scope = 'snsapi_userinfo' // 获取用户信息
-  location.href = `https://open.weixin.qq.com/connect/oauth2/authorize?appid=${appid}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}&state=merchant#wechat_redirect`
+  router.push('/wechat-login?userType=merchant')
 }
 
 const form = reactive({
@@ -127,8 +113,14 @@ const loading = ref(false)
 
 // 发送验证码（供SmsCodeInput组件调用）
 const sendCode = async ({ phone, type }) => {
-  await sendSms({ phone, type: 'login' })
-  ElMessage.success('验证码已发送')
+  try {
+    await sendSms({ phone, type: 'login' })
+    ElMessage.success('验证码已发送')
+  } catch (e) {
+    const msg = e.response?.data?.message || e.message || '发送失败，请稍后重试'
+    ElMessage.error(msg)
+    throw e
+  }
 }
 
 const login = async () => {

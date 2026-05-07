@@ -53,7 +53,6 @@
             <el-button type="success" size="large" style="width:100%;margin-top:8px;font-size:16px" :loading="loading" @click="wechatLogin">
               {{ loading ? '跳转中...' : '微信授权登录' }}
             </el-button>
-            <p v-if="!isWechatEnv" class="wechat-warn">⚠️ 请在微信内打开此页面以使用微信登录</p>
           </div>
 
           <!-- 手机登录表单 -->
@@ -65,6 +64,7 @@
               codeType="login"
               theme="red"
               :customSend="sendCode"
+              @phone-error="(msg) => ElMessage.warning(msg)"
               @enter="doLogin"
             />
 
@@ -112,7 +112,7 @@
 </template>
 
 <script setup>
-import { reactive, ref, computed, onMounted } from 'vue'
+import { reactive, ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import SmsCodeInput from '@/components/SmsCodeInput.vue'
@@ -128,29 +128,21 @@ const showApply = ref(false)
 const loading = ref(false)
 const applyForm = ref({ real_name: '', phone: '', reason: '' })
 
-// 检测是否在微信环境
-const isWechatEnv = computed(() => {
-  return /MicroMessenger/i.test(navigator.userAgent)
-})
-
-// 微信授权登录
+// 微信授权登录 → 跳转到 WechatLogin 页面统一处理 OAuth
 const wechatLogin = () => {
-  if (!isWechatEnv.value) {
-    ElMessage.warning('请在微信内打开此页面')
-    return
-  }
-  loading.value = true
-  // 跳转到微信 OAuth 授权页面
-  const redirectUri = encodeURIComponent(`${location.origin}/#/wechat-login?userType=ambassador`)
-  const appid = 'wxa382e1c9fb93780e' // 公众号 AppID
-  const scope = 'snsapi_userinfo' // 获取用户信息
-  location.href = `https://open.weixin.qq.com/connect/oauth2/authorize?appid=${appid}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}&state=ambassador#wechat_redirect`
+  router.push('/wechat-login?userType=ambassador')
 }
 
 // 发送验证码（供SmsCodeInput组件调用）
 const sendCode = async ({ phone, type }) => {
-  await sendSms({ phone, type: 'login' })
-  ElMessage.success('验证码已发送')
+  try {
+    await sendSms({ phone, type: 'login' })
+    ElMessage.success('验证码已发送')
+  } catch (e) {
+    const msg = e.response?.data?.message || e.message || '发送失败，请稍后重试'
+    ElMessage.error(msg)
+    throw e
+  }
 }
 
 async function doLogin() {

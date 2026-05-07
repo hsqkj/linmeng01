@@ -32,6 +32,7 @@
           codeType="login"
           theme="green"
           :customSend="sendCode"
+          @phone-error="(msg) => ElMessage.warning(msg)"
           @enter="login"
           v-if="loginMode === 'code'"
         />
@@ -47,37 +48,13 @@
         </button>
       </template>
 
-      <!-- 微信登录区域 -->
+      <!-- 微信登录区域：点击 tab 后已直接跳转，此分支保留空壳备用 -->
       <template v-else>
         <div class="wechat-login-area">
           <div class="wechat-icon-wrap">
             <span class="wechat-icon">💬</span>
           </div>
-
-          <!-- 首次登录：需要绑定 -->
-          <template v-if="!wechatBound">
-            <p class="wechat-tip">首次登录需要绑定手机号</p>
-            <SmsCodeInput
-              v-model="form.code"
-              v-model:phone="form.phone"
-              codeType="bind"
-              theme="green"
-              :customSend="sendCode"
-              @enter="wechatBindAndLogin"
-            />
-            <button class="btn-login comm" @click="wechatBindAndLogin" :disabled="loading">
-              {{ loading ? '登录中...' : '绑定并登录' }}
-            </button>
-          </template>
-
-          <!-- 已绑定：直接自动登录 -->
-          <template v-else>
-            <p class="wechat-tip">欢迎回来，正在登录...</p>
-            <div class="wechat-bound-info">
-              <span class="wechat-avatar">💬</span>
-              <span class="wechat-nickname">{{ storedNickname || '微信用户' }}</span>
-            </div>
-          </template>
+          <p class="wechat-tip">正在跳转微信授权...</p>
         </div>
       </template>
 
@@ -106,16 +83,14 @@
 </template>
 
 <script setup>
-import { reactive, ref, onMounted } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import { reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import SmsCodeInput from '@/components/SmsCodeInput.vue'
 import { communityLogin } from '@/api/community'
 import { sendSms } from '@/api/public'
-import { wechatBindLogin } from '@/api/public'
 
 const router = useRouter()
-const route = useRoute()
 
 const loginMode = ref('code') // 'code' | 'password' | 'wechat'
 
@@ -127,126 +102,21 @@ const form = reactive({
 
 const loading = ref(false)
 
-// 微信登录状态
-const wechatBound = ref(false)
-const storedOpenid = ref('')
-const storedNickname = ref('')
-const storedUserId = ref('')
-const storedToken = ref('')
-
-// 检测微信登录状态
-onMounted(() => {
-  const openid = localStorage.getItem('wechat_openid')
-  const nickname = localStorage.getItem('wechat_nickname')
-  const userId = localStorage.getItem('wechat_user_id')
-  const token = localStorage.getItem('wechat_token')
-
-  if (openid && token) {
-    storedOpenid.value = openid
-    storedNickname.value = nickname || ''
-    storedUserId.value = userId || ''
-    storedToken.value = token
-
-    // 如果是微信登录页面且已绑定，自动登录
-    if (loginMode.value === 'wechat' || route.path.includes('wechat')) {
-      wechatBound.value = true
-      autoWechatLogin()
-    }
-  }
-})
-
-// 切换到微信登录
+// 切换到微信登录 → 直接跳转到 WechatLogin 页面完成 OAuth 授权
 const switchToWechat = () => {
-  loginMode.value = 'wechat'
-
-  // 检查是否已绑定
-  const openid = localStorage.getItem('wechat_openid')
-  const token = localStorage.getItem('wechat_token')
-
-  if (openid && token) {
-    wechatBound.value = true
-    // 触发自动登录
-    setTimeout(() => autoWechatLogin(), 100)
-  } else {
-    wechatBound.value = false
-  }
-}
-
-// 自动微信登录
-const autoWechatLogin = async () => {
-  const token = storedToken.value
-  const userId = storedUserId.value
-  const openid = storedOpenid.value
-
-  if (!token) {
-    ElMessage.warning('请先绑定微信')
-    return
-  }
-
-  loading.value = true
-  try {
-    localStorage.setItem('community_token', token)
-    localStorage.setItem('community_info', JSON.stringify({ id: userId, openid }))
-    ElMessage.success('登录成功')
-    // 直接跳转首页
-    location.href = '/#/community'
-  } catch (e) {
-    ElMessage.error(e.message || '登录失败')
-    wechatBound.value = false
-  } finally {
-    loading.value = false
-  }
-}
-
-// 微信绑定并登录
-const wechatBindAndLogin = async () => {
-  if (!form.phone) {
-    ElMessage.warning('请填写手机号')
-    return
-  }
-  if (!/^1[3-9]\d{9}$/.test(form.phone)) {
-    ElMessage.warning('请输入正确的手机号')
-    return
-  }
-  if (!form.code) {
-    ElMessage.warning('请填写验证码')
-    return
-  }
-
-  const openid = localStorage.getItem('wechat_openid')
-  if (!openid) {
-    ElMessage.warning('微信授权失败，请重新点击微信登录')
-    return
-  }
-
-  loading.value = true
-  try {
-    const res = await wechatBindLogin({
-      phone: form.phone,
-      code: form.code,
-      openid: openid,
-      userType: 'community'
-    })
-
-    // 保存登录信息
-    localStorage.setItem('community_token', res.data.token)
-    localStorage.setItem('community_info', JSON.stringify(res.data.community))
-    localStorage.setItem('wechat_user_id', res.data.community.id)
-    localStorage.setItem('wechat_token', res.data.token)
-
-    ElMessage.success('绑定成功，欢迎使用！')
-    location.href = '/#/community'
-  } catch (e) {
-    ElMessage.error(e.message || '绑定失败')
-  } finally {
-    loading.value = false
-  }
+  router.push('/wechat-login?userType=community')
 }
 
 // 发送验证码（供SmsCodeInput组件调用）
 const sendCode = async ({ phone, type }) => {
-  await sendSms({ phone, type })
-  ElMessage.success('验证码已发送')
+  try {
+    await sendSms({ phone, type })
+    ElMessage.success('验证码已发送')
+  } catch (e) {
+    const msg = e.response?.data?.message || e.message || '发送失败，请稍后重试'
+    ElMessage.error(msg)
+    throw e  // 重新抛出，让组件不启动倒计时
+  }
 }
 
 const login = async () => {

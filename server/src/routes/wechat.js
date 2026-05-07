@@ -7,6 +7,8 @@ const router = express.Router()
 const axios = require('axios')
 const db = require('../config/db')
 const crypto = require('crypto')
+const jwt = require('jsonwebtoken')
+const jwtConfig = require('../config/jwt')
 
 // ============ 配置 ============
 const MINI_APPID = 'wx0d8ceb64dd56ca6c'
@@ -15,21 +17,19 @@ const PUBLIC_APPID = 'wxa382e1c9fb93780e'       // 微信公众号 AppID
 const PUBLIC_SECRET = process.env.WECHAT_PUBLIC_SECRET || ''  // 公众号密钥（需配置）
 
 // ============ 工具函数 ============
-// 生成 H5 登录 token（简化版，实际应改用 jwt）
+// 生成 H5 登录 token（JWT，与 auth.js 中间件兼容）
 function generateToken(openid, userId, userType) {
-  const payload = `${openid}:${userId}:${userType}:${Date.now()}`
-  return Buffer.from(payload).toString('base64')
+  return jwt.sign(
+    { openid, userId, role: userType },
+    jwtConfig.secret,
+    { expiresIn: '7d' }
+  )
 }
 
-// 验证 H5 登录 token（简化版）
+// 验证 H5 登录 token（JWT）
 function verifyToken(token) {
   try {
-    const str = Buffer.from(token, 'base64').toString()
-    const parts = str.split(':')
-    if (parts.length >= 3) {
-      return { openid: parts[0], userId: parts[1], userType: parts[2] }
-    }
-    return null
+    return jwt.verify(token, jwtConfig.secret)
   } catch {
     return null
   }
@@ -159,14 +159,14 @@ router.post('/h5-auth', async (req, res) => {
       // 获取用户基本信息
       let userName = '', phone = bind.phone || ''
       if (bind.user_type === 'community') {
-        const [rows] = await db.query('SELECT name, phone FROM communities WHERE id = ?', [bind.user_id])
-        if (rows.length > 0) { userName = rows[0].name; phone = rows[0].phone || phone }
+        const [rows] = await db.query('SELECT username, real_name, phone FROM communities WHERE id = ?', [bind.user_id])
+        if (rows.length > 0) { userName = rows[0].real_name || rows[0].username; phone = rows[0].phone || phone }
       } else if (bind.user_type === 'merchant') {
-        const [rows] = await db.query('SELECT name, phone FROM merchants WHERE id = ?', [bind.user_id])
-        if (rows.length > 0) { userName = rows[0].name; phone = rows[0].phone || phone }
+        const [rows] = await db.query('SELECT username, company_name, contact_name, phone FROM merchants WHERE id = ?', [bind.user_id])
+        if (rows.length > 0) { userName = rows[0].company_name || rows[0].contact_name || rows[0].username; phone = rows[0].phone || phone }
       } else if (bind.user_type === 'ambassador') {
-        const [rows] = await db.query('SELECT name, phone FROM ambassadors WHERE id = ?', [bind.user_id])
-        if (rows.length > 0) { userName = rows[0].name; phone = rows[0].phone || phone }
+        const [rows] = await db.query('SELECT username, real_name, phone FROM ambassadors WHERE id = ?', [bind.user_id])
+        if (rows.length > 0) { userName = rows[0].real_name || rows[0].username; phone = rows[0].phone || phone }
       }
 
       res.json({
@@ -223,24 +223,50 @@ router.post('/h5-bind-phone', async (req, res) => {
       if (!code) return res.json({ code: 400, msg: '请输入验证码' })
     }
 
-    // 查找对应类型的用户
+    // 查找对应类型的用户，未注册则自动创建
     let userId = null
     let userName = ''
     if (userType === 'community') {
-      const [rows] = await db.query('SELECT id, name FROM communities WHERE phone = ?', [phone])
-      if (rows.length === 0) return res.json({ code: 404, msg: '该手机号未注册社区账号' })
-      userId = rows[0].id
-      userName = rows[0].name
+      const [rows] = await db.query('SELECT id, username, real_name FROM communities WHERE phone = ?', [phone])
+      if (rows.length === 0) {
+        // 未注册，自动创建社区账号
+        const [result] = await db.query(
+          'INSERT INTO communities (username, real_name, phone, password, status, created_at) VALUES (?, ?, ?, ?, 1, NOW())',
+          [phone, phone, phone, require('bcryptjs').hashSync(phone.slice(-6), 10)]
+        )
+        userId = result.insertId
+        userName = phone
+      } else {
+        userId = rows[0].id
+        userName = rows[0].real_name || rows[0].username
+      }
     } else if (userType === 'merchant') {
-      const [rows] = await db.query('SELECT id, name FROM merchants WHERE phone = ?', [phone])
-      if (rows.length === 0) return res.json({ code: 404, msg: '该手机号未注册商家账号' })
-      userId = rows[0].id
-      userName = rows[0].name
+      const [rows] = await db.query('SELECT id, username, company_name, contact_name FROM merchants WHERE phone = ?', [phone])
+      if (rows.length === 0) {
+        const [result] = await db.query(
+          'INSERT INTO merchants (username, company_name, contact_name, phone, password, status, created_at) VALUES (?, ?, ?, ?, ?, 1, NOW())',
+          [phone, phone, phone, phone, require('bcryptjs').hashSync(phone.slice(-6), 10)]
+        )
+        userId = result.insertId
+        userName = phone
+      } else {
+        userId = rows[0].id
+        userName = rows[0].company_name || rows[0].contact_name || rows[0].username
+      }
     } else if (userType === 'ambassador') {
-      const [rows] = await db.query('SELECT id, name FROM ambassadors WHERE phone = ?', [phone])
-      if (rows.length === 0) return res.json({ code: 404, msg: '该手机号未注册大使账号' })
-      userId = rows[0].id
-      userName = rows[0].name
+      const [rows] = await db.query('SELECT id, username, real_name FROM ambassadors WHERE phone = ?', [phone])
+      if (rows.length === 0) {
+        const qrCode = `LM${Date.now().toString(36).toUpperCase()}`
+        const [result] = await db.query(
+          'INSERT INTO ambassadors (username, real_name, phone, password, qr_code, status, created_at) VALUES (?, ?, ?, ?, ?, 1, NOW())',
+          [phone, phone, phone, require('bcryptjs').hashSync(phone.slice(-6), 10), qrCode]
+        )
+        userId = result.insertId
+        userName = phone
+      } else {
+        userId = rows[0].id
+        userName = rows[0].real_name || rows[0].username
+      }
     }
 
     // 绑定到 wechat_user_bind 表
@@ -248,7 +274,7 @@ router.post('/h5-bind-phone', async (req, res) => {
     await db.query('DELETE FROM wechat_user_bind WHERE openid = ?', [openid])
 
     await db.query(
-      'INSERT INTO wechat_user_bind (unionid, openid, user_type, user_id, phone, bind_time) VALUES (?, ?, ?, ?, ?, NOW())',
+      'INSERT INTO wechat_user_bind (unionid, openid, user_type, user_id, phone) VALUES (?, ?, ?, ?, ?)',
       [unionid || '', openid, userType, userId, phone]
     )
 

@@ -25,34 +25,17 @@
       <div class="tip">请绑定手机号以完成登录</div>
 
       <div class="form">
-        <div class="form-item">
-          <select v-model="bindForm.userType" class="form-select">
-            <option value="community">社区用户</option>
-            <option value="merchant">商家用户</option>
-            <option value="ambassador">大使用户</option>
-          </select>
-        </div>
-        <div class="form-item">
-          <input
-            v-model="bindForm.phone"
-            type="tel"
-            maxlength="11"
-            placeholder="请输入手机号"
-            class="form-input"
-          />
-        </div>
-        <div class="form-item code-item">
-          <input
-            v-model="bindForm.code"
-            type="text"
-            maxlength="6"
-            placeholder="请输入验证码"
-            class="form-input"
-          />
-          <button class="btn-code" :disabled="codeSending" @click="sendCode">
-            {{ codeSending ? `${codeCountdown}s后重发` : '获取验证码' }}
-          </button>
-        </div>
+        <div class="role-hint">绑定为 {{ roleConfig[bindForm.userType]?.label }}</div>
+        <SmsCodeInput
+          v-model="bindForm.code"
+          v-model:phone="bindForm.phone"
+          codeType="bind"
+          :theme="roleConfig[bindForm.userType]?.theme || 'green'"
+          :customSend="sendCode"
+          @enter="handleBindPhone"
+          @phone-error="(msg) => ElMessage.warning(msg)"
+          @send-error="(err) => ElMessage.error(err?.message || '发送失败')"
+        />
         <button class="btn-primary" @click="handleBindPhone">绑定并登录</button>
       </div>
     </div>
@@ -70,6 +53,9 @@
 import { ref, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
+import { ElMessage } from 'element-plus'
+import SmsCodeInput from '@/components/SmsCodeInput.vue'
+import { sendSms } from '@/api/public'
 
 const defaultAvatar = '/default-avatar.png'
 
@@ -84,13 +70,21 @@ const errorMsg = ref('')
 const userInfo = ref({})
 const wechatInfo = ref({})
 
+// 根据 URL 参数确定用户类型，默认 community
+const userTypeFromUrl = ref('community')
+
 const bindForm = ref({
   userType: 'community',
   phone: '',
   code: ''
 })
-const codeSending = ref(false)
-const codeCountdown = ref(0)
+
+// 角色配置（用于显示和跳转）
+const roleConfig = {
+  community: { label: '社区用户', homePath: '/community/home', theme: 'green' },
+  merchant: { label: '商家用户', homePath: '/merchant/home', theme: 'blue' },
+  ambassador: { label: '大使用户', homePath: '/ambassador/home', theme: 'red' }
+}
 
 // 监听登录状态，自动跳转首页
 watch(isLoggedIn, (newVal) => {
@@ -109,12 +103,15 @@ onMounted(() => {
   // 优先检查 URL 中是否有小程序传来的 token（场景A：小程序 webview）
   const urlToken = route.query.token
   const urlUserType = route.query.userType
-  
-  // 保存 URL 参数中的 userType 到 localStorage
-  if (urlUserType) {
+
+  // 获取 URL 中的 userType 参数
+  const validTypes = ['community', 'merchant', 'ambassador']
+  if (urlUserType && validTypes.includes(urlUserType)) {
+    userTypeFromUrl.value = urlUserType
+    bindForm.value.userType = urlUserType
     localStorage.setItem('userType', urlUserType)
   }
-  
+
   if (urlToken) {
     // 小程序 webview 传过来的 token，验证后直接登录
     handleMiniProgramToken(urlToken, urlUserType)
@@ -141,13 +138,13 @@ onMounted(() => {
   // 检查 URL 中是否有 code（微信回调带回）
   // 注意：微信可能把 code 放在 # 前面或后面，需要都检查
   let code = route.query.code
-  
+
   // 如果 route.query 中没有，检查 window.location.search（# 前面的参数）
   if (!code) {
     const searchParams = new URLSearchParams(window.location.search)
     code = searchParams.get('code')
   }
-  
+
   if (code) {
     // 立即清除 URL 中的 code，防止刷新时重复使用
     const cleanUrl = window.location.pathname + window.location.hash
@@ -257,31 +254,22 @@ async function handleWechatAuth(code) {
 }
 
 /**
- * 发送验证码
+ * 发送验证码（返回 Promise 给 SmsCodeInput 组件调用）
  */
-async function sendCode() {
-  if (!bindForm.value.phone || !/^1[3-9]\d{9}$/.test(bindForm.value.phone)) {
-    alert('请输入正确的手机号')
-    return
+async function sendCode({ phone } = {}) {
+  const tel = phone || bindForm.value.phone
+  if (!tel || !/^1[3-9]\d{9}$/.test(tel)) {
+    return Promise.reject(new Error('请输入正确的手机号'))
   }
-
-  codeSending.value = true
-  codeCountdown.value = 60
 
   try {
-    await axios.post(`${API_BASE}/sms/send`, { phone: bindForm.value.phone })
-    alert('验证码已发送')
-  } catch {
-    alert('验证码发送失败')
+    await sendSms({ phone: tel, type: 'bind' })
+    ElMessage.success('验证码已发送')
+  } catch (err) {
+    const msg = err.response?.data?.msg || err.message || '验证码发送失败'
+    ElMessage.error(msg)
+    return Promise.reject(new Error(msg))
   }
-
-  const timer = setInterval(() => {
-    codeCountdown.value--
-    if (codeCountdown.value <= 0) {
-      clearInterval(timer)
-      codeSending.value = false
-    }
-  }, 1000)
 }
 
 /**
@@ -290,11 +278,11 @@ async function sendCode() {
 async function handleBindPhone() {
   const { userType, phone, code } = bindForm.value
   if (!phone || !/^1[3-9]\d{9}$/.test(phone)) {
-    alert('请输入正确的手机号')
+    ElMessage.warning('请输入正确的手机号')
     return
   }
   if (!code) {
-    alert('请输入验证码')
+    ElMessage.warning('请输入验证码')
     return
   }
 
@@ -310,29 +298,29 @@ async function handleBindPhone() {
       userType
     })
 
-    if (res.data.code === 0) {
-      const data = res.data.data
-      // 按端存储 token
-      const tokenKey = `${data.userType}_token`
-      localStorage.setItem(tokenKey, data.token)
-      localStorage.setItem('userType', data.userType)
-      localStorage.setItem('userId', data.userId)
-      localStorage.setItem('userName', data.userName)
-
-      userInfo.value = {
-        name: data.userName,
-        avatar: wechatInfo.value.avatar,
-        phone
-      }
-      isLoggedIn.value = true
-      needBindPhone.value = false
-    } else {
+    // 检查所有非 0 的返回码（后端即使报错也返回 HTTP 200）
+    if (res.data.code !== 0) {
       throw new Error(res.data.msg || '绑定失败')
     }
+
+    const data = res.data.data
+    // 按端存储 token
+    const tokenKey = `${data.userType}_token`
+    localStorage.setItem(tokenKey, data.token)
+    localStorage.setItem('userType', data.userType)
+    localStorage.setItem('userId', data.userId)
+    localStorage.setItem('userName', data.userName)
+
+    userInfo.value = {
+      name: data.userName,
+      avatar: wechatInfo.value.avatar,
+      phone
+    }
+    isLoggedIn.value = true
+    needBindPhone.value = false
   } catch (err) {
-    alert(err.message || '绑定失败')
-  } finally {
     loading.value = false
+    ElMessage.error(err.response?.data?.msg || err.message || '绑定失败')
   }
 }
 
@@ -369,9 +357,9 @@ function goHome() {
   const userType = localStorage.getItem('userType') || 'community'
   
   const routes = {
-    community: '/community/home',
-    merchant: '/merchant/home',
-    ambassador: '/ambassador/home'
+    community: '/community',
+    merchant: '/merchant',
+    ambassador: '/ambassador'
   }
   router.push(routes[userType] || '/community/home')
 }
@@ -496,6 +484,17 @@ function retryAuth() {
 
 .btn-code:disabled {
   background: #ccc;
+}
+
+/* 角色提示 */
+.role-hint {
+  text-align: center;
+  font-size: 14px;
+  color: #667eea;
+  margin-bottom: 16px;
+  padding: 8px 16px;
+  background: rgba(102, 126, 234, 0.1);
+  border-radius: 20px;
 }
 
 .btn-primary {
