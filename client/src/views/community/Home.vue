@@ -69,77 +69,73 @@
     </div>
 
     <!-- 数据概览 -->
-    <div class="stats-row">
-      <el-card class="stat-card">
-        <div class="stat-icon" style="background: #ecf5ff; color: #409EFF;">
-          <el-icon :size="24"><Document /></el-icon>
+    <el-card class="stats-panel">
+      <div class="stats-row">
+        <div class="stat-item">
+          <div class="stat-icon" style="background: #ecf5ff; color: #409EFF;">
+            <el-icon :size="20"><Document /></el-icon>
+          </div>
+          <div class="stat-info">
+            <div class="stat-value">{{ stats.demands }}</div>
+            <div class="stat-label">我的需求</div>
+          </div>
         </div>
-        <div class="stat-info">
-          <div class="stat-value">{{ stats.demands }}</div>
-          <div class="stat-label">我的需求</div>
+        <div class="stat-item">
+          <div class="stat-icon" style="background: #f0f9ff; color: #36cfc9;">
+            <el-icon :size="20"><Connection /></el-icon>
+          </div>
+          <div class="stat-info">
+            <div class="stat-value">{{ stats.intentions }}</div>
+            <div class="stat-label">对接中</div>
+          </div>
         </div>
-      </el-card>
-
-      <el-card class="stat-card">
-        <div class="stat-icon" style="background: #f0f9ff; color: #36cfc9;">
-          <el-icon :size="24"><Connection /></el-icon>
+        <div class="stat-item">
+          <div class="stat-icon" style="background: #f6ffed; color: #52c41a;">
+            <el-icon :size="20"><CircleCheck /></el-icon>
+          </div>
+          <div class="stat-info">
+            <div class="stat-value">{{ stats.completed }}</div>
+            <div class="stat-label">已完成</div>
+          </div>
         </div>
-        <div class="stat-info">
-          <div class="stat-value">{{ stats.intentions }}</div>
-          <div class="stat-label">对接中</div>
+        <div class="stat-item">
+          <div class="stat-icon" style="background: #fff7e6; color: #fa8c16;">
+            <el-icon :size="20"><Present /></el-icon>
+          </div>
+          <div class="stat-info">
+            <div class="stat-value">{{ stats.rewards }}</div>
+            <div class="stat-label">累计奖励</div>
+          </div>
         </div>
-      </el-card>
-
-      <el-card class="stat-card">
-        <div class="stat-icon" style="background: #f6ffed; color: #52c41a;">
-          <el-icon :size="24"><CircleCheck /></el-icon>
+        <div class="stat-item">
+          <div class="stat-icon" style="background: #fef0f0; color: #f56c6c;">
+            <el-icon :size="20"><Goods /></el-icon>
+          </div>
+          <div class="stat-info">
+            <div class="stat-value">{{ stats.totalDemands }}</div>
+            <div class="stat-label">平台总需求</div>
+          </div>
         </div>
-        <div class="stat-info">
-          <div class="stat-value">{{ stats.completed }}</div>
-          <div class="stat-label">已完成</div>
+        <div class="stat-item">
+          <div class="stat-icon" style="background: #f0f9ff; color: #909399;">
+            <el-icon :size="20"><Shop /></el-icon>
+          </div>
+          <div class="stat-info">
+            <div class="stat-value">{{ stats.totalResources }}</div>
+            <div class="stat-label">平台总资源</div>
+          </div>
         </div>
-      </el-card>
-
-      <el-card class="stat-card">
-        <div class="stat-icon" style="background: #fff7e6; color: #fa8c16;">
-          <el-icon :size="24"><Present /></el-icon>
+        <div class="stat-item">
+          <div class="stat-icon" style="background: #fff1f0; color: #ff4d4f;">
+            <el-icon :size="20"><View /></el-icon>
+          </div>
+          <div class="stat-info">
+            <div class="stat-value">{{ stats.demandViews }}</div>
+            <div class="stat-label">我的需求浏览</div>
+          </div>
         </div>
-        <div class="stat-info">
-          <div class="stat-value">{{ stats.rewards }}</div>
-          <div class="stat-label">累计奖励</div>
-        </div>
-      </el-card>
-
-      <el-card class="stat-card">
-        <div class="stat-icon" style="background: #fef0f0; color: #f56c6c;">
-          <el-icon :size="24"><Goods /></el-icon>
-        </div>
-        <div class="stat-info">
-          <div class="stat-value">{{ stats.totalDemands }}</div>
-          <div class="stat-label">平台总需求</div>
-        </div>
-      </el-card>
-
-      <el-card class="stat-card">
-        <div class="stat-icon" style="background: #f0f9ff; color: #909399;">
-          <el-icon :size="24"><Shop /></el-icon>
-        </div>
-        <div class="stat-info">
-          <div class="stat-value">{{ stats.totalResources }}</div>
-          <div class="stat-label">平台总资源</div>
-        </div>
-      </el-card>
-
-      <el-card class="stat-card">
-        <div class="stat-icon" style="background: #fff1f0; color: #ff4d4f;">
-          <el-icon :size="24"><View /></el-icon>
-        </div>
-        <div class="stat-info">
-          <div class="stat-value">{{ stats.demandViews }}</div>
-          <div class="stat-label">我的需求浏览</div>
-        </div>
-      </el-card>
-    </div>
+      </div>
+    </el-card>
 
     <!-- 推荐商家资源 -->
     <div class="section">
@@ -497,32 +493,32 @@ const viewActivityDetail = (activity) => {
 .banner-content p  { margin-bottom: 14px; opacity: 0.9; font-size: 14px; }
 
 /* ===== 统计卡片 ===== */
+.stats-panel { margin-bottom: 16px; }
+.stats-panel :deep(.el-card__body) { padding: 16px; }
 .stats-row {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-  margin-bottom: 16px;
-}
-.stat-card {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 12px 14px;
-  background: #fff;
+  justify-content: space-between;
+  gap: 8px;
+}
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+  padding: 8px 6px;
   border-radius: 10px;
-  box-shadow: 0 2px 8px rgba(0,0,0,.06);
   transition: all .2s;
 }
-.stat-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,.1); }
-.stat-card :deep(.el-card__body) { display: flex; align-items: center; gap: 10px; }
+.stat-item:hover { background: #f5f5f5; }
 .stat-icon {
-  width: 40px; height: 40px;
-  border-radius: 10px;
+  width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
 }
-.stat-value { font-size: 20px; font-weight: 700; color: #1a1a1a; }
-.stat-label  { color: #888; font-size: 12px; margin-top: 2px; }
+.stat-info { min-width: 0; }
+.stat-value { font-size: 18px; font-weight: 700; color: #1a1a1a; white-space: nowrap; }
+.stat-label  { color: #888; font-size: 11px; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* ===== 章节 ===== */
 .section { margin-bottom: 20px; }
@@ -595,10 +591,10 @@ const viewActivityDetail = (activity) => {
     justify-content: center;
   }
   .welcome-content h1 { font-size: 18px; }
-  .stats-row { grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 14px; }
-  .stat-card { padding: 10px 6px !important; gap: 6px; }
-  .stat-icon { width: 32px; height: 32px; border-radius: 8px; font-size: 16px !important; }
-  .stat-value { font-size: 16px; }
+  .stats-row { gap: 4px; }
+  .stat-item { gap: 6px; padding: 6px 4px; }
+  .stat-icon { width: 28px; height: 28px; border-radius: 8px; }
+  .stat-value { font-size: 15px; }
   .stat-label { font-size: 10px; }
   .banner-item { padding: 0 16px; }
   .banner-content h3 { font-size: 16px; }
@@ -646,8 +642,10 @@ const viewActivityDetail = (activity) => {
 }
 
 @media (max-width: 480px) {
-  .stats-row { grid-template-columns: repeat(4, 1fr); gap: 6px; }
-  .stat-card { padding: 8px 4px !important; }
-  .stat-value { font-size: 14px; }
+  .stats-row { gap: 2px; }
+  .stat-item { gap: 4px; padding: 4px 2px; }
+  .stat-icon { width: 22px; height: 22px; border-radius: 6px; }
+  .stat-value { font-size: 13px; }
+  .stat-label { font-size: 9px; }
 }
 </style>
