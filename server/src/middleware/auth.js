@@ -4,6 +4,7 @@
 
 const jwt = require('jsonwebtoken')
 const jwtConfig = require('../config/jwt')
+const pool = require('../config/db')
 
 // 验证Token
 function verifyToken(token) {
@@ -35,8 +36,8 @@ function authAdmin(req, res, next) {
   next()
 }
 
-// 社区用户认证
-function authCommunity(req, res, next) {
+// 社区用户认证（兼容新旧token：当userId缺失时通过phone查库）
+async function authCommunity(req, res, next) {
   const token = req.headers.authorization?.replace('Bearer ', '')
   
   if (!token) {
@@ -52,12 +53,28 @@ function authCommunity(req, res, next) {
     return res.status(403).json({ code: 403, message: '无权限访问' })
   }
   
-  req.community = decoded
+  // 兼容新旧token：如果userId不存在，通过phone查库获取用户ID
+  let userId = decoded.userId
+  if (!userId && decoded.phone) {
+    try {
+      const [rows] = await pool.query(
+        'SELECT id FROM communities WHERE phone = ? AND status = 1 LIMIT 1',
+        [decoded.phone]
+      )
+      if (rows.length > 0) {
+        userId = rows[0].id
+      }
+    } catch (err) {
+      console.error('[authCommunity] 查库失败:', err.message)
+    }
+  }
+  
+  req.community = { ...decoded, userId: userId, id: userId }
   next()
 }
 
-// 商家用户认证
-function authMerchant(req, res, next) {
+// 商家用户认证（兼容新旧token：当userId缺失时通过phone查库）
+async function authMerchant(req, res, next) {
   const token = req.headers.authorization?.replace('Bearer ', '')
   
   if (!token) {
@@ -73,12 +90,28 @@ function authMerchant(req, res, next) {
     return res.status(403).json({ code: 403, message: '无权限访问' })
   }
   
-  req.merchant = decoded
+  // 兼容新旧token：如果userId不存在，通过phone查库获取用户ID
+  let userId = decoded.userId
+  if (!userId && decoded.phone) {
+    try {
+      const [rows] = await pool.query(
+        'SELECT id FROM merchants WHERE phone = ? AND status = 1 LIMIT 1',
+        [decoded.phone]
+      )
+      if (rows.length > 0) {
+        userId = rows[0].id
+      }
+    } catch (err) {
+      console.error('[authMerchant] 查库失败:', err.message)
+    }
+  }
+  
+  req.merchant = { ...decoded, userId: userId, id: userId }
   next()
 }
 
-// 招商大使认证
-function authAmbassador(req, res, next) {
+// 招商大使认证（兼容新旧token：当userId缺失时通过phone查库）
+async function authAmbassador(req, res, next) {
   const token = req.headers.authorization?.replace('Bearer ', '')
   
   if (!token) {
@@ -94,7 +127,23 @@ function authAmbassador(req, res, next) {
     return res.status(403).json({ code: 403, message: '无权限访问' })
   }
   
-  req.ambassador = decoded
+  // 兼容新旧token：如果userId不存在，通过phone查库获取用户ID
+  let userId = decoded.userId
+  if (!userId && decoded.phone) {
+    try {
+      const [rows] = await pool.query(
+        'SELECT id FROM ambassadors WHERE phone = ? AND status = 1 LIMIT 1',
+        [decoded.phone]
+      )
+      if (rows.length > 0) {
+        userId = rows[0].id
+      }
+    } catch (err) {
+      console.error('[authAmbassador] 查库失败:', err.message)
+    }
+  }
+  
+  req.ambassador = { ...decoded, userId: userId, id: userId }
   next()
 }
 

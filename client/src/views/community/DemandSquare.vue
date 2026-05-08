@@ -240,13 +240,11 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.page { max-width: 1200px; margin: 0 auto; }
-.page-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 16px; }
-.page-header h2 { margin: 0; font-size: 22px; font-weight: 700; }
-.filter-bar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; align-items: center; }
-.demand-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
-.demand-card { cursor: pointer; transition: transform 0.2s; }
-.demand-card:hover { transform: translateY(-2px); }
+
+/* ===== 基础样式（移动端默认，PC覆盖）===== */
+.demand-list { display: block; }
+.demand-card { cursor: pointer; background: white; border-radius: 12px; padding: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); transition: transform 0.15s; }
+.demand-card:active { transform: scale(0.98); }
 .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
 .match-score { display: flex; align-items: center; gap: 2px; }
 .heart { color: #ddd; font-size: 14px; }
@@ -259,19 +257,111 @@ onMounted(() => {
 .demand-tags { margin-bottom: 8px; }
 .demand-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; }
 .sponsor-types { display: flex; align-items: center; flex-wrap: wrap; }
-.pagination { margin-top: 20px; display: flex; justify-content: flex-end; }
+.pagination { display: flex; justify-content: center; padding: 14px; }
 
+/* ===== PC 端样式（≥769px）===== */
+@media (min-width: 769px) {
+  .page {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px 20px 40px;
+    min-height: 100vh;
+    background: #f0f2f5;
+  }
+
+  /* 页面标题区 */
+  .page-header {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding: 16px 20px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  .page-header h2 { margin: 0; font-size: 22px; font-weight: 700; }
+
+  /* 筛选栏 */
+  .filter-bar {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+    align-items: center;
+    padding: 16px 20px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+
+  /* 需求列表 */
+  .demand-list {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    padding: 0 0 16px;
+  }
+  .demand-card {
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    background: white;
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    border: 1px solid transparent;
+  }
+  .demand-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    border-color: #07C160;
+  }
+  .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .match-score { display: flex; align-items: center; gap: 4px; }
+  .heart { color: #ddd; font-size: 16px; }
+  .heart.filled { color: #f56c6c; }
+  .score-pct { font-size: 13px; color: #f56c6c; font-weight: 600; margin-left: 6px; }
+  .demand-title { margin: 0 0 10px; font-size: 17px; font-weight: 600; color: #222; }
+  .demand-meta { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #606266; margin-bottom: 10px; flex-wrap: wrap; }
+  .divider { color: #ddd; }
+  .community-name { font-size: 13px; color: #409EFF; font-weight: 500; cursor: pointer; text-decoration: underline; }
+  .demand-tags { margin-bottom: 10px; }
+  .demand-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; }
+  .sponsor-types { display: flex; align-items: center; flex-wrap: wrap; }
+  .pagination { margin-top: 16px; display: flex; justify-content: center; background: white; padding: 16px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+}
+
+/* ===== 移动端样式（≤768px）===== */
 @media (max-width: 768px) {
   .page { padding-bottom: 70px; }
-  .page-header { flex-direction: column; gap: 4px; margin-bottom: 12px; }
+  .page-header { flex-direction: column; gap: 4px; margin-bottom: 12px; padding: 12px 14px; background: white; border-radius: 0; border-bottom: 1px solid #eee; }
   .page-header h2 { font-size: 18px; }
-  .filter-bar { gap: 8px; margin-bottom: 14px; }
+  .filter-bar { gap: 8px; margin-bottom: 14px; padding: 10px 14px; background: white; }
   .filter-bar .el-input,
   .filter-bar .el-select { width: calc(50% - 4px) !important; font-size: 13px; }
   .filter-bar .el-button { width: calc(50% - 4px); font-size: 13px; }
-  .demand-list { grid-template-columns: 1fr; gap: 12px; }
-  .demand-footer { flex-direction: column; gap: 10px; align-items: flex-start; }
-  .demand-footer .el-button { width: 100%; }
-  .pagination { justify-content: center; }
+  .demand-list { grid-template-columns: 1fr; gap: 12px; padding: 10px 14px; }
+  .demand-card {
+    cursor: pointer;
+    transition: transform 0.15s;
+    background: white;
+    border-radius: 12px;
+    padding: 12px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  }
+  .demand-card:active { transform: scale(0.98); }
+  .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .match-score { display: flex; align-items: center; gap: 2px; }
+  .heart { color: #ddd; font-size: 14px; }
+  .heart.filled { color: #f56c6c; }
+  .score-pct { font-size: 12px; color: #f56c6c; font-weight: 600; margin-left: 4px; }
+  .demand-title { margin: 0 0 8px; font-size: 15px; font-weight: 600; }
+  .demand-meta { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #606266; margin-bottom: 8px; flex-wrap: wrap; }
+  .divider { color: #ddd; }
+  .community-name { font-size: 13px; color: #409EFF; font-weight: 500; cursor: pointer; text-decoration: underline; }
+  .demand-tags { margin-bottom: 8px; }
+  .demand-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; }
+  .sponsor-types { display: flex; align-items: center; flex-wrap: wrap; }
+  .pagination { justify-content: center; padding: 14px; }
 }
 </style>

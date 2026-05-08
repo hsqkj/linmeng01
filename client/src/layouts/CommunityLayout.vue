@@ -38,7 +38,7 @@
         <el-dropdown>
           <div class="user-info">
             <el-avatar :size="32" src="https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png" />
-            <span class="pc-only">{{ userInfo?.real_name || userInfo?.manager || '社区用户' }}</span>
+            <span class="pc-only">{{ userInfo?.real_name || userInfo?.name || '社区用户' }}</span>
             <el-icon><ArrowDown /></el-icon>
           </div>
           <template #dropdown>
@@ -125,7 +125,7 @@ onMounted(() => {
     userInfo.value = JSON.parse(info)
     // 检查资料是否完整（未填关键字段）
     const profile = userInfo.value
-    const isIncomplete = !profile.community_name || !profile.real_name || !profile.phone
+    const isIncomplete = !profile.community || !profile.real_name || !profile.phone
     if (isIncomplete) {
       ElMessageBox.confirm(
         '您的资料尚未完善！完善资料有助于精准匹配商家资源，获得更多合作机会。',

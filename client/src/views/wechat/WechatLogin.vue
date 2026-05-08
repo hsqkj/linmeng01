@@ -56,6 +56,7 @@ import axios from 'axios'
 import { ElMessage } from 'element-plus'
 import SmsCodeInput from '@/components/SmsCodeInput.vue'
 import { sendSms } from '@/api/public'
+import { getProfile } from '@/api/community'
 
 const defaultAvatar = '/default-avatar.png'
 
@@ -236,6 +237,14 @@ async function handleWechatAuth(code) {
         localStorage.setItem('userId', data.userId)
         localStorage.setItem('userName', data.userName)
 
+        // 立即获取并保存 community_info，避免首页渲染时缺少用户信息
+        if (data.userType === 'community') {
+          try {
+            const profileRes = await getProfile()
+            localStorage.setItem('community_info', JSON.stringify(profileRes.data || {}))
+          } catch {}
+        }
+
         userInfo.value = {
           name: data.userName,
           avatar: data.avatar,
@@ -310,6 +319,14 @@ async function handleBindPhone() {
     localStorage.setItem('userType', data.userType)
     localStorage.setItem('userId', data.userId)
     localStorage.setItem('userName', data.userName)
+
+    // 立即获取并保存 community_info
+    if (data.userType === 'community') {
+      try {
+        const profileRes = await getProfile()
+        localStorage.setItem('community_info', JSON.stringify(profileRes.data || {}))
+      } catch {}
+    }
 
     userInfo.value = {
       name: data.userName,

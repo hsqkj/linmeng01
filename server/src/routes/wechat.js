@@ -69,7 +69,19 @@ router.post('/code2session', async (req, res) => {
 router.post('/bindPhone', async (req, res) => {
   try {
     const { code, openid, type } = req.body
-    const token = generateToken(openid, 0, type || 'community')
+    // 根据 openid 查对应的用户 ID
+    let userId = 0
+    if (type === 'community') {
+      const [rows] = await db.query('SELECT id FROM communities WHERE openid = ?', [openid])
+      if (rows.length) userId = rows[0].id
+    } else if (type === 'merchant') {
+      const [rows] = await db.query('SELECT id FROM merchants WHERE openid = ?', [openid])
+      if (rows.length) userId = rows[0].id
+    } else if (type === 'ambassador') {
+      const [rows] = await db.query('SELECT id FROM ambassadors WHERE openid = ?', [openid])
+      if (rows.length) userId = rows[0].id
+    }
+    const token = generateToken(openid, userId, type || 'community')
 
     if (type === 'community') {
       await db.query(

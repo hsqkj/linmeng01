@@ -894,11 +894,40 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.merchant-detail { max-width: 1200px; margin: 0 auto; padding: 16px; }
-.page-header { margin-bottom: 12px; }
-.detail-layout { display: grid; grid-template-columns: 1fr 320px; gap: 16px; align-items: start; }
-.main-content, .side-content { display: flex; flex-direction: column; gap: 12px; }
-.merchant-card { background: #fff; border-radius: 10px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+
+/* ===== 基础样式（移动端默认，PC覆盖）===== */
+.resource-detail { background: #f5f5f5; }
+
+/* ===== PC 端样式（≥769px）===== */
+@media (min-width: 769px) {
+  .merchant-detail {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px 20px 40px;
+    min-height: 100vh;
+    background: #f0f2f5;
+  }
+  .page-header { margin-bottom: 16px; padding: 16px 20px; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .detail-layout { display: grid; grid-template-columns: 1fr 360px; gap: 20px; align-items: start; }
+  .main-content, .side-content { display: flex; flex-direction: column; gap: 16px; }
+  .merchant-card { background: #fff; border-radius: 12px; padding: 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+}
+
+/* ===== 移动端样式（≤768px）===== */
+@media (max-width: 768px) {
+  .merchant-detail { padding: 12px; background: #f5f5f5; }
+  .page-header { margin-bottom: 12px; }
+  .detail-layout { grid-template-columns: 1fr; gap: 12px; }
+  .main-content, .side-content { display: flex; flex-direction: column; gap: 12px; }
+  .merchant-card { background: #fff; border-radius: 10px; padding: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+  .merchant-header { flex-direction: column; align-items: center; text-align: center; }
+  .info-grid { grid-template-columns: 1fr; }
+  .merchant-meta { justify-content: center; flex-wrap: wrap; }
+  .match-hearts { justify-content: center; }
+  .action-btns { flex-wrap: wrap; }
+  .action-btns .el-button { flex: 1; min-width: 80px; font-size: 12px; }
+}
+</style>
 .merchant-header { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 6px; }
 .merchant-logo { flex-shrink: 0; }
 .logo-img { width: 80px; height: 80px; border-radius: 10px; object-fit: cover; background: #f0f2f5; }

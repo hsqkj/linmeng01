@@ -284,11 +284,50 @@ function resetImport() {
 </script>
 
 <style scoped>
-.batch-import { max-width: 900px; margin: 0 auto; padding: 20px; }
-.page-header { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
-.page-header h2 { flex: 1; margin: 0; font-size: 22px; font-weight: 700; }
-.steps { margin-bottom: 32px; }
-.step-content { background: #fff; border-radius: 12px; padding: 28px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+/* ===== PC 端样式（≥769px）===== */
+@media (min-width: 769px) {
+  .batch-import {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px 20px 40px;
+    min-height: 100vh;
+    background: #f0f2f5;
+  }
+  .page-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+    padding: 16px 20px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  .page-header h2 { flex: 1; margin: 0; font-size: 22px; font-weight: 700; }
+  .steps { margin-bottom: 32px; padding: 16px 20px; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .step-content { background: #fff; border-radius: 12px; padding: 32px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+}
+
+/* ===== 移动端样式（≤768px）===== */
+@media (max-width: 768px) {
+  .batch-import { max-width: 100%; margin: 0 auto; padding: 0 0 70px; background: #f5f5f5; }
+  .page-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding: 12px 14px;
+    background: white;
+    border-radius: 0;
+    border-bottom: 1px solid #eee;
+  }
+  .page-header h2 { flex: 1; margin: 0; font-size: 18px; font-weight: 700; }
+  .steps { margin-bottom: 20px; }
+  .step-content { background: #fff; border-radius: 0; padding: 16px; box-shadow: none; }
+  .template-cards { grid-template-columns: 1fr; }
+}
+
+/* ===== 共享样式 ===== */
 .form-tip-box { background: linear-gradient(135deg, #e8f4ff, #fff8e1); border: 1px solid #b3d4ff; border-radius: 8px; padding: 12px 16px; margin-bottom: 24px; color: #409EFF; font-size: 14px; }
 .guide-box h3 { margin-bottom: 20px; }
 .guide-steps { display: flex; flex-direction: column; gap: 16px; }
@@ -316,8 +355,4 @@ function resetImport() {
 .ok-text { color: #C0C4CC; }
 .import-tip { margin-top: 12px; display: flex; align-items: center; gap: 8px; color: #E6A23C; font-size: 13px; }
 .step-actions { display: flex; justify-content: center; gap: 16px; margin-top: 32px; padding-bottom: 40px; }
-
-@media (max-width: 768px) {
-  .template-cards { grid-template-columns: 1fr; }
-}
 </style>

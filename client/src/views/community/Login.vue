@@ -38,9 +38,15 @@
         />
 
         <!-- 密码模式 -->
-        <div v-if="loginMode === 'password'" class="form-group">
-          <label>登录密码</label>
-          <input class="form-control" v-model="form.password" type="password" placeholder="请输入登录密码" />
+        <div v-if="loginMode === 'password'">
+          <div class="form-group">
+            <label>手机号</label>
+            <input class="form-control" v-model="form.phone" type="text" placeholder="请输入手机号" />
+          </div>
+          <div class="form-group">
+            <label>登录密码</label>
+            <input class="form-control" v-model="form.password" type="password" placeholder="请输入登录密码" />
+          </div>
         </div>
 
         <button class="btn-login comm" @click="login" :disabled="loading">

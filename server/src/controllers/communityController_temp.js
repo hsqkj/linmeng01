@@ -1373,7 +1373,8 @@ exports.getMyNotifications = async (req, res) => {
     const { page = 1, pageSize = 20 } = req.query
     const offset = (parseInt(page) - 1) * parseInt(pageSize)
     // 兼容 req.community.id (新) 和 req.community.userId (旧)
-    const communityId = req.community.id || req.community.userId
+    const communityId = req.community?.id || req.community?.userId
+    const cid = parseInt(communityId)
     if (!communityId) {
       console.error('[getMyNotifications] req.community:', JSON.stringify(req.community))
       return error(res, '获取通知列表失败: 无法识别用户')
@@ -1384,8 +1385,8 @@ exports.getMyNotifications = async (req, res) => {
       SELECT COUNT(*) as total FROM system_notifications
       WHERE status = 1
         AND (target_type IN ('all', 'community', 0, 1))
-        AND (target_ids IS NULL OR target_ids = '' OR JSON_CONTAINS(target_ids, ?))
-    `, [JSON.stringify(String(communityId))])
+        AND (target_ids IS NULL OR target_ids = '' OR FIND_IN_SET(?, target_ids) > 0)
+    `, [cid])
 
     const [rows] = await pool.query(`
       SELECT n.id, n.title, n.content, n.priority,
@@ -1407,10 +1408,10 @@ exports.getMyNotifications = async (req, res) => {
       FROM system_notifications n
       WHERE n.status = 1
         AND (n.target_type IN ('all', 'community', 0, 1))
-        AND (n.target_ids IS NULL OR n.target_ids = '' OR JSON_CONTAINS(n.target_ids, ?))
+        AND (n.target_ids IS NULL OR n.target_ids = '' OR FIND_IN_SET(?, n.target_ids) > 0)
       ORDER BY n.priority DESC, n.published_at DESC
       LIMIT ? OFFSET ?
-    `, [communityId, JSON.stringify(String(communityId)), parseInt(pageSize), offset])
+    `, [cid, cid, parseInt(pageSize), offset])
 
     pageSuccess(res, rows, countRows[0].total, parseInt(page), parseInt(pageSize))
   } catch (err) {
@@ -1424,23 +1425,24 @@ exports.getUnreadCount = async (req, res) => {
   try {
     // 兼容 req.community.id (新) 和 req.community.userId (旧)
     const communityId = req.community?.id || req.community?.userId
+    const cid = parseInt(communityId)
     if (!communityId) {
       console.error('[getUnreadCount] req.community:', JSON.stringify(req.community))
       return error(res, '未登录')
     }
     // JSON_CONTAINS 第二个参数必须是 JSON 字符串，如 '"123"'
-    const idJson = JSON.stringify(String(communityId))
+    const idJson = cid
     // 查询未读通知数量（排除已读的）
     const [[{ count }]] = await pool.query(
       `SELECT COUNT(*) as count FROM system_notifications n
        WHERE n.status = 1
        AND (n.target_type IN ('all', 'community', 0, 1))
-       AND (n.target_ids IS NULL OR n.target_ids = '' OR JSON_CONTAINS(n.target_ids, ?))
+       AND (n.target_ids IS NULL OR n.target_ids = '' OR FIND_IN_SET(?, n.target_ids) > 0)
        AND NOT EXISTS (
          SELECT 1 FROM notification_reads r
          WHERE r.notification_id = n.id AND r.user_type = 'community' AND r.user_id = ?
        )`,
-      [idJson, communityId]
+      [cid, cid]
     )
     success(res, { count })
   } catch (err) {
@@ -1453,6 +1455,7 @@ exports.getUnreadCount = async (req, res) => {
 exports.markNotificationsRead = async (req, res) => {
   try {
     const communityId = req.community?.id
+    const cid = parseInt(communityId)
     if (!communityId) {
       return error(res, '未登录')
     }
@@ -1461,12 +1464,12 @@ exports.markNotificationsRead = async (req, res) => {
       `SELECT n.id FROM system_notifications n
        WHERE n.status = 1
        AND (n.target_type IN ('all', 'community', 0, 1))
-       AND (n.target_ids IS NULL OR n.target_ids = '' OR JSON_CONTAINS(n.target_ids, ?))
+       AND (n.target_ids IS NULL OR n.target_ids = '' OR FIND_IN_SET(?, n.target_ids) > 0)
        AND NOT EXISTS (
          SELECT 1 FROM notification_reads r
          WHERE r.notification_id = n.id AND r.user_type = 'community' AND r.user_id = ?
        )`,
-      [String(communityId), communityId]
+      [cid, cid]
     )
     
     // 批量插入已读记录
@@ -1488,6 +1491,7 @@ exports.markNotificationsRead = async (req, res) => {
 exports.markOneNotificationRead = async (req, res) => {
   try {
     const communityId = req.community?.id
+    const cid = parseInt(communityId)
     if (!communityId) {
       return error(res, '未登录')
     }

@@ -414,30 +414,9 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.page {
-  max-width: 1400px;
-  margin: 0 auto;
-}
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-.page-header h2 { margin: 0; font-size: 22px; font-weight: 700; }
-.header-actions { display: flex; gap: 8px; align-items: center; }
-.draft-badge { margin-left: 4px; }
-.pagination-wrap { display: flex; justify-content: center; margin-top: 20px; }
 
-/* 草稿箱 */
-.draft-item { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-bottom: 1px solid #f0f0f0; }
-.draft-item:last-child { border-bottom: none; }
-.draft-title { font-weight: 500; font-size: 14px; margin-bottom: 4px; }
-.draft-meta { display: flex; align-items: center; gap: 8px; }
-.draft-time { font-size: 12px; color: #909399; }
-.draft-actions { display: flex; gap: 4px; }
-
-/* 表格内样式 */
+/* ===== 基础样式（移动端默认，PC覆盖）===== */
+.page { background: #f5f5f5; }
 .text-muted { color: #909399; }
 .text-ellipsis { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
 .clickable { cursor: pointer; color: #409EFF; }
@@ -445,48 +424,144 @@ onMounted(() => {
 .clickable.has-data { font-weight: 600; }
 .tags-cell { display: flex; flex-wrap: wrap; gap: 2px; }
 .tag-item { max-width: 60px; overflow: hidden; text-overflow: ellipsis; }
+.more-tag { font-size: 12px; color: #909399; margin-left: 4px; }
 
-/* 留言弹窗 */
-.comment-list { max-height: 400px; overflow-y: auto; margin-bottom: 16px; }
-.comment-item { padding: 12px 0; border-bottom: 1px solid #f0f0f0; }
-.comment-item:last-child { border-bottom: none; }
-.comment-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
-.comment-avatar { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; }
-.comment-avatar-placeholder { width: 28px; height: 28px; border-radius: 50%; background: #409EFF; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 12px; }
-.comment-user { font-weight: 500; }
-.comment-time { color: #909399; font-size: 12px; margin-left: auto; }
-.comment-content { color: #333; line-height: 1.6; padding-left: 36px; }
-.reply-list { margin: 8px 0 8px 36px; padding: 8px; background: #f5f7fa; border-radius: 4px; }
-.reply-item { margin-bottom: 4px; font-size: 13px; }
-.reply-user { font-weight: 500; color: #409EFF; }
-.reply-content { color: #666; }
-.reply-time { color: #909399; font-size: 11px; margin-left: 8px; }
-.reply-input-wrap { display: flex; gap: 8px; margin-top: 8px; padding-left: 36px; }
-.send-comment { border-top: 1px solid #f0f0f0; padding-top: 16px; }
+/* ===== PC 端样式（≥769px）===== */
+@media (min-width: 769px) {
+  .page {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px 20px 40px;
+    min-height: 100vh;
+    background: #f0f2f5;
+  }
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 16px 20px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  .page-header h2 { margin: 0; font-size: 22px; font-weight: 700; }
+  .header-actions { display: flex; gap: 12px; align-items: center; }
+  .draft-badge { margin-left: 4px; }
+  .pagination-wrap { display: flex; justify-content: center; margin-top: 20px; }
 
-/* 意向弹窗 */
-.intention-list { max-height: 400px; overflow-y: auto; }
-.intention-item { padding: 12px; border: 1px solid #ebeef5; border-radius: 8px; margin-bottom: 12px; }
-.intention-header { display: flex; align-items: flex-start; gap: 12px; }
-.intention-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
-.intention-avatar-placeholder { width: 40px; height: 40px; border-radius: 50%; background: #409EFF; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 16px; }
-.intention-info { flex: 1; }
-.intention-name { font-weight: 600; margin-bottom: 4px; }
-.intention-intro { color: #666; font-size: 13px; }
-.intention-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; padding-top: 8px; border-top: 1px dashed #ebeef5; }
-.intention-time { color: #909399; font-size: 12px; }
-.intention-actions { display: flex; gap: 8px; }
+  /* 表格内样式 */
+  .text-muted { color: #909399; }
+  .text-ellipsis { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
+  .clickable { cursor: pointer; color: #409EFF; }
+  .clickable:hover { text-decoration: underline; }
+  .clickable.has-data { font-weight: 600; }
+  .tags-cell { display: flex; flex-wrap: wrap; gap: 2px; }
+  .tag-item { max-width: 60px; overflow: hidden; text-overflow: ellipsis; }
 
+  /* 草稿箱 */
+  .draft-item { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-bottom: 1px solid #f0f0f0; }
+  .draft-item:last-child { border-bottom: none; }
+  .draft-title { font-weight: 500; font-size: 14px; margin-bottom: 4px; }
+  .draft-meta { display: flex; align-items: center; gap: 8px; }
+  .draft-time { font-size: 12px; color: #909399; }
+  .draft-actions { display: flex; gap: 4px; }
+
+  /* 留言弹窗 */
+  .comment-list { max-height: 400px; overflow-y: auto; margin-bottom: 16px; }
+  .comment-item { padding: 12px 0; border-bottom: 1px solid #f0f0f0; }
+  .comment-item:last-child { border-bottom: none; }
+  .comment-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .comment-avatar { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; }
+  .comment-avatar-placeholder { width: 28px; height: 28px; border-radius: 50%; background: #409EFF; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 12px; }
+  .comment-user { font-weight: 500; }
+  .comment-time { color: #909399; font-size: 12px; margin-left: auto; }
+  .comment-content { color: #333; line-height: 1.6; padding-left: 36px; }
+  .reply-list { margin: 8px 0 8px 36px; padding: 8px; background: #f5f7fa; border-radius: 4px; }
+  .reply-item { margin-bottom: 4px; font-size: 13px; }
+  .reply-user { font-weight: 500; color: #409EFF; }
+  .reply-content { color: #666; }
+  .reply-time { color: #909399; font-size: 11px; margin-left: 8px; }
+  .reply-input-wrap { display: flex; gap: 8px; margin-top: 8px; padding-left: 36px; }
+  .send-comment { border-top: 1px solid #f0f0f0; padding-top: 16px; }
+
+  /* 意向弹窗 */
+  .intention-list { max-height: 400px; overflow-y: auto; }
+  .intention-item { padding: 12px; border: 1px solid #ebeef5; border-radius: 8px; margin-bottom: 12px; }
+  .intention-header { display: flex; align-items: flex-start; gap: 12px; }
+  .intention-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
+  .intention-avatar-placeholder { width: 40px; height: 40px; border-radius: 50%; background: #409EFF; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+  .intention-info { flex: 1; }
+  .intention-name { font-weight: 600; margin-bottom: 4px; }
+  .intention-intro { color: #666; font-size: 13px; }
+  .intention-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; padding-top: 8px; border-top: 1px dashed #ebeef5; }
+  .intention-time { color: #909399; font-size: 12px; }
+  .intention-actions { display: flex; gap: 8px; }
+}
+
+/* ===== 移动端样式（≤768px）===== */
 @media (max-width: 768px) {
-  .page { padding-bottom: 70px; }
+  .page { padding-bottom: 70px; background: #f5f5f5; }
   .page-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 10px;
     margin-bottom: 14px;
+    padding: 12px 14px;
+    background: white;
+    border-radius: 0;
+    border-bottom: 1px solid #eee;
   }
   .page-header h2 { font-size: 18px; }
   .page-header .el-button { width: 100%; }
   .pagination-wrap { justify-content: center; }
+
+  /* 草稿箱 */
+  .draft-item { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-bottom: 1px solid #f0f0f0; }
+  .draft-item:last-child { border-bottom: none; }
+  .draft-title { font-weight: 500; font-size: 14px; margin-bottom: 4px; }
+  .draft-meta { display: flex; align-items: center; gap: 8px; }
+  .draft-time { font-size: 12px; color: #909399; }
+  .draft-actions { display: flex; gap: 4px; }
+
+  /* 表格内样式 */
+  .text-muted { color: #909399; }
+  .text-ellipsis { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
+  .clickable { cursor: pointer; color: #409EFF; }
+  .clickable:hover { text-decoration: underline; }
+  .clickable.has-data { font-weight: 600; }
+  .tags-cell { display: flex; flex-wrap: wrap; gap: 2px; }
+  .tag-item { max-width: 60px; overflow: hidden; text-overflow: ellipsis; }
+
+  /* 留言弹窗 */
+  .comment-list { max-height: 400px; overflow-y: auto; margin-bottom: 16px; }
+  .comment-item { padding: 12px 0; border-bottom: 1px solid #f0f0f0; }
+  .comment-item:last-child { border-bottom: none; }
+  .comment-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .comment-avatar { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; }
+  .comment-avatar-placeholder { width: 28px; height: 28px; border-radius: 50%; background: #409EFF; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 12px; }
+  .comment-user { font-weight: 500; }
+  .comment-time { color: #909399; font-size: 12px; margin-left: auto; }
+  .comment-content { color: #333; line-height: 1.6; padding-left: 36px; }
+  .reply-list { margin: 8px 0 8px 36px; padding: 8px; background: #f5f7fa; border-radius: 4px; }
+  .reply-item { margin-bottom: 4px; font-size: 13px; }
+  .reply-user { font-weight: 500; color: #409EFF; }
+  .reply-content { color: #666; }
+  .reply-time { color: #909399; font-size: 11px; margin-left: 8px; }
+  .reply-input-wrap { display: flex; gap: 8px; margin-top: 8px; padding-left: 36px; }
+  .send-comment { border-top: 1px solid #f0f0f0; padding-top: 16px; }
+
+  /* 意向弹窗 */
+  .intention-list { max-height: 400px; overflow-y: auto; }
+  .intention-item { padding: 12px; border: 1px solid #ebeef5; border-radius: 8px; margin-bottom: 12px; }
+  .intention-header { display: flex; align-items: flex-start; gap: 12px; }
+  .intention-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
+  .intention-avatar-placeholder { width: 40px; height: 40px; border-radius: 50%; background: #409EFF; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+  .intention-info { flex: 1; }
+  .intention-name { font-weight: 600; margin-bottom: 4px; }
+  .intention-intro { color: #666; font-size: 13px; }
+  .intention-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; padding-top: 8px; border-top: 1px dashed #ebeef5; }
+  .intention-time { color: #909399; font-size: 12px; }
+  .intention-actions { display: flex; gap: 8px; }
 }
 </style>

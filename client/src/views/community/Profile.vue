@@ -1,124 +1,124 @@
-<template>
+﻿<template>
   <div class="page">
-    <h2>个人中心</h2>
+    <h2>涓汉涓績</h2>
 
-    <el-row :gutter="20" v-loading="loading" element-loading-text="加载中...">
-      <!-- 左侧：社区基本信息 -->
+    <el-row :gutter="20" v-loading="loading" element-loading-text="鍔犺浇涓?..">
+      <!-- 宸︿晶锛氱ぞ鍖哄熀鏈俊鎭?-->
       <el-col :xs="24" :sm="24" :md="8">
         <div class="profile-card">
           <div class="avatar-area">
             <el-avatar :size="80" :src="profile.logo" style="background:#26a269">
               <el-icon :size="40"><OfficeBuilding /></el-icon>
             </el-avatar>
-            <div class="community-name">{{ profile.community || profile.community_name || '社区' }}</div>
-            <div class="district-name">{{ profile.district }} · {{ profile.street }}</div>
+            <div class="community-name">{{ profile.community || profile.community_name || '绀惧尯' }}</div>
+            <div class="district-name">{{ profile.district }} 路 {{ profile.street }}</div>
           </div>
           <div class="stats-row">
-            <div class="stat-item"><div class="stat-val">{{ profile.demandCount || 0 }}</div><div class="stat-label">发布需求</div></div>
-            <div class="stat-item"><div class="stat-val">{{ profile.intentionCount || 0 }}</div><div class="stat-label">撮合成功</div></div>
-            <div class="stat-item"><div class="stat-val">{{ profile.viewCount || 0 }}</div><div class="stat-label">浏览量</div></div>
+            <div class="stat-item"><div class="stat-val">{{ profile.demandCount || 0 }}</div><div class="stat-label">鍙戝竷闇€姹?/div></div>
+            <div class="stat-item"><div class="stat-val">{{ profile.intentionCount || 0 }}</div><div class="stat-label">鎾悎鎴愬姛</div></div>
+            <div class="stat-item"><div class="stat-val">{{ profile.viewCount || 0 }}</div><div class="stat-label">娴忚閲?/div></div>
           </div>
-          <el-button type="primary" style="width:100%;margin-top:12px" @click="startEdit">编辑社区资料</el-button>
+          <el-button type="primary" style="width:100%;margin-top:12px" @click="startEdit">缂栬緫绀惧尯璧勬枡</el-button>
           <div class="quick-links">
             <div class="quick-link-item" @click="infoTab = 'favorites'">
               <el-icon><Star /></el-icon>
-              <span>我的收藏</span>
+              <span>鎴戠殑鏀惰棌</span>
             </div>
             <div class="quick-link-item" @click="infoTab = 'rewards'">
-              <span>🎁</span>
-              <span>我的奖励</span>
+              <span>馃巵</span>
+              <span>鎴戠殑濂栧姳</span>
             </div>
           </div>
         </div>
       </el-col>
 
-      <!-- 右侧：详细信息 -->
+      <!-- 鍙充晶锛氳缁嗕俊鎭?-->
       <el-col :xs="24" :sm="24" :md="16">
         <el-card v-if="!editing">
           <template #header>
             <div style="display:flex;justify-content:space-between;align-items:center">
-              <span style="font-weight:700">社区详细资料</span>
-              <el-button text type="primary" @click="startEdit"><el-icon><Edit /></el-icon> 编辑</el-button>
+              <span style="font-weight:700">绀惧尯璇︾粏璧勬枡</span>
+              <el-button text type="primary" @click="startEdit"><el-icon><Edit /></el-icon> 缂栬緫</el-button>
             </div>
           </template>
           <el-tabs v-model="infoTab">
-            <el-tab-pane label="基本信息" name="basic">
+            <el-tab-pane label="鍩烘湰淇℃伅" name="basic">
               <el-descriptions :column="2" border>
-                <el-descriptions-item label="社区名称">{{ profile.community || '未填写' }}</el-descriptions-item>
-                <el-descriptions-item label="小区名称">{{ profile.address || '未填写' }}</el-descriptions-item>
-                <el-descriptions-item label="所属行政区">{{ profile.district || '未填写' }}</el-descriptions-item>
-                <el-descriptions-item label="所属街道">{{ profile.street || '未填写' }}</el-descriptions-item>
-                <el-descriptions-item label="联系人职务">{{ profile.position || '未填写' }}</el-descriptions-item>
-                <el-descriptions-item label="联系人姓名">{{ profile.real_name || '未填写' }}</el-descriptions-item>
-                <el-descriptions-item label="联系手机">{{ profile.phone || profile.username }}</el-descriptions-item>
-                <el-descriptions-item label="详细地址" :span="2">{{ profile.address || '未填写' }}</el-descriptions-item>
-                <el-descriptions-item label="地图定位" :span="2">
+                <el-descriptions-item label="绀惧尯鍚嶇О">{{ profile.community || '鏈～鍐? }}</el-descriptions-item>
+                <el-descriptions-item label="灏忓尯鍚嶇О">{{ profile.address || '鏈～鍐? }}</el-descriptions-item>
+                <el-descriptions-item label="鎵€灞炶鏀垮尯">{{ profile.district || '鏈～鍐? }}</el-descriptions-item>
+                <el-descriptions-item label="鎵€灞炶閬?>{{ profile.street || '鏈～鍐? }}</el-descriptions-item>
+                <el-descriptions-item label="鑱旂郴浜鸿亴鍔?>{{ profile.position || '鏈～鍐? }}</el-descriptions-item>
+                <el-descriptions-item label="鑱旂郴浜哄鍚?>{{ profile.real_name || '鏈～鍐? }}</el-descriptions-item>
+                <el-descriptions-item label="鑱旂郴鎵嬫満">{{ profile.phone || profile.username }}</el-descriptions-item>
+                <el-descriptions-item label="璇︾粏鍦板潃" :span="2">{{ profile.address || '鏈～鍐? }}</el-descriptions-item>
+                <el-descriptions-item label="鍦板浘瀹氫綅" :span="2">
                   <template v-if="profile.latitude && profile.longitude">
                     <el-link :href="'https://maps.google.com/?q=' + profile.latitude + ',' + profile.longitude" target="_blank" type="primary">
-                      📍 查看地图（{{ profile.latitude }}, {{ profile.longitude }}）
+                      馃搷 鏌ョ湅鍦板浘锛坽{ profile.latitude }}, {{ profile.longitude }}锛?
                     </el-link>
                   </template>
-                  <span v-else>未设置定位</span>
+                  <span v-else>鏈缃畾浣?/span>
                 </el-descriptions-item>
-                <el-descriptions-item label="审核状态">
+                <el-descriptions-item label="瀹℃牳鐘舵€?>
                   <el-tag :type="profile.status === 1 ? 'success' : 'warning'" size="small">
-                    {{ profile.status === 1 ? '已通过' : '待审核' }}
+                    {{ profile.status === 1 ? '宸查€氳繃' : '寰呭鏍? }}
                   </el-tag>
                 </el-descriptions-item>
-                <el-descriptions-item label="社区简介" :span="2">{{ profile.description || '暂无简介' }}</el-descriptions-item>
+                <el-descriptions-item label="绀惧尯绠€浠? :span="2">{{ profile.description || '鏆傛棤绠€浠? }}</el-descriptions-item>
               </el-descriptions>
             </el-tab-pane>
-            <el-tab-pane label="修改密码" name="password">
+            <el-tab-pane label="淇敼瀵嗙爜" name="password">
               <div class="password-form">
                 <el-alert type="info" :closable="false" style="margin-bottom: 16px">
-                  为保障账号安全，请定期更换密码。新密码长度不能少于6位。
+                  涓轰繚闅滆处鍙峰畨鍏紝璇峰畾鏈熸洿鎹㈠瘑鐮併€傛柊瀵嗙爜闀垮害涓嶈兘灏戜簬6浣嶃€?
                 </el-alert>
                 <el-form :model="passwordForm" :rules="passwordRules" ref="passwordFormRef" label-width="120px" style="max-width: 400px">
-                  <el-form-item label="旧密码" prop="oldPassword">
-                    <el-input v-model="passwordForm.oldPassword" type="password" placeholder="请输入当前密码" show-password />
+                  <el-form-item label="鏃у瘑鐮? prop="oldPassword">
+                    <el-input v-model="passwordForm.oldPassword" type="password" placeholder="璇疯緭鍏ュ綋鍓嶅瘑鐮? show-password />
                   </el-form-item>
-                  <el-form-item label="新密码" prop="newPassword">
-                    <el-input v-model="passwordForm.newPassword" type="password" placeholder="请输入新密码（至少6位）" show-password />
+                  <el-form-item label="鏂板瘑鐮? prop="newPassword">
+                    <el-input v-model="passwordForm.newPassword" type="password" placeholder="璇疯緭鍏ユ柊瀵嗙爜锛堣嚦灏?浣嶏級" show-password />
                   </el-form-item>
-                  <el-form-item label="确认密码" prop="confirmPassword">
-                    <el-input v-model="passwordForm.confirmPassword" type="password" placeholder="请再次输入新密码" show-password />
+                  <el-form-item label="纭瀵嗙爜" prop="confirmPassword">
+                    <el-input v-model="passwordForm.confirmPassword" type="password" placeholder="璇峰啀娆¤緭鍏ユ柊瀵嗙爜" show-password />
                   </el-form-item>
                   <el-form-item>
-                    <el-button type="primary" @click="handleChangePassword" :loading="passwordLoading">确认修改</el-button>
+                    <el-button type="primary" @click="handleChangePassword" :loading="passwordLoading">纭淇敼</el-button>
                   </el-form-item>
                 </el-form>
               </div>
             </el-tab-pane>
-            <el-tab-pane label="社区画像" name="portrait">
+            <el-tab-pane label="绀惧尯鐢诲儚" name="portrait">
               <el-descriptions :column="2" border>
-                <el-descriptions-item label="社区名称">{{ profile.community || profile.community_name || '未填写' }}</el-descriptions-item>
-                <el-descriptions-item label="详细地址">{{ profile.address || '未填写' }}</el-descriptions-item>
-                <el-descriptions-item label="社区总户数">{{ profile.total_households || profile.households || '未填写' }}户</el-descriptions-item>
-                <el-descriptions-item label="社区商户数">{{ profile.merchant_count || 0 }}家</el-descriptions-item>
-                <el-descriptions-item label="亲子家庭占比">{{ profile.family_ratio ? profile.family_ratio + '%' : '未填写' }}</el-descriptions-item>
-                <el-descriptions-item label="老年群体占比">{{ profile.elderly_ratio ? profile.elderly_ratio + '%' : '未填写' }}</el-descriptions-item>
-                <el-descriptions-item label="公共空间面积">{{ profile.public_space_area ? profile.public_space_area + '㎡' : '未填写' }}</el-descriptions-item>
-                <el-descriptions-item label="配套设施" :span="2">
-                  <el-tag v-if="profile.has_outdoor_plaza" size="small" type="success" style="margin-right: 8px">🏟️ 户外广场</el-tag>
-                  <el-tag v-if="profile.has_commercial" size="small" type="success" style="margin-right: 8px">🏪 商业配套</el-tag>
-                  <el-tag v-if="profile.has_school" size="small" type="success" style="margin-right: 8px">🏫 学校/幼儿园</el-tag>
-                  <el-tag v-if="profile.has_park" size="small" type="success" style="margin-right: 8px">🏞️ 公园/体育设施</el-tag>
-                  <span v-if="!profile.has_outdoor_plaza && !profile.has_commercial && !profile.has_school && !profile.has_park" style="color: #909399">暂无配套设施</span>
+                <el-descriptions-item label="绀惧尯鍚嶇О">{{ profile.community || profile.community_name || '鏈～鍐? }}</el-descriptions-item>
+                <el-descriptions-item label="璇︾粏鍦板潃">{{ profile.address || '鏈～鍐? }}</el-descriptions-item>
+                <el-descriptions-item label="绀惧尯鎬绘埛鏁?>{{ profile.total_households || profile.households || '鏈～鍐? }}鎴?/el-descriptions-item>
+                <el-descriptions-item label="绀惧尯鍟嗘埛鏁?>{{ profile.merchant_count || 0 }}瀹?/el-descriptions-item>
+                <el-descriptions-item label="浜插瓙瀹跺涵鍗犳瘮">{{ profile.family_ratio ? profile.family_ratio + '%' : '鏈～鍐? }}</el-descriptions-item>
+                <el-descriptions-item label="鑰佸勾缇や綋鍗犳瘮">{{ profile.elderly_ratio ? profile.elderly_ratio + '%' : '鏈～鍐? }}</el-descriptions-item>
+                <el-descriptions-item label="鍏叡绌洪棿闈㈢Н">{{ profile.public_space_area ? profile.public_space_area + '銕? : '鏈～鍐? }}</el-descriptions-item>
+                <el-descriptions-item label="閰嶅璁炬柦" :span="2">
+                  <el-tag v-if="profile.has_outdoor_plaza" size="small" type="success" style="margin-right: 8px">馃彑锔?鎴峰骞垮満</el-tag>
+                  <el-tag v-if="profile.has_commercial" size="small" type="success" style="margin-right: 8px">馃彧 鍟嗕笟閰嶅</el-tag>
+                  <el-tag v-if="profile.has_school" size="small" type="success" style="margin-right: 8px">馃彨 瀛︽牎/骞煎効鍥?/el-tag>
+                  <el-tag v-if="profile.has_park" size="small" type="success" style="margin-right: 8px">馃彏锔?鍏洯/浣撹偛璁炬柦</el-tag>
+                  <span v-if="!profile.has_outdoor_plaza && !profile.has_commercial && !profile.has_school && !profile.has_park" style="color: #909399">鏆傛棤閰嶅璁炬柦</span>
                 </el-descriptions-item>
-                <el-descriptions-item label="地图定位" :span="2">
+                <el-descriptions-item label="鍦板浘瀹氫綅" :span="2">
                   <template v-if="profile.latitude && profile.longitude">
                     <el-link :href="'https://maps.google.com/?q=' + profile.latitude + ',' + profile.longitude" target="_blank" type="primary">
-                      📍 查看地图（{{ profile.latitude }}, {{ profile.longitude }}）
+                      馃搷 鏌ョ湅鍦板浘锛坽{ profile.latitude }}, {{ profile.longitude }}锛?
                     </el-link>
                   </template>
-                  <span v-else>未设置定位</span>
+                  <span v-else>鏈缃畾浣?/span>
                 </el-descriptions-item>
-                <el-descriptions-item label="社区简介" :span="2">{{ profile.description || '暂无简介' }}</el-descriptions-item>
+                <el-descriptions-item label="绀惧尯绠€浠? :span="2">{{ profile.description || '鏆傛棤绠€浠? }}</el-descriptions-item>
               </el-descriptions>
               
-              <!-- 社区图片展示 -->
+              <!-- 绀惧尯鍥剧墖灞曠ず -->
               <div v-if="profile.images && profile.images.length > 0" style="margin-top: 16px">
-                <div style="font-weight: 600; margin-bottom: 8px; color: #303133;">社区图片</div>
+                <div style="font-weight: 600; margin-bottom: 8px; color: #303133;">绀惧尯鍥剧墖</div>
                 <div style="display: flex; flex-wrap: wrap; gap: 8px;">
                   <el-image 
                     v-for="(img, idx) in profile.images" 
@@ -131,18 +131,18 @@
                 </div>
               </div>
               
-              <!-- 小区列表展示 -->
+              <!-- 灏忓尯鍒楄〃灞曠ず -->
               <div v-if="profile.compounds && profile.compounds.length > 0" style="margin-top: 16px">
-                <div style="font-weight: 600; margin-bottom: 8px; color: #303133;">🏠 所辖小区</div>
+                <div style="font-weight: 600; margin-bottom: 8px; color: #303133;">馃彔 鎵€杈栧皬鍖?/div>
                 <el-table :data="profile.compounds" size="small" border>
-                  <el-table-column prop="name" label="小区名称" />
-                  <el-table-column prop="households" label="户数" width="100" />
+                  <el-table-column prop="name" label="灏忓尯鍚嶇О" />
+                  <el-table-column prop="households" label="鎴锋暟" width="100" />
                 </el-table>
               </div>
               
-              <!-- 场地空间展示 -->
+              <!-- 鍦哄湴绌洪棿灞曠ず -->
               <div v-if="profile.spaces && profile.spaces.length > 0" style="margin-top: 16px">
-                <div style="font-weight: 600; margin-bottom: 8px; color: #303133;">🏟️ 场地空间</div>
+                <div style="font-weight: 600; margin-bottom: 8px; color: #303133;">馃彑锔?鍦哄湴绌洪棿</div>
                 <div class="space-cards">
                   <el-card v-for="space in profile.spaces" :key="space.id" class="space-card" shadow="hover">
                     <template #header>
@@ -150,36 +150,36 @@
                     </template>
                     <div class="space-info">
                       <div class="space-row">
-                        <span class="space-label">类型：</span>
+                        <span class="space-label">绫诲瀷锛?/span>
                         <el-tag size="small" :type="space.location_type === 0 ? 'primary' : 'success'">
-                          {{ space.location_type === 0 ? '室内' : '室外' }}
+                          {{ space.location_type === 0 ? '瀹ゅ唴' : '瀹ゅ' }}
                         </el-tag>
                         <span v-if="space.location_type === 0 && space.floor_number" style="margin-left: 8px">
-                          {{ space.floor_number }}层
+                          {{ space.floor_number }}灞?
                         </span>
                       </div>
                       <div v-if="space.area" class="space-row">
-                        <span class="space-label">面积：</span>{{ space.area }}㎡
+                        <span class="space-label">闈㈢Н锛?/span>{{ space.area }}銕?
                       </div>
                       <div v-if="space.capacity" class="space-row">
-                        <span class="space-label">容纳：</span>{{ space.capacity }}人
+                        <span class="space-label">瀹圭撼锛?/span>{{ space.capacity }}浜?
                       </div>
                       <div v-if="space.facilities && space.facilities.length > 0" class="space-row">
-                        <span class="space-label">设施：</span>
+                        <span class="space-label">璁炬柦锛?/span>
                         <el-tag v-for="f in space.facilities" :key="f" size="small" style="margin: 2px">{{ f }}</el-tag>
                       </div>
                       <div class="space-row">
-                        <span class="space-label">可用：</span>
+                        <span class="space-label">鍙敤锛?/span>
                         <template v-if="parseAvailableHours(space.available_hours).weekday">
-                          <el-tag size="small" type="primary" style="margin-right: 8px">周一至周五 {{ parseAvailableHours(space.available_hours).weekday }}</el-tag>
+                          <el-tag size="small" type="primary" style="margin-right: 8px">鍛ㄤ竴鑷冲懆浜?{{ parseAvailableHours(space.available_hours).weekday }}</el-tag>
                         </template>
                         <template v-if="parseAvailableHours(space.available_hours).weekend">
-                          <el-tag size="small" type="success">周六周日 {{ parseAvailableHours(space.available_hours).weekend }}</el-tag>
+                          <el-tag size="small" type="success">鍛ㄥ叚鍛ㄦ棩 {{ parseAvailableHours(space.available_hours).weekend }}</el-tag>
                         </template>
-                        <span v-if="!parseAvailableHours(space.available_hours).weekday && !parseAvailableHours(space.available_hours).weekend" style="color: #909399">未设置</span>
+                        <span v-if="!parseAvailableHours(space.available_hours).weekday && !parseAvailableHours(space.available_hours).weekend" style="color: #909399">鏈缃?/span>
                       </div>
                       <div v-if="space.description" class="space-row">
-                        <span class="space-label">说明：</span>{{ space.description }}
+                        <span class="space-label">璇存槑锛?/span>{{ space.description }}
                       </div>
                       <div v-if="space.images && space.images.length > 0" class="space-images">
                         <el-image 
@@ -196,16 +196,16 @@
                 </div>
               </div>
             </el-tab-pane>
-            <el-tab-pane label="我的标签" name="tags">
-              <p style="color:#909399;font-size:13px;margin-bottom:12px">标签越精准，智能匹配效果越好</p>
+            <el-tab-pane label="鎴戠殑鏍囩" name="tags">
+              <p style="color:#909399;font-size:13px;margin-bottom:12px">鏍囩瓒婄簿鍑嗭紝鏅鸿兘鍖归厤鏁堟灉瓒婂ソ</p>
               <div class="tag-list">
                 <el-tag v-for="tag in (Array.isArray(profile.tags) ? profile.tags : (profile.tags ? profile.tags.split(',') : []))" :key="tag" style="margin:4px">{{ tag }}</el-tag>
               </div>
-              <el-button type="primary" text style="margin-top:12px" @click="startEdit">管理标签</el-button>
+              <el-button type="primary" text style="margin-top:12px" @click="startEdit">绠＄悊鏍囩</el-button>
             </el-tab-pane>
-            <el-tab-pane label="我的收藏" name="favorites">
+            <el-tab-pane label="鎴戠殑鏀惰棌" name="favorites">
               <div class="favorites-list" v-loading="favLoading">
-                <el-empty v-if="!favLoading && favorites.length === 0" description="暂无收藏资源" :image-size="80" />
+                <el-empty v-if="!favLoading && favorites.length === 0" description="鏆傛棤鏀惰棌璧勬簮" :image-size="80" />
                 <el-card v-for="item in favorites" :key="item.id" shadow="hover" class="fav-card" @click="viewFavResource(item)">
                   <div class="fav-header">
                     <el-avatar :size="40" :src="item.merchant_logo" @error="() => true">
@@ -224,25 +224,25 @@
                 </el-card>
               </div>
             </el-tab-pane>
-            <el-tab-pane label="我的奖励" name="rewards">
+            <el-tab-pane label="鎴戠殑濂栧姳" name="rewards">
               <div class="rewards-section" v-loading="rewardLoading">
-                <!-- 奖励统计 -->
+                <!-- 濂栧姳缁熻 -->
                 <div class="reward-stats">
                   <div class="reward-stat-item">
                     <div class="reward-stat-value" style="color:#67C23A">{{ rewardStats.totalCount }}</div>
-                    <div class="reward-stat-label">累计奖励</div>
+                    <div class="reward-stat-label">绱濂栧姳</div>
                   </div>
                   <div class="reward-stat-item">
                     <div class="reward-stat-value" style="color:#409EFF">{{ rewardStats.pendingCount }}</div>
-                    <div class="reward-stat-label">待领取</div>
+                    <div class="reward-stat-label">寰呴鍙?/div>
                   </div>
                   <div class="reward-stat-item">
                     <div class="reward-stat-value" style="color:#67C23A">{{ rewardStats.claimedCount }}</div>
-                    <div class="reward-stat-label">已领取</div>
+                    <div class="reward-stat-label">宸查鍙?/div>
                   </div>
                 </div>
-                <!-- 奖励记录 -->
-                <el-empty v-if="!rewardLoading && rewards.length === 0" description="暂无奖励记录" :image-size="80" />
+                <!-- 濂栧姳璁板綍 -->
+                <el-empty v-if="!rewardLoading && rewards.length === 0" description="鏆傛棤濂栧姳璁板綍" :image-size="80" />
                 <div class="rewards-list">
                   <el-card v-for="item in rewards" :key="item.id" class="reward-card" shadow="hover">
                     <div class="reward-header">
@@ -250,22 +250,22 @@
                       <span class="reward-time">{{ formatRewardTime(item.created_at || item.create_time) }}</span>
                     </div>
                     <div class="reward-body">
-                      <span class="reward-icon">🎁</span>
+                      <span class="reward-icon">馃巵</span>
                       <div class="reward-info">
-                        <div class="reward-title">撮合成功奖励</div>
-                        <div class="reward-desc">{{ item.reward_content || '撮合成功物资奖励' }}</div>
+                        <div class="reward-title">鎾悎鎴愬姛濂栧姳</div>
+                        <div class="reward-desc">{{ item.reward_content || '鎾悎鎴愬姛鐗╄祫濂栧姳' }}</div>
                         <div class="reward-meta" v-if="item.demand_title || item.resource_title">
-                          <span v-if="item.demand_title">关联需求：{{ item.demand_title }}</span>
-                          <span v-if="item.resource_title">关联资源：{{ item.resource_title }}</span>
+                          <span v-if="item.demand_title">鍏宠仈闇€姹傦細{{ item.demand_title }}</span>
+                          <span v-if="item.resource_title">鍏宠仈璧勬簮锛歿{ item.resource_title }}</span>
                         </div>
                       </div>
                     </div>
                     <div class="reward-footer" v-if="item.status === 1">
-                      <el-button type="success" size="small" @click="handleClaimReward(item)">确认领取</el-button>
+                      <el-button type="success" size="small" @click="handleClaimReward(item)">纭棰嗗彇</el-button>
                     </div>
                   </el-card>
                 </div>
-                <!-- 分页 -->
+                <!-- 鍒嗛〉 -->
                 <div class="pagination" v-if="rewardTotal > rewardPageSize">
                   <el-pagination layout="prev,pager,next,total" :total="rewardTotal" :page-size="rewardPageSize" :current-page="rewardPage" @current-change="onRewardPageChange" />
                 </div>
@@ -274,64 +274,64 @@
           </el-tabs>
         </el-card>
 
-        <!-- 编辑表单 -->
+        <!-- 缂栬緫琛ㄥ崟 -->
         <el-card v-else>
           <template #header>
             <div style="display:flex;justify-content:space-between;align-items:center">
-              <span style="font-weight:700">编辑社区资料</span>
-              <el-button text @click="editing=false">取消</el-button>
+              <span style="font-weight:700">缂栬緫绀惧尯璧勬枡</span>
+              <el-button text @click="editing=false">鍙栨秷</el-button>
             </div>
           </template>
-          <el-form :model="editForm" label-width="140px" ref="formRef">
-            <el-divider content-position="left">基本信息</el-divider>
+          <el-form :model="editForm" label-position="top" ref="formRef" class="edit-form-mobile">
+            <el-divider content-position="left">鍩烘湰淇℃伅</el-divider>
             <el-row :gutter="16">
               <el-col :xs="24" :sm="12">
-                <el-form-item label="所属区">
+                <el-form-item label="鎵€灞炲尯">
                   <el-input v-model="editForm.district" disabled />
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :sm="12">
-                <el-form-item label="所属街道">
+                <el-form-item label="鎵€灞炶閬?>
                   <el-input v-model="editForm.street" disabled />
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :sm="12">
-                <el-form-item label="社区名称">
+                <el-form-item label="绀惧尯鍚嶇О">
                   <el-input v-model="editForm.community" disabled />
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :sm="12">
-                <el-form-item label="联系手机">
+                <el-form-item label="鑱旂郴鎵嬫満">
                   <el-input v-model="editForm.phone" disabled />
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :sm="12">
-                <el-form-item label="联系人姓名">
-                  <el-input v-model="editForm.real_name" placeholder="请输入联系人姓名" />
+                <el-form-item label="鑱旂郴浜哄鍚?>
+                  <el-input v-model="editForm.real_name" placeholder="璇疯緭鍏ヨ仈绯讳汉濮撳悕" />
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :sm="12">
-                <el-form-item label="联系人职务">
-                  <el-input v-model="editForm.position" placeholder="如：社区主任" />
+                <el-form-item label="鑱旂郴浜鸿亴鍔?>
+                  <el-input v-model="editForm.position" placeholder="濡傦細绀惧尯涓讳换" />
                 </el-form-item>
               </el-col>
               <el-col :span="24">
-                <el-form-item label="地图定位">
+                <el-form-item label="鍦板浘瀹氫綅">
                   <div class="map-location-input">
-                    <el-input v-model="editForm.latitude" placeholder="纬度 如：30.5728" style="width:160px;margin-right:8px" />
-                    <el-input v-model="editForm.longitude" placeholder="经度 如：114.2553" style="width:160px;margin-right:8px" />
-                    <el-link v-if="editForm.latitude && editForm.longitude" :href="'https://maps.google.com/?q=' + editForm.latitude + ',' + editForm.longitude" target="_blank" type="primary">📍 预览地图</el-link>
-                    <span v-else style="color:#909399;font-size:12px">填写经纬度可精确定位社区位置</span>
+                    <el-input v-model="editForm.latitude" placeholder="绾害 濡傦細30.5728" style="width:160px;margin-right:8px" />
+                    <el-input v-model="editForm.longitude" placeholder="缁忓害 濡傦細114.2553" style="width:160px;margin-right:8px" />
+                    <el-link v-if="editForm.latitude && editForm.longitude" :href="'https://maps.google.com/?q=' + editForm.latitude + ',' + editForm.longitude" target="_blank" type="primary">馃搷 棰勮鍦板浘</el-link>
+                    <span v-else style="color:#909399;font-size:12px">濉啓缁忕含搴﹀彲绮剧‘瀹氫綅绀惧尯浣嶇疆</span>
                   </div>
                 </el-form-item>
               </el-col>
               <el-col :span="24">
-                <el-form-item label="详细地址">
-                  <el-input v-model="editForm.address" placeholder="详细地址（楼栋门牌号等）" />
+                <el-form-item label="璇︾粏鍦板潃">
+                  <el-input v-model="editForm.address" placeholder="璇︾粏鍦板潃锛堟ゼ鏍嬮棬鐗屽彿绛夛級" />
                 </el-form-item>
               </el-col>
               <el-col :span="24">
-                <el-form-item label="社区Logo">
+                <el-form-item label="绀惧尯Logo">
                   <div class="upload-item">
                     <el-upload
                       class="logo-uploader"
@@ -342,82 +342,82 @@
                       <img v-if="editForm.logo" :src="editForm.logo" class="uploaded-logo" />
                       <el-icon v-else class="logo-uploader-icon"><Plus /></el-icon>
                     </el-upload>
-                    <span class="upload-tip">点击上传Logo图片（建议200x200）</span>
+                    <span class="upload-tip">鐐瑰嚮涓婁紶Logo鍥剧墖锛堝缓璁?00x200锛?/span>
                   </div>
                 </el-form-item>
               </el-col>
 
             </el-row>
 
-            <el-divider content-position="left">社区画像数据</el-divider>
+            <el-divider content-position="left">绀惧尯鐢诲儚鏁版嵁</el-divider>
             <el-row :gutter="16">
               <el-col :xs="24" :sm="12">
-                <el-form-item label="社区总户数">
+                <el-form-item label="绀惧尯鎬绘埛鏁?>
                   <el-input-number v-model="editForm.households" :min="0" style="width:100%" />
                 </el-form-item>
               </el-col>
-              <!-- 多小区编辑 -->
+              <!-- 澶氬皬鍖虹紪杈?-->
               <el-col :span="24">
-                <el-form-item label="所辖小区">
+                <el-form-item label="鎵€杈栧皬鍖?>
                   <div class="compounds-editor">
                     <div v-for="(compound, index) in editForm.compounds" :key="index" class="compound-item">
-                      <el-input v-model="compound.name" placeholder="小区名称" style="width: 200px; margin-right: 8px" />
-                      <el-input-number v-model="compound.households" :min="0" placeholder="户数" style="width: 120px; margin-right: 8px" />
+                      <el-input v-model="compound.name" placeholder="灏忓尯鍚嶇О" style="width: 200px; margin-right: 8px" />
+                      <el-input-number v-model="compound.households" :min="0" placeholder="鎴锋暟" style="width: 120px; margin-right: 8px" />
                       <el-button type="danger" :icon="Delete" circle @click="removeCompound(index)" />
                     </div>
-                    <el-button type="primary" plain :icon="Plus" @click="addCompound">添加小区</el-button>
+                    <el-button type="primary" plain :icon="Plus" @click="addCompound">娣诲姞灏忓尯</el-button>
                   </div>
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :sm="12">
-                <el-form-item label="社区商户数">
+                <el-form-item label="绀惧尯鍟嗘埛鏁?>
                   <el-input-number v-model="editForm.merchant_count" :min="0" style="width:100%" />
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :sm="12">
-                <el-form-item label="亲子家庭占比">
-                  <el-input v-model="editForm.family_ratio" placeholder="如：35" />%
+                <el-form-item label="浜插瓙瀹跺涵鍗犳瘮">
+                  <el-input v-model="editForm.family_ratio" placeholder="濡傦細35" />%
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :sm="12">
-                <el-form-item label="老年群体占比">
-                  <el-input v-model="editForm.elderly_ratio" placeholder="如：28" />%
+                <el-form-item label="鑰佸勾缇や綋鍗犳瘮">
+                  <el-input v-model="editForm.elderly_ratio" placeholder="濡傦細28" />%
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :sm="12">
-                <el-form-item label="公共空间面积(㎡)">
+                <el-form-item label="鍏叡绌洪棿闈㈢Н(銕?">
                   <el-input-number v-model="editForm.public_space_area" :min="0" style="width:100%" />
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :sm="12">
-                <el-form-item label="户外广场">
+                <el-form-item label="鎴峰骞垮満">
                   <el-switch v-model="editForm.has_outdoor_plaza" :active-value="1" :inactive-value="0" />
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :sm="12">
-                <el-form-item label="商业体/商业街">
+                <el-form-item label="鍟嗕笟浣?鍟嗕笟琛?>
                   <el-switch v-model="editForm.has_commercial" :active-value="1" :inactive-value="0" />
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :sm="12">
-                <el-form-item label="学校/幼儿园">
+                <el-form-item label="瀛︽牎/骞煎効鍥?>
                   <el-switch v-model="editForm.has_school" :active-value="1" :inactive-value="0" />
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :sm="12">
-                <el-form-item label="公园/体育场馆">
+                <el-form-item label="鍏洯/浣撹偛鍦洪">
                   <el-switch v-model="editForm.has_park" :active-value="1" :inactive-value="0" />
                 </el-form-item>
               </el-col>
               <el-col :span="24">
-                <el-form-item label="社区简介">
-                  <el-input v-model="editForm.description" type="textarea" :rows="3" placeholder="简要介绍社区特色..." />
+                <el-form-item label="绀惧尯绠€浠?>
+                  <el-input v-model="editForm.description" type="textarea" :rows="3" placeholder="绠€瑕佷粙缁嶇ぞ鍖虹壒鑹?.." />
                 </el-form-item>
               </el-col>
             </el-row>
 
-            <el-divider content-position="left">社区标签</el-divider>
-            <el-form-item label="选择标签">
+            <el-divider content-position="left">绀惧尯鏍囩</el-divider>
+            <el-form-item label="閫夋嫨鏍囩">
               <div class="tag-selector">
                 <el-check-tag
                   v-for="tag in allTags" :key="tag"
@@ -427,47 +427,47 @@
               </div>
             </el-form-item>
 
-            <!-- 场地空间录入 -->
-            <el-divider content-position="left">场地空间录入</el-divider>
+            <!-- 鍦哄湴绌洪棿褰曞叆 -->
+            <el-divider content-position="left">鍦哄湴绌洪棿褰曞叆</el-divider>
             <div class="spaces-editor">
               <div v-for="(space, sIdx) in editForm.spaces" :key="sIdx" class="space-edit-card">
                 <div class="space-edit-header">
-                  <span style="font-weight: 600">场地 {{ sIdx + 1 }}</span>
+                  <span style="font-weight: 600">鍦哄湴 {{ sIdx + 1 }}</span>
                   <el-button type="danger" :icon="Delete" circle @click="removeSpace(sIdx)" />
                 </div>
                 <el-row :gutter="16">
                   <el-col :xs="24" :sm="12">
-                    <el-form-item label="场地名称" class="compact-form-item">
-                      <el-input v-model="space.name" placeholder="如：社区活动中心" />
+                    <el-form-item label="鍦哄湴鍚嶇О" class="compact-form-item">
+                      <el-input v-model="space.name" placeholder="濡傦細绀惧尯娲诲姩涓績" />
                     </el-form-item>
                   </el-col>
                   <el-col :xs="24" :sm="12">
-                    <el-form-item label="类型" class="compact-form-item">
+                    <el-form-item label="绫诲瀷" class="compact-form-item">
                       <el-radio-group v-model="space.location_type" size="small">
-                        <el-radio-button :value="0">室内</el-radio-button>
-                        <el-radio-button :value="1">室外</el-radio-button>
+                        <el-radio-button :value="0">瀹ゅ唴</el-radio-button>
+                        <el-radio-button :value="1">瀹ゅ</el-radio-button>
                       </el-radio-group>
                     </el-form-item>
                   </el-col>
                 </el-row>
                 <el-row :gutter="16">
                   <el-col :xs="24" :sm="8">
-                    <el-form-item label="面积" class="compact-form-item">
-                      <el-input-number v-model="space.area" :min="0" placeholder="㎡" style="width:100%" />
+                    <el-form-item label="闈㈢Н" class="compact-form-item">
+                      <el-input-number v-model="space.area" :min="0" placeholder="銕? style="width:100%" />
                     </el-form-item>
                   </el-col>
                   <el-col :xs="24" :sm="8">
-                    <el-form-item label="容纳人数" class="compact-form-item">
-                      <el-input-number v-model="space.capacity" :min="0" placeholder="人" style="width:100%" />
+                    <el-form-item label="瀹圭撼浜烘暟" class="compact-form-item">
+                      <el-input-number v-model="space.capacity" :min="0" placeholder="浜? style="width:100%" />
                     </el-form-item>
                   </el-col>
                   <el-col :xs="24" :sm="8" v-if="space.location_type === 0">
-                    <el-form-item label="楼层" class="compact-form-item">
-                      <el-input-number v-model="space.floor_number" :min="1" :max="100" placeholder="第几层" style="width:100%" />
+                    <el-form-item label="妤煎眰" class="compact-form-item">
+                      <el-input-number v-model="space.floor_number" :min="1" :max="100" placeholder="绗嚑灞? style="width:100%" />
                     </el-form-item>
                   </el-col>
                 </el-row>
-                <el-form-item label="场地照片" class="compact-form-item">
+                <el-form-item label="鍦哄湴鐓х墖" class="compact-form-item">
                   <div class="space-images-editor">
                     <div class="space-images-preview">
                       <div v-for="(img, imgIdx) in space.images" :key="'exist-' + imgIdx" class="space-image-item">
@@ -485,12 +485,12 @@
                       :before-upload="(file) => beforeSpaceImageUpload(file, sIdx)"
                       multiple
                     >
-                      <el-button size="small" plain :icon="Plus">上传照片</el-button>
+                      <el-button size="small" plain :icon="Plus">涓婁紶鐓х墖</el-button>
                     </el-upload>
-                    <div class="upload-tip">建议上传正面、侧面、内部全景等多角度照片</div>
+                    <div class="upload-tip">寤鸿涓婁紶姝ｉ潰銆佷晶闈€佸唴閮ㄥ叏鏅瓑澶氳搴︾収鐗?/div>
                   </div>
                 </el-form-item>
-                <el-form-item label="设施设备" class="compact-form-item">
+                <el-form-item label="璁炬柦璁惧" class="compact-form-item">
                   <div class="facility-selector">
                     <el-check-tag
                       v-for="facility in FACILITY_OPTIONS" :key="facility"
@@ -500,50 +500,50 @@
                     >{{ facility }}</el-check-tag>
                     <el-input
                       v-model="space.customFacilities"
-                      placeholder="其他设施（逗号分隔）"
+                      placeholder="鍏朵粬璁炬柦锛堥€楀彿鍒嗛殧锛?
                       style="width: 200px; margin-left: 8px"
                       size="small"
                     />
                   </div>
                 </el-form-item>
-                <el-form-item label="可用时间" class="compact-form-item">
+                <el-form-item label="鍙敤鏃堕棿" class="compact-form-item">
                   <div class="available-time-editor">
-                    <!-- 周一至周五时间段 -->
+                    <!-- 鍛ㄤ竴鑷冲懆浜旀椂闂存 -->
                     <div class="time-section">
-                      <span class="time-label">周一至周五：</span>
+                      <span class="time-label">鍛ㄤ竴鑷冲懆浜旓細</span>
                       <el-time-select
                         v-model="space.weekday_start"
-                        placeholder="开始时间"
+                        placeholder="寮€濮嬫椂闂?
                         start="06:00"
                         step="00:30"
                         end="23:00"
                         style="width: 120px; margin-right: 8px"
                       />
-                      <span class="time-separator">至</span>
+                      <span class="time-separator">鑷?/span>
                       <el-time-select
                         v-model="space.weekday_end"
-                        placeholder="结束时间"
+                        placeholder="缁撴潫鏃堕棿"
                         start="06:00"
                         step="00:30"
                         end="23:30"
                         style="width: 120px; margin-left: 8px"
                       />
                     </div>
-                    <!-- 周六周日时间段 -->
+                    <!-- 鍛ㄥ叚鍛ㄦ棩鏃堕棿娈?-->
                     <div class="time-section">
-                      <span class="time-label">周六周日：</span>
+                      <span class="time-label">鍛ㄥ叚鍛ㄦ棩锛?/span>
                       <el-time-select
                         v-model="space.weekend_start"
-                        placeholder="开始时间"
+                        placeholder="寮€濮嬫椂闂?
                         start="06:00"
                         step="00:30"
                         end="23:00"
                         style="width: 120px; margin-right: 8px"
                       />
-                      <span class="time-separator">至</span>
+                      <span class="time-separator">鑷?/span>
                       <el-time-select
                         v-model="space.weekend_end"
-                        placeholder="结束时间"
+                        placeholder="缁撴潫鏃堕棿"
                         start="06:00"
                         step="00:30"
                         end="23:30"
@@ -553,12 +553,12 @@
                   </div>
                 </el-form-item>
               </div>
-              <el-button type="primary" plain :icon="Plus" @click="addSpace" style="margin-top: 8px">添加场地</el-button>
+              <el-button type="primary" plain :icon="Plus" @click="addSpace" style="margin-top: 8px">娣诲姞鍦哄湴</el-button>
             </div>
 
             <div style="text-align:right;margin-top:16px">
-              <el-button @click="editing=false">取消</el-button>
-              <el-button type="primary" @click="saveProfile" :loading="saving">保存资料</el-button>
+              <el-button @click="editing=false">鍙栨秷</el-button>
+              <el-button type="primary" @click="saveProfile" :loading="saving">淇濆瓨璧勬枡</el-button>
             </div>
           </el-form>
         </el-card>
@@ -575,14 +575,14 @@ import { OfficeBuilding, Edit, Shop, Star, Plus, Delete, Close } from '@element-
 import { getProfile, updateProfile, updatePassword, getMyFavorites, getRewards, claimReward, saveCompounds, saveSpaces } from '@/api/community'
 import { uploadImage } from '@/api/public'
 
-// 场地设施预设选项
+// 鍦哄湴璁炬柦棰勮閫夐」
 const FACILITY_OPTIONS = [
-  '投影', '电子屏', '音响', '话筒', '桌椅', '白板',
-  'wifi', '空调', '窗帘', '灯光', '舞台', '讲台',
-  '饮水机', '停车场', '无障碍设施', '洗手间'
+  '鎶曞奖', '鐢靛瓙灞?, '闊冲搷', '璇濈瓛', '妗屾', '鐧芥澘',
+  'wifi', '绌鸿皟', '绐楀笜', '鐏厜', '鑸炲彴', '璁插彴',
+  '楗按鏈?, '鍋滆溅鍦?, '鏃犻殰纰嶈鏂?, '娲楁墜闂?
 ]
 
-// ========== 小区编辑相关函数 ==========
+// ========== 灏忓尯缂栬緫鐩稿叧鍑芥暟 ==========
 function addCompound() {
   editForm.value.compounds.push({ id: null, name: '', households: null })
 }
@@ -591,7 +591,7 @@ function removeCompound(index) {
   editForm.value.compounds.splice(index, 1)
 }
 
-// ========== 场地空间编辑相关函数 ==========
+// ========== 鍦哄湴绌洪棿缂栬緫鐩稿叧鍑芥暟 ==========
 function addSpace() {
   editForm.value.spaces.push({
     id: null,
@@ -602,12 +602,12 @@ function addSpace() {
     capacity: null,
     facilities: [],
     customFacilities: '',
-    // 可用时间（结构化）
+    // 鍙敤鏃堕棿锛堢粨鏋勫寲锛?
     weekday_start: '',
     weekday_end: '',
     weekend_start: '',
     weekend_end: '',
-    // 兼容旧的文本格式
+    // 鍏煎鏃х殑鏂囨湰鏍煎紡
     available_hours: '',
     images: [],
     newImages: []
@@ -631,27 +631,27 @@ function toggleSpaceFacility(spaceIdx, facility) {
 function beforeSpaceImageUpload(file, spaceIdx) {
   const isImage = file.type.startsWith('image/')
   const isLt2M = file.size / 1024 / 1024 < 2
-  if (!isImage) ElMessage.error('只能上传图片文件')
-  if (!isLt2M) ElMessage.error('图片大小不能超过2MB')
+  if (!isImage) ElMessage.error('鍙兘涓婁紶鍥剧墖鏂囦欢')
+  if (!isLt2M) ElMessage.error('鍥剧墖澶у皬涓嶈兘瓒呰繃2MB')
   if (isImage && isLt2M) {
-    // 创建预览URL
+    // 鍒涘缓棰勮URL
     const url = URL.createObjectURL(file)
     if (!editForm.value.spaces[spaceIdx].newImages) {
       editForm.value.spaces[spaceIdx].newImages = []
     }
     editForm.value.spaces[spaceIdx].newImages.push({ raw: file, url })
   }
-  return false // 阻止默认上传
+  return false // 闃绘榛樿涓婁紶
 }
 
 function removeSpaceImage(spaceIdx, imgIdx) {
   editForm.value.spaces[spaceIdx].images.splice(imgIdx, 1)
 }
 
-// 解析可用时间（支持JSON格式和旧文本格式）
+// 瑙ｆ瀽鍙敤鏃堕棿锛堟敮鎸丣SON鏍煎紡鍜屾棫鏂囨湰鏍煎紡锛?
 function parseAvailableHours(availableHours) {
   if (!availableHours) return { weekday: '', weekend: '' }
-  // 新格式 JSON: {"weekday":"09:00-18:00","weekend":"10:00-16:00"}
+  // 鏂版牸寮?JSON: {"weekday":"09:00-18:00","weekend":"10:00-16:00"}
   try {
     if (typeof availableHours === 'string' && availableHours.startsWith('{')) {
       const obj = JSON.parse(availableHours)
@@ -661,12 +661,12 @@ function parseAvailableHours(availableHours) {
       }
     }
   } catch {}
-  // 旧格式文本直接返回
+  // 鏃ф牸寮忔枃鏈洿鎺ヨ繑鍥?
   return { weekday: availableHours, weekend: '' }
 }
 
 function removeSpaceNewImage(spaceIdx, fileIdx) {
-  // 释放blob URL
+  // 閲婃斁blob URL
   const file = editForm.value.spaces[spaceIdx].newImages[fileIdx]
   if (file.url) URL.revokeObjectURL(file.url)
   editForm.value.spaces[spaceIdx].newImages.splice(fileIdx, 1)
@@ -685,17 +685,17 @@ const passwordForm = ref({
   confirmPassword: ''
 })
 const passwordRules = {
-  oldPassword: [{ required: true, message: '请输入旧密码', trigger: 'blur' }],
+  oldPassword: [{ required: true, message: '璇疯緭鍏ユ棫瀵嗙爜', trigger: 'blur' }],
   newPassword: [
-    { required: true, message: '请输入新密码', trigger: 'blur' },
-    { min: 6, message: '新密码长度不能少于6位', trigger: 'blur' }
+    { required: true, message: '璇疯緭鍏ユ柊瀵嗙爜', trigger: 'blur' },
+    { min: 6, message: '鏂板瘑鐮侀暱搴︿笉鑳藉皯浜?浣?, trigger: 'blur' }
   ],
   confirmPassword: [
-    { required: true, message: '请再次输入新密码', trigger: 'blur' },
+    { required: true, message: '璇峰啀娆¤緭鍏ユ柊瀵嗙爜', trigger: 'blur' },
     {
       validator: (rule, value, callback) => {
         if (value !== passwordForm.value.newPassword) {
-          callback(new Error('两次输入的密码不一致'))
+          callback(new Error('涓ゆ杈撳叆鐨勫瘑鐮佷笉涓€鑷?))
         } else {
           callback()
         }
@@ -708,16 +708,16 @@ const profile = ref({})
 const favorites = ref([])
 const favLoading = ref(false)
 
-// 奖励相关
+// 濂栧姳鐩稿叧
 const rewardLoading = ref(false)
 const rewards = ref([])
 const rewardTotal = ref(0)
 const rewardPage = ref(1)
 const rewardPageSize = 10
-const rewardStatusName = { 0: '待发放', 1: '待领取', 2: '已领取', 3: '已失效' }
+const rewardStatusName = { 0: '寰呭彂鏀?, 1: '寰呴鍙?, 2: '宸查鍙?, 3: '宸插け鏁? }
 const rewardStatusType = { 0: 'warning', 1: 'primary', 2: 'success', 3: 'info' }
 
-// 资源类型映射（从API动态加载）
+// 璧勬簮绫诲瀷鏄犲皠锛堜粠API鍔ㄦ€佸姞杞斤級
 const resourceTypeNumMap = ref({})
 const getResourceTypeName = (type) => {
   if (typeof type === 'string' && resourceTypeNumMap.value[type] !== undefined) {
@@ -730,10 +730,10 @@ const getResourceTypeName = (type) => {
   if (typeof type === 'string') {
     return type
   }
-  return type || '其他'
+  return type || '鍏朵粬'
 }
 
-// 加载资源类型配置
+// 鍔犺浇璧勬簮绫诲瀷閰嶇疆
 async function loadResourceTypes() {
   try {
     const { getPublishTypes } = await import('@/api/community')
@@ -758,11 +758,11 @@ const rewardStats = computed(() => ({
 }))
 
 const allTags = [
-  '亲子友好', '老年服务', '文化活动', '体育赛事', '教育资源', '健康社区',
-  '公益活动', '科技创新', '环保绿色', '商业活跃', '居民参与度高', '节庆氛围浓',
-  '便民服务', '文艺演出', '亲子活动', '健康讲座', '法律咨询', '志愿服务',
-  '节日庆典', '技能培训', '邻里互助', '垃圾分类', '消防安全', '防诈骗宣传',
-  '儿童托管', '家电维修', '居家养老', '社区团购', '心理健康', '运动健身'
+  '浜插瓙鍙嬪ソ', '鑰佸勾鏈嶅姟', '鏂囧寲娲诲姩', '浣撹偛璧涗簨', '鏁欒偛璧勬簮', '鍋ュ悍绀惧尯',
+  '鍏泭娲诲姩', '绉戞妧鍒涙柊', '鐜繚缁胯壊', '鍟嗕笟娲昏穬', '灞呮皯鍙備笌搴﹂珮', '鑺傚簡姘涘洿娴?,
+  '渚挎皯鏈嶅姟', '鏂囪壓婕斿嚭', '浜插瓙娲诲姩', '鍋ュ悍璁插骇', '娉曞緥鍜ㄨ', '蹇楁効鏈嶅姟',
+  '鑺傛棩搴嗗吀', '鎶€鑳藉煿璁?, '閭婚噷浜掑姪', '鍨冨溇鍒嗙被', '娑堥槻瀹夊叏', '闃茶瘓楠楀浼?,
+  '鍎跨鎵樼', '瀹剁數缁翠慨', '灞呭鍏昏€?, '绀惧尯鍥㈣喘', '蹇冪悊鍋ュ悍', '杩愬姩鍋ヨ韩'
 ]
 
 const editForm = ref({
@@ -789,9 +789,9 @@ const editForm = ref({
   has_park: 0,
   description: '',
   tagsList: [],
-  // 多小区数据
+  // 澶氬皬鍖烘暟鎹?
   compounds: [],
-  // 场地空间数据
+  // 鍦哄湴绌洪棿鏁版嵁
   spaces: []
 })
 
@@ -801,7 +801,7 @@ async function loadProfile() {
     const res = await getProfile()
     profile.value = res.data || {}
   } catch {
-    ElMessage.error('加载社区资料失败')
+    ElMessage.error('鍔犺浇绀惧尯璧勬枡澶辫触')
   } finally {
     loading.value = false
   }
@@ -812,17 +812,17 @@ function startEdit() {
   const tagsArray = Array.isArray(tags) ? tags : (tags ? tags.split(',') : [])
   const images = profile.value.images
   const imagesArray = Array.isArray(images) ? images : (images ? images.split(',').filter(Boolean) : [])
-  // 处理小区数据
+  // 澶勭悊灏忓尯鏁版嵁
   const compounds = profile.value.compounds && profile.value.compounds.length > 0
     ? profile.value.compounds.map(c => ({ ...c }))
     : []
-  // 处理场地空间数据
+  // 澶勭悊鍦哄湴绌洪棿鏁版嵁
   const spaces = profile.value.spaces && profile.value.spaces.length > 0
     ? profile.value.spaces.map(s => {
-        // 解析可用时间段（支持新旧两种格式）
+        // 瑙ｆ瀽鍙敤鏃堕棿娈碉紙鏀寔鏂版棫涓ょ鏍煎紡锛?
         let weekday_start = '', weekday_end = '', weekend_start = '', weekend_end = ''
         if (s.available_hours) {
-          // 新格式 JSON: {"weekday":"09:00-18:00","weekend":"10:00-16:00"}
+          // 鏂版牸寮?JSON: {"weekday":"09:00-18:00","weekend":"10:00-16:00"}
           try {
             const hoursObj = typeof s.available_hours === 'string' ? JSON.parse(s.available_hours) : s.available_hours
             if (hoursObj.weekday) {
@@ -836,9 +836,9 @@ function startEdit() {
               weekend_end = weEnd || ''
             }
           } catch {
-            // 旧格式文本：尝试解析 "周一至周五 9:00-18:00"
-            const weekdayMatch = s.available_hours.match(/周[一三四五]?[^周]*?(\d{1,2}:\d{2})[^周六]*?(\d{1,2}:\d{2})/)
-            const weekendMatch = s.available_hours.match(/周六?日[^至]*?至[^:]*?(\d{1,2}:\d{2})[^:]*?(\d{1,2}:\d{2})/)
+            // 鏃ф牸寮忔枃鏈細灏濊瘯瑙ｆ瀽 "鍛ㄤ竴鑷冲懆浜?9:00-18:00"
+            const weekdayMatch = s.available_hours.match(/鍛╗涓€涓夊洓浜擼?[^鍛╙*?(\d{1,2}:\d{2})[^鍛ㄥ叚]*?(\d{1,2}:\d{2})/)
+            const weekendMatch = s.available_hours.match(/鍛ㄥ叚?鏃^鑷砞*?鑷砙^:]*?(\d{1,2}:\d{2})[^:]*?(\d{1,2}:\d{2})/)
             if (weekdayMatch) {
               weekday_start = weekdayMatch[1]
               weekday_end = weekdayMatch[2]
@@ -851,20 +851,20 @@ function startEdit() {
         }
         return {
           ...s,
-          // 如果 images 是字符串，转换为数组
+          // 濡傛灉 images 鏄瓧绗︿覆锛岃浆鎹负鏁扮粍
           images: Array.isArray(s.images) ? s.images : (s.images ? s.images.split(',').filter(Boolean) : []),
-          // 处理设施选项，确保是数组
+          // 澶勭悊璁炬柦閫夐」锛岀‘淇濇槸鏁扮粍
           facilities: Array.isArray(s.facilities) ? s.facilities : [],
-          // 处理自定义设施
+          // 澶勭悊鑷畾涔夎鏂?
           customFacilities: s.custom_facilities || '',
-          // 处理可用时段（结构化）
+          // 澶勭悊鍙敤鏃舵锛堢粨鏋勫寲锛?
           weekday_start,
           weekday_end,
           weekend_start,
           weekend_end,
-          // 兼容旧的文本格式
+          // 鍏煎鏃х殑鏂囨湰鏍煎紡
           available_hours: s.available_hours || '',
-          // 临时存储新上传的图片
+          // 涓存椂瀛樺偍鏂颁笂浼犵殑鍥剧墖
           newImages: []
         }
       })
@@ -911,11 +911,11 @@ function toggleTag(tag) {
 async function saveProfile() {
   saving.value = true
   try {
-    // 处理场地图片上传
+    // 澶勭悊鍦哄湴鍥剧墖涓婁紶
     const images = editForm.value.imagesStr
       ? editForm.value.imagesStr.split(',').map(s => s.trim()).filter(Boolean)
       : []
-    // 如果有新上传的图片，先上传
+    // 濡傛灉鏈夋柊涓婁紶鐨勫浘鐗囷紝鍏堜笂浼?
     const newImages = editForm.value.logoImagesList || []
     for (const file of newImages) {
       if (file.raw) {
@@ -923,8 +923,8 @@ async function saveProfile() {
           const res = await uploadImage(file.raw)
           images.push(res.data.url)
         } catch (err) {
-          console.error('Logo上传失败:', err)
-          ElMessage.error('Logo图片上传失败')
+          console.error('Logo涓婁紶澶辫触:', err)
+          ElMessage.error('Logo鍥剧墖涓婁紶澶辫触')
         }
       }
     }
@@ -950,7 +950,7 @@ async function saveProfile() {
       longitude: editForm.value.longitude ? parseFloat(editForm.value.longitude) : null
     })
     
-    // 保存小区数据
+    // 淇濆瓨灏忓尯鏁版嵁
     const compounds = editForm.value.compounds.map(c => ({
       id: c.id || null,
       name: c.name,
@@ -958,10 +958,10 @@ async function saveProfile() {
     }))
     await saveCompounds({ compounds })
     
-    // 保存场地空间数据
+    // 淇濆瓨鍦哄湴绌洪棿鏁版嵁
     const spacesData = []
     for (const space of editForm.value.spaces) {
-      // 处理场地图片上传
+      // 澶勭悊鍦哄湴鍥剧墖涓婁紶
       const spaceImages = [...(space.images || [])]
       if (space.newImages && space.newImages.length > 0) {
         for (const file of space.newImages) {
@@ -971,16 +971,16 @@ async function saveProfile() {
               if (res.data && res.data.url) {
                 spaceImages.push(res.data.url)
               } else {
-                throw new Error('上传响应格式错误')
+                throw new Error('涓婁紶鍝嶅簲鏍煎紡閿欒')
               }
             } catch (err) {
-              console.error('场地图片上传失败:', err)
-              ElMessage.error('场地图片上传失败，请重试')
+              console.error('鍦哄湴鍥剧墖涓婁紶澶辫触:', err)
+              ElMessage.error('鍦哄湴鍥剧墖涓婁紶澶辫触锛岃閲嶈瘯')
             }
           }
         }
       }
-      // 处理可用时间（结构化数据转为JSON）
+      // 澶勭悊鍙敤鏃堕棿锛堢粨鏋勫寲鏁版嵁杞负JSON锛?
       let available_hours = ''
       if (space.weekday_start || space.weekday_end || space.weekend_start || space.weekend_end) {
         available_hours = JSON.stringify({
@@ -1005,9 +1005,9 @@ async function saveProfile() {
     
     await loadProfile()
     editing.value = false
-    ElMessage.success('社区资料已保存')
+    ElMessage.success('绀惧尯璧勬枡宸蹭繚瀛?)
   } catch {
-    ElMessage.error('保存失败')
+    ElMessage.error('淇濆瓨澶辫触')
   } finally {
     saving.value = false
   }
@@ -1016,14 +1016,14 @@ async function saveProfile() {
 onMounted(() => {
   loadProfile()
   loadResourceTypes()
-  // 从 URL 参数切换 Tab（来自导航下拉的「我的收藏」「我的奖励」）
+  // 浠?URL 鍙傛暟鍒囨崲 Tab锛堟潵鑷鑸笅鎷夌殑銆屾垜鐨勬敹钘忋€嶃€屾垜鐨勫鍔便€嶏級
   const tab = new URLSearchParams(window.location.search).get('tab')
   if (tab === 'favorites' || tab === 'rewards') {
     infoTab.value = tab
   }
 })
 
-// 加载收藏列表
+// 鍔犺浇鏀惰棌鍒楄〃
 async function loadFavorites() {
   favLoading.value = true
   try {
@@ -1036,33 +1036,33 @@ async function loadFavorites() {
   }
 }
 
-// 查看收藏的资源详情
+// 鏌ョ湅鏀惰棌鐨勮祫婧愯鎯?
 function viewFavResource(item) {
   const id = item.resource_id || item.id
   router.push(`/community/resources/${id}`)
 }
 
-// Logo上传前检查
+// Logo涓婁紶鍓嶆鏌?
 function beforeLogoUpload(file) {
   const isImage = file.type.startsWith('image/')
   const isLt2M = file.size / 1024 / 1024 < 2
-  if (!isImage) ElMessage.error('只能上传图片文件')
-  if (!isLt2M) ElMessage.error('图片大小不能超过2MB')
+  if (!isImage) ElMessage.error('鍙兘涓婁紶鍥剧墖鏂囦欢')
+  if (!isLt2M) ElMessage.error('鍥剧墖澶у皬涓嶈兘瓒呰繃2MB')
   return isImage && isLt2M
 }
 
-// 上传Logo
+// 涓婁紶Logo
 async function uploadLogo(options) {
   try {
     const res = await uploadImage(options.file)
     editForm.value.logo = res.data.url
-    ElMessage.success('Logo上传成功')
+    ElMessage.success('Logo涓婁紶鎴愬姛')
   } catch {
-    ElMessage.error('Logo上传失败')
+    ElMessage.error('Logo涓婁紶澶辫触')
   }
 }
 
-// 监听切换到收藏tab时加载
+// 鐩戝惉鍒囨崲鍒版敹钘弔ab鏃跺姞杞?
 watch(infoTab, (newTab) => {
   if (newTab === 'favorites') {
     loadFavorites()
@@ -1071,7 +1071,7 @@ watch(infoTab, (newTab) => {
   }
 })
 
-// 修改密码
+// 淇敼瀵嗙爜
 async function handleChangePassword() {
   try {
     await passwordFormRef.value.validate()
@@ -1084,16 +1084,16 @@ async function handleChangePassword() {
       oldPassword: passwordForm.value.oldPassword,
       newPassword: passwordForm.value.newPassword
     })
-    ElMessage.success('密码修改成功')
+    ElMessage.success('瀵嗙爜淇敼鎴愬姛')
     passwordForm.value = { oldPassword: '', newPassword: '', confirmPassword: '' }
   } catch (err) {
-    ElMessage.error(err.message || '修改失败')
+    ElMessage.error(err.message || '淇敼澶辫触')
   } finally {
     passwordLoading.value = false
   }
 }
 
-// 奖励相关函数
+// 濂栧姳鐩稿叧鍑芥暟
 async function loadRewards() {
   rewardLoading.value = true
   try {
@@ -1116,10 +1116,10 @@ function formatRewardTime(time) {
 async function handleClaimReward(item) {
   try {
     await claimReward({ id: item.id })
-    ElMessage.success('已确认领取奖励')
+    ElMessage.success('宸茬‘璁ら鍙栧鍔?)
     loadRewards()
   } catch {
-    ElMessage.error('领取失败，请重试')
+    ElMessage.error('棰嗗彇澶辫触锛岃閲嶈瘯')
   }
 }
 
@@ -1130,10 +1130,7 @@ function onRewardPageChange(page) {
 </script>
 
 <style scoped>
-.page { max-width: 1100px; margin: 0 auto; }
-.page h2 { margin-bottom: 20px; font-size: 22px; font-weight: 700; }
-.profile-card { background: #fff; border-radius: 12px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); text-align: center; }
-.avatar-area { margin-bottom: 16px; }
+/* ===== 鍩虹鏍峰紡锛堝叡浜級===== */
 .community-name { font-size: 17px; font-weight: 700; margin-top: 10px; }
 .district-name { font-size: 13px; color: #909399; margin-top: 4px; }
 .stats-row { display: flex; justify-content: space-around; margin: 16px 0; border-top: 1px solid #f0f0f0; padding-top: 16px; }
@@ -1156,7 +1153,6 @@ function onRewardPageChange(page) {
 .fav-star { font-size: 18px; color: #f56c6c; }
 .fav-star.active { color: #f56c6c; }
 .fav-desc { font-size: 13px; color: #606266; margin: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-/* 奖励样式 */
 .reward-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; }
 .reward-stat-item { background: #f5f7fa; border-radius: 8px; padding: 12px; text-align: center; }
 .reward-stat-value { font-size: 24px; font-weight: 700; }
@@ -1181,21 +1177,15 @@ function onRewardPageChange(page) {
 .upload-tip { font-size: 12px; color: #909399; }
 .map-location-input { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; }
 .password-form { padding: 10px 0; }
-
-/* 场地空间样式 */
 .space-cards { display: flex; flex-wrap: wrap; gap: 12px; }
 .space-card { width: 300px; }
 .space-info { font-size: 13px; color: #606266; }
 .space-row { margin-bottom: 6px; display: flex; align-items: center; flex-wrap: wrap; gap: 4px; }
 .space-label { color: #909399; min-width: 50px; }
 .space-images { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 4px; }
-
-/* 小区编辑样式 */
 .compound-item { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; padding: 8px; background: #f5f7fa; border-radius: 4px; }
 .compound-item .el-input { flex: 1; }
 .compound-item .el-input-number { flex: 0 0 120px; }
-
-/* 场地编辑样式 */
 .space-edit-item { padding: 16px; background: #f5f7fa; border-radius: 8px; margin-bottom: 16px; }
 .space-edit-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
 .space-edit-row { display: flex; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
@@ -1204,39 +1194,129 @@ function onRewardPageChange(page) {
 .custom-facility { display: flex; gap: 8px; margin-top: 8px; }
 .available-hours { display: flex; gap: 8px; flex-wrap: wrap; }
 .available-hours .el-select { width: 200px; }
-
-/* 场地图片上传 */
 .space-images-upload { display: flex; flex-wrap: wrap; gap: 8px; }
-.space-image-item { position: relative; width: 100px; height: 100px; }
-.space-image-item img { width: 100%; height: 100%; object-fit: cover; border-radius: 4px; }
-.space-image-delete { position: absolute; top: -8px; right: -8px; }
-
-/* 小区编辑表单样式 */
 .compounds-editor { display: flex; flex-direction: column; gap: 8px; }
-.compound-item { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; padding: 8px; background: #f5f7fa; border-radius: 4px; }
-.compound-item .el-input { flex: 1; }
-.compound-item .el-input-number { flex: 0 0 120px; }
-
-/* 场地编辑表单样式 */
 .spaces-editor { display: flex; flex-direction: column; gap: 12px; }
 .space-edit-card { background: #f5f7fa; border-radius: 8px; padding: 16px; margin-bottom: 12px; }
-.space-edit-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e4e7ed; }
+.space-edit-card .space-edit-header { border-bottom: 1px solid #e4e7ed; padding-bottom: 8px; margin-bottom: 16px; }
 .space-images-editor { display: flex; flex-direction: column; gap: 8px; }
 .space-images-preview { display: flex; flex-wrap: wrap; gap: 8px; }
 .space-images-preview .space-image-item { position: relative; width: 80px; height: 80px; }
 .space-images-preview .space-image-item .el-image { width: 80px; height: 80px; border-radius: 4px; }
-.space-images-preview .remove-icon { position: absolute; top: -6px; right: -6px; background: #fff; border-radius: 50%; cursor: pointer; color: #f56c6c; box-shadow: 0 1px 4px rgba(0,0,0,0.2); }
+.space-images-preview .space-image-item .remove-icon { position: absolute; top: -6px; right: -6px; background: #fff; border-radius: 50%; cursor: pointer; color: #f56c6c; box-shadow: 0 1px 4px rgba(0,0,0,0.2); }
 .facility-selector { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
 .compact-form-item { margin-bottom: 12px; }
 .compact-form-item :deep(.el-form-item__label) { font-size: 13px; }
 
+/* ===== PC 绔牱寮忥紙>=769px锛?==== */
+@media (min-width: 769px) {
+  .page {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 20px 20px 40px;
+    min-height: 100vh;
+    background: #f0f2f5;
+  }
+  .page h2 {
+    margin-bottom: 20px;
+    font-size: 22px;
+    font-weight: 700;
+    padding: 16px 20px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  .profile-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 32px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    text-align: center;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+  .avatar-area { margin-bottom: 24px; }
+}
+
+/* ===== 绉诲姩绔牱寮忥紙<=768px锛?==== */
 @media (max-width: 768px) {
   .page { padding-bottom: 70px; }
-  .page h2 { font-size: 18px; margin-bottom: 14px; }
+  .page h2 { font-size: 18px; margin-bottom: 14px; padding: 12px 14px; background: white; border-radius: 0; border-bottom: 1px solid #eee; }
   .profile-card { padding: 16px; border-radius: 8px; }
+  .avatar-area { margin-bottom: 16px; }
   .avatar-area .el-avatar { width: 64px !important; height: 64px !important; }
   .community-name { font-size: 15px; }
+  .space-card { width: 100%; }
   :deep(.el-descriptions) { font-size: 13px; }
+  .edit-form-mobile { padding: 0 14px; }
+  .edit-form-mobile :deep(.el-form-item) { margin-bottom: 14px; }
+  .edit-form-mobile :deep(.el-form-item__label) { font-size: 13px; color: #606266; padding-bottom: 4px; }
+  .edit-form-mobile :deep(.el-form-item__content) { font-size: 14px; }
+  .edit-form-mobile :deep(.el-divider) { margin: 12px 0; }
+  .edit-form-mobile :deep(.el-row) { margin-left: 0 !important; margin-right: 0 !important; }
+  .edit-form-mobile :deep(.el-col) { padding-left: 0 !important; padding-right: 0 !important; }
+  .edit-form-mobile :deep(.el-input),
+  .edit-form-mobile :deep(.el-input-number),
+  .edit-form-mobile :deep(.el-select) { width: 100% !important; }
+  /* 地图定位 - 强制覆盖 inline style */
+  .edit-form-mobile :deep(.map-location-input .el-input) { width: 100% !important; margin-right: 0 !important; }
+  .map-location-input { display: flex; flex-direction: column; gap: 8px; }
+  /* 小区编辑 - 强制覆盖 inline style */
+  .edit-form-mobile :deep(.compound-item .el-input) { width: 100% !important; margin-right: 0 !important; }
+  .edit-form-mobile :deep(.compound-item .el-input-number) { width: 100% !important; margin-right: 0 !important; }
+  .compound-item { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+  .edit-form-mobile :deep(.compounds-editor .el-button) { width: 100%; margin-top: 8px; }
+  .upload-item { display: flex; flex-direction: column; gap: 8px; }
+  .upload-tip { font-size: 11px; color: #909399; }
   :deep(.el-descriptions__label) { width: 100px; font-size: 12px; }
+  /* ===== 场地空间编辑器 - 移动端 ===== */
+  .edit-form-mobile :deep(.space-edit-card) { margin-bottom: 16px; border: 1px solid #e4e7ed; border-radius: 8px; padding: 12px; }
+  .edit-form-mobile :deep(.space-edit-header) { flex-direction: column; gap: 8px; align-items: flex-start; margin-bottom: 12px; }
+  /* 强制 el-row/el-col 单列铺满 */
+  .edit-form-mobile :deep(.space-edit-card .el-row) { margin-left: 0 !important; margin-right: 0 !important; display: flex; flex-direction: column; }
+  .edit-form-mobile :deep(.space-edit-card .el-col) { max-width: 100% !important; width: 100% !important; padding-left: 0 !important; padding-right: 0 !important; }
+  .edit-form-mobile :deep(.space-edit-card .el-form-item) { margin-bottom: 10px; }
+  /* 设施选择器 - 强制覆盖 inline style width:200px */
+  .edit-form-mobile :deep(.facility-selector) { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+  .edit-form-mobile :deep(.facility-selector .el-check-tag) { font-size: 12px; padding: 3px 8px; margin: 2px !important; }
+  .edit-form-mobile :deep(.facility-selector .el-input) { width: 100% !important; margin-left: 0 !important; margin-top: 6px; }
+  /* 可用时间 - 强制覆盖 inline style width:120px */
+  .edit-form-mobile :deep(.available-time-editor) { display: flex; flex-direction: column; gap: 12px; }
+  .edit-form-mobile :deep(.available-time-editor .time-section) { display: flex; flex-direction: column; gap: 6px; }
+  .edit-form-mobile :deep(.available-time-editor .time-label) { font-size: 12px; color: #909399; text-align: left; }
+  .edit-form-mobile :deep(.available-time-editor .time-separator) { text-align: center; color: #909399; font-size: 12px; }
+  .edit-form-mobile :deep(.available-time-editor .el-time-select) { width: 100% !important; margin-left: 0 !important; margin-right: 0 !important; }
+  /* 图片编辑 */
+  .edit-form-mobile :deep(.space-images-editor) { display: flex; flex-direction: column; gap: 8px; }
+  .edit-form-mobile :deep(.spaces-editor .el-button) { width: 100%; margin-top: 8px; }
+
+  /* ===== 额外强制覆盖 ===== */
+  .edit-form-mobile * { max-width: 100% !important; }
+  .edit-form-mobile .el-input__wrapper { width: 100% !important; }
+  .edit-form-mobile .el-input { width: 100% !important; min-width: 0 !important; }
+  .edit-form-mobile .el-input-number { width: 100% !important; min-width: 0 !important; }
+  .edit-form-mobile .el-input-number__input { width: 100% !important; }
+  .edit-form-mobile .el-textarea__inner { width: 100% !important; }
+  .edit-form-mobile .el-select { width: 100% !important; min-width: 0 !important; }
+  .edit-form-mobile .el-time-select { width: 100% !important; min-width: 0 !important; }
+  .edit-form-mobile .el-form-item__content { width: 100% !important; max-width: 100% !important; }
+  /* 小区编辑项 - 强制单列 */
+  .edit-form-mobile .compounds-editor .compound-item > * { width: 100% !important; margin-right: 0 !important; display: block !important; margin-bottom: 6px !important; }
+  .edit-form-mobile .compounds-editor .el-button { width: 100% !important; margin: 8px 0 0 !important; display: block !important; }
+  /* 场地编辑卡片 - 强制单列 */
+  .edit-form-mobile .space-edit-card > * { max-width: 100% !important; }
+  .edit-form-mobile .space-edit-card .el-row { display: flex !important; flex-direction: column !important; }
+  .edit-form-mobile .space-edit-card .el-col { max-width: 100% !important; width: 100% !important; padding: 0 !important; display: block !important; }
+  .edit-form-mobile .space-edit-card .el-form-item { width: 100% !important; }
+  /* 设施选择器 */
+  .edit-form-mobile .facility-selector { flex-direction: column !important; align-items: stretch !important; }
+  .edit-form-mobile .facility-selector .el-check-tag { width: auto !important; }
+  /* 时间选择器 */
+  .edit-form-mobile .available-time-editor { flex-direction: column !important; }
+  .edit-form-mobile .available-time-editor > * { width: 100% !important; }
+  /* 场地添加按钮 */
+  .edit-form-mobile .spaces-editor .el-button { width: 100% !important; }
+
 }
 </style>
+

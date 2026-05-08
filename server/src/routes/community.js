@@ -10,7 +10,6 @@ const { authCommunity } = require('../middleware/auth')
 // 登录注册
 router.post('/login', CommunityController.login)
 router.post('/register', CommunityController.register)
-router.post('/wechat/bind-login', CommunityController.wechatBindLogin)
 
 // 公共信息
 router.get('/banners', CommunityController.getBanners)
@@ -86,6 +85,7 @@ router.get('/my/comments', CommunityController.getMyComments)
 // 收藏资源
 router.post('/favorites/toggle', CommunityController.toggleFavorite)
 router.get('/favorites', CommunityController.getMyFavorites)
+
 
 // 系统通知
 router.get('/notifications', CommunityController.getMyNotifications)
