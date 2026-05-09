@@ -412,6 +412,88 @@ onMounted(() => {
   align-items: center;
 }
 
+/* ===== PC 端样式（>=769px）===== */
+@media (min-width: 769px) {
+  .dashboard {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 24px;
+    min-height: 100vh;
+    background: #f0f2f5;
+  }
+  .dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    padding: 20px 24px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  .dashboard-header h2 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 700;
+    color: #1a1a2e;
+  }
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .stat-card {
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    transition: transform 0.2s;
+  }
+  .stat-card:hover {
+    transform: translateY(-2px);
+  }
+  .stat-number {
+    font-size: 32px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .stat-label {
+    font-size: 14px;
+    color: #909399;
+  }
+  .pending-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    margin-bottom: 24px;
+  }
+  .pending-section {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  .section-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #eee;
+  }
+  .ranking-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    margin-bottom: 24px;
+  }
+  .ranking-section {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+}
+
 @media (max-width: 1200px) {
   .ranking-grid {
     grid-template-columns: 1fr;
@@ -422,39 +504,129 @@ onMounted(() => {
 }
 
 @media (max-width: 768px) {
-  .dashboard-header { flex-direction: column; align-items: flex-start; gap: 12px; }
-  .dashboard-header h2 { font-size: 18px; }
+  /* ========== 小程序风格：全屏通栏、无阴影 ========== */
+  .dashboard {
+    padding: 0 0 70px;
+    background: #f5f5f5;
+  }
+  .dashboard-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding: 12px 14px;
+    background: white;
+    border-radius: 0;
+    border-bottom: 1px solid #eee;
+  }
+  .dashboard-header h2 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin: 0;
+  }
+  .period-filter {
+    width: 100%;
+  }
+  .period-filter :deep(.el-radio-group) {
+    display: flex;
+    width: 100%;
+  }
+  .period-filter :deep(.el-radio-button) {
+    flex: 1;
+  }
+  .period-filter :deep(.el-radio-button__inner) {
+    width: 100%;
+    padding: 8px 0;
+  }
+
+  /* 统计卡片 - 2列网格 */
   .stats-row {
     grid-template-columns: repeat(2, 1fr);
     gap: 10px;
-    margin-bottom: 14px;
+    margin: 0 14px 16px;
   }
   .stat-card {
-    padding: 14px 12px !important;
+    border-radius: 8px;
+    padding: 14px 12px;
+    box-shadow: none;
+    background: white;
   }
-  .stat-number { font-size: 20px; }
-  .stat-label { font-size: 11px; }
+  .stat-number {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .stat-label {
+    font-size: 11px;
+    color: #909399;
+  }
 
-  .pending-items {
+  /* 待处理事项 */
+  .pending-grid {
     grid-template-columns: 1fr;
-    gap: 8px;
+    gap: 12px;
+    margin: 0 14px 16px;
+  }
+  .pending-section {
+    background: white;
+    border-radius: 8px;
+    padding: 14px;
+    box-shadow: none;
+  }
+  .section-title {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #eee;
   }
   .pending-item {
     padding: 10px 12px;
     font-size: 13px;
+    background: #f5f7fa;
+    border-radius: 6px;
+    margin-bottom: 6px;
   }
 
+  /* 排行榜 */
   .ranking-grid {
     grid-template-columns: 1fr;
     gap: 12px;
+    margin: 0 14px 16px;
+  }
+  .ranking-section {
+    background: white;
+    border-radius: 8px;
+    padding: 14px;
+    box-shadow: none;
   }
   .ranking-section h4 {
     font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #eee;
   }
 
+  /* 最近需求/资源 */
   .lists-grid {
     grid-template-columns: 1fr;
-    gap: 12px;
+    gap: 0;
+    margin: 0 14px 16px;
+  }
+  .list-section {
+    background: white;
+    border-radius: 8px;
+    padding: 14px;
+    box-shadow: none;
+  }
+  .list-section h4 {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #eee;
   }
 
   /* 表格横向滚动 */

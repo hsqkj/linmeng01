@@ -318,8 +318,8 @@
               <el-col :span="24">
                 <el-form-item label="鍦板浘瀹氫綅">
                   <div class="map-location-input">
-                    <el-input v-model="editForm.latitude" placeholder="绾害 濡傦細30.5728" style="width:160px;margin-right:8px" />
-                    <el-input v-model="editForm.longitude" placeholder="缁忓害 濡傦細114.2553" style="width:160px;margin-right:8px" />
+                    <el-input v-model="editForm.latitude" placeholder="绾害 濡傦細30.5728"  />
+                    <el-input v-model="editForm.longitude" placeholder="缁忓害 濡傦細114.2553"  />
                     <el-link v-if="editForm.latitude && editForm.longitude" :href="'https://maps.google.com/?q=' + editForm.latitude + ',' + editForm.longitude" target="_blank" type="primary">馃搷 棰勮鍦板浘</el-link>
                     <span v-else style="color:#909399;font-size:12px">濉啓缁忕含搴﹀彲绮剧‘瀹氫綅绀惧尯浣嶇疆</span>
                   </div>
@@ -361,8 +361,8 @@
                 <el-form-item label="鎵€杈栧皬鍖?>
                   <div class="compounds-editor">
                     <div v-for="(compound, index) in editForm.compounds" :key="index" class="compound-item">
-                      <el-input v-model="compound.name" placeholder="灏忓尯鍚嶇О" style="width: 200px; margin-right: 8px" />
-                      <el-input-number v-model="compound.households" :min="0" placeholder="鎴锋暟" style="width: 120px; margin-right: 8px" />
+                      <el-input v-model="compound.name" placeholder="灏忓尯鍚嶇О"  />
+                      <el-input-number v-model="compound.households" :min="0" placeholder="鎴锋暟"  />
                       <el-button type="danger" :icon="Delete" circle @click="removeCompound(index)" />
                     </div>
                     <el-button type="primary" plain :icon="Plus" @click="addCompound">娣诲姞灏忓尯</el-button>
@@ -453,17 +453,17 @@
                 <el-row :gutter="16">
                   <el-col :xs="24" :sm="8">
                     <el-form-item label="闈㈢Н" class="compact-form-item">
-                      <el-input-number v-model="space.area" :min="0" placeholder="銕? style="width:100%" />
+                      <el-input-number v-model="space.area" :min="0" placeholder="銕?" style="width:100%" />
                     </el-form-item>
                   </el-col>
                   <el-col :xs="24" :sm="8">
                     <el-form-item label="瀹圭撼浜烘暟" class="compact-form-item">
-                      <el-input-number v-model="space.capacity" :min="0" placeholder="浜? style="width:100%" />
+                      <el-input-number v-model="space.capacity" :min="0" placeholder="浜?" style="width:100%" />
                     </el-form-item>
                   </el-col>
                   <el-col :xs="24" :sm="8" v-if="space.location_type === 0">
                     <el-form-item label="妤煎眰" class="compact-form-item">
-                      <el-input-number v-model="space.floor_number" :min="1" :max="100" placeholder="绗嚑灞? style="width:100%" />
+                      <el-input-number v-model="space.floor_number" :min="1" :max="100" placeholder="绗嚑灞?" style="width:100%" />
                     </el-form-item>
                   </el-col>
                 </el-row>
@@ -500,8 +500,7 @@
                     >{{ facility }}</el-check-tag>
                     <el-input
                       v-model="space.customFacilities"
-                      placeholder="鍏朵粬璁炬柦锛堥€楀彿鍒嗛殧锛?
-                      style="width: 200px; margin-left: 8px"
+                      placeholder="鍏朵粬璁炬柦锛堥€楀彿鍒嗛殧锛?"
                       size="small"
                     />
                   </div>
@@ -513,11 +512,10 @@
                       <span class="time-label">鍛ㄤ竴鑷冲懆浜旓細</span>
                       <el-time-select
                         v-model="space.weekday_start"
-                        placeholder="寮€濮嬫椂闂?
+                        placeholder="寮€濮嬫椂闂?"
                         start="06:00"
                         step="00:30"
                         end="23:00"
-                        style="width: 120px; margin-right: 8px"
                       />
                       <span class="time-separator">鑷?/span>
                       <el-time-select
@@ -526,7 +524,6 @@
                         start="06:00"
                         step="00:30"
                         end="23:30"
-                        style="width: 120px; margin-left: 8px"
                       />
                     </div>
                     <!-- 鍛ㄥ叚鍛ㄦ棩鏃堕棿娈?-->
@@ -534,11 +531,10 @@
                       <span class="time-label">鍛ㄥ叚鍛ㄦ棩锛?/span>
                       <el-time-select
                         v-model="space.weekend_start"
-                        placeholder="寮€濮嬫椂闂?
+                        placeholder="寮€濮嬫椂闂?"
                         start="06:00"
                         step="00:30"
                         end="23:00"
-                        style="width: 120px; margin-right: 8px"
                       />
                       <span class="time-separator">鑷?/span>
                       <el-time-select
@@ -547,7 +543,6 @@
                         start="06:00"
                         step="00:30"
                         end="23:30"
-                        style="width: 120px; margin-left: 8px"
                       />
                     </div>
                   </div>
@@ -1240,83 +1235,114 @@ function onRewardPageChange(page) {
 
 /* ===== 绉诲姩绔牱寮忥紙<=768px锛?==== */
 @media (max-width: 768px) {
+  /* ========== Profile.vue 移动端专属 ========== */
   .page { padding-bottom: 70px; }
   .page h2 { font-size: 18px; margin-bottom: 14px; padding: 12px 14px; background: white; border-radius: 0; border-bottom: 1px solid #eee; }
   .profile-card { padding: 16px; border-radius: 8px; }
-  .avatar-area { margin-bottom: 16px; }
-  .avatar-area .el-avatar { width: 64px !important; height: 64px !important; }
+  .avatar-area { margin-bottom: 16px; text-align: center; }
+  .avatar-area :deep(.el-avatar) { width: 64px !important; height: 64px !important; }
   .community-name { font-size: 15px; }
   .space-card { width: 100%; }
   :deep(.el-descriptions) { font-size: 13px; }
-  .edit-form-mobile { padding: 0 14px; }
+  :deep(.el-descriptions__label) { width: auto !important; font-size: 12px; }
+
+  /* ========== 编辑表单移动端（核心！）========== */
+  .edit-form-mobile {
+    padding: 0 14px 20px;
+    /* 所有后代元素最大不超过容器 */
+  }
   .edit-form-mobile :deep(.el-form-item) { margin-bottom: 14px; }
-  .edit-form-mobile :deep(.el-form-item__label) { font-size: 13px; color: #606266; padding-bottom: 4px; }
-  .edit-form-mobile :deep(.el-form-item__content) { font-size: 14px; }
+  .edit-form-mobile :deep(.el-form-item__label) { font-size: 13px; color: #606266; padding-bottom: 4px; float: none !important; text-align: left !important; line-height: 1.4 !important; }
+  .edit-form-mobile :deep(.el-form-item__content) { font-size: 14px; width: 100% !important; max-width: 100% !important; flex-wrap: wrap !important; }
   .edit-form-mobile :deep(.el-divider) { margin: 12px 0; }
-  .edit-form-mobile :deep(.el-row) { margin-left: 0 !important; margin-right: 0 !important; }
-  .edit-form-mobile :deep(.el-col) { padding-left: 0 !important; padding-right: 0 !important; }
   .edit-form-mobile :deep(.el-input),
   .edit-form-mobile :deep(.el-input-number),
-  .edit-form-mobile :deep(.el-select) { width: 100% !important; }
-  /* 地图定位 - 强制覆盖 inline style */
-  .edit-form-mobile :deep(.map-location-input .el-input) { width: 100% !important; margin-right: 0 !important; }
+  .edit-form-mobile :deep(.el-select),
+  .edit-form-mobile :deep(.el-time-select),
+  .edit-form-mobile :deep(.el-textarea__inner),
+  .edit-form-mobile :deep(.el-cascader) { width: 100% !important; min-width: 0 !important; max-width: 100% !important; }
+  .edit-form-mobile :deep(.el-input__wrapper) { width: 100% !important; }
+  .edit-form-mobile :deep(.el-input-number__input) { width: 100% !important; }
+  .edit-form-mobile :deep(.el-row) { display: flex !important; flex-direction: column !important; margin-left: 0 !important; margin-right: 0 !important; }
+  .edit-form-mobile :deep(.el-col) { max-width: 100% !important; width: 100% !important; padding-left: 0 !important; padding-right: 0 !important; flex: 0 0 100% !important; }
+
+  /* 地图定位 - 垂直堆叠 */
   .map-location-input { display: flex; flex-direction: column; gap: 8px; }
-  /* 小区编辑 - 强制覆盖 inline style */
-  .edit-form-mobile :deep(.compound-item .el-input) { width: 100% !important; margin-right: 0 !important; }
-  .edit-form-mobile :deep(.compound-item .el-input-number) { width: 100% !important; margin-right: 0 !important; }
-  .compound-item { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
-  .edit-form-mobile :deep(.compounds-editor .el-button) { width: 100%; margin-top: 8px; }
+  .map-location-input :deep(.el-input) { width: 100% !important; margin-right: 0 !important; }
+
+  /* ========== 小区编辑 ========== */
+  .compounds-editor { display: flex; flex-direction: column; gap: 12px; }
+  .compound-item { display: flex; flex-direction: column; gap: 8px; align-items: stretch; }
+  .compound-item :deep(.el-input),
+  .compound-item :deep(.el-input-number) { width: 100% !important; margin-right: 0 !important; }
+  .compounds-editor :deep(.el-button) { width: 100% !important; margin-top: 4px; }
+
+  /* ========== 场地空间编辑器 ========== */
+  .space-edit-card {
+    background: #f5f7fa; border: 1px solid #e4e7ed;
+    border-radius: 8px; padding: 12px; margin-bottom: 16px;
+  }
+  .space-edit-header { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; margin-bottom: 12px; }
+  .space-edit-card :deep(.el-row) { display: flex !important; flex-direction: column !important; }
+  .space-edit-card :deep(.el-col) { max-width: 100% !important; width: 100% !important; padding: 0 !important; }
+  .space-edit-card :deep(.el-form-item) { margin-bottom: 10px; width: 100% !important; }
+  .space-images-editor { display: flex; flex-direction: column; gap: 8px; }
+  .spaces-editor :deep(.el-button) { width: 100% !important; margin-top: 8px; }
+
+  /* 设施选择器 */
+  .facility-selector { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+  .facility-selector :deep(.el-check-tag) { font-size: 12px; padding: 3px 8px; margin: 2px !important; }
+  .facility-selector :deep(.el-input) { width: 100% !important; margin-left: 0 !important; margin-top: 6px; }
+
+  /* 可用时间 - 垂直堆叠 */
+  .available-time-editor { display: flex; flex-direction: column; gap: 12px; }
+  .available-time-editor .time-section { display: flex; flex-direction: column; gap: 6px; }
+  .available-time-editor .time-label { font-size: 12px; color: #909399; text-align: left; }
+  .available-time-editor .time-separator { text-align: center; color: #909399; font-size: 12px; }
+  .available-time-editor :deep(.el-time-select) { width: 100% !important; margin-left: 0 !important; margin-right: 0 !important; }
+
+  /* 上传区 */
   .upload-item { display: flex; flex-direction: column; gap: 8px; }
   .upload-tip { font-size: 11px; color: #909399; }
-  :deep(.el-descriptions__label) { width: 100px; font-size: 12px; }
-  /* ===== 场地空间编辑器 - 移动端 ===== */
-  .edit-form-mobile :deep(.space-edit-card) { margin-bottom: 16px; border: 1px solid #e4e7ed; border-radius: 8px; padding: 12px; }
-  .edit-form-mobile :deep(.space-edit-header) { flex-direction: column; gap: 8px; align-items: flex-start; margin-bottom: 12px; }
-  /* 强制 el-row/el-col 单列铺满 */
-  .edit-form-mobile :deep(.space-edit-card .el-row) { margin-left: 0 !important; margin-right: 0 !important; display: flex; flex-direction: column; }
-  .edit-form-mobile :deep(.space-edit-card .el-col) { max-width: 100% !important; width: 100% !important; padding-left: 0 !important; padding-right: 0 !important; }
-  .edit-form-mobile :deep(.space-edit-card .el-form-item) { margin-bottom: 10px; }
-  /* 设施选择器 - 强制覆盖 inline style width:200px */
-  .edit-form-mobile :deep(.facility-selector) { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
-  .edit-form-mobile :deep(.facility-selector .el-check-tag) { font-size: 12px; padding: 3px 8px; margin: 2px !important; }
-  .edit-form-mobile :deep(.facility-selector .el-input) { width: 100% !important; margin-left: 0 !important; margin-top: 6px; }
-  /* 可用时间 - 强制覆盖 inline style width:120px */
-  .edit-form-mobile :deep(.available-time-editor) { display: flex; flex-direction: column; gap: 12px; }
-  .edit-form-mobile :deep(.available-time-editor .time-section) { display: flex; flex-direction: column; gap: 6px; }
-  .edit-form-mobile :deep(.available-time-editor .time-label) { font-size: 12px; color: #909399; text-align: left; }
-  .edit-form-mobile :deep(.available-time-editor .time-separator) { text-align: center; color: #909399; font-size: 12px; }
-  .edit-form-mobile :deep(.available-time-editor .el-time-select) { width: 100% !important; margin-left: 0 !important; margin-right: 0 !important; }
-  /* 图片编辑 */
-  .edit-form-mobile :deep(.space-images-editor) { display: flex; flex-direction: column; gap: 8px; }
-  .edit-form-mobile :deep(.spaces-editor .el-button) { width: 100%; margin-top: 8px; }
 
-  /* ===== 额外强制覆盖 ===== */
-  .edit-form-mobile * { max-width: 100% !important; }
-  .edit-form-mobile .el-input__wrapper { width: 100% !important; }
-  .edit-form-mobile .el-input { width: 100% !important; min-width: 0 !important; }
-  .edit-form-mobile .el-input-number { width: 100% !important; min-width: 0 !important; }
-  .edit-form-mobile .el-input-number__input { width: 100% !important; }
-  .edit-form-mobile .el-textarea__inner { width: 100% !important; }
-  .edit-form-mobile .el-select { width: 100% !important; min-width: 0 !important; }
-  .edit-form-mobile .el-time-select { width: 100% !important; min-width: 0 !important; }
-  .edit-form-mobile .el-form-item__content { width: 100% !important; max-width: 100% !important; }
-  /* 小区编辑项 - 强制单列 */
-  .edit-form-mobile .compounds-editor .compound-item > * { width: 100% !important; margin-right: 0 !important; display: block !important; margin-bottom: 6px !important; }
-  .edit-form-mobile .compounds-editor .el-button { width: 100% !important; margin: 8px 0 0 !important; display: block !important; }
-  /* 场地编辑卡片 - 强制单列 */
-  .edit-form-mobile .space-edit-card > * { max-width: 100% !important; }
-  .edit-form-mobile .space-edit-card .el-row { display: flex !important; flex-direction: column !important; }
-  .edit-form-mobile .space-edit-card .el-col { max-width: 100% !important; width: 100% !important; padding: 0 !important; display: block !important; }
-  .edit-form-mobile .space-edit-card .el-form-item { width: 100% !important; }
-  /* 设施选择器 */
-  .edit-form-mobile .facility-selector { flex-direction: column !important; align-items: stretch !important; }
-  .edit-form-mobile .facility-selector .el-check-tag { width: auto !important; }
-  /* 时间选择器 */
-  .edit-form-mobile .available-time-editor { flex-direction: column !important; }
-  .edit-form-mobile .available-time-editor > * { width: 100% !important; }
-  /* 场地添加按钮 */
-  .edit-form-mobile .spaces-editor .el-button { width: 100% !important; }
+  /* ========== 额外修复：确保所有按钮宽度100% ========== */
+  .compounds-editor :deep(.el-button--primary) {
+    width: 100% !important;
+    margin-top: 8px !important;
+  }
+  .spaces-editor :deep(.el-button) {
+    width: 100% !important;
+  }
 
+  /* ========== 设施选择器加强修复 ========== */
+  .facility-selector :deep(.el-input) {
+    width: 100% !important;
+    margin-left: 0 !important;
+    margin-top: 8px !important;
+    flex: 1 1 100% !important;
+    min-width: 0 !important;
+  }
+
+  /* ========== 场地内 el-row/col 强制单列 ========== */
+  .space-edit-card :deep(.el-row) {
+    display: flex !important;
+    flex-direction: column !important;
+    flex-wrap: nowrap !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+  .space-edit-card :deep(.el-col) {
+    max-width: 100% !important;
+    width: 100% !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    flex: 0 0 100% !important;
+    margin-bottom: 12px !important;
+  }
+  .space-edit-card :deep(.el-col:last-child) {
+    margin-bottom: 0 !important;
+  }
 }
+
 </style>
 
