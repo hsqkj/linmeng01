@@ -1,9 +1,27 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 
-// 判断是否在微信内置浏览器内
+// 判断是否在微信内置浏览器内（含小程序 webview 传参识别）
 function isWechat() {
   if (typeof navigator === 'undefined') return false
-  return /MicroMessenger/i.test(navigator.userAgent)
+  const ua = navigator.userAgent || ''
+  // 微信内置浏览器或小程序 webview
+  if (/MicroMessenger/i.test(ua)) return true
+  // 部分小程序 webview UA 含 miniProgram 标识
+  if (/miniProgram/i.test(ua)) return true
+  // 通过 URL 参数 ?from=miniprogram 告知环境（search 或 hash 中均可）
+  if (typeof window !== 'undefined') {
+    const searchParams = new URLSearchParams(window.location.search)
+    if (searchParams.get('from') === 'miniprogram') return true
+    // 兼容 hash 模式：#/route?from=miniprogram
+    const hash = window.location.hash || ''
+    const qIdx = hash.indexOf('?')
+    if (qIdx !== -1) {
+      const hashQuery = hash.substring(qIdx)
+      const hashParams = new URLSearchParams(hashQuery)
+      if (hashParams.get('from') === 'miniprogram') return true
+    }
+  }
+  return false
 }
 
 // 获取当前端对应的 token key

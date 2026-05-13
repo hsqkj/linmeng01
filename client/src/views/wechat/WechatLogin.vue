@@ -128,8 +128,10 @@ onMounted(() => {
     return
   }
 
-  // 判断是否在微信内
-  const isWechat = /MicroMessenger/i.test(navigator.userAgent)
+  // 判断是否在微信内（含小程序 webview 传参识别）
+  const ua = navigator.userAgent
+  const isMiniProgram = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('from') === 'miniprogram'
+  const isWechat = /MicroMessenger/i.test(ua) || isMiniProgram
   if (!isWechat) {
     loading.value = false
     errorMsg.value = '请在微信中打开以使用微信授权登录'

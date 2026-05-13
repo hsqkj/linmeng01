@@ -526,7 +526,6 @@ onMounted(() => {
   .action-btns { flex-wrap: wrap; }
   .action-btns .el-button { flex: 1; min-width: 80px; font-size: 12px; }
 }
-</style>
 .merchant-header { display: flex; align-items: flex-start; gap: 20px; margin-bottom: 8px; }
 .merchant-logo { flex-shrink: 0; }
 .logo-img { width: 100px; height: 100px; border-radius: 12px; object-fit: cover; background: #f0f2f5; }

@@ -927,7 +927,6 @@ onMounted(() => {
   .action-btns { flex-wrap: wrap; }
   .action-btns .el-button { flex: 1; min-width: 80px; font-size: 12px; }
 }
-</style>
 .merchant-header { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 6px; }
 .merchant-logo { flex-shrink: 0; }
 .logo-img { width: 80px; height: 80px; border-radius: 10px; object-fit: cover; background: #f0f2f5; }
