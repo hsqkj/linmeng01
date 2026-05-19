@@ -52,15 +52,22 @@
 
     <!-- 手机端顶部栏 -->
     <div class="mobile-header mobile-only">
-      <el-button text @click="mobileDrawerVisible = true">
-        <el-icon :size="22"><Menu /></el-icon>
-      </el-button>
-      <div class="mobile-title">招商大使中心</div>
-      <el-badge :value="unreadCount" :hidden="unreadCount === 0" type="warning" size="small" :max="99">
-        <el-button text @click="goToNotifications">
-          <el-icon :size="20"><Bell /></el-icon>
+      <template v-if="isLoggedIn">
+        <el-button text @click="mobileDrawerVisible = true">
+          <el-icon :size="22"><Menu /></el-icon>
         </el-button>
-      </el-badge>
+        <div class="mobile-title">招商大使中心</div>
+        <el-badge :value="unreadCount" :hidden="unreadCount === 0" type="warning" size="small" :max="99">
+          <el-button text @click="goToNotifications">
+            <el-icon :size="20"><Bell /></el-icon>
+          </el-button>
+        </el-badge>
+      </template>
+      <template v-else>
+        <div style="width:32px"></div>
+        <div class="mobile-title">招商大使中心</div>
+        <button class="btn-amb-login-mobile" @click="showLogin = true">登录</button>
+      </template>
     </div>
 
     <!-- 手机端抽屉菜单 -->
@@ -112,21 +119,34 @@
           <span class="page-title">{{ pageTitle }}</span>
         </div>
         <div class="topbar-right">
-          <el-badge :value="unreadCount" :hidden="unreadCount === 0" class="badge-item">
-            <el-button text @click="goToNotifications"><el-icon><Bell /></el-icon></el-button>
-          </el-badge>
-          <el-avatar size="small" :src="`https://ui-avatars.com/api/?name=${encodeURIComponent(userInfo?.real_name || '大')}&background=F59E0B&color=fff`" />
-          <span style="font-size:14px">{{ userInfo?.real_name || '招商大使' }}</span>
-          <el-button type="warning" plain size="small" @click="handleLogout">
-            <el-icon><SwitchButton /></el-icon>
-            退出登录
-          </el-button>
+          <!-- 已登录 -->
+          <template v-if="isLoggedIn">
+            <el-badge :value="unreadCount" :hidden="unreadCount === 0" class="badge-item">
+              <el-button text @click="goToNotifications"><el-icon><Bell /></el-icon></el-button>
+            </el-badge>
+            <el-avatar size="small" :src="`https://ui-avatars.com/api/?name=${encodeURIComponent(userInfo?.real_name || '大')}&background=F59E0B&color=fff`" />
+            <span style="font-size:14px">{{ userInfo?.real_name || '招商大使' }}</span>
+            <el-button type="warning" plain size="small" @click="handleLogout">
+              <el-icon><SwitchButton /></el-icon>
+              退出登录
+            </el-button>
+          </template>
+          <!-- 未登录 -->
+          <button v-else class="btn-amb-login" @click="showLogin = true">登录</button>
         </div>
       </div>
       <div class="content-area">
         <router-view />
       </div>
     </div>
+
+    <!-- 登录弹窗 -->
+    <LoginDialog
+      :visible="showLogin"
+      type="ambassador"
+      @close="showLogin = false"
+      @success="onLoginSuccess"
+    />
   </div>
 </template>
 
@@ -135,11 +155,13 @@ import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { House, Grid, List, Money, Wallet, Bell, Fold, Expand, SwitchButton, Menu, Message, User } from '@element-plus/icons-vue'
 import { getAmbassadorNotifications, markNotificationRead } from '@/api/ambassador'
+import LoginDialog from '@/components/LoginDialog.vue'
 
 const route = useRoute()
 const router = useRouter()
 const sidebarCollapsed = ref(false)
 const mobileDrawerVisible = ref(false)
+const showLogin = ref(false)
 const activeMenu = computed(() => route.path)
 const pageTitles = {
   '/ambassador': '首页概览',
@@ -157,29 +179,43 @@ const showNotifications = ref(false)
 const notifications = ref([])
 const unreadCount = ref(0)
 
-// 加载真实通知数据
+// 是否已登录
+const isLoggedIn = computed(() => !!localStorage.getItem('ambassador_token'))
+
+function loadUserInfo() {
+  try {
+    const info = localStorage.getItem('ambassador_info')
+    if (info) userInfo.value = JSON.parse(info)
+  } catch {}
+}
+
+function onLoginSuccess(data) {
+  userInfo.value = data
+  loadUserInfo()
+  loadNotifications()
+}
+
 const loadNotifications = async () => {
+  if (!isLoggedIn.value) return
   try {
     const res = await getAmbassadorNotifications({ page: 1, pageSize: 10 })
     notifications.value = res.data?.list || []
     unreadCount.value = res.data?.extra?.unreadCount || 0
   } catch (e) {
-    console.error('加载通知失败', e)
     notifications.value = []
   }
 }
-loadNotifications()
 
 const handleLogout = () => {
   localStorage.removeItem('ambassador_token')
   localStorage.removeItem('ambassador_info')
-  window.location.href = '/login/ambassador'
+  userInfo.value = null
+  window.location.href = '/ambassador'
 }
-// 加载大使信息
-try {
-  const info = localStorage.getItem('ambassador_info')
-  if (info) userInfo.value = JSON.parse(info)
-} catch {}
+
+// 初始化
+loadUserInfo()
+loadNotifications()
 
 // 跳转到消息页面
 const goToNotifications = () => {
@@ -215,6 +251,21 @@ const goToNotifications = () => {
 .page-title { font-weight: 600; font-size: 15px; }
 .topbar-right { display: flex; align-items: center; gap: 12px; }
 .badge-item :deep(.el-badge__content) { top: 4px; right: 4px; }
+.btn-amb-login {
+  height: 32px; padding: 0 18px;
+  background: linear-gradient(135deg, #0055cc, #003999);
+  color: #fff; border: none; border-radius: 16px;
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  transition: all .2s; font-family: inherit;
+}
+.btn-amb-login:hover { filter: brightness(1.1); }
+.btn-amb-login-mobile {
+  height: 28px; padding: 0 14px;
+  background: #F59E0B; color: #fff; border: none; border-radius: 14px;
+  font-size: 12px; font-weight: 600; cursor: pointer;
+  font-family: inherit; transition: all .2s;
+}
+.btn-amb-login-mobile:hover { filter: brightness(1.1); }
 .content-area { flex: 1; overflow-y: auto; padding: 20px; }
 
 /* 手机端顶部栏 */

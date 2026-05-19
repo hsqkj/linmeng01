@@ -13,7 +13,8 @@
     <script>
       (function() {
         var href = window.location.href;
-        // 只处理含有 code 的 URL（微信回调）
+        // 只处理 /wechat-callback 路径的微信回调，避免跳转后二次触发
+        if (window.location.pathname.indexOf('wechat-callback') === -1) return;
         if (href.indexOf('code=') === -1) return;
 
         var url = new URL(href);

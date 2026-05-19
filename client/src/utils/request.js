@@ -94,9 +94,14 @@ request.interceptors.response.use(
         }
       }
       // 无token时不提示，直接跳转（未登录用户点击需要登录的链接）
-      
+
       // 跳转登录页
       const currentPath = window.location.pathname
+      // 首页路径允许未登录访问，即使 API 返回 401 也不跳转
+      const homePaths = ['/merchant', '/community', '/ambassador']
+      const isAtHome = homePaths.some(p => currentPath === p || currentPath.startsWith(p + '/'))
+      if (isAtHome) return // 首页不跳转登录页，让用户继续浏览
+
       if (currentPath.startsWith('/admin')) window.location.href = '/admin/login'
       else if (currentPath.startsWith('/merchant')) window.location.href = '/login/merchant'
       else if (currentPath.startsWith('/community')) window.location.href = '/login/community'

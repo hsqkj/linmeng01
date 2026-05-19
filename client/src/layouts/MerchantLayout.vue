@@ -32,23 +32,28 @@
       </nav>
 
       <div class="header-right">
-        <el-badge :value="unreadCount" :hidden="unreadCount === 0" class="message-badge" @click="$router.push('/merchant/messages')">
-          <el-icon :size="20"><Bell /></el-icon>
-        </el-badge>
-        <el-dropdown>
-          <div class="user-info">
-            <el-avatar :size="32" src="https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png" />
-            <span class="pc-only">{{ userInfo?.contact_name || userInfo?.manager || '商家用户' }}</span>
-            <el-icon><ArrowDown /></el-icon>
-          </div>
-          <template #dropdown>
-            <el-dropdown-menu>
-              <el-dropdown-item @click="$router.push('/merchant/profile')">商家资料</el-dropdown-item>
-              <el-dropdown-item @click="$router.push('/merchant/member')">会员中心</el-dropdown-item>
-              <el-dropdown-item divided @click="logout">退出登录</el-dropdown-item>
-            </el-dropdown-menu>
-          </template>
-        </el-dropdown>
+        <!-- 已登录：显示消息和用户信息 -->
+        <template v-if="isLoggedIn">
+          <el-badge :value="unreadCount" :hidden="unreadCount === 0" class="message-badge" @click="$router.push('/merchant/messages')">
+            <el-icon :size="20"><Bell /></el-icon>
+          </el-badge>
+          <el-dropdown>
+            <div class="user-info">
+              <el-avatar :size="32" :src="userInfo?.avatar || ''" />
+              <span class="pc-only">{{ userInfo?.contact_name || userInfo?.manager || '商家用户' }}</span>
+              <el-icon><ArrowDown /></el-icon>
+            </div>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item @click="$router.push('/merchant/profile')">商家资料</el-dropdown-item>
+                <el-dropdown-item @click="$router.push('/merchant/member')">会员中心</el-dropdown-item>
+                <el-dropdown-item divided @click="logout">退出登录</el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
+        </template>
+        <!-- 未登录：显示登录按钮 -->
+        <button v-else class="btn-header-login" @click="showLogin = true">登录</button>
       </div>
     </header>
 
@@ -63,19 +68,44 @@
         <el-icon><HomeFilled /></el-icon>
         <span>首页</span>
       </router-link>
-      <router-link to="/merchant/resources" class="mobile-nav-item" :class="{ active: $route.path.includes('/resources') }">
-        <el-icon><Goods /></el-icon>
-        <span>资源</span>
-      </router-link>
-      <router-link to="/merchant/demands" class="mobile-nav-item" :class="{ active: $route.path.includes('/demands') }">
-        <el-icon><Document /></el-icon>
-        <span>需求</span>
-      </router-link>
-      <router-link to="/merchant/profile" class="mobile-nav-item" :class="{ active: $route.path.includes('/profile') }">
-        <el-icon><User /></el-icon>
-        <span>我的</span>
-      </router-link>
+      <!-- 未登录时点击需先登录 -->
+      <div v-if="isLoggedIn">
+        <router-link to="/merchant/resources" class="mobile-nav-item" :class="{ active: $route.path.includes('/resources') }">
+          <el-icon><Goods /></el-icon>
+          <span>资源</span>
+        </router-link>
+        <router-link to="/merchant/demands" class="mobile-nav-item" :class="{ active: $route.path.includes('/demands') }">
+          <el-icon><Document /></el-icon>
+          <span>需求</span>
+        </router-link>
+        <router-link to="/merchant/profile" class="mobile-nav-item" :class="{ active: $route.path.includes('/profile') }">
+          <el-icon><User /></el-icon>
+          <span>我的</span>
+        </router-link>
+      </div>
+      <div v-else>
+        <div class="mobile-nav-item" @click="showLogin = true">
+          <el-icon><Goods /></el-icon>
+          <span>资源</span>
+        </div>
+        <div class="mobile-nav-item" @click="showLogin = true">
+          <el-icon><Document /></el-icon>
+          <span>需求</span>
+        </div>
+        <div class="mobile-nav-item" @click="showLogin = true">
+          <el-icon><User /></el-icon>
+          <span>我的</span>
+        </div>
+      </div>
     </nav>
+
+    <!-- 登录弹窗 -->
+    <LoginDialog
+      :visible="showLogin"
+      type="merchant"
+      @close="showLogin = false"
+      @success="onLoginSuccess"
+    />
 
     <!-- 悬浮客服 -->
     <ServiceChat />
@@ -83,18 +113,40 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
 import ServiceChat from '@/components/ServiceChat.vue'
+import LoginDialog from '@/components/LoginDialog.vue'
 import { getUnreadCount } from '@/api/merchant'
 
 const router = useRouter()
+const showLogin = ref(false)
 const userInfo = ref(null)
 const unreadCount = ref(0)
 let refreshTimer = null
 
+// 是否已登录
+const isLoggedIn = computed(() => !!localStorage.getItem('merchant_token'))
+
+function onLoginSuccess(data) {
+  userInfo.value = data
+  loadUserInfo()
+  loadUnreadCount()
+  refreshTimer = setInterval(loadUnreadCount, 30000)
+  // 检查资料完整性
+  checkProfile()
+}
+
+function loadUserInfo() {
+  const info = localStorage.getItem('merchant_info')
+  if (info) {
+    userInfo.value = JSON.parse(info)
+  }
+}
+
 async function loadUnreadCount() {
+  if (!isLoggedIn.value) return
   try {
     const res = await getUnreadCount()
     unreadCount.value = res?.data?.count || 0
@@ -106,6 +158,7 @@ async function loadUnreadCount() {
 function logout() {
   localStorage.removeItem('merchant_token')
   localStorage.removeItem('merchant_info')
+  userInfo.value = null
   window.location.href = '/merchant'
 }
 
@@ -115,32 +168,32 @@ function onNotificationRead() {
 }
 
 // 检查资料完整性
+function checkProfile() {
+  const profile = userInfo.value
+  if (!profile) return
+  const isIncomplete = !profile.company_name || !profile.contact_name || !profile.phone
+  if (isIncomplete) {
+    ElMessageBox.confirm(
+      '您的商家资料尚未完善！完善资料有助于精准匹配社区需求，获得更多合作机会。',
+      '📋 完善资料提示',
+      {
+        confirmButtonText: '立即完善',
+        cancelButtonText: '稍后再说',
+        type: 'warning'
+      }
+    ).then(() => {
+      router.push('/merchant/profile')
+    }).catch(() => {})
+  }
+}
+
 onMounted(() => {
-  const info = localStorage.getItem('merchant_info')
-  if (info) {
-    userInfo.value = JSON.parse(info)
-    // 检查资料是否完整（未填关键字段）
-    const profile = userInfo.value
-    const isIncomplete = !profile.company_name || !profile.contact_name || !profile.phone
-    if (isIncomplete) {
-      ElMessageBox.confirm(
-        '您的商家资料尚未完善！完善资料有助于精准匹配社区需求，获得更多合作机会。',
-        '📋 完善资料提示',
-        {
-          confirmButtonText: '立即完善',
-          cancelButtonText: '稍后再说',
-          type: 'warning'
-        }
-      ).then(() => {
-        router.push('/merchant/profile')
-      }).catch(() => {})
-    }
-    // 登录后才加载未读通知数
+  if (isLoggedIn.value) {
+    loadUserInfo()
     loadUnreadCount()
-    // 每30秒刷新一次
+    checkProfile()
     refreshTimer = setInterval(loadUnreadCount, 30000)
   }
-  // 监听通知已读事件
   window.addEventListener('notification-read', onNotificationRead)
 })
 
@@ -149,7 +202,6 @@ onUnmounted(() => {
   window.removeEventListener('notification-read', onNotificationRead)
 })
 
-// 监听路由变化时刷新未读数
 router.afterEach((to) => {
   loadUnreadCount()
 })
@@ -194,6 +246,14 @@ router.afterEach((to) => {
 /* 右侧 */
 .header-right { display: flex; align-items: center; gap: 16px; }
 .message-badge { cursor: pointer; }
+.btn-header-login {
+  height: 34px; padding: 0 20px;
+  background: linear-gradient(135deg, #e66100, #b84d00);
+  color: #fff; border: none; border-radius: 20px;
+  font-size: 14px; font-weight: 600; cursor: pointer;
+  transition: all .2s; font-family: inherit;
+}
+.btn-header-login:hover { filter: brightness(1.1); transform: translateY(-1px); }
 .user-info {
   display: flex; align-items: center; gap: 8px; cursor: pointer;
   padding: 5px 10px; border-radius: 20px; transition: background .2s;
@@ -214,6 +274,7 @@ router.afterEach((to) => {
   color: #999; text-decoration: none; font-size: 11px;
   padding: 4px 16px; border-radius: 12px; transition: all .2s;
 }
+.mobile-nav-item:not(a) { cursor: pointer; }
 .mobile-nav-item.active { color: #e66100; }
 
 @media (max-width: 768px) {

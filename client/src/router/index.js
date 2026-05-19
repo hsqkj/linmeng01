@@ -207,10 +207,19 @@ const router = createRouter({
 // 路由守卫
 router.beforeEach((to, from, next) => {
   const path = to.path
+  window.__DEBUG_ROUTE = { path, ts: Date.now() }
 
   // 公开路由（不需要登录）
   const publicPaths = ['/', '/wechat-login', '/wechat-login-community', '/wechat-login-merchant', '/wechat-login-ambassador', '/wechat-callback', '/login/community', '/login/merchant', '/login/ambassador', '/register/community', '/register/merchant', '/legal/terms', '/legal/privacy']
   if (publicPaths.includes(path) || path === '/admin/login') {
+    return next()
+  }
+
+  // 社区/商家/大使首页允许未登录访问（但子路由需要登录）—— 必须在微信拦截之前判断
+  if (path === '/community' || path === '/community/' ||
+      path === '/merchant' || path === '/merchant/' ||
+      path === '/ambassador' || path === '/ambassador/') {
+    console.log('[Router] Allow unauthenticated access to:', path)
     return next()
   }
 
@@ -223,13 +232,14 @@ router.beforeEach((to, from, next) => {
     return next()
   }
 
-  // 社区端首页和列表页允许未登录访问（但详情页需要登录）
-  if (path === '/community' || path === '/merchant') {
-    return next() // 首页允许未登录访问
-  }
+  // 商家/大使首页未登录：显示首页（Layout 中自行处理登录弹窗）
+  // 不在此处拦截，由各 Layout 组件自行判断
 
-  // 检查各端登录状态（非微信环境）
-  if (!checkAuth(path)) {
+  // 检查各端登录状态（非微信环境）- 但商家/大使/社区首页不拦截
+  if (!checkAuth(path) &&
+      path !== '/community' && path !== '/community/' &&
+      path !== '/merchant' && path !== '/merchant/' &&
+      path !== '/ambassador' && path !== '/ambassador/') {
     // 未登录，重定向到对应登录页
     if (path.startsWith('/community/')) {
       return next('/login/community')
