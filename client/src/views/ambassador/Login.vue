@@ -246,10 +246,11 @@ async function submitApply() {
   .benefit-title { font-size: 12px; }
   .benefit-desc { display: none; }
   .login-right { justify-content: center; width: 100%; }
-  .login-card { padding: 20px 16px; border-radius: 16px; }
+  .login-card { padding: 20px 16px; border-radius: 16px; max-width: 100%; }
   .login-card h2 { font-size: 20px; margin-bottom: 18px; text-align: center; }
   .login-links { font-size: 13px; }
   .other-logins { margin-top: 6px; }
+  .login-role-btns { flex-direction: column; gap: 4px; }
 }
 
 .test-hint {

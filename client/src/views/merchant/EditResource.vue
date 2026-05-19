@@ -893,7 +893,7 @@ async function submitResource() {
 </script>
 
 <style scoped>
-.edit-resource { max-width: 800px; margin: 0 auto; padding: 20px; }
+.edit-resource { background: #f5f5f5; min-height: 100vh; padding: 12px 14px 20px; }
 .page-header { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
 .page-header h2 { flex: 1; margin: 0; font-size: 22px; font-weight: 700; }
 .steps { margin-bottom: 32px; }
@@ -924,5 +924,7 @@ h3 { font-size: 18px; margin-bottom: 20px; color: #303133; }
 @media (max-width: 768px) {
   .type-cards { grid-template-columns: 1fr 1fr; }
   .preview-card { min-width: auto; width: 100%; }
+  .step-actions { flex-direction: column; gap: 10px; padding-bottom: 30px; }
+  .step-actions .el-button { width: 100% !important; }
 }
 </style>

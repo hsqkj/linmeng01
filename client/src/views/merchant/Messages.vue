@@ -253,7 +253,7 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.page { max-width: 900px; margin: 0 auto; }
+.page { background: #f5f5f5; padding: 12px 14px 20px; max-width: 900px; margin: 0 auto; }
 .page h2 { margin-bottom: 20px; font-size: 22px; font-weight: 700; }
 .message-tabs :deep(.el-tabs__header) { margin-bottom: 20px; }
 .message-list { display: flex; flex-direction: column; gap: 16px; }

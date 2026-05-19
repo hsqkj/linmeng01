@@ -131,7 +131,7 @@ async function downloadQR() {
 }
 
 async function copyLink() {
-  const url = qrData.value.register_url || "http://150.158.12.243/#/register/merchant?code=" + (qrData.value.qr_code || "")
+  const url = qrData.value.register_url || "http://150.158.12.243/register/merchant?code=" + (qrData.value.qr_code || "")
   try {
     if (navigator.clipboard && navigator.clipboard.writeText) {
       await navigator.clipboard.writeText(url)
@@ -154,7 +154,7 @@ async function copyLink() {
 </script>
 
 <style scoped>
-.qrcode-page { max-width: 900px; margin: 0 auto; }
+.qrcode-page { background: #f5f5f5; padding: 12px 14px 20px; max-width: 900px; margin: 0 auto; }
 .qrcode-page h2 { margin-bottom: 24px; font-size: 22px; font-weight: 700; }
 .qrcode-layout { display: grid; grid-template-columns: 320px 1fr; gap: 32px; align-items: start; }
 .qrcode-card { background: linear-gradient(135deg, #1a1a2e, #16213e); border-radius: 20px; padding: 24px; box-shadow: 0 8px 32px rgba(0,0,0,0.2); }

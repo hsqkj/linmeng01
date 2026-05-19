@@ -115,7 +115,7 @@ function fmtTime(t) {
 }
 </script>
 <style scoped>
-.commission-page { max-width: 1100px; margin: 0 auto; }
+.commission-page { background: #f5f5f5; padding: 12px 14px 20px; max-width: 1100px; margin: 0 auto; }
 .commission-page h2 { margin-bottom: 20px; font-size: 22px; font-weight: 700; }
 .summary-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px; }
 .sum-card { background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); text-align: center; }

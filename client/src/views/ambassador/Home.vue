@@ -367,8 +367,16 @@ function fmtTime(t) {
 </script>
 
 <style scoped>
-.ambassador-home { max-width: 1200px; margin: 0 auto; }
-.welcome-banner { background: linear-gradient(135deg, #1a1a2e, #16213e); border-radius: 12px; padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.ambassador-home { background: #f5f5f5; padding: 12px 14px 20px; max-width: 1200px; margin: 0 auto; }
+.welcome-banner { background: linear-gradient(135deg, #1a1a2e, #16213e); border-radius: 12px; padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; position: relative; overflow: hidden; }
+.welcome-banner::before {
+  content: '';
+  position: absolute;
+  top: -50px; right: -30px;
+  width: 200px; height: 200px;
+  background: rgba(255,255,255,.05);
+  border-radius: 50%;
+}
 .banner-left { display: flex; align-items: center; gap: 14px; }
 .amb-avatar { width: 52px; height: 52px; border-radius: 50%; border: 2px solid #F59E0B; }
 .amb-name { font-size: 16px; font-weight: 700; color: #fff; margin-bottom: 6px; }
@@ -616,27 +624,48 @@ function fmtTime(t) {
   color: #606266;
 }
 
+@media (min-width: 769px) {
+  .ambassador-home { padding: 20px 20px 40px; min-height: 100vh; }
+  .welcome-banner { padding: 24px 32px; margin-bottom: 20px; }
+  .banner-left { gap: 20px; }
+  .amb-avatar { width: 60px; height: 60px; }
+  .amb-name { font-size: 20px; }
+  .amb-meta { gap: 12px; }
+  .stats-row { grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
+  .stat-card { padding: 16px 20px; border-radius: 12px; }
+  .stat-icon { font-size: 28px; }
+  .stat-val { font-size: 22px; }
+  .stat-label { font-size: 13px; }
+  .section-card { padding: 20px; border-radius: 12px; margin-bottom: 16px; }
+  .section-header { margin-bottom: 16px; }
+  .section-header h3, .section-card h3 { font-size: 16px; margin-bottom: 14px; }
+  .quick-actions { grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px; }
+  .qa-item { padding: 16px; }
+}
+
 @media (max-width: 768px) {
   .ambassador-home {
     padding-bottom: 70px;
     width: 100%;
     max-width: 100%;
   }
-  .welcome-banner { flex-direction: column; gap: 14px; padding: 16px; }
+  .welcome-banner { flex-direction: column; gap: 14px; padding: 16px; border-radius: 12px; }
   .banner-left { flex-direction: column; text-align: center; }
   .banner-info { text-align: center; }
   .amb-name { font-size: 16px; margin-bottom: 6px; }
   .amb-meta { flex-direction: column; gap: 6px; align-items: center; }
   .stats-row { grid-template-columns: 1fr 1fr; gap: 10px; }
-  .stat-card { padding: 12px; }
+  .stat-card { padding: 12px; border-radius: 10px; }
   .stat-icon { font-size: 22px; }
   .stat-val { font-size: 18px; }
   .stat-label { font-size: 11px; }
-  .section-card { padding: 14px 12px; }
+  .section-card { padding: 14px 12px; border-radius: 10px; }
   .section-header h3, .section-card h3 { font-size: 14px; margin-bottom: 12px; }
   :deep(.el-table) { font-size: 11px; }
   :deep(.el-table th) { padding: 6px 4px; font-size: 11px; }
   :deep(.el-table td) { padding: 6px 4px; }
+  :deep(.el-dialog) { width: 95% !important; margin: 12px auto !important; }
+  :deep(.el-dialog__body) { padding: 16px; }
   .income-item { padding: 6px 0; }
   .income-label { font-size: 13px; }
   .income-val { font-size: 16px; }

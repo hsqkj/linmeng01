@@ -145,9 +145,10 @@ onMounted(() => {
 
 <style scoped>
 .notifications-page {
+  background: #f5f5f5;
   max-width: 800px;
   margin: 0 auto;
-  padding: 0 16px 80px;
+  padding: 12px 14px 80px;
 }
 
 .page-header {

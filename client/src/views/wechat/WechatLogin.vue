@@ -52,7 +52,7 @@
 <script setup>
 import { ref, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import axios from 'axios'
+import request from '@/utils/request'
 import { ElMessage } from 'element-plus'
 import SmsCodeInput from '@/components/SmsCodeInput.vue'
 import { sendSms } from '@/api/public'
@@ -93,9 +93,6 @@ watch(isLoggedIn, (newVal) => {
     goHome()
   }
 })
-
-// API 基础地址（生产环境通过 Nginx 反向代理，使用相对路径）
-const API_BASE = import.meta.env.VITE_API_BASE || ''
 
 /**
  * 初始化：判断是否在微信内，发起授权
@@ -149,7 +146,7 @@ onMounted(() => {
   }
 
   if (code) {
-    // 立即清除 URL 中的 code，防止刷新时重复使用
+    // 清除 URL 中的 code，保留当前路由路径
     const cleanUrl = window.location.pathname + window.location.hash
     window.history.replaceState(null, '', cleanUrl)
     // 用 code 换登录信息
@@ -168,9 +165,9 @@ async function handleMiniProgramToken(token, userType) {
   loadingText.value = '身份验证中...'
 
   try {
-    const res = await axios.post(`${API_BASE}/auth/mini-login`, { token, userType })
-    if (res.data.code === 0) {
-      const data = res.data.data
+    const res = await request.post(`/auth/mini-login`, { token, userType })
+    if (res.code === 200) {
+      const data = res.data
       // 统一存储：按端存储 token
       const tokenKey = `${data.userType}_token`
       localStorage.setItem(tokenKey, data.token)
@@ -197,14 +194,16 @@ async function handleMiniProgramToken(token, userType) {
 
 /**
  * 发起微信网页授权（跳转到微信授权页）
- * 关键：让微信回调时 code 参数在 # 后面，这样 Vue Router 才能获取到
+ * redirect_uri 指向带 hash 路由的 wechat-login 页
+ * 回调后由 index.html 中的原生 JS 提取 code 并转发到正确路由
  */
 function redirectToWechatAuth() {
-  // 用能识别 hash 的 redirect_uri，让微信把 code 放在 # 后面
-  const redirectUri = encodeURIComponent('https://www.3qall.com/#/wechat-login')
+  const state = route.query.state || localStorage.getItem('userType') || 'community'
+  // 回调地址必须是不带 hash 的完整 URL（微信 OAuth 规范）
+  // index.html 中的原生 JS 会提取 code 并转发到 /wechat-login-xxx
+  const redirectUri = encodeURIComponent('https://3qall.com/wechat-callback')
   const appid = 'wxa382e1c9fb93780e'
-  const authUrl = `https://open.weixin.qq.com/connect/oauth2/authorize?appid=${appid}&redirect_uri=${redirectUri}&response_type=code&scope=snsapi_userinfo&state=linmeng#wechat_redirect`
-
+  const authUrl = `https://open.weixin.qq.com/connect/oauth2/authorize?appid=${appid}&redirect_uri=${redirectUri}&response_type=code&scope=snsapi_userinfo&state=${state}#wechat_redirect`
   window.location.href = authUrl
 }
 
@@ -216,10 +215,10 @@ async function handleWechatAuth(code) {
   loadingText.value = '正在登录...'
 
   try {
-    const res = await axios.post(`${API_BASE}/wechat/h5-auth`, { code })
+    const result = await request.post(`/wechat/h5-auth`, { code })
 
-    if (res.data.code === 0) {
-      const data = res.data.data
+    if (result.code === 0 || result.code === 200) {
+      const data = result.data
 
       if (data.isNew) {
         // 新用户，需要绑定手机号
@@ -256,7 +255,7 @@ async function handleWechatAuth(code) {
         loading.value = false
       }
     } else {
-      throw new Error(res.data.msg || '登录失败')
+      throw new Error(result.message || '登录失败')
     }
   } catch (err) {
     loading.value = false
@@ -301,7 +300,7 @@ async function handleBindPhone() {
   loadingText.value = '绑定中...'
 
   try {
-    const res = await axios.post(`${API_BASE}/wechat/h5-bind-phone`, {
+    const res = await request.post(`/wechat/h5-bind-phone`, {
       openid: wechatInfo.value.openid,
       unionid: wechatInfo.value.unionid,
       phone,
@@ -309,12 +308,11 @@ async function handleBindPhone() {
       userType
     })
 
-    // 检查所有非 0 的返回码（后端即使报错也返回 HTTP 200）
-    if (res.data.code !== 0) {
-      throw new Error(res.data.msg || '绑定失败')
+    if (res.code !== 0) {
+      throw new Error(res.msg || res.message || '绑定失败')
     }
 
-    const data = res.data.data
+    const data = res.data
     // 按端存储 token
     const tokenKey = `${data.userType}_token`
     localStorage.setItem(tokenKey, data.token)
@@ -348,11 +346,11 @@ async function handleBindPhone() {
  */
 async function checkLoginStatus(token) {
   try {
-    const res = await axios.get(`${API_BASE}/auth/verify`, {
+    const res = await request.get(`/auth/verify`, {
       headers: { Authorization: `Bearer ${token}` }
     })
-    if (res.data.code === 0) {
-      const data = res.data.data
+    if (res.code === 200) {
+      const data = res.data
       userInfo.value = {
         name: data.userName || '用户',
         avatar: data.avatar || defaultAvatar
@@ -394,7 +392,7 @@ function retryAuth() {
 <style scoped>
 .wechat-login-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #26a269 0%, #1a7a4c 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -406,11 +404,11 @@ function retryAuth() {
 .login-failed,
 .loading {
   background: #fff;
-  border-radius: 16px;
+  border-radius: 20px;
   padding: 40px 30px;
   text-align: center;
   width: 100%;
-  max-width: 360px;
+  max-width: 380px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
 }
 
@@ -420,7 +418,7 @@ function retryAuth() {
   margin: 0 auto 16px;
   border-radius: 50%;
   overflow: hidden;
-  border: 3px solid #667eea;
+  border: 3px solid #26a269;
 }
 
 .avatar img {
@@ -430,9 +428,9 @@ function retryAuth() {
 }
 
 .name {
-  font-size: 18px;
-  font-weight: 600;
-  color: #333;
+  font-size: 20px;
+  font-weight: 700;
+  color: #1a1a1a;
   margin-bottom: 8px;
 }
 
@@ -450,8 +448,8 @@ function retryAuth() {
   width: 40px;
   height: 40px;
   margin: 0 auto 16px;
-  border: 4px solid #f3f3f3;
-  border-top: 4px solid #667eea;
+  border: 4px solid #e8f7ed;
+  border-top: 4px solid #26a269;
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -474,10 +472,16 @@ function retryAuth() {
   width: 100%;
   height: 44px;
   border: 1px solid #ddd;
-  border-radius: 8px;
+  border-radius: 10px;
   padding: 0 12px;
   font-size: 14px;
   box-sizing: border-box;
+  font-family: inherit;
+  outline: none;
+}
+
+.form-input:focus {
+  border-color: #26a269;
 }
 
 .code-item {
@@ -492,41 +496,58 @@ function retryAuth() {
 .btn-code {
   width: 110px;
   height: 44px;
-  background: #667eea;
-  color: #fff;
-  border: none;
-  border-radius: 8px;
+  background: #e8f7ed;
+  color: #26a269;
+  border: 1.5px solid #26a269;
+  border-radius: 10px;
   font-size: 13px;
   white-space: nowrap;
   cursor: pointer;
+  font-family: inherit;
+  transition: all .2s;
+}
+
+.btn-code:hover:not(:disabled) {
+  background: #26a269;
+  color: #fff;
 }
 
 .btn-code:disabled {
-  background: #ccc;
+  background: #f5f5f5;
+  border-color: #e0e0e0;
+  color: #ccc;
 }
 
 /* 角色提示 */
 .role-hint {
   text-align: center;
   font-size: 14px;
-  color: #667eea;
+  color: #26a269;
   margin-bottom: 16px;
   padding: 8px 16px;
-  background: rgba(102, 126, 234, 0.1);
+  background: #e8f7ed;
   border-radius: 20px;
+  font-weight: 500;
 }
 
 .btn-primary {
   width: 100%;
-  height: 44px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  height: 48px;
+  background: linear-gradient(135deg, #26a269 0%, #1a7a4c 100%);
   color: #fff;
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   font-size: 16px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
   margin-top: 8px;
+  transition: all .2s;
+  font-family: inherit;
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(38, 162, 105, 0.4);
 }
 
 .icon {

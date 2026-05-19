@@ -604,7 +604,7 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.demand-detail { max-width: 1200px; margin: 0 auto; padding: 20px; }
+.demand-detail { background: #f5f5f5; padding: 12px 14px 20px; max-width: 1200px; margin: 0 auto; }
 .page-header { margin-bottom: 20px; }
 .detail-layout { display: grid; grid-template-columns: 1fr 340px; gap: 20px; align-items: start; }
 .main-content, .side-content { display: flex; flex-direction: column; gap: 16px; }

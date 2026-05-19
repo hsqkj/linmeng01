@@ -177,7 +177,7 @@ function formatTime(time) {
 // 获取专属注册链接
 function getRegisterUrl(qrCode) {
   const baseUrl = import.meta.env.VITE_API_BASE || window.location.origin
-  return `${baseUrl}/#/register/merchant?code=${qrCode || ''}`
+  return `${baseUrl}/register/merchant?code=${qrCode || ''}`
 }
 
 // 复制链接

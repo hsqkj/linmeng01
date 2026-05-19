@@ -5,7 +5,7 @@
 const express = require('express')
 const router = express.Router()
 const axios = require('axios')
-const db = require('../config/db')
+const { pool: db } = require('../config/db')
 const crypto = require('crypto')
 const jwt = require('jsonwebtoken')
 const jwtConfig = require('../config/jwt')
@@ -20,7 +20,7 @@ const PUBLIC_SECRET = process.env.WECHAT_PUBLIC_SECRET || ''  // 公众号密钥
 // 生成 H5 登录 token（JWT，与 auth.js 中间件兼容）
 function generateToken(openid, userId, userType) {
   return jwt.sign(
-    { openid, userId, role: userType },
+    { openid, id: userId, role: userType },
     jwtConfig.secret,
     { expiresIn: '7d' }
   )

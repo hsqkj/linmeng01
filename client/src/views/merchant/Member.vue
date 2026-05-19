@@ -253,7 +253,7 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.page { max-width: 1000px; margin: 0 auto; padding: 20px; }
+.page { background: #f5f5f5; padding: 12px 14px 20px; max-width: 1000px; margin: 0 auto; }
 .page h2 { margin-bottom: 20px; font-size: 22px; font-weight: 700; }
 .current-level-card { 
   border-radius: 14px; 

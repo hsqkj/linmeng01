@@ -224,7 +224,7 @@ function fmtTime(t) {
 }
 </script>
 <style scoped>
-.withdraw-page { max-width: 900px; margin: 0 auto; padding: 0 16px; }
+.withdraw-page { background: #f5f5f5; padding: 12px 14px 20px; max-width: 900px; margin: 0 auto; }
 .withdraw-page h2 { margin-bottom: 16px; font-size: 20px; font-weight: 700; }
 
 /* 余额和账户信息行 - 紧凑布局 */

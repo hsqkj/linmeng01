@@ -8,6 +8,37 @@
     <!-- 腾讯地图 WebGL JS API（请替换 VITE_TENCENT_MAP_KEY 为您的腾讯地图 key） -->
     <!-- 申请地址：https://lbs.qq.com/ -->
     <script src="https://map.qq.com/api/gljs?v=1.5&key=OB4BZ-D4W3U-B7OV3-ZXFZZ-IN6EZ-F6B77" async></script>
+    <!-- 微信 OAuth 回调处理：处理 /wechat-callback?code=xxx&state=xxx -->
+    <!-- 必须在 Vue 加载前执行，将 code 重定向到 hash 路由 -->
+    <script>
+      (function() {
+        var href = window.location.href;
+        // 只处理含有 code 的 URL（微信回调）
+        if (href.indexOf('code=') === -1) return;
+
+        var url = new URL(href);
+        var code = url.searchParams.get('code');
+        var state = url.searchParams.get('state') || 'community';
+
+        if (!code) return;
+
+        // 根据 state 决定跳转的路由
+        var routeMap = {
+          community: '/wechat-login-community',
+          merchant: '/wechat-login-merchant',
+          ambassador: '/wechat-login-ambassador'
+        };
+        var targetRoute = routeMap[state] || '/wechat-login-community';
+
+        // 将 code 和 state 放到路由 query
+        var targetUrl = window.location.origin + targetRoute;
+        targetUrl += '?code=' + encodeURIComponent(code);
+        targetUrl += '&state=' + encodeURIComponent(state);
+
+        // 替换当前 URL，避免用户后退时重复处理 code
+        window.location.replace(targetUrl);
+      })();
+    </script>
   </head>
   <body>
     <div id="app"></div>

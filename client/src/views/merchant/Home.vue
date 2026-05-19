@@ -504,10 +504,11 @@ async function loadDemandTypes() {
 
 <style scoped>
 .merchant-home {
-  padding-bottom: 20px;
+  background: #f5f5f5;
+  padding: 12px 14px 20px;
 }
 
-/* ===== 未登录欢迎横幅 ===== */
+/* ===== 未登录欢迎横幅（移动端默认）===== */
 .merchant-welcome {
   background: linear-gradient(135deg, #e66100, #b84d00);
   border-radius: 12px;
@@ -1005,5 +1006,71 @@ async function loadDemandTypes() {
   .stat-value {
     font-size: 16px;
   }
+}
+
+/* ===== PC 端样式（≥769px）===== */
+@media (min-width: 769px) {
+  .merchant-home {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px 20px 40px;
+    min-height: 100vh;
+    background: #f0f2f5;
+  }
+
+  /* 欢迎横幅 PC */
+  .merchant-welcome {
+    padding: 24px 32px;
+    margin-bottom: 16px;
+  }
+  .merchant-welcome .welcome-content h1 { font-size: 22px; }
+  .merchant-welcome .welcome-content p { font-size: 14px; }
+
+  /* 会员卡 PC */
+  .membership-card { padding: 20px 24px; margin-bottom: 16px; }
+  .membership-info { gap: 24px; }
+  .level-badge { padding: 20px; gap: 10px; }
+  .level-badge .el-icon { width: 36px !important; height: 36px !important; }
+  .level-badge span { font-size: 13px !important; }
+  .membership-details h3 { font-size: 18px; }
+  .membership-details p { font-size: 14px; }
+
+  /* 统计卡片 PC */
+  .stats-row {
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+  .stat-card :deep(.el-card__body) { gap: 14px; padding: 16px; }
+  .stat-icon { width: 48px; height: 48px; border-radius: 12px; }
+  .stat-value { font-size: 22px; }
+  .stat-label { font-size: 13px; }
+
+  /* Banner PC */
+  .banner-section { margin-bottom: 20px; }
+  .banner-section :deep(.el-carousel) { border-radius: 16px; overflow: hidden; }
+  .banner-item { border-radius: 16px; padding: 0 60px; }
+  .banner-content h3 { font-size: 26px; margin-bottom: 8px; }
+  .banner-content p { font-size: 15px; margin-bottom: 14px; }
+
+  /* 章节 PC */
+  .section { margin-bottom: 24px; }
+  .section-header { margin-bottom: 16px; }
+  .section-header h2 { font-size: 18px; }
+
+  /* 需求列表 PC：2列网格 */
+  .demand-list {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+  .demand-card {
+    border-radius: 12px !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  .demand-card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,0.12) !important; }
+
+  /* 提示横幅 PC */
+  .login-tip-banner { margin-bottom: 16px; }
+  .login-tip-banner :deep(.el-alert) { border-radius: 12px; }
 }
 </style>

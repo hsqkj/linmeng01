@@ -209,7 +209,8 @@ onMounted(() => {
 
 <style scoped>
 .ambassador-profile {
-  padding: 20px;
+  background: #f5f5f5;
+  padding: 12px 14px 20px;
   max-width: 800px;
   margin: 0 auto;
 }

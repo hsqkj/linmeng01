@@ -1,4 +1,4 @@
-import { createRouter, createWebHashHistory } from 'vue-router'
+import { createRouter, createWebHistory } from 'vue-router'
 
 // 判断是否在微信内置浏览器内（含小程序 webview 传参识别）
 function isWechat() {
@@ -12,7 +12,7 @@ function isWechat() {
   if (typeof window !== 'undefined') {
     const searchParams = new URLSearchParams(window.location.search)
     if (searchParams.get('from') === 'miniprogram') return true
-    // 兼容 hash 模式：#/route?from=miniprogram
+    // 兼容 URL query 参数：?from=miniprogram
     const hash = window.location.hash || ''
     const qIdx = hash.indexOf('?')
     if (qIdx !== -1) {
@@ -136,10 +136,26 @@ const routes = [
       { path: 'profile', name: 'AmbassadorProfile', component: () => import('@/views/ambassador/Profile.vue') }
     ]
   },
-  // 微信 H5 授权登录
+  // 微信 H5 授权登录（通用，state参数区分端）
   {
     path: '/wechat-login',
     name: 'WechatLogin',
+    component: () => import('@/views/wechat/WechatLogin.vue')
+  },
+  // 社区端微信授权回调
+  {
+    path: '/wechat-login-community',
+    name: 'WechatLoginCommunity',
+    component: () => import('@/views/wechat/WechatLogin.vue')
+  },
+  {
+    path: '/wechat-login-merchant',
+    name: 'WechatLoginMerchant',
+    component: () => import('@/views/wechat/WechatLogin.vue')
+  },
+  {
+    path: '/wechat-login-ambassador',
+    name: 'WechatLoginAmbassador',
     component: () => import('@/views/wechat/WechatLogin.vue')
   },
   // 管理后台
@@ -184,7 +200,7 @@ const routes = [
 ]
 
 const router = createRouter({
-  history: createWebHashHistory(),
+  history: createWebHistory(),
   routes
 })
 
@@ -193,7 +209,7 @@ router.beforeEach((to, from, next) => {
   const path = to.path
 
   // 公开路由（不需要登录）
-  const publicPaths = ['/', '/wechat-login', '/login/community', '/login/merchant', '/login/ambassador', '/register/community', '/register/merchant', '/legal/terms', '/legal/privacy']
+  const publicPaths = ['/', '/wechat-login', '/wechat-login-community', '/wechat-login-merchant', '/wechat-login-ambassador', '/wechat-callback', '/login/community', '/login/merchant', '/login/ambassador', '/register/community', '/register/merchant', '/legal/terms', '/legal/privacy']
   if (publicPaths.includes(path) || path === '/admin/login') {
     return next()
   }

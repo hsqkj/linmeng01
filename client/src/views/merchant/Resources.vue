@@ -26,35 +26,33 @@
       <el-button @click="resetFilters">重置</el-button>
     </div>
 
-    <!-- 资源列表 -->
-    <el-table :data="myResources" stripe v-loading="loading">
-      <el-table-column prop="title" label="资源标题" min-width="200" />
-      <el-table-column prop="resource_type" label="资源类型" width="120">
-        <template #default="{ row }">
+    <!-- 资源列表（卡片模式） -->
+    <div class="resource-list" v-loading="loading">
+      <el-empty v-if="!loading && myResources.length === 0" description="暂无资源" />
+      <el-card v-for="row in myResources" :key="row.id" shadow="hover" class="resource-card">
+        <!-- 卡片头部：类型+状态 -->
+        <div class="card-header">
           <el-tag size="small">{{ getResourceTypeName(row.resource_type) }}</el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column prop="status" label="状态" width="90">
-        <template #default="{ row }">
           <el-tag size="small" :type="statusType[row.status]">{{ statusLabel[row.status] }}</el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column prop="view_count" label="浏览量" width="80" align="center" />
-      <el-table-column prop="created_at" label="发布时间" width="110">
-        <template #default="{ row }">
-          {{ row.created_at ? row.created_at.split('T')[0] : '-' }}
-        </template>
-      </el-table-column>
-      <el-table-column label="操作" width="200" fixed="right">
-        <template #default="{ row }">
-          <el-button type="primary" size="small" text @click="viewDetail(row)">查看</el-button>
-          <el-button type="success" size="small" text @click="editResource(row)">编辑</el-button>
-          <el-button v-if="row.status === 1" type="warning" size="small" text @click="toggleStatus(row, 2)">下架</el-button>
-          <el-button v-else-if="row.status === 2" type="success" size="small" text @click="toggleStatus(row, 1)">上架</el-button>
-          <el-button type="danger" size="small" text @click="deleteResource(row)">删除</el-button>
-        </template>
-      </el-table-column>
-    </el-table>
+          <span class="view-count"><el-icon :size="12"><View /></el-icon> {{ row.view_count || 0 }}</span>
+        </div>
+        <!-- 资源标题 -->
+        <h4 class="resource-title">{{ row.title }}</h4>
+        <!-- 简介 -->
+        <p class="resource-desc">{{ row.description || '暂无描述' }}</p>
+        <!-- 底部：发布时间 + 操作按钮 -->
+        <div class="card-footer">
+          <span class="publish-time">{{ row.created_at ? row.created_at.split('T')[0] : '-' }}</span>
+          <div class="action-btns">
+            <el-button type="primary" size="small" text @click="viewDetail(row)">查看</el-button>
+            <el-button type="success" size="small" text @click="editResource(row)">编辑</el-button>
+            <el-button v-if="row.status === 1" type="warning" size="small" text @click="toggleStatus(row, 2)">下架</el-button>
+            <el-button v-else-if="row.status === 2" type="success" size="small" text @click="toggleStatus(row, 1)">上架</el-button>
+            <el-button type="danger" size="small" text @click="deleteResource(row)">删除</el-button>
+          </div>
+        </div>
+      </el-card>
+    </div>
 
     <div class="pagination">
       <el-pagination
@@ -72,7 +70,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search, Plus } from '@element-plus/icons-vue'
+import { Search, Plus, View } from '@element-plus/icons-vue'
 import { getMyResources, updateResource, deleteResource as delResource } from '@/api/merchant'
 
 const router = useRouter()
@@ -212,20 +210,81 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.page { max-width: 1200px; margin: 0 auto; }
+.page {
+  background: #f5f5f5;
+  padding: 12px 14px 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
 .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
 .page-header h2 { margin: 0; font-size: 22px; font-weight: 700; }
 .filter-bar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; align-items: center; }
 .pagination { margin-top: 20px; display: flex; justify-content: flex-end; }
 
+/* 资源卡片列表 */
+.resource-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 14px;
+}
+.resource-card { transition: transform 0.2s; }
+.resource-card:hover { transform: translateY(-2px); }
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.view-count {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 12px;
+  color: #909399;
+  margin-left: auto;
+}
+.resource-title {
+  margin: 0 0 8px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+}
+.resource-desc {
+  margin: 0 0 12px;
+  font-size: 13px;
+  color: #666;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid #f0f0f0;
+  padding-top: 10px;
+}
+.publish-time { font-size: 12px; color: #909399; }
+.action-btns { display: flex; gap: 4px; flex-wrap: wrap; }
+.action-btns .el-button { padding: 4px 8px; font-size: 12px; }
+
+@media (min-width: 769px) {
+  .page { padding: 20px 20px 40px; min-height: 100vh; }
+  .page-header { margin-bottom: 24px; }
+  .page-header h2 { font-size: 24px; }
+  .filter-bar { margin-bottom: 20px; }
+  .resource-list { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+  .resource-card { border-radius: 12px !important; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+  .resource-card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,.12) !important; }
+  .resource-title { font-size: 16px; }
+  .resource-desc { font-size: 14px; }
+}
+
 @media (max-width: 768px) {
   .page { padding-bottom: 70px; }
-  .page-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
-    margin-bottom: 14px;
-  }
+  .page-header { flex-direction: column; align-items: flex-start; gap: 10px; margin-bottom: 14px; }
   .page-header h2 { font-size: 18px; }
   .page-header .el-button { width: 100%; }
   .filter-bar { gap: 8px; margin-bottom: 12px; }
@@ -238,12 +297,9 @@ onMounted(() => {
     width: calc(50% - 4px);
     font-size: 13px;
   }
+  .resource-list { grid-template-columns: 1fr; gap: 12px; }
+  .card-footer { flex-direction: column; gap: 8px; align-items: flex-start; }
+  .action-btns { width: 100%; justify-content: space-between; }
   .pagination { justify-content: center; }
-  :deep(.el-table) {
-    font-size: 13px;
-  }
-  :deep(.el-table__header th) {
-    font-size: 12px;
-  }
 }
 </style>

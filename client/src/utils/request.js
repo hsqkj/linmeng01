@@ -51,11 +51,11 @@ request.interceptors.request.use(
 request.interceptors.response.use(
   (response) => {
     const { data } = response
-    if (data.code === 200) {
+    if (data.code === 0 || data.code === 200) {
       return data
     }
     // 业务错误
-    ElMessage.error(data.message || '操作失败')
+    ElMessage.error(data.message || data.msg || '操作失败')
     return Promise.reject(new Error(data.message || '操作失败'))
   },
   (error) => {
