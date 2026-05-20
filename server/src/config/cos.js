@@ -1,0 +1,9 @@
+// 腾讯云 COS 配置文件
+// 必须在环境变量中配置 COS_SECRET_ID 和 COS_SECRET_KEY
+module.exports = {
+  secretId: process.env.COS_SECRET_ID,
+  secretKey: process.env.COS_SECRET_KEY,
+  bucket: 'hsqkj-1304867442',
+  region: 'ap-shanghai',
+  baseUrl: 'https://hsqkj-1304867442.cos.ap-shanghai.myqcloud.com'
+}
