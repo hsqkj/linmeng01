@@ -33,11 +33,22 @@ function getTokenKey(path) {
   return null
 }
 
-// 路由守卫：检查登录状态
+// 从 cookie 读取指定 key
+function getCookie(name) {
+  try {
+    const match = document.cookie.match(new RegExp('(?:^|;\\s*)' + name + '=([^;]*)'))
+    return match ? decodeURIComponent(match[1]) : ''
+  } catch { return '' }
+}
+
+// 路由守卫：检查登录状态（localStorage + cookie 兜底）
 function checkAuth(path) {
   const key = getTokenKey(path)
-  if (key) return !!localStorage.getItem(key)
-  return true
+  if (!key) return true
+  // 优先 localStorage
+  if (localStorage.getItem(key)) return true
+  // 兜底：检查 cookie（SSO WebView 场景）
+  return !!getCookie(key)
 }
 
 const routes = [
@@ -142,6 +153,12 @@ const routes = [
     name: 'WechatLogin',
     component: () => import('@/views/wechat/WechatLogin.vue')
   },
+  // SSO 单点登录回调（益邻邻小程序跳转）
+  {
+    path: '/sso-callback',
+    name: 'SsoCallback',
+    component: () => import('@/views/SsoCallback.vue')
+  },
   // 社区端微信授权回调
   {
     path: '/wechat-login-community',
@@ -210,7 +227,7 @@ router.beforeEach((to, from, next) => {
   window.__DEBUG_ROUTE = { path, ts: Date.now() }
 
   // 公开路由（不需要登录）
-  const publicPaths = ['/', '/wechat-login', '/wechat-login-community', '/wechat-login-merchant', '/wechat-login-ambassador', '/wechat-callback', '/login/community', '/login/merchant', '/login/ambassador', '/register/community', '/register/merchant', '/legal/terms', '/legal/privacy']
+  const publicPaths = ['/', '/wechat-login', '/sso-callback', '/wechat-login-community', '/wechat-login-merchant', '/wechat-login-ambassador', '/wechat-callback', '/login/community', '/login/merchant', '/login/ambassador', '/register/community', '/register/merchant', '/legal/terms', '/legal/privacy']
   if (publicPaths.includes(path) || path === '/admin/login') {
     return next()
   }

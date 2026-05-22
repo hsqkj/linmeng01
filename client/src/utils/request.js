@@ -19,24 +19,44 @@ const TOKEN_KEYS = {
   ambassador: 'ambassador_token'
 }
 
-// 从 localStorage 获取对应角色的 token
+// 从 localStorage 或 cookie 获取对应角色的 token
 function getToken(role) {
   if (role && TOKEN_KEYS[role]) {
-    return localStorage.getItem(TOKEN_KEYS[role]) || ''
+    const key = TOKEN_KEYS[role]
+    // 优先 localStorage
+    const local = localStorage.getItem(key)
+    if (local) return local
+    // 兜底：从 cookie 读取（SSO WebView 场景）
+    return getCookie(key) || ''
   }
-  // 未指定角色时返回空（公开接口不需要 token）
   return ''
+}
+
+// 从 cookie 读取指定 key 的值
+function getCookie(name) {
+  try {
+    const match = document.cookie.match(new RegExp('(?:^|;\\s*)' + name + '=([^;]*)'))
+    return match ? decodeURIComponent(match[1]) : ''
+  } catch {
+    return ''
+  }
 }
 
 // 请求拦截器 - 自动附加 token
 request.interceptors.request.use(
   (config) => {
     // 优先使用 config 上的 role，否则尝试从 URL 路径推断
-    const role = config.role ||
+    let role = config.role ||
       (config.url?.startsWith('/admin/') ? 'admin' :
        config.url?.startsWith('/community/') ? 'community' :
        config.url?.startsWith('/merchant/') ? 'merchant' :
        config.url?.startsWith('/ambassador/') ? 'ambassador' : null)
+
+    // 如果无法从 URL 推断角色，尝试从 cookie 的 sso_user_type 获取
+    if (!role) {
+      const ssoType = getCookie('sso_user_type')
+      if (ssoType && TOKEN_KEYS[ssoType]) role = ssoType
+    }
 
     const token = getToken(role)
     if (token) {

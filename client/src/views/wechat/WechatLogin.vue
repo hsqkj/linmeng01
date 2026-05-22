@@ -97,6 +97,14 @@ watch(isLoggedIn, (newVal) => {
 /**
  * 初始化：判断是否在微信内，发起授权
  */
+// 从 cookie 读取指定 key
+function getCookie(name) {
+  try {
+    const match = document.cookie.match(new RegExp('(?:^|;\\s*)' + name + '=([^;]*)'))
+    return match ? decodeURIComponent(match[1]) : ''
+  } catch { return '' }
+}
+
 onMounted(() => {
   // 优先检查 URL 中是否有小程序传来的 token（场景A：小程序 webview）
   const urlToken = route.query.token
@@ -116,10 +124,18 @@ onMounted(() => {
     return
   }
 
-  // 检查本地是否有 token（按端存储）
+  // 检查本地是否有 token（按端存储，优先 localStorage，兜底 cookie）
   const localUserType = localStorage.getItem('userType') || 'community'
   const tokenKey = `${localUserType}_token`
-  const localToken = localStorage.getItem(tokenKey)
+  let localToken = localStorage.getItem(tokenKey)
+  if (!localToken) {
+    // 兜底：cookie（SSO WebView 场景）
+    localToken = getCookie(tokenKey)
+    if (localToken) {
+      // 同步到 localStorage，后续路由守卫能直接命中
+      localStorage.setItem(tokenKey, localToken)
+    }
+  }
   if (localToken) {
     checkLoginStatus(localToken)
     return
@@ -165,28 +181,26 @@ async function handleMiniProgramToken(token, userType) {
   loadingText.value = '身份验证中...'
 
   try {
-    const res = await request.post(`/auth/mini-login`, { token, userType })
-    if (res.code === 200) {
-      const data = res.data
-      // 统一存储：按端存储 token
-      const tokenKey = `${data.userType}_token`
-      localStorage.setItem(tokenKey, data.token)
-      localStorage.setItem('userType', data.userType)
-      localStorage.setItem('userId', data.userId)
-      localStorage.setItem('userName', data.userName)
+    // 优先使用 SSO 登录接口（JWT签名验证，更安全）
+    const res = await request.post('/auth/sso-login', { token, userType })
+    // request 拦截器已过滤：code 非 0/200 会走 catch
+    const data = res.data
+    // 统一存储：按端存储 token
+    const tokenKey = `${data.userType}_token`
+    localStorage.setItem(tokenKey, data.token)
+    localStorage.setItem('userType', data.userType)
+    localStorage.setItem('userId', String(data.userId))
+    localStorage.setItem('userName', data.userName)
 
-      userInfo.value = {
-        name: data.userName,
-        avatar: data.avatar || defaultAvatar,
-        phone: data.phone
-      }
-      isLoggedIn.value = true
-      loading.value = false
-    } else {
-      throw new Error(res.data.msg || '身份验证失败')
+    userInfo.value = {
+      name: data.userName,
+      avatar: data.avatar || defaultAvatar,
+      phone: data.phone
     }
+    isLoggedIn.value = true
+    loading.value = false
   } catch (err) {
-    // token 失效，尝试微信授权
+    // SSO token 失效，尝试微信授权
     console.warn('小程序 token 验证失败，尝试微信授权:', err.message)
     redirectToWechatAuth()
   }
