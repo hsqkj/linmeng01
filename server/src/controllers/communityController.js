@@ -457,11 +457,12 @@ exports.getDemands = async (req, res) => {
     )
     
     const result = rows.map(d => {
-      const mapped = typeMapper.mapDemandFields(d)
+      const mapped = typeMapper.mapDemand(d)
       return { ...mapped, matchScore: 3, matchHearts: 3 }
     })
     pageSuccess(res, result, total, page, pageSize)
   } catch (err) {
+    console.error('[getDemands]', err.message, err.stack)
     error(res, '获取需求列表失败')
   }
 }
@@ -598,8 +599,8 @@ exports.createDemand = async (req, res) => {
        required_types, budget_min, budget_max, material_details, human_details,
        tech_details, media_details, return_ways, return_value, images, tags, deadline,
        volunteer_points, volunteer_max_points, volunteer_count, volunteer_desc,
-       ai_audit_level, ai_audit_reason)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       ai_audit_level, ai_audit_reason, plan_file)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [data.community_id, data.demand_type, data.title, data.activity_type,
        JSON.stringify(data.target_audience || []), data.start_time, data.end_time,
        data.location_type, data.location_name, data.expected_count, data.content,
@@ -609,7 +610,7 @@ exports.createDemand = async (req, res) => {
        JSON.stringify(data.return_ways || []), data.return_value, JSON.stringify(data.images || []),
        JSON.stringify(data.tags || []), data.deadline,
        data.volunteer_points || 0, data.volunteer_max_points || 0, data.volunteer_count || 0, data.volunteer_desc || null,
-       auditResult.level, auditResult.reason || null]
+       auditResult.level, auditResult.reason || null, data.plan_file || null]
     )
 
     // 如果从草稿提交，删除对应草稿
@@ -654,17 +655,23 @@ exports.updateDemand = async (req, res) => {
       `UPDATE demands SET title = ?, activity_type = ?, target_audience = ?,
        start_time = ?, end_time = ?, location_type = ?, location_name = ?,
        expected_count = ?, content = ?, required_types = ?, budget_min = ?,
-       budget_max = ?, return_ways = ?, return_value = ?, images = ?,
+       budget_max = ?, material_details = ?, human_details = ?, tech_details = ?, media_details = ?,
+       return_ways = ?, return_value = ?, images = ?,
        tags = ?, deadline = ?, status = 0,
-       volunteer_points = ?, volunteer_max_points = ?, volunteer_count = ?, volunteer_desc = ?
+       volunteer_points = ?, volunteer_max_points = ?, volunteer_count = ?, volunteer_desc = ?,
+       plan_file = ?
        WHERE id = ?`,
       [data.title, data.activity_type, JSON.stringify(data.target_audience || []),
        data.start_time, data.end_time, data.location_type, data.location_name,
        data.expected_count, data.content, JSON.stringify(data.required_types || []),
-       data.budget_min, data.budget_max, JSON.stringify(data.return_ways || []),
+       data.budget_min, data.budget_max,
+       JSON.stringify(data.material_details || {}), JSON.stringify(data.human_details || {}),
+       JSON.stringify(data.tech_details || {}), JSON.stringify(data.media_details || {}),
+       JSON.stringify(data.return_ways || []),
        data.return_value, JSON.stringify(data.images || []), JSON.stringify(data.tags || []),
        data.deadline, 0, // 重新设为待审核
        data.volunteer_points || 0, data.volunteer_max_points || 0, data.volunteer_count || 0, data.volunteer_desc || null,
+       data.plan_file || null,
        id]
     )
     

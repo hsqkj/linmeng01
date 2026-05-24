@@ -82,5 +82,24 @@ export const markOneNotificationRead = (id) => request.put(`/community/notificat
 // ====== 公共配置 ======
 export const getPublishTypes = () => request.get('/public/publish-types')
 
+// ====== 文件上传 ======
+export const uploadFile = (file, folder = 'demands') => {
+  const formData = new FormData()
+  formData.append('file', file)
+  formData.append('folder', folder)
+  return request.post('/api/upload/single', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  })
+}
+
+export const uploadFiles = (files, folder = 'demands') => {
+  const formData = new FormData()
+  files.forEach(f => formData.append('files', f))
+  formData.append('folder', folder)
+  return request.post('/api/upload/multiple', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  })
+}
+
 // ====== 平台统计 ======
 export const getPlatformStats = () => request.get('/public/stats')

@@ -18,6 +18,11 @@
           <p>连接社区与商家，精准匹配资源，共创美好生活</p>
         </template>
       </div>
+      <!-- 右上角"我的"按钮 -->
+      <div class="my-btn-wrap" v-if="isLoggedIn" @click="$router.push('/community/profile')">
+        <el-icon :size="22"><UserFilled /></el-icon>
+        <span class="my-btn-text">我的</span>
+      </div>
       <!-- 右侧按钮 -->
       <div class="welcome-actions">
         <template v-if="isLoggedIn">
@@ -213,7 +218,7 @@ import { ref, computed, onMounted, inject } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { requireAuth, isLoggedIn as checkLogin } from '@/utils/useAuth'
-import { Shop, StarFilled, Document, Connection, CircleCheck, Present, Plus, View, User, Edit } from '@element-plus/icons-vue'
+import { Shop, StarFilled, Document, Connection, CircleCheck, Present, Plus, View, User, Edit, UserFilled } from '@element-plus/icons-vue'
 import { getBanners, getRecommendResources, getProfile, getMyDemands, getMyIntentions, getResources, getDemands } from '@/api/community'
 
 const router = useRouter()
@@ -420,6 +425,25 @@ const viewActivityDetail = (activity) => {
 .welcome-content h1 { font-size: 16px; font-weight: 700; margin-bottom: 4px; color: #fff; }
 .welcome-content p { opacity: 0.9; font-size: 13px; color: #fff; display: inline; }
 .welcome-actions { position: relative; z-index: 10; flex-shrink: 0; }
+.my-btn-wrap {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 20px;
+  background: rgba(255,255,255,.18);
+  backdrop-filter: blur(4px);
+  transition: background .2s;
+}
+.my-btn-wrap:active { background: rgba(255,255,255,.32); }
+.my-btn-wrap .el-icon { color: #fff; }
+.my-btn-text { font-size: 10px; color: #fff; line-height: 1; }
 .banner-section { margin-bottom: 20px; }
 .banner-item {
   height: 200px;
@@ -487,6 +511,8 @@ const viewActivityDetail = (activity) => {
     overflow: hidden;
     box-shadow: 0 4px 16px rgba(38, 162, 105, 0.3);
   }
+  .my-btn-wrap { top: 14px; right: 14px; padding: 8px 14px; }
+  .my-btn-text { font-size: 11px; }
   .welcome-banner::before {
     content: '';
     position: absolute;

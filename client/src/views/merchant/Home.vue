@@ -837,12 +837,56 @@ async function loadDemandTypes() {
 }
 
 @media (max-width: 768px) {
+  .merchant-home {
+    background: #f7f8fa;
+    padding-bottom: 70px;
+  }
+
+  /* 欢迎横幅 */
+  .welcome-banner.merchant-welcome {
+    margin: 12px 16px 16px;
+    padding: 20px 16px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #07c160, #06ad56);
+  }
+  .welcome-banner.merchant-welcome h1 {
+    font-size: 20px;
+    margin-bottom: 8px;
+  }
+  .welcome-banner.merchant-welcome p {
+    font-size: 13px;
+    opacity: 0.9;
+  }
+  .welcome-actions {
+    margin-top: 16px;
+    display: flex;
+    gap: 10px;
+  }
+  .welcome-actions :deep(.el-button) {
+    border-radius: 22px;
+    flex: 1;
+    height: 40px;
+    font-size: 14px;
+  }
+
+  /* 登录提示 */
+  .login-tip-banner {
+    margin: 0 16px 16px;
+  }
+  .login-tip-banner :deep(.el-alert) {
+    border-radius: 12px;
+    border: none;
+  }
+
+  /* 会员卡片 — 小程序风格 */
   .membership-card {
     flex-direction: row;
     gap: 12px;
-    padding: 14px;
+    padding: 16px;
     border-radius: 12px;
-    margin-bottom: 16px;
+    margin: 0 16px 16px;
+    background: linear-gradient(135deg, #07c160, #06ad56);
+    box-shadow: 0 4px 16px rgba(7,193,96,0.2);
   }
 
   .membership-info {
@@ -858,6 +902,7 @@ async function loadDemandTypes() {
     min-width: 56px;
     flex-direction: column;
     gap: 4px;
+    background: rgba(255,255,255,0.2);
   }
 
   .level-badge .el-icon {
@@ -867,6 +912,7 @@ async function loadDemandTypes() {
 
   .level-badge span {
     font-size: 11px !important;
+    color: white;
   }
 
   .membership-details {
@@ -874,14 +920,15 @@ async function loadDemandTypes() {
   }
 
   .membership-details h3 {
-    font-size: 14px;
+    font-size: 15px;
     margin-bottom: 4px;
     text-align: left;
+    color: white;
   }
 
   .membership-details p {
-    font-size: 11px;
-    color: rgba(255,255,255,0.8);
+    font-size: 12px;
+    color: rgba(255,255,255,0.85);
   }
 
   .membership-actions {
@@ -889,25 +936,21 @@ async function loadDemandTypes() {
   }
 
   .membership-actions .el-button {
-    padding: 8px 12px;
+    padding: 8px 14px;
     font-size: 12px;
+    border-radius: 14px;
+    background: rgba(255,255,255,0.9);
+    color: #07c160;
+    border: none;
   }
 
-  .banner-item {
-    padding: 0 16px;
+  /* 轮播图 — 小程序风格 */
+  .banner-section {
+    margin: 0 16px 16px;
   }
-
-  .banner-content h3 {
-    font-size: 16px;
-  }
-
-  .banner-content p {
-    font-size: 12px;
-  }
-
-  /* 轮播图手机端优化 */
   .banner-section :deep(.el-carousel) {
     border-radius: 12px;
+    overflow: hidden;
   }
   .banner-section :deep(.el-carousel__container) {
     height: 140px !important;
@@ -915,82 +958,151 @@ async function loadDemandTypes() {
   .banner-section :deep(.el-carousel__item) {
     height: 140px !important;
   }
+  .banner-item {
+    padding: 0 20px;
+    border-radius: 12px;
+  }
+  .banner-content h3 {
+    font-size: 16px;
+    margin-bottom: 6px;
+  }
+  .banner-content p {
+    font-size: 12px;
+    margin-bottom: 10px;
+  }
 
+  /* 统计卡片 — 小程序风格 */
   .stats-row {
     grid-template-columns: repeat(2, 1fr);
     gap: 10px;
-    margin-bottom: 16px;
+    margin: 0 16px 16px;
   }
 
+  .stat-card {
+    border-radius: 12px !important;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.04) !important;
+  }
   .stat-card :deep(.el-card__body) {
     gap: 10px;
-    padding: 12px;
+    padding: 14px;
+    display: flex;
+    align-items: center;
   }
 
   .stat-icon {
-    width: 38px;
-    height: 38px;
-    border-radius: 8px;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
     flex-shrink: 0;
-    font-size: 16px !important;
+    font-size: 18px !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .stat-value {
-    font-size: 18px;
+    font-size: 20px;
+    color: #323233;
+    font-weight: 600;
   }
 
   .stat-label {
     font-size: 12px;
+    color: #969799;
   }
 
+  /* 章节 */
   .section {
-    margin-bottom: 20px;
+    margin: 0 16px 20px;
+    background: white;
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.04);
   }
 
   .section-header {
-    margin-bottom: 12px;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
   }
 
   .section-header h2 {
-    font-size: 15px;
+    font-size: 16px;
+    color: #323233;
+    font-weight: 600;
   }
 
+  /* 需求列表 */
   .demand-list {
     grid-template-columns: 1fr;
     gap: 12px;
   }
 
+  .demand-card {
+    border-radius: 10px !important;
+    box-shadow: none !important;
+    border: 1px solid #ebedf0;
+  }
+
   .demand-header {
     gap: 8px;
     padding-right: 0;
+    flex-wrap: wrap;
   }
 
   .demand-actions {
     flex-direction: column;
+    gap: 6px;
   }
 
   .demand-actions .el-button {
     width: 100%;
+    border-radius: 8px;
   }
 
-  /* 社区详情弹窗手机端 */
+  /* 弹窗 */
   :deep(.el-dialog) {
-    width: 95% !important;
-    margin: 12px auto !important;
+    width: 92% !important;
+    margin: 16px auto !important;
+    border-radius: 16px !important;
+  }
+  :deep(.el-dialog__header) {
+    padding: 16px 16px 0;
+  }
+  :deep(.el-dialog__body) {
+    padding: 16px;
+  }
+  :deep(.el-dialog__footer) {
+    padding: 0 16px 16px;
   }
 
-  /* 表格容器手机端 */
+  /* 表格 */
   :deep(.el-table) {
     font-size: 12px;
+    border-radius: 8px;
+  }
+  :deep(.el-table th) {
+    background: #f7f8fa !important;
+    color: #969799;
+    font-weight: 500;
   }
 
-  /* 搜索栏手机端 */
+  /* 搜索栏 */
   .search-bar {
     flex-wrap: wrap;
     gap: 8px;
+    margin: 0 16px 16px;
+    background: white;
+    padding: 12px;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.04);
   }
   .search-bar :deep(.el-select) {
     width: 100% !important;
+  }
+  .search-bar :deep(.el-input__wrapper) {
+    border-radius: 10px !important;
   }
 }
 

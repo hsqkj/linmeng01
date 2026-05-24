@@ -1,7 +1,7 @@
 <template>
   <div class="publish-demand">
     <div class="page-header">
-      <el-button text @click="$router.back()">
+      <el-button text @click="$router.back()" class="back-btn">
         <el-icon><ArrowLeft /></el-icon> 返回
       </el-button>
       <h2>{{ isEdit ? (isRepublish ? '重新编辑需求' : '编辑需求') : '发布社区需求' }}</h2>
@@ -48,20 +48,26 @@
         <div class="type-cards">
           <div class="type-card" :class="{ active: form.type === 'activity' }" @click="form.type = 'activity'">
             <el-icon :size="44" color="#409EFF"><Calendar /></el-icon>
-            <h4>活动赞助</h4>
-            <p>举办社区活动，寻求资金、物资、人力、技术、媒体等多类型支持</p>
+            <div class="type-card-body">
+              <h4>活动赞助</h4>
+              <p>举办社区活动，寻求资金、物资、人力、技术、媒体等多类型支持</p>
+            </div>
             <div class="check-badge" v-if="form.type === 'activity'">✓ 已选</div>
           </div>
           <div class="type-card" :class="{ active: form.type === 'expert' }" @click="form.type = 'expert'">
             <el-icon :size="44" color="#67C23A"><UserFilled /></el-icon>
-            <h4>专家服务</h4>
-            <p>邀请专业人士提供法律、医疗、教育、心理等专业服务</p>
+            <div class="type-card-body">
+              <h4>专家服务</h4>
+              <p>邀请专业人士提供法律、医疗、教育、心理等专业服务</p>
+            </div>
             <div class="check-badge" v-if="form.type === 'expert'">✓ 已选</div>
           </div>
           <div class="type-card" :class="{ active: form.type === 'space' }" @click="form.type = 'space'">
             <el-icon :size="44" color="#E6A23C"><OfficeBuilding /></el-icon>
-            <h4>空间运营</h4>
-            <p>社区公共空间寻求合作运营、改造共建或品牌冠名</p>
+            <div class="type-card-body">
+              <h4>空间运营</h4>
+              <p>社区公共空间寻求合作运营、改造共建或品牌冠名</p>
+            </div>
             <div class="check-badge" v-if="form.type === 'space'">✓ 已选</div>
           </div>
         </div>
@@ -184,11 +190,23 @@
         </el-form-item>
 
         <el-form-item label="策划方案（选填）">
-          <el-upload drag accept=".pdf,.doc,.docx,.ppt,.pptx" :auto-upload="false" :on-change="handlePlanFile">
+          <el-upload
+            v-if="!form.planFileUrl"
+            drag
+            accept=".pdf,.doc,.docx,.ppt,.pptx"
+            :auto-upload="true"
+            :http-request="uploadPlanFile"
+            :show-file-list="false"
+            :disabled="uploadingPlan"
+          >
             <el-icon class="el-icon--upload"><UploadFilled /></el-icon>
-            <div class="el-upload__text">拖拽文件至此，或 <em>点击上传</em></div>
+            <div class="el-upload__text">{{ uploadingPlan ? '上传中...' : '拖拽文件至此，或 <em>点击上传</em>' }}</div>
             <template #tip><div class="el-upload__tip">支持PDF/Word/PPT，有策划方案可大大提升商家信任度</div></template>
           </el-upload>
+          <div v-else class="uploaded-file">
+            <span class="file-name">📎 {{ planFileName }}</span>
+            <el-button type="danger" text size="small" @click="removePlanFile">删除</el-button>
+          </div>
         </el-form-item>
 
         <!-- 所需赞助类型 -->
@@ -481,11 +499,13 @@
 
         <el-form-item label="空间实景图片" required>
           <el-upload
-            v-model:file-list="form.spaceImages"
+            v-model:file-list="form.spaceImageFiles"
             list-type="picture-card"
-            :auto-upload="false"
+            :auto-upload="true"
+            :http-request="uploadSpaceImage"
             :limit="9"
             accept="image/*"
+            :on-remove="removeSpaceImage"
           >
             <el-icon><Plus /></el-icon>
             <template #tip>
@@ -528,11 +548,13 @@
 
         <el-form-item label="活动现场图片（让商家直观了解活动氛围）">
           <el-upload
-            v-model:file-list="form.activityImages"
+            v-model:file-list="form.activityImageFiles"
             list-type="picture-card"
-            :auto-upload="false"
+            :auto-upload="true"
+            :http-request="uploadActivityImage"
             :limit="9"
             accept="image/*"
+            :on-remove="removeActivityImage"
           >
             <el-icon><Plus /></el-icon>
             <template #tip>
@@ -551,18 +573,18 @@
         <div class="volunteer-block">
           <div class="block-title">🏅 志愿服务积分奖励</div>
           <p class="volunteer-desc">设置志愿服务积分，激励更多志愿者参与，提升活动影响力</p>
-          <el-row :gutter="16">
-            <el-col :span="8">
+          <el-row :gutter="16" class="volunteer-inputs-row">
+            <el-col :xs="24" :sm="8">
               <el-form-item label="志愿服务积分">
                 <el-input-number v-model="form.volunteerPoints" :min="0" :max="9999" style="width:100%" placeholder="0" />
               </el-form-item>
             </el-col>
-            <el-col :span="8">
+            <el-col :xs="24" :sm="8">
               <el-form-item label="积分上限（每人）">
                 <el-input-number v-model="form.volunteerMaxPoints" :min="0" :max="9999" style="width:100%" placeholder="0" />
               </el-form-item>
             </el-col>
-            <el-col :span="8">
+            <el-col :xs="24" :sm="8">
               <el-form-item label="招募志愿者人数">
                 <el-input-number v-model="form.volunteerCount" :min="0" :max="999" style="width:100%" placeholder="0" />
               </el-form-item>
@@ -599,7 +621,7 @@
         </el-form-item>
 
         <el-form-item label="空间实景图片（可补充上传）">
-          <el-upload v-model:file-list="form.activityImages" list-type="picture-card" :auto-upload="false" :limit="9" accept="image/*">
+          <el-upload v-model:file-list="form.spaceImageFiles" list-type="picture-card" :auto-upload="true" :http-request="uploadSpaceImage" :limit="9" accept="image/*" :on-remove="removeSpaceImage">
             <el-icon><Plus /></el-icon>
           </el-upload>
         </el-form-item>
@@ -624,12 +646,15 @@
                 <div class="preview-item" v-if="form.expectedAttendees"><span class="label">预计人数：</span>{{ form.expectedAttendees }}人</div>
                 <div class="preview-item" v-if="form.description"><span class="label">需求描述：</span>{{ form.description.slice(0, 100) }}{{ form.description.length > 100 ? '...' : '' }}</div>
                 <div class="preview-item" v-if="form.sponsorTypes.length > 0"><span class="label">赞助类型：</span>{{ form.sponsorTypes.map(s => sponsorTypeLabels[s]).join('、') }}</div>
-                <div class="preview-item" v-if="form.fundMin > 0 || form.fundMax > 0"><span class="label">资金需求：</span>¥{{ form.fundMin }} ~ ¥{{ form.fundMax }}</div>
-                <div class="preview-item" v-if="form.goodsList"><span class="label">物资需求：</span>{{ form.goodsList }}</div>
-                <div class="preview-item" v-if="form.manpowerCount > 0"><span class="label">人力需求：</span>{{ form.manpowerCount }}人，{{ form.manpowerHours }}小时</div>
+                <div class="preview-item" v-if="form.sponsorTypes.includes('fund') && (form.fundMin > 0 || form.fundMax > 0)"><span class="label">资金需求：</span>¥{{ form.fundMin }} ~ ¥{{ form.fundMax }}</div>
+                <div class="preview-item" v-if="form.sponsorTypes.includes('goods') && form.goodsList"><span class="label">物资需求：</span>{{ form.goodsList.slice(0, 50) }}{{ form.goodsList.length > 50 ? '...' : '' }}</div>
+                <div class="preview-item" v-if="form.sponsorTypes.includes('manpower') && form.manpowerCount > 0"><span class="label">人力需求：</span>{{ form.manpowerCount }}人，{{ form.manpowerHours }}小时</div>
+                <div class="preview-item" v-if="form.sponsorTypes.includes('tech') && form.techDesc"><span class="label">技术需求：</span>{{ form.techDesc.slice(0, 40) }}{{ form.techDesc.length > 40 ? '...' : '' }}</div>
+                <div class="preview-item" v-if="form.sponsorTypes.includes('media')"><span class="label">媒体报道：</span>{{ form.mediaTypes.length > 0 ? form.mediaTypes.map(m => ({news:'新闻网站',wechat:'微信公众号',video:'短视频',tv:'电视/广播',paper:'报纸'})[m]).filter(Boolean).join('、') : '已选媒体报道' }}</div>
                 <div class="preview-item" v-if="form.rewards.length > 0"><span class="label">商家回报：</span>{{ form.rewards.slice(0,3).join('、') }}{{ form.rewards.length > 3 ? '等' : '' }}</div>
                 <div class="preview-item" v-if="form.volunteerPoints > 0"><span class="label">志愿服务积分：</span>{{ form.volunteerPoints }}分{{ form.volunteerCount ? `（招募${form.volunteerCount}人）` : '' }}</div>
                 <div class="preview-item" v-if="form.deadline"><span class="label">需求截止：</span>{{ form.deadline }}</div>
+                <div class="preview-item" v-if="form.planFileUrl"><span class="label">策划方案：</span>📎 已上传</div>
                 <div class="preview-item" v-if="form.tags.length > 0">
                   <span class="label">标签：</span>
                   <el-tag v-for="t in form.tags" :key="t" size="small" type="primary" effect="light" style="margin-right:4px">{{ t }}</el-tag>
@@ -700,7 +725,7 @@ import {
   ArrowLeft, Calendar, UserFilled, OfficeBuilding, UploadFilled,
   Upload, Plus, Check, Warning, Document
 } from '@element-plus/icons-vue'
-import { createDemand, updateDemand, getDemandDetail, saveDraft, getMyDrafts, deleteDraft as apiDeleteDraft } from '@/api/community'
+import { createDemand, updateDemand, getDemandDetail, saveDraft, getMyDrafts, deleteDraft as apiDeleteDraft, uploadFile } from '@/api/community'
 
 const router = useRouter()
 const route = useRoute()
@@ -845,7 +870,10 @@ const form = ref({
   rewardDesc: '', customReward: '', activityImages: [],
   spaceUsageDesc: '', brandDisplayTypes: [],
   deadline: '',
-  volunteerPoints: 0, volunteerMaxPoints: 0, volunteerCount: 0, volunteerDesc: ''
+  volunteerPoints: 0, volunteerMaxPoints: 0, volunteerCount: 0, volunteerDesc: '',
+  planFileUrl: '',
+  activityImageFiles: [],
+  spaceImageFiles: []
 })
 
 // 禁用非10分钟档的分钟数
@@ -870,8 +898,67 @@ function removeTag(arr, val) {
   const i = arr.indexOf(val)
   if (i >= 0) arr.splice(i, 1)
 }
-function handlePlanFile(file) {
-  form.value.planFile = file
+const uploadingPlan = ref(false)
+const planFileName = ref('')
+
+// 上传策划方案到服务器
+async function uploadPlanFile({ file }) {
+  uploadingPlan.value = true
+  try {
+    const res = await uploadFile(file, 'demands')
+    form.value.planFileUrl = res.data?.url || ''
+    planFileName.value = file.name
+    ElMessage.success('策划方案上传成功')
+  } catch {
+    ElMessage.error('策划方案上传失败，请重试')
+  } finally {
+    uploadingPlan.value = false
+  }
+}
+
+function removePlanFile() {
+  form.value.planFileUrl = ''
+  planFileName.value = ''
+}
+
+// 已上传的图片 URL 列表
+const uploadedActivityImageUrls = ref([])
+const uploadedSpaceImageUrls = ref([])
+
+// 上传活动图片
+async function uploadActivityImage({ file }) {
+  try {
+    const res = await uploadFile(file, 'demands/activity')
+    const url = res.data?.url || ''
+    if (url) uploadedActivityImageUrls.value.push(url)
+  } catch {
+    ElMessage.error('图片上传失败')
+  }
+}
+
+function removeActivityImage(file) {
+  const url = file.url || file.response?.data?.url
+  if (url) {
+    uploadedActivityImageUrls.value = uploadedActivityImageUrls.value.filter(u => u !== url)
+  }
+}
+
+// 上传空间图片
+async function uploadSpaceImage({ file }) {
+  try {
+    const res = await uploadFile(file, 'demands/space')
+    const url = res.data?.url || ''
+    if (url) uploadedSpaceImageUrls.value.push(url)
+  } catch {
+    ElMessage.error('图片上传失败')
+  }
+}
+
+function removeSpaceImage(file) {
+  const url = file.url || file.response?.data?.url
+  if (url) {
+    uploadedSpaceImageUrls.value = uploadedSpaceImageUrls.value.filter(u => u !== url)
+  }
 }
 
 function nextStep() {
@@ -922,13 +1009,19 @@ function transformFormData() {
     required_types: f.sponsorTypes || [],
     budget_min: f.fundMin || 0,
     budget_max: f.fundMax || 0,
+    material_details: { goodsList: f.goodsList || '', goodsDelivery: f.goodsDelivery || 'both' },
+    human_details: { manpowerCount: f.manpowerCount || 0, manpowerHours: f.manpowerHours || 0, manpowerContent: f.manpowerContent || '', manpowerSkills: f.manpowerSkills || '' },
+    tech_details: { techTypes: f.techTypes || [], techDesc: f.techDesc || '' },
+    media_details: { mediaTypes: f.mediaTypes || [], mediaDesc: f.mediaDesc || '', mediaPublishTime: f.mediaPublishTime || '' },
     return_ways: f.rewards || [],
     return_value: f.rewardDesc || '',
     deadline: f.deadline || '',
     volunteer_points: f.volunteerPoints || 0,
     volunteer_max_points: f.volunteerMaxPoints || 0,
     volunteer_count: f.volunteerCount || 0,
-    volunteer_desc: f.volunteerDesc || ''
+    volunteer_desc: f.volunteerDesc || '',
+    plan_file: f.planFileUrl || '',
+    images: [...uploadedActivityImageUrls.value, ...uploadedSpaceImageUrls.value]
   }
   return data
 }
@@ -964,6 +1057,59 @@ function fillFormFromDemand(demand) {
   f.rewardDesc = demand.return_value || ''
   f.startTime = demand.start_time || ''
   f.endTime = demand.end_time || ''
+
+  // 恢复赞助详情（JSON字段可能需要解析）
+  function parseJsonField(val) {
+    if (!val) return {}
+    if (typeof val === 'object') return val
+    try { return JSON.parse(val) } catch { return {} }
+  }
+
+  const material = parseJsonField(demand.material_details)
+  f.goodsList = material.goodsList || ''
+  f.goodsDelivery = material.goodsDelivery || 'both'
+
+  const human = parseJsonField(demand.human_details)
+  f.manpowerCount = human.manpowerCount || 0
+  f.manpowerHours = human.manpowerHours || 0
+  f.manpowerContent = human.manpowerContent || ''
+  f.manpowerSkills = human.manpowerSkills || ''
+
+  const tech = parseJsonField(demand.tech_details)
+  f.techTypes = tech.techTypes || []
+  f.techDesc = tech.techDesc || ''
+
+  const media = parseJsonField(demand.media_details)
+  f.mediaTypes = media.mediaTypes || []
+  f.mediaDesc = media.mediaDesc || ''
+  f.mediaPublishTime = media.mediaPublishTime || ''
+
+  // 恢复策划方案
+  f.planFileUrl = demand.plan_file || ''
+  if (demand.plan_file) {
+    planFileName.value = '已上传文件'
+  }
+
+  // 恢复已上传图片（images 字段是 JSON 数组或字符串）
+  let images = demand.images || []
+  if (typeof images === 'string') {
+    try { images = JSON.parse(images) } catch { images = [] }
+  }
+  // 将 URL 转为 file-list 格式供 el-upload 显示
+  const imageFiles = images.map((url, idx) => ({
+    name: `image-${idx}`,
+    url,
+    status: 'success'
+  }))
+  if (f.type === 'space') {
+    f.spaceImageFiles = imageFiles
+    uploadedSpaceImageUrls.value = images
+    uploadedActivityImageUrls.value = []
+  } else {
+    f.activityImageFiles = imageFiles
+    uploadedActivityImageUrls.value = images
+    uploadedSpaceImageUrls.value = []
+  }
 }
 
 async function submitDemand() {
@@ -1213,7 +1359,7 @@ watch(showDraftDialog, (val) => {
 @media (max-width: 768px) {
   .publish-demand { max-width: 100%; margin: 0 auto; padding: 0 0 90px; background: #f7f8fa; }
 
-  /* 头部 — 小程序导航栏风格 */
+  /* 头部 — 小程序导航栏风格（隐藏返回按钮，小程序WebView自带） */
   .page-header {
     display: flex;
     align-items: center;
@@ -1228,7 +1374,7 @@ watch(showDraftDialog, (val) => {
     top: 0;
     z-index: 100;
   }
-  .page-header :deep(.el-button) { padding: 6px 10px; font-size: 13px; }
+  .page-header > .el-button:first-child { display: none; }
   .page-header h2 { flex: 1; margin: 0; font-size: 17px; font-weight: 600; color: #323233; text-align: center; }
   .header-actions { display: flex; gap: 6px; flex-shrink: 0; }
   .header-actions :deep(.el-button) { padding: 5px 10px; font-size: 12px; border-radius: 14px; }
@@ -1328,17 +1474,29 @@ watch(showDraftDialog, (val) => {
     box-shadow: 0 4px 16px rgba(7,193,96,0.12);
   }
   .type-card :deep(.el-icon) { flex-shrink: 0; }
-  .type-card h4 {
+  .type-card-body {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+  }
+  .type-card-body h4 {
     font-size: 16px;
     margin: 0 0 4px;
     color: #323233;
     font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
-  .type-card p {
+  .type-card-body p {
     font-size: 13px;
     color: #969799;
     line-height: 1.5;
     margin: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
   .check-badge {
     position: absolute;
@@ -1366,6 +1524,21 @@ watch(showDraftDialog, (val) => {
     align-items: center;
     flex-wrap: wrap;
     gap: 6px;
+  }
+
+  /* 已上传文件 */
+  .uploaded-file {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: #f0f9f4;
+    border-radius: 10px;
+    border: 1px solid #ebedf0;
+  }
+  .uploaded-file .file-name {
+    font-size: 13px;
+    color: #323233;
   }
 
   /* 字段提示 */
@@ -1453,18 +1626,38 @@ watch(showDraftDialog, (val) => {
   }
   .action-group { display: flex; gap: 10px; flex: 1; }
 
+  /* 提交审核步骤 — el-result 宽度 */
+  :deep(.el-result) {
+    padding: 20px 8px !important;
+  }
+  :deep(.el-result__extra) {
+    width: 100% !important;
+    margin-top: 12px !important;
+  }
+
   /* 预览卡片 */
   .preview-card {
     background: #f7f8fa;
     border-radius: 12px;
-    padding: 16px;
+    padding: 16px 14px;
     text-align: left;
     min-width: auto;
     width: 100%;
     margin-bottom: 14px;
+    box-sizing: border-box;
   }
-  .preview-item { margin-bottom: 10px; font-size: 14px; }
-  .preview-item .label { color: #969799; margin-right: 6px; }
+  .preview-item {
+    margin-bottom: 10px;
+    font-size: 14px;
+    line-height: 1.6;
+    word-break: break-all;
+  }
+  .preview-item .label {
+    color: #969799;
+    margin-right: 4px;
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
 
   .tip-box {
     color: #ff976a;

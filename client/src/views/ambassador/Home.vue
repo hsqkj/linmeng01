@@ -645,32 +645,238 @@ function fmtTime(t) {
 
 @media (max-width: 768px) {
   .ambassador-home {
-    padding-bottom: 70px;
+    padding-bottom: 90px;
     width: 100%;
     max-width: 100%;
+    background: #f7f8fa;
   }
-  .welcome-banner { flex-direction: column; gap: 14px; padding: 16px; border-radius: 12px; }
-  .banner-left { flex-direction: column; text-align: center; }
-  .banner-info { text-align: center; }
-  .amb-name { font-size: 16px; margin-bottom: 6px; }
-  .amb-meta { flex-direction: column; gap: 6px; align-items: center; }
-  .stats-row { grid-template-columns: 1fr 1fr; gap: 10px; }
-  .stat-card { padding: 12px; border-radius: 10px; }
-  .stat-icon { font-size: 22px; }
-  .stat-val { font-size: 18px; }
-  .stat-label { font-size: 11px; }
-  .section-card { padding: 14px 12px; border-radius: 10px; }
-  .section-header h3, .section-card h3 { font-size: 14px; margin-bottom: 12px; }
-  :deep(.el-table) { font-size: 11px; }
-  :deep(.el-table th) { padding: 6px 4px; font-size: 11px; }
-  :deep(.el-table td) { padding: 6px 4px; }
-  :deep(.el-dialog) { width: 95% !important; margin: 12px auto !important; }
-  :deep(.el-dialog__body) { padding: 16px; }
-  .income-item { padding: 6px 0; }
-  .income-label { font-size: 13px; }
-  .income-val { font-size: 16px; }
-  .income-item.total .income-val { font-size: 20px; }
-  .quick-actions { gap: 10px; }
-  .qa-item { padding: 12px; font-size: 12px; }
+
+  /* 欢迎横幅 — 小程序风格 */
+  .welcome-banner {
+    flex-direction: column;
+    gap: 14px;
+    padding: 20px 16px;
+    border-radius: 12px;
+    margin: 12px 16px 16px;
+    background: linear-gradient(135deg, #F59E0B, #D97706);
+    box-shadow: 0 4px 16px rgba(245,158,11,0.2);
+  }
+  .banner-left {
+    flex-direction: row;
+    text-align: left;
+    align-items: center;
+    gap: 12px;
+  }
+  .amb-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
+    flex-shrink: 0;
+  }
+  .banner-info { text-align: left; }
+  .amb-name {
+    font-size: 16px;
+    margin-bottom: 6px;
+    color: white;
+    font-weight: 600;
+  }
+  .amb-meta {
+    flex-direction: row;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .amb-meta .el-tag {
+    background: rgba(255,255,255,0.2);
+    border-color: rgba(255,255,255,0.3);
+    color: white;
+  }
+  .amb-code {
+    font-size: 12px;
+    color: rgba(255,255,255,0.85);
+  }
+  .join-time {
+    font-size: 11px;
+    color: rgba(255,255,255,0.7);
+  }
+  .banner-actions {
+    margin-top: 4px;
+  }
+  .banner-actions .el-button {
+    border-radius: 18px;
+    background: rgba(255,255,255,0.9);
+    color: #D97706;
+    border: none;
+    font-weight: 500;
+  }
+
+  /* 统计卡片 — 小程序风格 */
+  .stats-row {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin: 0 16px 16px;
+  }
+  .stat-card {
+    padding: 14px;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+    border: none;
+  }
+  .stat-card.blue { background: #ecf5ff; }
+  .stat-card.green { background: #ecf9f1; }
+  .stat-card.yellow { background: #fff7ed; }
+  .stat-card.orange { background: #fff3e0; }
+  .stat-icon {
+    font-size: 24px;
+    margin-bottom: 8px;
+  }
+  .stat-val {
+    font-size: 20px;
+    color: #323233;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .stat-label {
+    font-size: 12px;
+    color: #969799;
+  }
+
+  /* 章节卡片 — 小程序风格 */
+  .section-card {
+    padding: 16px;
+    border-radius: 12px;
+    margin: 0 16px 16px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+    border: none;
+  }
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .section-header h3, .section-card h3 {
+    font-size: 15px;
+    margin-bottom: 0;
+    color: #323233;
+    font-weight: 600;
+  }
+
+  /* 图表 */
+  .chart-placeholder {
+    padding: 10px 0;
+  }
+  .bar-chart {
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+    height: 160px;
+  }
+  .bar-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+  .bar-wrap {
+    flex: 1;
+    display: flex;
+    align-items: flex-end;
+    width: 100%;
+  }
+  .bar-fill {
+    width: 100%;
+    background: linear-gradient(0deg, #F59E0B, #FBBF24);
+    border-radius: 4px 4px 0 0;
+    min-height: 4px;
+    position: relative;
+  }
+  .bar-tooltip {
+    display: none;
+  }
+  .bar-label {
+    font-size: 10px;
+    color: #969799;
+    margin-top: 4px;
+  }
+
+  /* 表格 */
+  :deep(.el-table) {
+    font-size: 12px;
+    border-radius: 8px;
+  }
+  :deep(.el-table th) {
+    padding: 8px 6px;
+    font-size: 12px;
+    background: #f7f8fa !important;
+    color: #969799;
+    font-weight: 500;
+  }
+  :deep(.el-table td) {
+    padding: 8px 6px;
+  }
+
+  /* 弹窗 */
+  :deep(.el-dialog) {
+    width: 92% !important;
+    margin: 16px auto !important;
+    border-radius: 16px !important;
+  }
+  :deep(.el-dialog__header) {
+    padding: 16px 16px 0;
+  }
+  :deep(.el-dialog__body) {
+    padding: 16px;
+  }
+  :deep(.el-dialog__footer) {
+    padding: 0 16px 16px;
+  }
+
+  /* 收益明细 */
+  .income-item {
+    padding: 8px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .income-label {
+    font-size: 13px;
+    color: #646566;
+  }
+  .income-val {
+    font-size: 16px;
+    color: #323233;
+    font-weight: 600;
+  }
+  .income-item.total {
+    border-top: 0.5px solid #ebedf0;
+    padding-top: 12px;
+    margin-top: 4px;
+  }
+  .income-item.total .income-val {
+    font-size: 20px;
+    color: #F59E0B;
+  }
+
+  /* 快捷操作 */
+  .quick-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .qa-item {
+    padding: 14px 12px;
+    font-size: 13px;
+    border-radius: 10px;
+    background: #f7f8fa;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .qa-item:active {
+    background: #ecf9f1;
+    color: #07c160;
+  }
 }
 </style>

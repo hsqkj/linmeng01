@@ -771,12 +771,12 @@ onMounted(() => { loadConfig(); fetchResources(); loadFavorites() })
 @media (max-width: 768px) {
   .mp-page {
     min-height: 100vh;
-    background: #f5f5f5;
-    padding-bottom: 70px;
+    background: #f7f8fa;
+    padding-bottom: 90px;
     font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', sans-serif;
   }
 
-  /* 导航栏 */
+  /* 导航栏 — 小程序风格 */
   .mp-nav {
     position: sticky;
     top: 0;
@@ -794,58 +794,60 @@ onMounted(() => { loadConfig(); fetchResources(); loadFavorites() })
     color: white;
     font-size: 17px;
     font-weight: 600;
-    letter-spacing: 1px;
+    letter-spacing: 0.5px;
   }
 
-  /* 搜索栏 */
+  /* 搜索栏 — 小程序风格 */
   .mp-search-bar {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 10px 14px;
+    gap: 8px;
+    padding: 10px 16px;
     background: white;
-    border-bottom: 1px solid #eee;
+    border-bottom: 0.5px solid #ebedf0;
   }
   .mp-search-input-wrap {
     flex: 1;
     display: flex;
     align-items: center;
-    background: #f0f0f0;
+    background: #f7f8fa;
     border-radius: 18px;
     padding: 0 14px;
     height: 36px;
+    border: none;
   }
-  .mp-search-icon { font-size: 14px; color: #999; margin-right: 6px; }
+  .mp-search-icon { font-size: 14px; color: #969799; margin-right: 6px; }
   .mp-search-input {
     flex: 1;
     border: none;
     background: transparent;
     outline: none;
     font-size: 14px;
-    color: #333;
+    color: #323233;
   }
-  .mp-search-input::placeholder { color: #bbb; }
-  .mp-search-clear { font-size: 12px; color: #ccc; cursor: pointer; }
+  .mp-search-input::placeholder { color: #c8c9cc; }
+  .mp-search-clear { font-size: 12px; color: #c8c9cc; cursor: pointer; }
   .mp-search-btn {
     background: #07C160;
     color: white;
     border: none;
-    border-radius: 16px;
+    border-radius: 18px;
     padding: 0 16px;
-    height: 34px;
+    height: 36px;
     font-size: 14px;
     cursor: pointer;
     font-weight: 500;
+    flex-shrink: 0;
   }
 
-  /* 横向滚动标签 */
+  /* 横向滚动标签 — 小程序胶囊风格 */
   .mp-tabs-scroll {
     display: flex;
     overflow-x: auto;
-    padding: 10px 14px;
+    padding: 10px 16px;
     gap: 8px;
     background: white;
-    border-bottom: 1px solid #eee;
+    border-bottom: 0.5px solid #ebedf0;
     scrollbar-width: none;
     -ms-overflow-style: none;
   }
@@ -855,104 +857,111 @@ onMounted(() => { loadConfig(); fetchResources(); loadFavorites() })
     padding: 5px 14px;
     border-radius: 14px;
     font-size: 13px;
-    color: #666;
-    background: #f0f0f0;
-    border: 1.5px solid transparent;
+    color: #646566;
+    background: #f7f8fa;
+    border: none;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    white-space: nowrap;
   }
   .mp-tab.active {
     color: #07C160;
-    border-color: #07C160;
     background: #e8f8f0;
     font-weight: 600;
   }
 
-  /* 快捷筛选 */
+  /* 快捷筛选 — 小程序风格 */
   .mp-quick-filters {
     display: flex;
     gap: 12px;
-    padding: 8px 14px;
+    padding: 8px 16px;
     background: white;
-    border-bottom: 1px solid #eee;
+    border-bottom: 0.5px solid #ebedf0;
   }
   .mp-filter-group {
     display: flex;
     align-items: center;
     gap: 4px;
   }
-  .mp-filter-label { font-size: 12px; color: #999; }
+  .mp-filter-label { font-size: 12px; color: #969799; }
   .mp-select {
-    border: 1px solid #ddd;
-    border-radius: 12px;
+    border: 1px solid #ebedf0;
+    border-radius: 14px;
     padding: 3px 10px;
     font-size: 12px;
-    color: #555;
+    color: #323233;
     background: white;
     outline: none;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23969799'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    padding-right: 24px;
   }
 
   /* 结果统计 */
   .mp-result-info {
-    padding: 8px 14px;
+    padding: 8px 16px;
     font-size: 12px;
-    color: #999;
-    background: #f9f9f9;
+    color: #969799;
+    background: #f7f8fa;
   }
   .mp-result-info strong { color: #07C160; }
 
   /* 骨架屏 */
-  .mp-skeleton-list { padding: 10px 14px; display: flex; flex-direction: column; gap: 10px; }
+  .mp-skeleton-list { padding: 12px 16px; display: flex; flex-direction: column; gap: 12px; }
   .mp-skeleton-card {
     background: white;
     border-radius: 12px;
-    padding: 12px;
+    padding: 14px;
     display: flex;
-    gap: 10px;
+    gap: 12px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.04);
     animation: mp-pulse 1.5s infinite;
   }
   .mp-skeleton-left { flex-shrink: 0; }
-  .mp-skeleton-logo { width: 44px; height: 44px; border-radius: 8px; background: #eee; }
-  .mp-skeleton-right { flex: 1; display: flex; flex-direction: column; gap: 6px; justify-content: center; }
-  .mp-skeleton-line { height: 10px; border-radius: 5px; background: #eee; }
+  .mp-skeleton-logo { width: 48px; height: 48px; border-radius: 10px; background: #ebedf0; }
+  .mp-skeleton-right { flex: 1; display: flex; flex-direction: column; gap: 8px; justify-content: center; }
+  .mp-skeleton-line { height: 10px; border-radius: 5px; background: #ebedf0; }
   .w40 { width: 40%; } .w60 { width: 60%; } .w80 { width: 80%; }
   @keyframes mp-pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
 
-  /* 资源卡片 */
-  .mp-list { padding: 10px 14px; display: flex; flex-direction: column; gap: 10px; }
+  /* 资源卡片 — 小程序卡片风格 */
+  .mp-list { padding: 12px 16px; display: flex; flex-direction: column; gap: 12px; }
   .mp-card {
     background: white;
     border-radius: 12px;
-    padding: 12px;
+    padding: 14px;
     display: flex;
-    gap: 10px;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    gap: 12px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.04);
     cursor: pointer;
-    transition: transform 0.15s, box-shadow 0.15s;
+    transition: transform 0.2s, box-shadow 0.2s;
   }
-  .mp-card:active { transform: scale(0.98); box-shadow: 0 0 0 rgba(0,0,0,0.06); }
+  .mp-card:active { transform: scale(0.98); }
 
   .mp-card-left { flex-shrink: 0; }
   .mp-merchant-logo {
-    width: 44px; height: 44px;
-    border-radius: 8px;
+    width: 48px; height: 48px;
+    border-radius: 10px;
     object-fit: cover;
-    background: #f5f5f5;
+    background: #f7f8fa;
   }
   .mp-merchant-logo-default {
-    width: 44px; height: 44px;
-    border-radius: 8px;
+    width: 48px; height: 48px;
+    border-radius: 10px;
     background: #e8f8f0;
     display: flex; align-items: center; justify-content: center;
-    font-size: 20px;
+    font-size: 22px;
   }
 
-  .mp-card-right { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+  .mp-card-right { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
 
   .mp-card-row1 { display: flex; align-items: center; justify-content: space-between; }
   .mp-type-badge {
     font-size: 10px; color: white;
-    padding: 1px 6px; border-radius: 4px;
+    padding: 2px 8px; border-radius: 6px;
     font-weight: 600;
   }
   .mp-match-hearts { display: flex; gap: 1px; }
@@ -960,66 +969,76 @@ onMounted(() => { loadConfig(); fetchResources(); loadFavorites() })
   .mp-heart.filled { color: #f56c6c; }
 
   .mp-card-title {
-    font-size: 14px; font-weight: 600; color: #333;
-    line-height: 1.4;
+    font-size: 15px; font-weight: 600; color: #323233;
+    line-height: 1.5;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
 
   .mp-card-merchant {
     display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
   }
-  .mp-merchant-name { font-size: 12px; color: #409EFF; }
+  .mp-merchant-name { font-size: 12px; color: #07C160; }
   .mp-star { font-size: 11px; color: #f5a623; }
   .mp-member-badge {
     font-size: 10px;
-    background: #f0f0f0;
-    color: #666;
-    padding: 1px 5px; border-radius: 4px;
+    background: #f7f8fa;
+    color: #646566;
+    padding: 2px 6px; border-radius: 6px;
   }
 
   .mp-card-desc {
-    font-size: 12px; color: #888; line-height: 1.4;
+    font-size: 12px; color: #969799; line-height: 1.5;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
   }
 
-  .mp-card-row5 { display: flex; align-items: center; justify-content: space-between; margin-top: 2px; }
-  .mp-card-tags { display: flex; gap: 4px; flex-wrap: wrap; }
+  .mp-card-row5 { display: flex; align-items: center; justify-content: space-between; margin-top: 4px; }
+  .mp-card-tags { display: flex; gap: 6px; flex-wrap: wrap; }
   .mp-tag {
-    font-size: 10px; color: #555;
-    background: #f5f5f5;
-    padding: 1px 6px; border-radius: 4px;
+    font-size: 10px; color: #646566;
+    background: #f7f8fa;
+    padding: 2px 8px; border-radius: 6px;
   }
   .mp-card-actions { display: flex; gap: 8px; }
   .mp-action-btn {
-    font-size: 14px; cursor: pointer; padding: 2px 4px;
+    font-size: 13px; cursor: pointer; padding: 4px 8px;
+    color: #07C160;
+    border-radius: 4px;
+    transition: background 0.2s;
   }
+  .mp-action-btn:active { background: #f0f9f4; }
 
-  /* 空状态 */
+  /* 空状态 — 小程序风格 */
   .mp-empty {
     display: flex; flex-direction: column; align-items: center;
-    padding: 40px 20px; gap: 10px;
+    padding: 60px 20px; gap: 12px;
   }
-  .mp-empty-icon { font-size: 48px; }
-  .mp-empty-text { font-size: 14px; color: #999; }
+  .mp-empty-icon { font-size: 56px; opacity: 0.6; }
+  .mp-empty-text { font-size: 14px; color: #969799; }
   .mp-empty-btn {
     background: #07C160; color: white;
-    border: none; border-radius: 16px;
-    padding: 8px 24px; font-size: 13px;
+    border: none; border-radius: 22px;
+    padding: 10px 32px; font-size: 14px;
     cursor: pointer;
+    font-weight: 500;
+    box-shadow: 0 4px 12px rgba(7,193,96,0.3);
   }
 
-  /* 分页 */
+  /* 分页 — 小程序风格 */
   .mp-pagination {
     display: flex; align-items: center; justify-content: center;
-    gap: 14px; padding: 14px;
+    gap: 16px; padding: 16px;
   }
   .mp-page-btn {
     background: #07C160; color: white;
-    border: none; border-radius: 16px;
-    padding: 7px 18px; font-size: 13px;
+    border: none; border-radius: 18px;
+    padding: 8px 20px; font-size: 13px;
     cursor: pointer;
+    font-weight: 500;
   }
-  .mp-page-btn:disabled { background: #ccc; cursor: not-allowed; }
-  .mp-page-info { font-size: 13px; color: #666; }
+  .mp-page-btn:disabled { background: #ebedf0; color: #c8c9cc; cursor: not-allowed; }
+  .mp-page-info { font-size: 13px; color: #969799; }
 }
 </style>
