@@ -258,6 +258,10 @@ async function loadAllTypeMaps() {
     const expertTypes = configMap.expert_types || {}
     if (expertTypes.types) {
       typeMaps.expertTypes = parseTypeArray(expertTypes.types) || defaultMaps.expertTypes
+    } else if (Array.isArray(expertTypes) && expertTypes.length > 0) {
+      typeMaps.expertTypes = parseTypeArray(expertTypes) || defaultMaps.expertTypes
+    } else {
+      typeMaps.expertTypes = defaultMaps.expertTypes
     }
     
     // 2. 从 tags 表加载标签

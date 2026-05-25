@@ -35,8 +35,8 @@
         <el-badge :value="unreadCount" :hidden="unreadCount === 0" class="message-badge" @click="$router.push('/community/messages')">
           <el-icon :size="20"><Bell /></el-icon>
         </el-badge>
-        <el-dropdown>
-          <div class="user-info">
+        <el-dropdown trigger="click">
+          <div class="user-info" @click.stop>
             <el-avatar :size="32" src="https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png" />
             <span class="pc-only">{{ userInfo?.real_name || userInfo?.name || '社区用户' }}</span>
             <el-icon><ArrowDown /></el-icon>
