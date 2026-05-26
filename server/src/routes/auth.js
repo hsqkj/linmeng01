@@ -122,6 +122,13 @@ router.get('/sso-login', async (req, res) => {
     const targetUrl = `https://3qall.com/#${redirectPath}`
     console.log(`[SSO] 返回自动跳转页 → ${targetUrl}`)
 
+    const ssoData = JSON.stringify({
+      token: result.h5Token,
+      userType: result.userType,
+      userId: result.user.id,
+      userName: result.userName || '用户'
+    })
+
     res.setHeader('Content-Type', 'text/html; charset=utf-8')
     res.send(`<!DOCTYPE html>
 <html>
@@ -130,19 +137,24 @@ router.get('/sso-login', async (req, res) => {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>正在跳转...</title>
   <style>body{font-family:system-ui;text-align:center;padding:40px;color:#666}</style>
+  <!-- 微信小程序 JSSDK -->
+  <script type="text/javascript" src="https://res.wx.qq.com/open/js/jweixin-1.6.0.js"></script>
 </head>
 <body>
   <p>正在跳转，请稍候...</p>
   <script>
     (function() {
+      var ssoData = ${ssoData};
       try {
-        localStorage.setItem('${cookieName}', '${result.h5Token}')
-        localStorage.setItem('userType', '${result.userType}')
+        localStorage.setItem('${cookieName}', ssoData.token)
+        localStorage.setItem('userType', ssoData.userType)
         // 同时尝试写 cookie（兼容普通浏览器）
-        document.cookie = '${cookieName}=${encodeURIComponent(result.h5Token)};path=/;max-age=${maxAge};SameSite=Lax'
-        document.cookie = 'sso_user_type=${result.userType};path=/;max-age=${maxAge};SameSite=Lax'
+        document.cookie = '${cookieName}=' + encodeURIComponent(ssoData.token) + ';path=/;max-age=${maxAge};SameSite=Lax'
+        document.cookie = 'sso_user_type=' + ssoData.userType + ';path=/;max-age=${maxAge};SameSite=Lax'
       } catch(e) { console.error('SSO storage error:', e) }
-      window.location.replace('${targetUrl}')
+
+      // 跳转到目标页面
+      window.location.replace('${targetUrl}');
     })()
   </script>
 </body>

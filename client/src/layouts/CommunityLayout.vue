@@ -97,7 +97,10 @@ const userInfo = ref(null)
 const unreadCount = ref(0)
 let refreshTimer = null
 
+const isLoggedIn = () => !!localStorage.getItem('community_token')
+
 async function loadUnreadCount() {
+  if (!isLoggedIn()) return
   try {
     const res = await getUnreadCount()
     unreadCount.value = res?.data?.count || 0

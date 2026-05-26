@@ -145,9 +145,14 @@
           </button>
         </div>
 
-        <!-- 返回微信登录 -->
-        <div class="back-to-wechat" @click="phase = 'wechat'">
-          ← 返回微信登录
+        <!-- 底部链接 -->
+        <div class="phone-bottom-links">
+          <div class="link-left" @click="router.push('/register/community')">
+            没有账号？<span class="link">立即注册</span>
+          </div>
+          <div class="link-right" @click="phase = 'wechat'">
+            ← 返回微信登录
+          </div>
         </div>
       </div>
 
@@ -182,7 +187,7 @@
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 
 const router = useRouter()
 
@@ -274,26 +279,36 @@ function onAuthDeny() {
 async function sendCode() {
   if (!isPhoneValid.value) return
   try {
-    const res = await fetch('/api/public/sms/send', {
+    const response = await fetch('/api/public/sms/send', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ phone: form.value.phone, type: 'login' })
-    }).then(r => r.json())
+    })
+    const res = await response.json()
+    const msg = res.msg || res.message || '发送失败'
     // 模拟模式自动填入
     if (res.code_value) {
       form.value.code = res.code_value
       ElMessage.success(`[模拟] 验证码已自动填充: ${res.code_value}`)
     }
-    if (res.code === 0 || res.code === 200 || res.code === 0) {
+    if (res.code === 0 || res.code === 200) {
       ElMessage.success('验证码已发送')
+      codeCountdown.value = 60
+      countdownTimer = setInterval(() => {
+        codeCountdown.value--
+        if (codeCountdown.value <= 0) clearInterval(countdownTimer)
+      }, 1000)
+    } else if (response.status === 404 && msg.includes('尚未注册')) {
+      ElMessageBox.confirm('该手机号尚未注册，是否前往注册？', '提示', {
+        confirmButtonText: '去注册',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        router.push('/register/community')
+      }).catch(() => {})
     } else {
-      ElMessage.error(res.msg || '发送失败')
+      ElMessage.error(msg)
     }
-    codeCountdown.value = 60
-    countdownTimer = setInterval(() => {
-      codeCountdown.value--
-      if (codeCountdown.value <= 0) clearInterval(countdownTimer)
-    }, 1000)
   } catch {
     ElMessage.error('发送失败，请稍后重试')
   }
@@ -599,14 +614,17 @@ onBeforeUnmount(() => {
 }
 .btn-phone-login:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(38,162,105,.4); }
 .btn-phone-login:disabled { opacity: .6; cursor: not-allowed; transform: none; }
-.back-to-wechat {
-  text-align: center;
+.phone-bottom-links {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   margin-top: 16px;
-  font-size: 13px;
-  color: #26a269;
-  cursor: pointer;
   padding-bottom: 8px;
+  font-size: 13px;
 }
+.link-left { color: #666; cursor: pointer; }
+.link-right { color: #26a269; cursor: pointer; }
+.link-right:hover { text-decoration: underline; }
 
 /* ===== 微信授权弹窗 ===== */
 .auth-overlay {
