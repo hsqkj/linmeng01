@@ -109,13 +109,33 @@ exports.register = async (req, res) => {
     }
 
     // 检查该社区是否已被注册（每个社区仅限一个账号）
-    if (data.district && data.street && data.community) {
-      const [communityExist] = await pool.query(
-        'SELECT id, real_name FROM communities WHERE district = ? AND street = ? AND community = ? AND status != 2 LIMIT 1',
-        [data.district, data.street, data.community]
-      )
+    // 优先用 community_id 精确匹配；无 id 时降级为名称匹配
+    if (data.community_id || (data.district && data.street && data.community)) {
+      let communityExist = []
+      if (data.community_id) {
+        // 用 regions 表 id 精确查询是否已注册
+        const [regionRows] = await pool.query(
+          'SELECT name FROM regions WHERE id = ? LIMIT 1',
+          [data.community_id]
+        )
+        const communityName = regionRows.length > 0 ? regionRows[0].name : data.community
+        const [existById] = await pool.query(
+          'SELECT id, real_name FROM communities WHERE community = ? AND district = ? AND street = ? AND status != 2 LIMIT 1',
+          [communityName, data.district, data.street]
+        )
+        communityExist = existById
+      } else {
+        const [existByName] = await pool.query(
+          'SELECT id, real_name FROM communities WHERE district = ? AND street = ? AND community = ? AND status != 2 LIMIT 1',
+          [data.district, data.street, data.community]
+        )
+        communityExist = existByName
+      }
       if (communityExist.length > 0) {
-        return error(res, `该社区（${data.district}${data.street}${data.community}）已有账号注册，如有问题请联系管理员`, 400)
+        const displayName = data.district && data.street && data.community
+          ? `${data.district}${data.street}${data.community}`
+          : '该社区'
+        return error(res, `${displayName}已有账号注册，如有问题请联系管理员`, 400)
       }
     }
 

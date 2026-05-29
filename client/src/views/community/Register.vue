@@ -34,7 +34,7 @@
         <el-form-item prop="district">
           <div class="region-select-group">
             <el-select v-model="form.district" placeholder="区/开发区" size="large" @change="onDistrictChange">
-              <el-option v-for="d in districts" :key="d" :label="d" :value="d" />
+              <el-option v-for="d in districts" :key="d.value" :label="d.label" :value="d.value" />
             </el-select>
             <el-select v-model="form.street" placeholder="街道/镇" size="large" :disabled="!form.district" @change="onStreetChange">
               <el-option v-for="s in filteredStreets" :key="s.value" :label="s.label" :value="s.value" />
@@ -189,38 +189,48 @@ async function loadRegions() {
 }
 
 // 行政区列表（parent_id = 0 或 null 表示顶级，跳过顶级直接显示区）
+// value 统一用 id 字符串，提交时通过 id 反查名称
 const districts = computed(() => {
-  // 找出顶级地区
   const topLevel = allRegions.value.filter(r => !r.parent_id || r.parent_id === 0 || r.parent_id === '0')
-  // 如果顶级只有一个且是"武汉市"，直接显示它的子级（区）
   if (topLevel.length === 1 && (topLevel[0].name === '武汉市' || topLevel[0].region_name === '武汉市')) {
     return allRegions.value
       .filter(r => r.parent_id === topLevel[0].id)
-      .map(r => r.name || r.region_name)
-      .filter(Boolean)
+      .map(r => ({ label: r.name || r.region_name, value: String(r.id) }))
   }
-  // 否则显示顶级地区
-  return topLevel.map(r => r.name || r.region_name).filter(Boolean)
+  return topLevel.map(r => ({ label: r.name || r.region_name, value: String(r.id) }))
 })
 
-// 根据选择的区获取街道列表
+// 根据选择的区获取街道列表（value 用 id，提交时通过 id 反查名称）
 const filteredStreets = computed(() => {
   if (!form.district) return []
-  const district = allRegions.value.find(r => (r.name || r.region_name) === form.district)
+  const district = allRegions.value.find(r => String(r.id) === String(form.district))
   if (!district) return []
   return allRegions.value
     .filter(r => r.parent_id === district.id)
-    .map(r => ({ label: r.name || r.region_name, value: r.name || r.region_name }))
+    .map(r => ({ label: r.name || r.region_name, value: String(r.id) }))
 })
 
-// 根据选择的街道获取社区列表
+// 根据选择的街道获取社区列表（value 用 id，同名社区在 label 中标注街道以区分）
 const filteredCommunities = computed(() => {
   if (!form.street) return []
-  const street = allRegions.value.find(r => (r.name || r.region_name) === form.street)
+  const street = allRegions.value.find(r => String(r.id) === String(form.street))
   if (!street) return []
-  return allRegions.value
-    .filter(r => r.parent_id === street.id)
-    .map(r => ({ label: r.name || r.region_name, value: r.name || r.region_name }))
+
+  const communities = allRegions.value.filter(r => r.parent_id === street.id)
+  // 检查是否有重名社区
+  const nameCount = {}
+  communities.forEach(r => {
+    const name = r.name || r.region_name
+    nameCount[name] = (nameCount[name] || 0) + 1
+  })
+
+  return communities.map(r => {
+    const name = r.name || r.region_name
+    const label = nameCount[name] > 1
+      ? `${name}（${street.name || street.region_name}）`
+      : name
+    return { label, value: String(r.id) }
+  })
 })
 
 function onDistrictChange() {
@@ -230,6 +240,12 @@ function onDistrictChange() {
 
 function onStreetChange() {
   form.community = ''
+}
+
+// 通过 id 反查地区名称
+function getNameById(id) {
+  const r = allRegions.value.find(r => String(r.id) === String(id))
+  return r ? (r.name || r.region_name) : ''
 }
 
 // 发送验证码（供SmsCodeInput组件调用）
@@ -249,14 +265,20 @@ const register = () => {
     }
     loading.value = true
     try {
+      // 通过 id 反查地区名称
+      const districtName = getNameById(form.district)
+      const streetName = getNameById(form.street)
+      const communityName = getNameById(form.community)
+
       const payload = {
         username: form.manager,  // 姓名作为登录名
         password: form.password,
         real_name: form.manager,
         phone: form.phone,
-        district: form.district,
-        street: form.street,
-        community: form.community
+        district: districtName,
+        street: streetName,
+        community: communityName,
+        community_id: form.community  // 同时传 id，供后端做精确校验
       }
       const baseURL = import.meta.env.VITE_API_BASE_URL || ''
       await axios.post(`${baseURL}/api/community/register`, payload)
