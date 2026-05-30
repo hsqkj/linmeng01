@@ -103,11 +103,11 @@ async function sendVerifyCode(phone, code) {
     if (result.statusCode === '000000') {
       return { success: true, message: '短信发送成功' }
     } else {
-      // 业务限流错误码（天限/月限/限速）降级：返回 success，不阻断主流程
+      // 业务限流错误码（天限/月限/限速）：短信未实际发送，标记 sent=false
       const businessCodes = ['160040', '160041', '160042']
       if (businessCodes.includes(result.statusCode)) {
-        console.warn(`[SMS] 业务限流(${result.statusCode})，返回模拟验证码: ${code}`)
-        return { success: true, mock: true, message: result.statusMsg || '已达发送上限（模拟模式）' }
+        console.warn(`[SMS] 业务限流(${result.statusCode})，短信未发送，返回模拟验证码: ${code}`)
+        return { success: true, mock: true, sent: false, message: result.statusMsg || '已达发送上限（模拟模式）' }
       }
       return { success: false, message: result.statusMsg || '短信发送失败' }
     }

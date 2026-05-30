@@ -66,6 +66,12 @@ exports.sendSms = async (req, res) => {
       return error(res, '短信发送失败：' + smsResult.message, 500)
     }
 
+    // 短信限流（sent=false）时：不覆盖缓存，让用户继续使用上一次收到的验证码
+    if (smsResult.sent === false) {
+      console.log(`[SMS] 限流未发送(${smsResult.message})，保留原缓存验证码，向 ${phone} 返回模拟码: ${code}`)
+      return success(res, { code }, '今日发送次数已达上限，请使用上一次收到的验证码登录')
+    }
+
     // 写入内存缓存（生产环境建议用 Redis）
     codeCache.set(phone, { code, time: Date.now() })
 

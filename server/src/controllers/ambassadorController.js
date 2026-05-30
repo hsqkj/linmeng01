@@ -30,13 +30,14 @@ exports.login = async (req, res) => {
       return error(res, '账号已被禁用', 403)
     }
     
-    // 验证码登录
+    // 验证码登录（统一转字符串比较）
     if (code !== undefined) {
+      const codeStr = String(code)
       // 测试账号：直接验证固定验证码（不依赖缓存）
       const { getTestAccount } = require('./publicController')
       const testAccount = getTestAccount(phone)
       if (testAccount) {
-        if (code !== testAccount.code) {
+        if (codeStr !== String(testAccount.code)) {
           return error(res, '验证码错误', 401)
         }
       } else {
@@ -45,7 +46,7 @@ exports.login = async (req, res) => {
         if (!cached) {
           return error(res, '验证码已过期，请重新获取', 401)
         }
-        if (code !== cached.code) {
+        if (codeStr !== String(cached.code)) {
           return error(res, '验证码错误', 401)
         }
         // 验证通过，清除缓存

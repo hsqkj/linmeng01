@@ -120,9 +120,10 @@
             <div class="code-input-wrap">
               <input
                 v-model="form.code"
-                type="number"
+                type="text"
                 placeholder="请输入验证码"
                 maxlength="6"
+                inputmode="numeric"
                 class="code-input"
               />
               <button
@@ -241,9 +242,10 @@ function onAuthAllow() {
   if (ua.includes('micromessenger')) {
     doOAuthRedirect()
   } else {
-    // 非微信环境：模拟登录（开发调试）
-    // mockLogin() — 改为真实微信授权流程
-    doOAuthRedirect()
+    // 非微信环境：关闭弹窗并切换到手机号登录
+    showAuthDialog.value = false
+    phase.value = 'phone'
+    ElMessage.info('请在微信客户端中使用微信登录，或使用手机号登录')
   }
 }
 
