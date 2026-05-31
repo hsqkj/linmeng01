@@ -24,6 +24,10 @@
         <div class="other-login-section">
           <div class="divider-line"><span>其他登录方式</span></div>
           <div class="other-login-icons">
+            <div class="other-login-item" @click="onWebsiteLogin">
+              <div class="other-icon wechat-icon">💬</div>
+              <span>微信扫码</span>
+            </div>
             <div class="other-login-item" @click="switchToPhone">
               <div class="other-icon phone-icon">📱</div>
               <span>手机号</span>
@@ -70,6 +74,10 @@
         <div class="other-login-section">
           <div class="divider-line"><span>其他登录方式</span></div>
           <div class="other-login-icons">
+            <div class="other-login-item" @click="onWebsiteLogin">
+              <div class="other-icon wechat-icon">💬</div>
+              <span>微信扫码</span>
+            </div>
             <div class="other-login-item" @click="switchToPhone">
               <div class="other-icon phone-icon">📱</div>
               <span>手机号</span>
@@ -218,6 +226,15 @@ function switchToPhone() {
   phase.value = 'phone'
 }
 
+// ============ PC 微信扫码登录 ============
+function onWebsiteLogin() {
+  const params = new URLSearchParams({
+    userType: 'community',
+    redirect: window.location.origin + '/community'
+  })
+  window.location.href = `/api/wechat/website-auth?${params.toString()}`
+}
+
 // ============ 微信登录逻辑 ============
 const WX_APPID = 'wxa382e1c9fb93780e'
 const WX_REDIRECT = encodeURIComponent('https://3qall.com/wechat-login-community?from=community')
@@ -337,6 +354,28 @@ async function phoneLogin() {
       const data = res.data || res
       localStorage.setItem('community_token', data.token)
       localStorage.setItem('community_info', JSON.stringify(data.community || data))
+
+      // 如果有微信绑定信息（扫码后未绑定用户），后台绑定
+      const bindInfo = window.__wechat_bind_info
+      if (bindInfo && data.token) {
+        try {
+          await fetch('/api/wechat/bind', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              openid: bindInfo.openid,
+              unionid: bindInfo.unionid || '',
+              user_type: bindInfo.userType || 'community',
+              phone: form.value.phone,
+              userId: data.community?.id || data.id
+            })
+          })
+          delete window.__wechat_bind_info
+        } catch (e) {
+          console.warn('微信绑定失败:', e)
+        }
+      }
+
       ElMessage.success('登录成功')
       router.push('/community')
     } else {
@@ -357,6 +396,55 @@ onMounted(() => {
   // 已登录则直接跳转
   if (localStorage.getItem('community_token')) {
     router.push('/community')
+    return
+  }
+
+  // 处理微信网站应用扫码登录回调
+  const params = new URLSearchParams(window.location.search)
+  const wechatLogin = params.get('wechat_login')
+  const wechatNew = params.get('wechat_new')
+  const wechatError = params.get('wechat_error')
+
+  if (wechatError) {
+    ElMessage.error('微信登录失败：' + decodeURIComponent(wechatError))
+    // 清除 URL 参数
+    window.history.replaceState({}, '', window.location.pathname)
+  }
+
+  if (wechatLogin === 'success') {
+    const token = params.get('token')
+    const userId = params.get('userId')
+    const userType = params.get('userType')
+    if (token) {
+      localStorage.setItem('community_token', token)
+      ElMessage.success('微信登录成功')
+      // 获取用户信息并存储
+      fetch(`/api/community/info`, {
+        headers: { 'Authorization': 'Bearer ' + token }
+      }).then(r => r.json()).then(res => {
+        if (res.code === 0 || res.code === 200) {
+          localStorage.setItem('community_info', JSON.stringify(res.data || res))
+        }
+        router.push('/community')
+      }).catch(() => {
+        router.push('/community')
+      })
+      // 清除 URL 参数
+      window.history.replaceState({}, '', window.location.pathname)
+    }
+  }
+
+  if (wechatNew === 'true') {
+    const openid = params.get('openid')
+    const unionid = params.get('unionid')
+    const nickname = params.get('nickname')
+    const avatar = params.get('avatar')
+    // 未绑定的微信用户：提示绑定手机号
+    ElMessage.info('请绑定手机号以完成登录')
+    phase.value = 'phone'
+    // 存储微信信息，绑定手机号时一起提交
+    window.__wechat_bind_info = { openid, unionid, nickname, avatar, userType: params.get('userType') || 'community' }
+    window.history.replaceState({}, '', window.location.pathname)
   }
 })
 
@@ -503,6 +591,7 @@ onBeforeUnmount(() => {
   transition: border-color .2s;
 }
 .other-icon:hover { border-color: #26a269; }
+.other-icon.wechat-icon:hover { border-color: #07c160; background: #f0faf4; }
 
 /* ===== 底部协议勾选 ===== */
 .bottom-agree {
