@@ -16,6 +16,9 @@ dist/
 build/
 *.zip
 
+# Uploads (user uploaded files, keep on server only)
+uploads/
+
 # Logs
 logs/
 *.log
