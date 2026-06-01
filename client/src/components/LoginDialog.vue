@@ -288,13 +288,19 @@ function onWechatLogin() {
   if (isWechat) {
     doOAuthRedirect()
   } else {
-    showAuthDialog.value = true
+    // PC端：跳转到微信扫码登录页面
+    doWebsiteLogin()
   }
 }
 
 function doOAuthRedirect() {
   const stateMap = { community: 'community', merchant: 'merchant', ambassador: 'ambassador' }
   window.location.href = `https://open.weixin.qq.com/connect/oauth2/authorize?appid=${WX_APPID}&redirect_uri=${getWxRedirect()}&response_type=code&scope=snsapi_userinfo&state=${stateMap[props.type]}#wechat_redirect`
+}
+
+function doWebsiteLogin() {
+  // PC端微信扫码登录：跳转到后端接口，后端302到微信QR码页面
+  window.location.href = `/api/wechat/website-auth?userType=${props.type}`
 }
 
 function onAuthAllow() {
